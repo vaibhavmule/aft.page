@@ -107,6 +107,11 @@ async function publishHtml(html) {
   return data;
 }
 
+/** Land on the aft.page preview shell (claim / copy / manage) not the raw site. */
+function previewUrl(liveUrl) {
+  return `https://aft.page/preview?url=${encodeURIComponent(liveUrl)}`;
+}
+
 function createIconButton(getHtml) {
   const btn = document.createElement("button");
   btn.type = "button";
@@ -132,8 +137,8 @@ function createIconButton(getHtml) {
     try {
       const data = await publishHtml(html);
       setIconState(btn, "ok");
-      if (opened) opened.location.replace(data.url);
-      else window.open(data.url, "_blank", "noopener,noreferrer");
+      if (opened) opened.location.replace(previewUrl(data.url));
+      else window.open(previewUrl(data.url), "_blank", "noopener,noreferrer");
       setTimeout(() => setIconState(btn, "idle"), 2200);
     } catch (err) {
       console.error("[aft.page]", err);
@@ -174,8 +179,8 @@ function createMenuItem(getHtml) {
     try {
       const data = await publishHtml(html);
       btn.textContent = "Live — opening…";
-      if (opened) opened.location.replace(data.url);
-      else window.open(data.url, "_blank", "noopener,noreferrer");
+      if (opened) opened.location.replace(previewUrl(data.url));
+      else window.open(previewUrl(data.url), "_blank", "noopener,noreferrer");
     } catch (err) {
       console.error("[aft.page]", err);
       opened?.close();

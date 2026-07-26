@@ -65,6 +65,7 @@ server.registerTool(
             type: "text" as const,
             text: [
               `Live: ${result.url}`,
+              `Manage/claim: https://aft.page/preview?url=${encodeURIComponent(result.url)}`,
               `slug: ${result.slug}`,
               `deploy: ${result.deployId}`,
               `files: ${result.files}`,
@@ -133,6 +134,7 @@ server.registerTool(
             type: "text" as const,
             text: [
               `Live: ${result.url}`,
+              `Manage/claim: https://aft.page/preview?url=${encodeURIComponent(result.url)}`,
               `slug: ${result.slug}`,
               `deploy: ${result.deployId}`,
               `files: ${result.files}`,

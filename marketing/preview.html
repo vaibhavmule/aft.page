@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Preview — aft.page</title>
+    <meta name="robots" content="noindex" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Sora:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #14110f;
+        --paper: #f3efe6;
+        --signal: #c45c26;
+        --signal-deep: #9a3f12;
+        --quiet: #5c554c;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        font-family: "Sora", "Segoe UI", sans-serif;
+        background: var(--paper);
+        color: var(--ink);
+      }
+      .bar {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.6rem 1rem;
+        background: var(--paper);
+        border-bottom: 1.5px solid rgba(20, 17, 15, 0.12);
+        flex-wrap: wrap;
+      }
+      .brand {
+        font-family: "Fraunces", serif;
+        font-weight: 600;
+        font-size: 1.15rem;
+        letter-spacing: -0.03em;
+        text-decoration: none;
+        color: var(--ink);
+        margin-right: 0.25rem;
+      }
+      .brand span {
+        color: var(--signal);
+      }
+      .slug {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 0.85rem;
+        color: var(--quiet);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 40vw;
+      }
+      .actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-left: auto;
+        flex-wrap: wrap;
+      }
+      .btn {
+        appearance: none;
+        display: inline-flex;
+        align-items: center;
+        padding: 0.45rem 0.85rem;
+        border-radius: 0.35rem;
+        border: 1.5px solid transparent;
+        font: 600 0.85rem "Sora", sans-serif;
+        text-decoration: none;
+        cursor: pointer;
+        color: var(--ink);
+        background: transparent;
+      }
+      .btn-primary {
+        background: var(--ink);
+        color: var(--paper);
+      }
+      .btn-primary:hover {
+        background: #000;
+      }
+      .btn-ghost {
+        border-color: rgba(20, 17, 15, 0.28);
+      }
+      .btn-ghost:hover {
+        border-color: var(--ink);
+      }
+      .btn-claim {
+        background: var(--signal);
+        color: #fbfaf7;
+      }
+      .btn-claim:hover {
+        background: var(--signal-deep);
+      }
+      .frame-wrap {
+        flex: 1;
+        min-height: 0;
+        background: #fff;
+      }
+      iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+      }
+      .empty {
+        flex: 1;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        color: var(--quiet);
+        padding: 2rem;
+      }
+      .empty a {
+        color: var(--signal-deep);
+      }
+      .toast {
+        position: fixed;
+        bottom: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--ink);
+        color: var(--paper);
+        font-size: 0.85rem;
+        padding: 0.5rem 0.9rem;
+        border-radius: 0.35rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+      .toast.show {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bar">
+      <a class="brand" href="/">aft<span>.</span>page</a>
+      <span class="slug" id="slug"></span>
+      <div class="actions">
+        <button class="btn btn-ghost" id="copy">Copy link</button>
+        <a class="btn btn-ghost" id="open" target="_blank" rel="noopener noreferrer">Open live</a>
+        <button class="btn btn-claim" id="claim">Claim this site</button>
+      </div>
+    </div>
+    <div class="frame-wrap" id="wrap" hidden>
+      <iframe id="frame" title="Site preview" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+    </div>
+    <div class="empty" id="empty">
+      <p>
+        No site to preview.<br />
+        Deploy something on <a href="/#paste">aft.page</a> first.
+      </p>
+    </div>
+    <div class="toast" id="toast"></div>
+
+    <script>
+      const params = new URLSearchParams(location.search);
+      const raw = params.get("url") || "";
+
+      // Only preview our own tenant sites — never arbitrary URLs.
+      const m = raw.match(/^https:\/\/([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\.aft\.page\/?$/i);
+
+      const slugEl = document.getElementById("slug");
+      const copyBtn = document.getElementById("copy");
+      const openA = document.getElementById("open");
+      const claimBtn = document.getElementById("claim");
+      const wrap = document.getElementById("wrap");
+      const empty = document.getElementById("empty");
+      const frame = document.getElementById("frame");
+      const toast = document.getElementById("toast");
+
+      function showToast(text) {
+        toast.textContent = text;
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 1800);
+      }
+
+      if (m) {
+        const url = `https://${m[1].toLowerCase()}.aft.page/`;
+        const slug = m[1].toLowerCase();
+        slugEl.textContent = url.replace(/^https:\/\//, "").replace(/\/$/, "");
+        openA.href = url;
+        frame.src = url;
+        wrap.hidden = false;
+        empty.hidden = true;
+
+        // Remember locally so "my sites" has a seed before real accounts.
+        try {
+          const key = "aft.mySites";
+          const list = JSON.parse(localStorage.getItem(key) || "[]");
+          if (!list.some((s) => s.slug === slug)) {
+            list.unshift({ slug, url, seenAt: new Date().toISOString() });
+            localStorage.setItem(key, JSON.stringify(list.slice(0, 100)));
+          }
+        } catch (_) {}
+
+        copyBtn.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(url);
+            showToast("Link copied");
+          } catch (_) {
+            showToast("Couldn’t copy");
+          }
+        });
+
+        claimBtn.addEventListener("click", () => {
+          showToast("Claiming with an account is coming soon — link saved on this device");
+        });
+      } else {
+        wrap.hidden = true;
+        empty.hidden = false;
+        slugEl.textContent = "";
+        copyBtn.style.display = "none";
+        openA.style.display = "none";
+        claimBtn.style.display = "none";
+      }
+    </script>
+  </body>
+</html>
