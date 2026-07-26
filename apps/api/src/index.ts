@@ -213,21 +213,40 @@ async function parseUpload(request: Request): Promise<UploadFile[]> {
     };
     const out: UploadFile[] = [];
     for (const f of body.files ?? []) {
-      const bytes =
-        f.encoding === "base64"
-          ? base64ToArrayBuffer(f.content)
-          : new TextEncoder().encode(f.content).buffer;
-      out.push({
-        path: normalizePath(f.path),
-        bytes,
-        contentType: guessMime(f.path),
-      });
+      const path = normalizePath(f.path);
+      if (f.encoding === "base64") {
+        const raw = base64ToArrayBuffer(f.content);
+        if (/\.html?$/i.test(path)) {
+          const text = sanitizeHtmlDocument(new TextDecoder().decode(raw));
+          out.push({
+            path,
+            bytes: new TextEncoder().encode(text).buffer,
+            contentType: guessMime(path),
+          });
+        } else {
+          out.push({
+            path,
+            bytes: raw,
+            contentType: guessMime(path),
+          });
+        }
+      } else {
+        const text =
+          /\.html?$/i.test(path) || looksLikeHtmlDoc(f.content)
+            ? sanitizeHtmlDocument(f.content)
+            : f.content;
+        out.push({
+          path,
+          bytes: new TextEncoder().encode(text).buffer,
+          contentType: guessMime(path),
+        });
+      }
     }
     return out;
   }
 
   if (ct.includes("text/html") || ct.includes("text/plain") || ct === "") {
-    const text = await request.text();
+    const text = sanitizeHtmlDocument(await request.text());
     if (!text.trim()) return [];
     return [
       {
@@ -335,6 +354,24 @@ function kvFileKey(slug: string, deployId: string, path: string) {
 
 function normalizePath(path: string): string {
   return path.replace(/^(\.\/)+/, "").replace(/^\/+/, "").replace(/\\/g, "/");
+}
+
+/** Strip UI chrome accidentally scraped after </html> (e.g. extension "Deploy"). */
+export function sanitizeHtmlDocument(text: string): string {
+  let t = String(text ?? "").trim();
+  const close = t.search(/<\/html>\s*/i);
+  if (close !== -1) {
+    t = t.slice(0, close + "</html>".length);
+  }
+  t = t.replace(
+    /\s*(Deploy(?:\s+to\s+aft\.page)?|Live ✓|Publishing…|Failed|Empty|Not HTML)\s*$/i,
+    "",
+  );
+  return t.trim();
+}
+
+function looksLikeHtmlDoc(text: string): boolean {
+  return /<!DOCTYPE\s+html/i.test(text) || /<html[\s>]/i.test(text);
 }
 
 function randomSlug(): string {

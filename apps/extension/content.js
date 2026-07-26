@@ -32,6 +32,31 @@ function looksLikeHtml(text) {
   );
 }
 
+/**
+ * Extension UI labels sometimes get scraped into the artifact text
+ * (we saw live pages ending in `</html>Deploy`). Strip that junk.
+ */
+function sanitizeHtml(text) {
+  let t = String(text ?? "").trim();
+  // Prefer a clean document if the scrape appended UI chrome after </html>.
+  const close = t.search(/<\/html>\s*/i);
+  if (close !== -1) {
+    t = t.slice(0, close + "</html>".length);
+  }
+  t = t.replace(
+    /\s*(Deploy(?:\s+to\s+aft\.page)?|Live ✓|Publishing…|Failed|Empty|Not HTML)\s*$/i,
+    "",
+  );
+  return t.trim();
+}
+
+function extractPreHtml(pre, fallback = "") {
+  const code = pre.querySelector("code");
+  // Never use pre.innerText — it includes our Deploy button label.
+  const raw = code?.innerText || fallback || "";
+  return sanitizeHtml(raw);
+}
+
 /** ChatGPT: code block labeled HTML / language-html */
 function findChatGptBlocks(root = document) {
   const out = [];
@@ -42,7 +67,7 @@ function findChatGptBlocks(root = document) {
       pre.querySelector("span")?.textContent ||
       "";
     const code = pre.querySelector("code");
-    const text = code?.innerText || pre.innerText || "";
+    const text = extractPreHtml(pre, code?.innerText || "");
     const isHtml =
       /html/i.test(lang) ||
       looksLikeHtml(text) ||
@@ -63,7 +88,7 @@ function findClaudeBlocks(root = document) {
   const out = [];
   for (const pre of root.querySelectorAll("pre")) {
     if (pre.querySelector(`[${BTN_ATTR}]`)) continue;
-    const text = pre.querySelector("code")?.innerText || pre.innerText || "";
+    const text = extractPreHtml(pre);
     if (!looksLikeHtml(text)) continue;
     const toolbar =
       pre.parentElement?.querySelector("button")?.parentElement ||
@@ -75,14 +100,15 @@ function findClaudeBlocks(root = document) {
 }
 
 async function publishHtml(html) {
-  const slug = slugFromHtml(html);
+  const clean = sanitizeHtml(html);
+  const slug = slugFromHtml(clean);
   const url = slug
     ? `${API}?slug=${encodeURIComponent(slug)}`
     : API;
   const res = await fetch(url, {
     method: "POST",
     headers: { "content-type": "text/html; charset=utf-8" },
-    body: html,
+    body: clean,
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok || !data.url) {
@@ -97,13 +123,19 @@ function createButton(getHtml, options = {}) {
   btn.setAttribute(BTN_ATTR, "1");
   btn.className = options.className || "aft-deploy-btn";
   btn.dataset.aftIdleLabel = options.label || "Deploy";
-  btn.textContent = btn.dataset.aftIdleLabel;
+  // Keep visible label via CSS for the floating button; menu items need real text.
+  if (options.menuItem) {
+    btn.textContent = btn.dataset.aftIdleLabel;
+  } else {
+    btn.setAttribute("aria-label", btn.dataset.aftIdleLabel);
+    btn.textContent = "";
+  }
   btn.title = "Publish to aft.page";
 
   btn.addEventListener("click", async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    const html = getHtml().trim();
+    const html = sanitizeHtml(getHtml());
     if (!html) {
       setBtn(btn, "Empty", true);
       return;
@@ -123,11 +155,11 @@ function createButton(getHtml, options = {}) {
       setBtn(btn, options.successLabel || "Live ✓");
       if (opened) opened.location.replace(data.url);
       else window.open(data.url, "_blank", "noopener,noreferrer");
-      setTimeout(() => setBtn(btn, btn.dataset.aftIdleLabel), 2500);
+      setTimeout(() => setBtn(btn, btn.dataset.aftIdleLabel, false, options), 2500);
     } catch (err) {
       console.error("[aft.page]", err);
       opened?.close();
-      setBtn(btn, "Failed", true);
+      setBtn(btn, "Failed", true, options);
     } finally {
       btn.disabled = false;
     }
@@ -136,11 +168,18 @@ function createButton(getHtml, options = {}) {
   return btn;
 }
 
-function setBtn(btn, label, err = false) {
-  btn.textContent = label;
+function setBtn(btn, label, err = false, options = {}) {
+  const idle = btn.dataset.aftIdleLabel || "Deploy";
+  const isIdle = label === idle;
+  if (isIdle && !options.menuItem && !btn.classList.contains("aft-deploy-menu-item")) {
+    btn.textContent = "";
+    btn.setAttribute("aria-label", idle);
+  } else {
+    btn.textContent = label;
+  }
   btn.classList.toggle("aft-deploy-btn--err", err);
   if (err) {
-    setTimeout(() => setBtn(btn, btn.dataset.aftIdleLabel || "Deploy"), 2000);
+    setTimeout(() => setBtn(btn, idle, false, options), 2000);
   }
 }
 
@@ -148,9 +187,8 @@ function inject(block) {
   const { pre, text, toolbar } = block;
   if (pre.querySelector(`[${BTN_ATTR}]`)) return;
 
-  const btn = createButton(() => {
-    const code = pre.querySelector("code");
-    return code?.innerText || pre.innerText || text;
+  const btn = createButton(() => extractPreHtml(pre, text), {
+    label: "Deploy",
   });
 
   // Prefer the header row next to Copy; else float on the pre.
@@ -213,10 +251,11 @@ function injectClaudeArtifactMenu() {
   const menu = anchor.parentElement;
   if (!menu || menu.querySelector(`[${BTN_ATTR}='claude-menu']`)) return;
 
-  const btn = createButton(getOpenClaudeArtifactHtml, {
+  const btn = createButton(() => sanitizeHtml(getOpenClaudeArtifactHtml()), {
     label: "Deploy to aft.page",
     successLabel: "Live — opening…",
     className: `${anchor.className || ""} aft-deploy-menu-item`,
+    menuItem: true,
   });
   btn.setAttribute(BTN_ATTR, "claude-menu");
   btn.setAttribute("role", anchor.getAttribute("role") || "menuitem");

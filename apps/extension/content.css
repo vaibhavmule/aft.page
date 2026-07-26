@@ -13,6 +13,11 @@
   z-index: 5;
 }
 
+/* Visible label without polluting DOM textContent / copy scrape. */
+.aft-deploy-btn:not(.aft-deploy-menu-item)::before {
+  content: attr(aria-label);
+}
+
 .aft-deploy-btn:hover {
   background: #9a3f12;
 }

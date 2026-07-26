@@ -10,6 +10,20 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { DEFAULT_API, deployFiles, deployHtml, health } from "./client.js";
 
+/** Strip UI chrome accidentally scraped after </html> (extension "Deploy"). */
+function sanitizeHtmlDocument(text: string): string {
+  let t = String(text ?? "").trim();
+  const close = t.search(/<\/html>\s*/i);
+  if (close !== -1) {
+    t = t.slice(0, close + "</html>".length);
+  }
+  t = t.replace(
+    /\s*(Deploy(?:\s+to\s+aft\.page)?|Live ✓|Publishing…|Failed|Empty|Not HTML)\s*$/i,
+    "",
+  );
+  return t.trim();
+}
+
 const apiBase = process.env.AFT_API_BASE?.replace(/\/$/, "") || DEFAULT_API;
 
 const server = new McpServer({
@@ -41,7 +55,7 @@ server.registerTool(
   },
   async ({ html, preferred_slug }) => {
     try {
-      const result = await deployHtml(html, {
+      const result = await deployHtml(sanitizeHtmlDocument(html), {
         slug: preferred_slug,
         apiBase,
       });
@@ -104,7 +118,12 @@ server.registerTool(
   },
   async ({ files, preferred_slug }) => {
     try {
-      const result = await deployFiles(files, {
+      const cleaned = files.map((f) =>
+        /\.html?$/i.test(f.path)
+          ? { ...f, content: sanitizeHtmlDocument(f.content), encoding: "utf8" as const }
+          : f,
+      );
+      const result = await deployFiles(cleaned, {
         slug: preferred_slug,
         apiBase,
       });
