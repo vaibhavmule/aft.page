@@ -37,6 +37,18 @@ Limits: 50 files, 2 MB/file, 5 MB total. No auth yet.
 - **KV** (`SITES`): slug → deploy pointer. Reads also fall back to KV blobs so
   sites uploaded before R2 was enabled keep serving.
 
+## Tests
+
+```bash
+npm test          # vitest run, real KV/R2 bindings via workers pool
+npm run test:watch
+```
+
+Tests live in `test/` and run against the Worker through
+`@cloudflare/vitest-pool-workers`, so KV and R2 behave like production
+(locally simulated, no network). `test/slug.test.ts` guards the rule that a
+publish must never overwrite an existing site.
+
 ## Deploy this Worker
 
 ```bash

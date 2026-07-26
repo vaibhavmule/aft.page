@@ -8,7 +8,10 @@
 - [x] *.aft.page serve path (+ /s/{slug}/ fallback)
 - [x] Curl smoke (https://hello.aft.page)
 - [x] R2 enabled; files in aft-page-sites, KV keeps pointers
+- [x] Unique slugs on collision (about-me-mist) — no overwrite
+- [x] Worker test suite (vitest-pool-workers, 29 tests)
 - [ ] Email capture on marketing (tomorrow)
+- [ ] Edit token + D1 registry (own/update a slug)
 - [ ] Chrome extension / paste UI
 - [ ] MCP wrapper
 - [ ] Auth / custom domains (later)
