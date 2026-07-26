@@ -47,7 +47,7 @@
           GitHub ceremony or an AWS console.
         </p>
         <div class="cta">
-          <a class="btn btn-primary" href="#soon">Coming soon</a>
+          <a class="btn btn-primary" href="#paste">Paste HTML → live URL</a>
           <a
             class="btn btn-ghost"
             href="https://github.com/vaibhavmule/aft"
@@ -57,7 +57,39 @@
         </div>
       </header>
 
-      <main class="sections" id="soon">
+      <main class="sections">
+        <section class="paste" id="paste" aria-labelledby="paste-title">
+          <h2 id="paste-title">Paste HTML. Get a link.</h2>
+          <p class="paste-lede">
+            No Vercel account. No GitHub. Copy what Claude (or you) made — we
+            mint a name and put it live on <code>*.aft.page</code>.
+          </p>
+          <form class="paste-form" id="paste-form">
+            <label class="sr-only" for="html-input">HTML</label>
+            <textarea
+              id="html-input"
+              name="html"
+              rows="12"
+              spellcheck="false"
+              autocomplete="off"
+              placeholder="<!DOCTYPE html>&#10;<html>&#10;  <body>&#10;    <h1>Hello</h1>&#10;  </body>&#10;</html>"
+              required
+            ></textarea>
+            <div class="paste-actions">
+              <button type="submit" class="btn btn-primary" id="paste-submit">
+                Generate URL
+              </button>
+              <p class="paste-status" id="paste-status" role="status" aria-live="polite"></p>
+            </div>
+            <div class="paste-result" id="paste-result" hidden>
+              <a id="paste-url" href="#" target="_blank" rel="noopener noreferrer"></a>
+              <button type="button" class="btn btn-ghost" id="paste-copy">
+                Copy link
+              </button>
+            </div>
+          </form>
+        </section>
+
         <section class="block">
           <h2>What it is</h2>
           <p>
@@ -99,9 +131,10 @@
       </main>
 
       <footer class="footer">
-        <p>Deployed with <code>aft deploy</code> · Hosted in our AWS</p>
+        <p>Paste → <code>*.aft.page</code> · OSS CLI for your own cloud</p>
       </footer>
     </div>
     <script src="./confetti.js" defer></script>
+    <script src="./deploy.js" defer></script>
   </body>
 </html>
