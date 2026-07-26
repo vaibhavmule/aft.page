@@ -1,29 +1,31 @@
+/* Match ChatGPT code-header icons: quiet glyph, circular hit target. */
 .aft-deploy-btn--icon {
   appearance: none;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  margin-left: 0.25rem;
+  width: 32px;
+  height: 32px;
+  margin: 0;
   padding: 0;
   border: 0;
   border-radius: 999px;
   background: transparent;
-  color: #c45c26;
+  color: #b4b4b4;
   vertical-align: middle;
   flex: 0 0 auto;
   z-index: 5;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
 .aft-deploy-btn--icon:hover {
-  background: rgba(196, 92, 38, 0.14);
-  color: #9a3f12;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ececec;
 }
 
 .aft-deploy-btn--icon:disabled {
-  opacity: 0.65;
+  opacity: 0.55;
   cursor: wait;
 }
 
@@ -32,11 +34,11 @@
 }
 
 .aft-deploy-btn--icon.aft-deploy-btn--ok {
-  color: #2f6f6a;
+  color: #7dba8c;
 }
 
 .aft-deploy-btn--icon.aft-deploy-btn--err {
-  color: #8b1e1e;
+  color: #ef6b6b;
 }
 
 .aft-deploy-btn--icon .aft-icon,
@@ -47,23 +49,32 @@
 
 .aft-deploy-btn--float {
   position: absolute;
-  top: 0.4rem;
-  right: 0.4rem;
+  top: 0.35rem;
+  right: 0.35rem;
 }
 
 @keyframes aft-pulse {
   0%,
   100% {
     opacity: 1;
-    transform: scale(1);
   }
   50% {
-    opacity: 0.55;
-    transform: scale(0.94);
+    opacity: 0.45;
   }
 }
 
-/* Claude artifact Copy dropdown: inherit the native menu typography/layout. */
+/* Light surfaces (rare on ChatGPT code blocks, useful if theme flips). */
+@media (prefers-color-scheme: light) {
+  .aft-deploy-btn--icon {
+    color: #6b6b6b;
+  }
+  .aft-deploy-btn--icon:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: #111;
+  }
+}
+
+/* Claude artifact Copy dropdown — text item stays native-looking. */
 .aft-deploy-menu-item {
   appearance: none;
   display: block;
@@ -80,5 +91,5 @@
 }
 
 .aft-deploy-menu-item:hover {
-  background: rgba(196, 92, 38, 0.18);
+  background: rgba(255, 255, 255, 0.08);
 }

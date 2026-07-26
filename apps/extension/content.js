@@ -57,18 +57,16 @@ function extractPreHtml(pre, fallback = "") {
   return sanitizeHtml(raw);
 }
 
-/** Compact aft mark — no text nodes that pollute copy/scrape. */
-function aftIconSvg(kind = "idle") {
+/** Quiet "a." glyph — same weight as ChatGPT’s Copy / Play icons. */
+function aftIconSvg() {
   const wrap = document.createElement("span");
-  wrap.setAttribute(ICON_MARK, kind);
+  wrap.setAttribute(ICON_MARK, "idle");
   wrap.setAttribute("aria-hidden", "true");
   wrap.className = "aft-icon";
-  // Terracotta rounded square with a white "a." mark.
   wrap.innerHTML = `
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="18" height="18" rx="4" fill="currentColor"/>
-      <path d="M5.2 12.4L8.1 5.1h1.8l2.9 7.3h-1.55l-.55-1.5H7.3l-.55 1.5H5.2zm2.45-2.75h2.5L9.1 6.55h-.1L7.65 9.65z" fill="#fbfaf7"/>
-      <circle cx="13.2" cy="12.1" r="1.05" fill="#fbfaf7"/>
+      <path d="M4.6 13.5L7.85 4.8h1.55l3.25 8.7H11.1l-.7-1.95H6.85L6.15 13.5H4.6zm2.85-3.35h2.7L8.7 6.7h-.1l-1.15 3.45z" fill="currentColor"/>
+      <circle cx="13.35" cy="12.85" r="1.2" fill="currentColor"/>
     </svg>
   `.trim();
   return wrap;
@@ -306,35 +304,39 @@ function findCopyButtons() {
  */
 function injectBesideCopyButtons() {
   for (const copy of findCopyButtons()) {
-    const group =
+    // Sit in the same icon row as Copy (ChatGPT: </> · ▶ · copy).
+    const row =
+      copy.parentElement ||
       copy.closest('[class*="gap"]') ||
-      copy.parentElement?.parentElement ||
-      copy.parentElement;
-    if (!group) continue;
-    if (group.querySelector(`[${BTN_ATTR}="icon"]`)) continue;
+      copy.closest('[class*="flex"]');
+    if (!row) continue;
+    if (row.querySelector(`[${BTN_ATTR}="icon"]`)) continue;
 
-    // Only near HTML artifacts / code headers — avoid random Copy buttons.
     const panel =
       copy.closest("[class*='artifact']") ||
+      copy.closest("pre") ||
+      copy.closest("[class*='overflow']") ||
       copy.closest("header") ||
-      copy.closest("[class*='sticky']") ||
-      group.parentElement;
+      row.closest("div");
     const nearbyHtml =
       getOpenClaudeArtifactHtml() ||
       [...(panel?.querySelectorAll("pre, code, .cm-content") || [])]
         .map((el) => el.innerText || "")
         .find(looksLikeHtml);
-    if (!nearbyHtml && !location.hostname.includes("chatgpt.com")) continue;
+    if (!nearbyHtml && !location.hostname.includes("chatgpt.com") && !location.hostname.includes("openai.com")) {
+      continue;
+    }
 
     const btn = createIconButton(() =>
-      sanitizeHtml(getOpenClaudeArtifactHtml() || nearbyHtml || ""),
+      sanitizeHtml(
+        getOpenClaudeArtifactHtml() ||
+          nearbyHtml ||
+          extractPreHtml(copy.closest("pre") || panel || document.body) ||
+          "",
+      ),
     );
-    // Prefer immediately after the Copy control cluster.
-    const insertAfter =
-      copy.parentElement?.contains(copy.nextElementSibling)
-        ? copy.parentElement
-        : copy;
-    insertAfter.insertAdjacentElement("afterend", btn);
+    // Native order: … Copy → aft icon (same cluster, not far-right orphan).
+    copy.insertAdjacentElement("afterend", btn);
   }
 }
 
