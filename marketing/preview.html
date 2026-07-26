@@ -79,6 +79,27 @@
         flex-wrap: wrap;
         align-items: center;
       }
+      .view-toggle {
+        display: inline-flex;
+        padding: 0.2rem;
+        border: 1.5px solid rgba(20, 17, 15, 0.2);
+        border-radius: 0.45rem;
+        background: rgba(255, 255, 255, 0.35);
+      }
+      .view-toggle button {
+        appearance: none;
+        border: 0;
+        border-radius: 0.28rem;
+        padding: 0.32rem 0.65rem;
+        background: transparent;
+        color: var(--quiet);
+        cursor: pointer;
+        font: 600 0.78rem "Sora", sans-serif;
+      }
+      .view-toggle button[aria-pressed="true"] {
+        background: var(--ink);
+        color: var(--paper);
+      }
       .btn {
         appearance: none;
         display: inline-flex;
@@ -139,51 +160,33 @@
         display: flex;
         flex-direction: column;
       }
-      .mobile-tabs {
-        display: none;
-        gap: 0.25rem;
-        padding: 0.45rem 1rem;
-        background: var(--mist);
-        border-bottom: 1px solid rgba(20, 17, 15, 0.1);
-        flex-shrink: 0;
-      }
-      .mobile-tabs button {
-        appearance: none;
-        flex: 1;
-        border: 0;
-        border-radius: 0.35rem;
-        padding: 0.45rem 0.75rem;
-        background: transparent;
-        color: var(--quiet);
-        cursor: pointer;
-        font: 600 0.85rem "Sora", sans-serif;
-      }
-      .mobile-tabs button[aria-pressed="true"] {
-        background: var(--ink);
-        color: var(--paper);
-      }
       .split {
         flex: 1;
         min-height: 0;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        display: flex;
       }
-      body.code-hidden .split {
-        grid-template-columns: 1fr;
+      .code-pane {
+        display: none;
       }
-      body.code-hidden .code-pane {
+      body.code-view .code-pane {
+        display: flex;
+      }
+      body.code-view .preview-pane {
         display: none;
       }
       .code-pane,
       .preview-pane {
+        flex: 1;
         min-width: 0;
         min-height: 0;
-        display: flex;
         flex-direction: column;
+      }
+      body.code-view .code-pane,
+      .preview-pane {
+        display: flex;
       }
       .code-pane {
         background: var(--code-bg);
-        border-right: 1px solid rgba(235, 230, 218, 0.1);
         color: var(--code-fg);
       }
       .code-toolbar {
@@ -282,25 +285,6 @@
       }
 
       @media (max-width: 800px) {
-        .mobile-tabs {
-          display: flex;
-        }
-        .split {
-          grid-template-columns: 1fr !important;
-        }
-        body.code-hidden .code-pane,
-        body.mobile-preview .code-pane {
-          display: none;
-        }
-        body.mobile-code .preview-pane {
-          display: none;
-        }
-        body.mobile-code .code-pane {
-          display: flex;
-        }
-        #toggle-code {
-          display: none;
-        }
         .slug {
           max-width: 55vw;
         }
@@ -311,8 +295,11 @@
     <div class="bar">
       <a class="brand" href="/">aft<span>.</span>page</a>
       <span class="slug" id="slug"></span>
+      <div class="view-toggle" id="view-toggle" role="group" aria-label="Preview view" hidden>
+        <button id="preview-tab" type="button" aria-pressed="true">Preview</button>
+        <button id="code-tab" type="button" aria-pressed="false">Code</button>
+      </div>
       <div class="actions">
-        <button class="btn btn-ghost" id="toggle-code" type="button" hidden>Hide code</button>
         <a class="btn btn-ghost" id="back" hidden>Back to chat</a>
         <button class="btn btn-ghost" id="copy">Copy link</button>
         <a class="btn btn-ghost" id="open" target="_blank" rel="noopener noreferrer">Open live</a>
@@ -321,10 +308,6 @@
     </div>
 
     <div class="workspace" id="workspace" hidden>
-      <div class="mobile-tabs" role="tablist" aria-label="View">
-        <button id="tab-code" type="button" role="tab" aria-pressed="true">Code</button>
-        <button id="tab-preview" type="button" role="tab" aria-pressed="false">Preview</button>
-      </div>
       <div class="split">
         <section class="code-pane" id="code-pane" aria-label="Source HTML">
           <div class="code-toolbar">
@@ -392,7 +375,9 @@
       const copyBtn = document.getElementById("copy");
       const openA = document.getElementById("open");
       const claimBtn = document.getElementById("claim");
-      const toggleCodeBtn = document.getElementById("toggle-code");
+      const viewToggle = document.getElementById("view-toggle");
+      const previewTab = document.getElementById("preview-tab");
+      const codeTab = document.getElementById("code-tab");
       const workspace = document.getElementById("workspace");
       const empty = document.getElementById("empty");
       const frame = document.getElementById("frame");
@@ -403,12 +388,9 @@
       const downloadCodeBtn = document.getElementById("download-code");
       const codeError = document.getElementById("code-error");
       const codeErrorLink = document.getElementById("code-error-link");
-      const tabCode = document.getElementById("tab-code");
-      const tabPreview = document.getElementById("tab-preview");
 
       let sourceHtml = "";
-      let codeVisible = true;
-      let mobileView = "code";
+      let sourceRequested = false;
 
       function showToast(text) {
         toast.textContent = text;
@@ -441,19 +423,22 @@
           .replace(/=("[\s\S]*?"|'[\s\S]*?')/g, '=<span class="tok-str">$1</span>');
       }
 
-      function setCodeVisible(visible) {
-        codeVisible = visible;
-        document.body.classList.toggle("code-hidden", !visible);
-        toggleCodeBtn.textContent = visible ? "Hide code" : "Show code";
-        toggleCodeBtn.setAttribute("aria-pressed", String(visible));
-      }
-
-      function setMobileView(view) {
-        mobileView = view;
-        document.body.classList.toggle("mobile-code", view === "code");
-        document.body.classList.toggle("mobile-preview", view === "preview");
-        tabCode.setAttribute("aria-pressed", String(view === "code"));
-        tabPreview.setAttribute("aria-pressed", String(view === "preview"));
+      async function loadSource(url) {
+        if (sourceRequested) return;
+        sourceRequested = true;
+        try {
+          const response = await fetch(url);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          sourceHtml = await response.text();
+          codeEl.innerHTML = highlightHtml(sourceHtml);
+          codeStatus.textContent = "index.html";
+          copyCodeBtn.disabled = false;
+          downloadCodeBtn.disabled = false;
+        } catch (_) {
+          codeStatus.textContent = "Source unavailable";
+          codeEl.hidden = true;
+          codeError.hidden = false;
+        }
       }
 
       if (m) {
@@ -465,9 +450,17 @@
         codeErrorLink.href = url;
         workspace.hidden = false;
         empty.hidden = true;
-        toggleCodeBtn.hidden = false;
-        setCodeVisible(true);
-        setMobileView("code");
+        viewToggle.hidden = false;
+
+        function setView(view) {
+          const showingCode = view === "code";
+          document.body.classList.toggle("code-view", showingCode);
+          previewTab.setAttribute("aria-pressed", String(!showingCode));
+          codeTab.setAttribute("aria-pressed", String(showingCode));
+          if (showingCode) loadSource(url);
+        }
+
+        setView("preview");
 
         if (chatFrom) {
           backA.hidden = false;
@@ -494,25 +487,8 @@
           localStorage.setItem(key, JSON.stringify(list.slice(0, 100)));
         } catch (_) {}
 
-        (async () => {
-          try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            sourceHtml = await response.text();
-            codeEl.innerHTML = highlightHtml(sourceHtml);
-            codeStatus.textContent = "index.html";
-            copyCodeBtn.disabled = false;
-            downloadCodeBtn.disabled = false;
-          } catch (_) {
-            codeStatus.textContent = "Source unavailable";
-            codeEl.hidden = true;
-            codeError.hidden = false;
-          }
-        })();
-
-        toggleCodeBtn.addEventListener("click", () => setCodeVisible(!codeVisible));
-        tabCode.addEventListener("click", () => setMobileView("code"));
-        tabPreview.addEventListener("click", () => setMobileView("preview"));
+        previewTab.addEventListener("click", () => setView("preview"));
+        codeTab.addEventListener("click", () => setView("code"));
 
         copyBtn.addEventListener("click", async () => {
           try {
@@ -551,7 +527,7 @@
         empty.hidden = false;
         slugEl.textContent = "";
         backA.hidden = true;
-        toggleCodeBtn.hidden = true;
+        viewToggle.hidden = true;
         copyBtn.style.display = "none";
         openA.style.display = "none";
         claimBtn.style.display = "none";
