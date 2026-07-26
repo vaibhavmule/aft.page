@@ -1,8 +1,7 @@
 # aft.page Chrome extension
 
-Adds a **Deploy** button next to HTML code blocks on ChatGPT. In Claude's
-artifact editor, it adds **Deploy to aft.page** to the existing Copy dropdown,
-beside **Download as HTML** and **Publish artifact**.
+Adds an **aft icon** beside Copy on ChatGPT / Claude artifact headers, plus
+**Deploy to aft.page** inside Claude's Copy dropdown (next to Download as HTML).
 
 One click → `POST https://api.aft.page/v1/deploy` → opens
 `https://{slug}.aft.page`.
@@ -14,15 +13,13 @@ No copy. No paste. No account.
 1. Open `chrome://extensions`
 2. Enable **Developer mode**
 3. **Load unpacked** → select this folder (`apps/extension`)
-4. Reload ChatGPT / Claude after loading or updating the extension
-5. On ChatGPT, click **Deploy** beside the HTML block
-6. On Claude, open Copy's dropdown and click **Deploy to aft.page**
+4. Click **Reload** after updates
+5. Refresh ChatGPT / Claude
+6. Look for the terracotta **a.** icon next to Copy (or the dropdown item on Claude)
 
 ## Notes
 
-- Only deploys content that looks like HTML (`<!DOCTYPE html>`, `<html>`, etc.)
+- Icon has no text label in the DOM (avoids scraping `Deploy` into published HTML)
+- Rescans after fullscreen / minimize / resize — Claude remounts the artifact chrome
 - Slug comes from `<title>` / `<h1>` (same as the landing paste UI)
-- Claude's artifact editor is read from CodeMirror, with Monaco and `<pre>`
-  fallbacks.
-- ChatGPT and Claude DOMs change often — if the button doesn’t appear, retarget
-  the selectors in `content.js`.
+- ChatGPT and Claude DOMs change often — if the icon disappears, retarget selectors in `content.js`

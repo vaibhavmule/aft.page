@@ -1,5 +1,6 @@
 const API = "https://api.aft.page/v1/deploy";
 const BTN_ATTR = "data-aft-deploy";
+const ICON_MARK = "data-aft-icon";
 
 function slugFromHtml(html) {
   const title = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim();
@@ -38,7 +39,6 @@ function looksLikeHtml(text) {
  */
 function sanitizeHtml(text) {
   let t = String(text ?? "").trim();
-  // Prefer a clean document if the scrape appended UI chrome after </html>.
   const close = t.search(/<\/html>\s*/i);
   if (close !== -1) {
     t = t.slice(0, close + "</html>".length);
@@ -52,16 +52,152 @@ function sanitizeHtml(text) {
 
 function extractPreHtml(pre, fallback = "") {
   const code = pre.querySelector("code");
-  // Never use pre.innerText — it includes our Deploy button label.
+  // Never use pre.innerText — it can include toolbar chrome.
   const raw = code?.innerText || fallback || "";
   return sanitizeHtml(raw);
+}
+
+/** Compact aft mark — no text nodes that pollute copy/scrape. */
+function aftIconSvg(kind = "idle") {
+  const wrap = document.createElement("span");
+  wrap.setAttribute(ICON_MARK, kind);
+  wrap.setAttribute("aria-hidden", "true");
+  wrap.className = "aft-icon";
+  // Terracotta rounded square with a white "a." mark.
+  wrap.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="18" height="18" rx="4" fill="currentColor"/>
+      <path d="M5.2 12.4L8.1 5.1h1.8l2.9 7.3h-1.55l-.55-1.5H7.3l-.55 1.5H5.2zm2.45-2.75h2.5L9.1 6.55h-.1L7.65 9.65z" fill="#fbfaf7"/>
+      <circle cx="13.2" cy="12.1" r="1.05" fill="#fbfaf7"/>
+    </svg>
+  `.trim();
+  return wrap;
+}
+
+function setIconState(btn, state) {
+  btn.dataset.aftState = state;
+  btn.classList.toggle("aft-deploy-btn--err", state === "err");
+  btn.classList.toggle("aft-deploy-btn--ok", state === "ok");
+  btn.classList.toggle("aft-deploy-btn--busy", state === "busy");
+  const label =
+    state === "busy"
+      ? "Publishing…"
+      : state === "ok"
+        ? "Live on aft.page"
+        : state === "err"
+          ? "Deploy failed — try again"
+          : "Deploy to aft.page";
+  btn.title = label;
+  btn.setAttribute("aria-label", label);
+}
+
+async function publishHtml(html) {
+  const clean = sanitizeHtml(html);
+  const slug = slugFromHtml(clean);
+  const url = slug
+    ? `${API}?slug=${encodeURIComponent(slug)}`
+    : API;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "text/html; charset=utf-8" },
+    body: clean,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.url) {
+    throw new Error(data.message || data.error || `Deploy failed (${res.status})`);
+  }
+  return data;
+}
+
+function createIconButton(getHtml) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.setAttribute(BTN_ATTR, "icon");
+  btn.className = "aft-deploy-btn aft-deploy-btn--icon";
+  btn.appendChild(aftIconSvg());
+  setIconState(btn, "idle");
+
+  btn.addEventListener("click", async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const html = sanitizeHtml(getHtml());
+    if (!html || !looksLikeHtml(html)) {
+      setIconState(btn, "err");
+      setTimeout(() => setIconState(btn, "idle"), 1800);
+      return;
+    }
+
+    btn.disabled = true;
+    setIconState(btn, "busy");
+    const opened = window.open("about:blank", "_blank");
+
+    try {
+      const data = await publishHtml(html);
+      setIconState(btn, "ok");
+      if (opened) opened.location.replace(data.url);
+      else window.open(data.url, "_blank", "noopener,noreferrer");
+      setTimeout(() => setIconState(btn, "idle"), 2200);
+    } catch (err) {
+      console.error("[aft.page]", err);
+      opened?.close();
+      setIconState(btn, "err");
+      setTimeout(() => setIconState(btn, "idle"), 2200);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  return btn;
+}
+
+function createMenuItem(getHtml) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.setAttribute(BTN_ATTR, "claude-menu");
+  btn.className = "aft-deploy-menu-item";
+  btn.textContent = "Deploy to aft.page";
+  btn.title = "Publish this HTML to a new *.aft.page URL";
+  btn.setAttribute("role", "menuitem");
+
+  btn.addEventListener("click", async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const html = sanitizeHtml(getHtml());
+    if (!html || !looksLikeHtml(html)) {
+      btn.textContent = "Not HTML";
+      setTimeout(() => {
+        btn.textContent = "Deploy to aft.page";
+      }, 1800);
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = "Publishing…";
+    const opened = window.open("about:blank", "_blank");
+    try {
+      const data = await publishHtml(html);
+      btn.textContent = "Live — opening…";
+      if (opened) opened.location.replace(data.url);
+      else window.open(data.url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      console.error("[aft.page]", err);
+      opened?.close();
+      btn.textContent = "Failed";
+    } finally {
+      btn.disabled = false;
+      setTimeout(() => {
+        btn.textContent = "Deploy to aft.page";
+      }, 2200);
+    }
+  });
+
+  return btn;
 }
 
 /** ChatGPT: code block labeled HTML / language-html */
 function findChatGptBlocks(root = document) {
   const out = [];
   for (const pre of root.querySelectorAll("pre")) {
-    if (pre.querySelector(`[${BTN_ATTR}]`)) continue;
+    if (pre.querySelector(`[${BTN_ATTR}="icon"]`)) continue;
     const lang =
       pre.querySelector("[class*='language-']")?.className ||
       pre.querySelector("span")?.textContent ||
@@ -87,7 +223,7 @@ function findChatGptBlocks(root = document) {
 function findClaudeBlocks(root = document) {
   const out = [];
   for (const pre of root.querySelectorAll("pre")) {
-    if (pre.querySelector(`[${BTN_ATTR}]`)) continue;
+    if (pre.querySelector(`[${BTN_ATTR}="icon"]`)) continue;
     const text = extractPreHtml(pre);
     if (!looksLikeHtml(text)) continue;
     const toolbar =
@@ -99,109 +235,26 @@ function findClaudeBlocks(root = document) {
   return out;
 }
 
-async function publishHtml(html) {
-  const clean = sanitizeHtml(html);
-  const slug = slugFromHtml(clean);
-  const url = slug
-    ? `${API}?slug=${encodeURIComponent(slug)}`
-    : API;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "content-type": "text/html; charset=utf-8" },
-    body: clean,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok || !data.url) {
-    throw new Error(data.message || data.error || `Deploy failed (${res.status})`);
-  }
-  return data;
-}
-
-function createButton(getHtml, options = {}) {
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.setAttribute(BTN_ATTR, "1");
-  btn.className = options.className || "aft-deploy-btn";
-  btn.dataset.aftIdleLabel = options.label || "Deploy";
-  // Keep visible label via CSS for the floating button; menu items need real text.
-  if (options.menuItem) {
-    btn.textContent = btn.dataset.aftIdleLabel;
-  } else {
-    btn.setAttribute("aria-label", btn.dataset.aftIdleLabel);
-    btn.textContent = "";
-  }
-  btn.title = "Publish to aft.page";
-
-  btn.addEventListener("click", async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const html = sanitizeHtml(getHtml());
-    if (!html) {
-      setBtn(btn, "Empty", true);
-      return;
-    }
-    if (!looksLikeHtml(html)) {
-      setBtn(btn, "Not HTML", true);
-      return;
-    }
-
-    btn.disabled = true;
-    setBtn(btn, "…");
-    // Open synchronously so Chrome does not block the tab after the fetch.
-    const opened = window.open("about:blank", "_blank");
-
-    try {
-      const data = await publishHtml(html);
-      setBtn(btn, options.successLabel || "Live ✓");
-      if (opened) opened.location.replace(data.url);
-      else window.open(data.url, "_blank", "noopener,noreferrer");
-      setTimeout(() => setBtn(btn, btn.dataset.aftIdleLabel, false, options), 2500);
-    } catch (err) {
-      console.error("[aft.page]", err);
-      opened?.close();
-      setBtn(btn, "Failed", true, options);
-    } finally {
-      btn.disabled = false;
-    }
-  });
-
-  return btn;
-}
-
-function setBtn(btn, label, err = false, options = {}) {
-  const idle = btn.dataset.aftIdleLabel || "Deploy";
-  const isIdle = label === idle;
-  if (isIdle && !options.menuItem && !btn.classList.contains("aft-deploy-menu-item")) {
-    btn.textContent = "";
-    btn.setAttribute("aria-label", idle);
-  } else {
-    btn.textContent = label;
-  }
-  btn.classList.toggle("aft-deploy-btn--err", err);
-  if (err) {
-    setTimeout(() => setBtn(btn, idle, false, options), 2000);
-  }
+function injectIntoToolbar(toolbar, getHtml) {
+  if (!toolbar || toolbar.querySelector(`[${BTN_ATTR}="icon"]`)) return;
+  const btn = createIconButton(getHtml);
+  // Place just before the trailing expand/close cluster when possible.
+  toolbar.appendChild(btn);
 }
 
 function inject(block) {
   const { pre, text, toolbar } = block;
-  if (pre.querySelector(`[${BTN_ATTR}]`)) return;
+  if (pre.querySelector(`[${BTN_ATTR}="icon"]`)) return;
 
-  const btn = createButton(() => extractPreHtml(pre, text), {
-    label: "Deploy",
-  });
-
-  // Prefer the header row next to Copy; else float on the pre.
-  const header =
-    toolbar ||
-    pre.querySelector("div") ||
-    null;
+  const getHtml = () => extractPreHtml(pre, text);
+  const header = toolbar || pre.querySelector("div") || null;
 
   if (header && header !== pre) {
-    header.appendChild(btn);
+    injectIntoToolbar(header, getHtml);
   } else {
-    pre.style.position = pre.style.position || "relative";
+    const btn = createIconButton(getHtml);
     btn.classList.add("aft-deploy-btn--float");
+    pre.style.position = pre.style.position || "relative";
     pre.appendChild(btn);
   }
 }
@@ -229,7 +282,6 @@ function getOpenClaudeArtifactHtml() {
       if (looksLikeHtml(text)) candidates.push(text);
     }
   }
-  // The open artifact is normally the largest HTML candidate on the page.
   candidates.sort((a, b) => b.length - a.length);
   return candidates[0] || "";
 }
@@ -241,6 +293,51 @@ function exactTextElement(text) {
   return [...candidates].find((el) => el.textContent?.trim() === text) || null;
 }
 
+function findCopyButtons() {
+  return [...document.querySelectorAll("button")].filter((b) => {
+    const t = (b.textContent || "").replace(/\s+/g, " ").trim();
+    return t === "Copy" || t.startsWith("Copy");
+  });
+}
+
+/**
+ * Put the aft icon beside Claude/ChatGPT Copy controls in the artifact header.
+ * Fullscreen remounts this header — scan() must re-run after that.
+ */
+function injectBesideCopyButtons() {
+  for (const copy of findCopyButtons()) {
+    const group =
+      copy.closest('[class*="gap"]') ||
+      copy.parentElement?.parentElement ||
+      copy.parentElement;
+    if (!group) continue;
+    if (group.querySelector(`[${BTN_ATTR}="icon"]`)) continue;
+
+    // Only near HTML artifacts / code headers — avoid random Copy buttons.
+    const panel =
+      copy.closest("[class*='artifact']") ||
+      copy.closest("header") ||
+      copy.closest("[class*='sticky']") ||
+      group.parentElement;
+    const nearbyHtml =
+      getOpenClaudeArtifactHtml() ||
+      [...(panel?.querySelectorAll("pre, code, .cm-content") || [])]
+        .map((el) => el.innerText || "")
+        .find(looksLikeHtml);
+    if (!nearbyHtml && !location.hostname.includes("chatgpt.com")) continue;
+
+    const btn = createIconButton(() =>
+      sanitizeHtml(getOpenClaudeArtifactHtml() || nearbyHtml || ""),
+    );
+    // Prefer immediately after the Copy control cluster.
+    const insertAfter =
+      copy.parentElement?.contains(copy.nextElementSibling)
+        ? copy.parentElement
+        : copy;
+    insertAfter.insertAdjacentElement("afterend", btn);
+  }
+}
+
 /** Add aft.page to Claude's Copy dropdown beside Download as HTML. */
 function injectClaudeArtifactMenu() {
   const download = exactTextElement("Download as HTML");
@@ -249,36 +346,45 @@ function injectClaudeArtifactMenu() {
   if (!anchor) return;
 
   const menu = anchor.parentElement;
-  if (!menu || menu.querySelector(`[${BTN_ATTR}='claude-menu']`)) return;
+  if (!menu || menu.querySelector(`[${BTN_ATTR}="claude-menu"]`)) return;
 
-  const btn = createButton(() => sanitizeHtml(getOpenClaudeArtifactHtml()), {
-    label: "Deploy to aft.page",
-    successLabel: "Live — opening…",
-    className: `${anchor.className || ""} aft-deploy-menu-item`,
-    menuItem: true,
-  });
-  btn.setAttribute(BTN_ATTR, "claude-menu");
-  btn.setAttribute("role", anchor.getAttribute("role") || "menuitem");
-  btn.title = "Publish this HTML to a new *.aft.page URL";
-
-  if (download) download.insertAdjacentElement("afterend", btn);
-  else menu.appendChild(btn);
+  const item = createMenuItem(() => sanitizeHtml(getOpenClaudeArtifactHtml()));
+  if (download) download.insertAdjacentElement("afterend", item);
+  else menu.appendChild(item);
 }
 
 function scan() {
   const host = location.hostname;
+  injectBesideCopyButtons();
   if (host.includes("claude.ai")) injectClaudeArtifactMenu();
-  const blocks =
-    host.includes("claude.ai")
-      ? findClaudeBlocks()
-      : findChatGptBlocks();
+  const blocks = host.includes("claude.ai")
+    ? findClaudeBlocks()
+    : findChatGptBlocks();
   for (const b of blocks) inject(b);
 }
 
+function scheduleScan(delay = 250) {
+  clearTimeout(scheduleScan._t);
+  scheduleScan._t = setTimeout(scan, delay);
+}
+
 scan();
-const obs = new MutationObserver(() => {
-  // Debounce a bit — chat streams tokens constantly.
-  clearTimeout(scan._t);
-  scan._t = setTimeout(scan, 400);
+const obs = new MutationObserver(() => scheduleScan(300));
+obs.observe(document.documentElement, {
+  childList: true,
+  subtree: true,
+  attributes: true,
+  attributeFilter: ["class", "style", "hidden", "aria-expanded"],
 });
-obs.observe(document.documentElement, { childList: true, subtree: true });
+
+// Fullscreen / minimize remounts Claude's artifact chrome — force a rescan.
+document.addEventListener("fullscreenchange", () => scheduleScan(100));
+document.addEventListener("webkitfullscreenchange", () => scheduleScan(100));
+window.addEventListener("resize", () => scheduleScan(400));
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") scheduleScan(100);
+});
+// Belt-and-suspenders: Claude sometimes mutates without useful observer events.
+setInterval(() => {
+  if (!document.querySelector(`[${BTN_ATTR}="icon"]`)) scan();
+}, 2000);

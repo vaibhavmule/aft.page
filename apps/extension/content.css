@@ -1,54 +1,76 @@
-.aft-deploy-btn {
+.aft-deploy-btn--icon {
   appearance: none;
   cursor: pointer;
-  margin-left: 0.35rem;
-  padding: 0.2rem 0.55rem;
-  border-radius: 0.35rem;
-  border: 1px solid rgba(196, 92, 38, 0.55);
-  background: #c45c26;
-  color: #fbfaf7;
-  font: 600 12px/1.4 system-ui, -apple-system, Segoe UI, sans-serif;
-  letter-spacing: 0.01em;
-  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin-left: 0.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #c45c26;
+  vertical-align: middle;
+  flex: 0 0 auto;
   z-index: 5;
 }
 
-/* Visible label without polluting DOM textContent / copy scrape. */
-.aft-deploy-btn:not(.aft-deploy-menu-item)::before {
-  content: attr(aria-label);
+.aft-deploy-btn--icon:hover {
+  background: rgba(196, 92, 38, 0.14);
+  color: #9a3f12;
 }
 
-.aft-deploy-btn:hover {
-  background: #9a3f12;
-}
-
-.aft-deploy-btn:disabled {
-  opacity: 0.7;
+.aft-deploy-btn--icon:disabled {
+  opacity: 0.65;
   cursor: wait;
 }
 
-.aft-deploy-btn--err {
-  background: #8b1e1e;
-  border-color: #8b1e1e;
+.aft-deploy-btn--icon.aft-deploy-btn--busy {
+  animation: aft-pulse 0.9s ease-in-out infinite;
+}
+
+.aft-deploy-btn--icon.aft-deploy-btn--ok {
+  color: #2f6f6a;
+}
+
+.aft-deploy-btn--icon.aft-deploy-btn--err {
+  color: #8b1e1e;
+}
+
+.aft-deploy-btn--icon .aft-icon,
+.aft-deploy-btn--icon .aft-icon svg {
+  display: block;
+  pointer-events: none;
 }
 
 .aft-deploy-btn--float {
   position: absolute;
-  top: 0.45rem;
-  right: 0.45rem;
+  top: 0.4rem;
+  right: 0.4rem;
+}
+
+@keyframes aft-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.94);
+  }
 }
 
 /* Claude artifact Copy dropdown: inherit the native menu typography/layout. */
 .aft-deploy-menu-item {
+  appearance: none;
+  display: block;
   width: 100%;
   cursor: pointer;
   text-align: left;
   white-space: nowrap;
-}
-
-.aft-deploy-menu-item:not([class*="bg-"]):not([class*="rounded"]) {
-  appearance: none;
-  display: block;
   padding: 0.55rem 0.75rem;
   border: 0;
   border-radius: 0.35rem;
@@ -59,8 +81,4 @@
 
 .aft-deploy-menu-item:hover {
   background: rgba(196, 92, 38, 0.18);
-}
-
-.aft-deploy-menu-item.aft-deploy-btn--err {
-  color: #ef8f72;
 }
