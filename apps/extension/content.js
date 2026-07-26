@@ -315,6 +315,72 @@ function findCopyButtons() {
   });
 }
 
+/** Walk up from a ChatGPT toolbar row to find the associated <pre>/code HTML. */
+function findHtmlNearToolbar(row) {
+  let shell = row.parentElement;
+  let pre = null;
+  for (let i = 0; i < 10 && shell; i++) {
+    pre = shell.matches?.("pre")
+      ? shell
+      : shell.querySelector(":scope > pre, :scope pre");
+    if (pre) break;
+    shell = shell.parentElement;
+  }
+  if (pre) {
+    const text = extractPreHtml(pre);
+    if (looksLikeHtml(text)) return { pre, text, anchor: pre };
+  }
+
+  // Artifact/canvas preview: HTML may live in a sibling code panel or iframe srcdoc.
+  shell = row.parentElement;
+  for (let i = 0; i < 10 && shell; i++) {
+    const code = shell.querySelector("pre code, code.language-html, [class*='language-html']");
+    if (code) {
+      const text = sanitizeHtml(code.innerText || code.textContent || "");
+      if (looksLikeHtml(text)) {
+        return { pre: code.closest("pre") || code, text, anchor: code };
+      }
+    }
+    const iframe = shell.querySelector("iframe[srcdoc]");
+    if (iframe?.srcdoc && looksLikeHtml(iframe.srcdoc)) {
+      return {
+        pre: null,
+        text: sanitizeHtml(iframe.srcdoc),
+        anchor: iframe,
+      };
+    }
+    shell = shell.parentElement;
+  }
+  return null;
+}
+
+function chatGptToolbarRow(el) {
+  return (
+    el.closest(".justify-self-end") ||
+    el.closest(".flex.flex-row.items-center") ||
+    el.closest(".flex.items-center") ||
+    el.parentElement
+  );
+}
+
+function isChatGptPreviewToggle(btn) {
+  if (
+    btn.hasAttribute("data-code-block-preview-toggle-code") ||
+    btn.hasAttribute("data-code-block-preview-toggle-preview")
+  ) {
+    return true;
+  }
+  const label = (btn.getAttribute("aria-label") || "").trim().toLowerCase();
+  return (
+    label === "code" ||
+    label === "preview" ||
+    label === "code block view" ||
+    label === "preview the code" ||
+    label.startsWith("switch to code") ||
+    label.startsWith("switch to preview")
+  );
+}
+
 /**
  * ChatGPT code header: [Code|Preview] toggle + Copy in one flex row.
  * Insert aft share as a sibling after Copy so it sits in that same group.
@@ -323,30 +389,77 @@ function findChatGptCodeToolbars() {
   const out = [];
   const seen = new Set();
   for (const copy of document.querySelectorAll('button[aria-label="Copy"]')) {
-    const row =
-      copy.closest(".justify-self-end") ||
-      copy.closest(".flex.flex-row.items-center") ||
-      copy.parentElement;
+    const row = chatGptToolbarRow(copy);
     if (!row || seen.has(row)) continue;
     const hasToggle =
       row.querySelector('[aria-label="Code block view"]') ||
-      row.querySelector("[data-code-block-preview-toggle-code]");
+      row.querySelector("[data-code-block-preview-toggle-code]") ||
+      [...row.querySelectorAll("button")].some(isChatGptPreviewToggle);
     if (!hasToggle && copy.parentElement !== row) continue;
     seen.add(row);
 
-    // Walk up from the toolbar to the code-block shell, then find its <pre>.
-    let shell = row.parentElement;
-    let pre = null;
-    for (let i = 0; i < 8 && shell; i++) {
-      pre = shell.matches?.("pre")
-        ? shell
-        : shell.querySelector(":scope > pre, :scope pre");
-      if (pre) break;
-      shell = shell.parentElement;
+    const near = findHtmlNearToolbar(row);
+    if (!near || !looksLikeHtml(near.text)) continue;
+    out.push({ row, copy, pre: near.pre, text: near.text, insertAfter: copy });
+  }
+  return out;
+}
+
+/**
+ * ChatGPT artifact / canvas headers: filename + Code + Preview (+ Fullscreen),
+ * often without a Copy button. Share must still inject into that icon group.
+ */
+function findChatGptArtifactToolbars() {
+  const out = [];
+  const seen = new Set();
+  const toggleButtons = [
+    ...document.querySelectorAll(
+      'button[aria-label="Code"], button[aria-label="Preview"], button[aria-label="Code block view"], [data-code-block-preview-toggle-code], [data-code-block-preview-toggle-preview]',
+    ),
+    ...[...document.querySelectorAll("button")].filter(isChatGptPreviewToggle),
+  ];
+
+  for (const toggle of toggleButtons) {
+    const row = chatGptToolbarRow(toggle);
+    if (!row || seen.has(row)) continue;
+    if (row.querySelector(`[${BTN_ATTR}="icon"]`)) {
+      seen.add(row);
+      continue;
     }
-    const text = pre ? extractPreHtml(pre) : "";
-    if (!pre || !looksLikeHtml(text)) continue;
-    out.push({ row, copy, pre, text });
+
+    const buttons = [...row.querySelectorAll("button")];
+    if (!buttons.some(isChatGptPreviewToggle)) continue;
+
+    seen.add(row);
+    const near = findHtmlNearToolbar(row);
+    if (!near || !looksLikeHtml(near.text)) continue;
+
+    const copy = buttons.find((b) => {
+      const label = (b.getAttribute("aria-label") || "").trim().toLowerCase();
+      return label === "copy" || label.startsWith("copy ");
+    });
+    const previewBtn = buttons.find((b) => {
+      const label = (b.getAttribute("aria-label") || "").trim().toLowerCase();
+      return (
+        label === "preview" ||
+        b.hasAttribute("data-code-block-preview-toggle-preview")
+      );
+    });
+    // Prefer after Copy, else after Preview, else last toggle — before Fullscreen.
+    const insertAfter =
+      copy ||
+      previewBtn ||
+      buttons.find(isChatGptPreviewToggle) ||
+      buttons[buttons.length - 1] ||
+      null;
+
+    out.push({
+      row,
+      copy: copy || null,
+      pre: near.pre,
+      text: near.text,
+      insertAfter,
+    });
   }
   return out;
 }
@@ -359,6 +472,26 @@ function createChatGptNativeButton(getHtml) {
   return btn;
 }
 
+function injectChatGptToolbar({ row, pre, text, insertAfter }) {
+  if (!row || row.querySelector(`[${BTN_ATTR}="icon"]`)) return;
+  const getHtml = () => {
+    if (pre) {
+      const fromPre = extractPreHtml(pre, text);
+      if (looksLikeHtml(fromPre)) return fromPre;
+    }
+    const near = findHtmlNearToolbar(row);
+    if (near?.text && looksLikeHtml(near.text)) return near.text;
+    return sanitizeHtml(text || "");
+  };
+  if (!looksLikeHtml(getHtml())) return;
+  const btn = createChatGptNativeButton(getHtml);
+  if (insertAfter?.isConnected) {
+    insertAfter.insertAdjacentElement("afterend", btn);
+  } else {
+    row.appendChild(btn);
+  }
+}
+
 /**
  * Put the aft icon beside Claude/ChatGPT Copy controls in the artifact header.
  * Fullscreen remounts this header — scan() must re-run after that.
@@ -369,18 +502,14 @@ function injectBesideCopyButtons() {
     host.includes("chatgpt.com") || host.includes("openai.com");
 
   if (onChatGpt) {
-    for (const { row, copy, pre, text } of findChatGptCodeToolbars()) {
-      if (row.querySelector(`[${BTN_ATTR}="icon"]`)) continue;
-      const getHtml = () =>
-        sanitizeHtml(
-          (pre && extractPreHtml(pre, text)) ||
-            getOpenClaudeArtifactHtml() ||
-            "",
-        );
-      // Only inject when there's deployable HTML nearby.
-      if (!looksLikeHtml(getHtml())) continue;
-      const btn = createChatGptNativeButton(getHtml);
-      copy.insertAdjacentElement("afterend", btn);
+    const seen = new Set();
+    for (const hit of [
+      ...findChatGptCodeToolbars(),
+      ...findChatGptArtifactToolbars(),
+    ]) {
+      if (seen.has(hit.row)) continue;
+      seen.add(hit.row);
+      injectChatGptToolbar(hit);
     }
     return;
   }
@@ -437,7 +566,7 @@ function scan() {
   const host = location.hostname;
   injectBesideCopyButtons();
   if (host.includes("claude.ai")) injectClaudeArtifactMenu();
-  // ChatGPT: only inject into the native Code/Preview/Copy group (above).
+  // ChatGPT: inject via Code/Preview(/Copy) toolbar paths only (above).
   // Extra pre-scanning duplicates buttons outside that cluster.
   if (host.includes("chatgpt.com") || host.includes("openai.com")) return;
   for (const b of findClaudeBlocks()) inject(b);
@@ -464,7 +593,6 @@ window.addEventListener("resize", () => scheduleScan(400));
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") scheduleScan(100);
 });
-// Belt-and-suspenders: Claude sometimes mutates without useful observer events.
-setInterval(() => {
-  if (!document.querySelector(`[${BTN_ATTR}="icon"]`)) scan();
-}, 2000);
+// Belt-and-suspenders: new replies / remounts can miss MutationObserver.
+// Always rescan — injectors no-op when a toolbar already has Share.
+setInterval(() => scan(), 2000);
