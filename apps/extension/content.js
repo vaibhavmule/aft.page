@@ -297,9 +297,55 @@ function exactTextElement(text) {
 
 function findCopyButtons() {
   return [...document.querySelectorAll("button")].filter((b) => {
+    const label = (b.getAttribute("aria-label") || "").trim().toLowerCase();
+    if (label === "copy" || label.startsWith("copy ")) return true;
     const t = (b.textContent || "").replace(/\s+/g, " ").trim();
     return t === "Copy" || t.startsWith("Copy");
   });
+}
+
+/**
+ * ChatGPT code header: [Code|Preview] toggle + Copy in one flex row.
+ * Insert aft share as a sibling after Copy so it sits in that same group.
+ */
+function findChatGptCodeToolbars() {
+  const out = [];
+  const seen = new Set();
+  for (const copy of document.querySelectorAll('button[aria-label="Copy"]')) {
+    const row =
+      copy.closest(".justify-self-end") ||
+      copy.closest(".flex.flex-row.items-center") ||
+      copy.parentElement;
+    if (!row || seen.has(row)) continue;
+    const hasToggle =
+      row.querySelector('[aria-label="Code block view"]') ||
+      row.querySelector("[data-code-block-preview-toggle-code]");
+    if (!hasToggle && copy.parentElement !== row) continue;
+    seen.add(row);
+
+    // Walk up from the toolbar to the code-block shell, then find its <pre>.
+    let shell = row.parentElement;
+    let pre = null;
+    for (let i = 0; i < 8 && shell; i++) {
+      pre = shell.matches?.("pre")
+        ? shell
+        : shell.querySelector(":scope > pre, :scope pre");
+      if (pre) break;
+      shell = shell.parentElement;
+    }
+    const text = pre ? extractPreHtml(pre) : "";
+    if (!pre || !looksLikeHtml(text)) continue;
+    out.push({ row, copy, pre, text });
+  }
+  return out;
+}
+
+function createChatGptNativeButton(getHtml) {
+  const btn = createIconButton(getHtml);
+  // Match ChatGPT Copy: size-9 circle, same hover tokens.
+  btn.className =
+    "aft-deploy-btn aft-deploy-btn--icon aft-deploy-btn--chatgpt flex gap-1 items-center select-none py-2 text-sm font-medium hover:bg-black/5 dark:hover:bg-white/10 size-9 rounded-full px-2";
+  return btn;
 }
 
 /**
@@ -307,8 +353,28 @@ function findCopyButtons() {
  * Fullscreen remounts this header — scan() must re-run after that.
  */
 function injectBesideCopyButtons() {
+  const host = location.hostname;
+  const onChatGpt =
+    host.includes("chatgpt.com") || host.includes("openai.com");
+
+  if (onChatGpt) {
+    for (const { row, copy, pre, text } of findChatGptCodeToolbars()) {
+      if (row.querySelector(`[${BTN_ATTR}="icon"]`)) continue;
+      const getHtml = () =>
+        sanitizeHtml(
+          (pre && extractPreHtml(pre, text)) ||
+            getOpenClaudeArtifactHtml() ||
+            "",
+        );
+      // Only inject when there's deployable HTML nearby.
+      if (!looksLikeHtml(getHtml())) continue;
+      const btn = createChatGptNativeButton(getHtml);
+      copy.insertAdjacentElement("afterend", btn);
+    }
+    return;
+  }
+
   for (const copy of findCopyButtons()) {
-    // Sit in the same icon row as Copy (ChatGPT: </> · ▶ · copy).
     const row =
       copy.parentElement ||
       copy.closest('[class*="gap"]') ||
@@ -327,9 +393,7 @@ function injectBesideCopyButtons() {
       [...(panel?.querySelectorAll("pre, code, .cm-content") || [])]
         .map((el) => el.innerText || "")
         .find(looksLikeHtml);
-    if (!nearbyHtml && !location.hostname.includes("chatgpt.com") && !location.hostname.includes("openai.com")) {
-      continue;
-    }
+    if (!nearbyHtml) continue;
 
     const btn = createIconButton(() =>
       sanitizeHtml(
@@ -339,7 +403,6 @@ function injectBesideCopyButtons() {
           "",
       ),
     );
-    // Native order: … Copy → aft icon (same cluster, not far-right orphan).
     copy.insertAdjacentElement("afterend", btn);
   }
 }
@@ -363,10 +426,10 @@ function scan() {
   const host = location.hostname;
   injectBesideCopyButtons();
   if (host.includes("claude.ai")) injectClaudeArtifactMenu();
-  const blocks = host.includes("claude.ai")
-    ? findClaudeBlocks()
-    : findChatGptBlocks();
-  for (const b of blocks) inject(b);
+  // ChatGPT: only inject into the native Code/Preview/Copy group (above).
+  // Extra pre-scanning duplicates buttons outside that cluster.
+  if (host.includes("chatgpt.com") || host.includes("openai.com")) return;
+  for (const b of findClaudeBlocks()) inject(b);
 }
 
 function scheduleScan(delay = 250) {

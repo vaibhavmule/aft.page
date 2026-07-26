@@ -47,6 +47,13 @@
   pointer-events: none;
 }
 
+/* ChatGPT native toolbar sibling — lean on their size-9 / hover classes. */
+.aft-deploy-btn--chatgpt {
+  width: 2.25rem; /* size-9 */
+  height: 2.25rem;
+  color: inherit;
+}
+
 .aft-deploy-btn--float {
   position: absolute;
   top: 0.35rem;
