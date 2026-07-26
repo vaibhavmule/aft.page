@@ -1,0 +1,7 @@
+{
+  "name": "aft-page",
+  "dir": ".",
+  "region": "us-east-1",
+  "spa": false,
+  "provider": "cloudflare"
+}

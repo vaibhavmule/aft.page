@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>og image source — not linked</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Sora:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { box-sizing: border-box; margin: 0; }
+      html, body { width: 1200px; height: 630px; overflow: hidden; }
+      body {
+        font-family: "Sora", sans-serif;
+        color: #14110f;
+        background-color: #f3efe6;
+        background-image:
+          radial-gradient(ellipse 90% 65% at 10% -10%, rgba(196, 92, 38, 0.20), transparent 55%),
+          radial-gradient(ellipse 70% 55% at 105% 15%, rgba(20, 17, 15, 0.08), transparent 50%),
+          linear-gradient(180deg, #f3efe6 0%, #e4ddd0 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 0 96px;
+        position: relative;
+      }
+      .glow {
+        position: absolute;
+        right: 60px;
+        bottom: 40px;
+        width: 380px;
+        height: 380px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(196, 92, 38, 0.25), transparent 70%);
+      }
+      .celebrate {
+        font-size: 28px;
+        font-weight: 500;
+        color: #c45c26;
+        letter-spacing: -0.01em;
+        margin-bottom: 22px;
+      }
+      .brand {
+        font-family: "Fraunces", serif;
+        font-weight: 600;
+        font-size: 140px;
+        letter-spacing: -0.045em;
+        line-height: 0.95;
+        margin-bottom: 28px;
+      }
+      .brand span { color: #c45c26; }
+      .lede {
+        font-size: 36px;
+        font-weight: 500;
+        letter-spacing: -0.02em;
+        max-width: 28ch;
+        margin-bottom: 16px;
+      }
+      .support {
+        font-size: 24px;
+        color: #5c554c;
+        max-width: 34ch;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="glow"></div>
+    <p class="celebrate">Happy birthday, Payal</p>
+    <h1 class="brand">aft<span>.</span>page</h1>
+    <p class="lede">Born on July 26, 2026 — on Payal’s birthday.</p>
+    <p class="support">Agents build small software. We make it live and shareable.</p>
+  </body>
+</html>

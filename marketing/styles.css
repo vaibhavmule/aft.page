@@ -1,0 +1,236 @@
+:root {
+  color-scheme: light;
+  --ink: #14110f;
+  --paper: #f3efe6;
+  --mist: #e4ddd0;
+  --signal: #c45c26;
+  --signal-deep: #9a3f12;
+  --quiet: #5c554c;
+  --font-display: "Fraunces", "Times New Roman", serif;
+  --font-body: "Sora", "Segoe UI", sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-body);
+  font-weight: 400;
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(ellipse 90% 55% at 12% -10%, rgba(196, 92, 38, 0.18), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 100% 8%, rgba(20, 17, 15, 0.08), transparent 50%),
+    linear-gradient(180deg, var(--paper) 0%, var(--mist) 100%);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+.site {
+  width: min(1080px, calc(100% - 2.5rem));
+  margin: 0 auto;
+}
+
+/* —— Hero: one composition —— */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4rem 0 5rem;
+  position: relative;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 12% auto;
+  width: min(42vw, 380px);
+  height: min(42vw, 380px);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(196, 92, 38, 0.22), transparent 70%);
+  pointer-events: none;
+  animation: drift 14s ease-in-out infinite alternate;
+}
+
+@keyframes drift {
+  from {
+    transform: translate(-8%, 4%) scale(1);
+  }
+  to {
+    transform: translate(6%, -6%) scale(1.08);
+  }
+}
+
+.celebrate {
+  margin: 0 0 1rem;
+  font-family: var(--font-body);
+  font-size: clamp(0.95rem, 2vw, 1.1rem);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--signal-deep);
+  animation: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.brand {
+  font-family: var(--font-display);
+  font-size: clamp(3.4rem, 12vw, 7.5rem);
+  font-weight: 600;
+  font-optical-sizing: auto;
+  letter-spacing: -0.045em;
+  line-height: 0.92;
+  margin: 0 0 1.5rem;
+  animation: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+}
+
+.brand span {
+  color: var(--signal);
+}
+
+.lede {
+  font-size: clamp(1.2rem, 2.6vw, 1.65rem);
+  font-weight: 500;
+  max-width: 28ch;
+  margin: 0 0 0.85rem;
+  letter-spacing: -0.02em;
+  animation: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.16s both;
+}
+
+.support {
+  margin: 0;
+  max-width: 38ch;
+  color: var(--quiet);
+  font-size: 1.05rem;
+  animation: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.24s both;
+}
+
+.cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem 1.1rem;
+  margin-top: 2.25rem;
+  align-items: center;
+  animation: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.32s both;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem 1.35rem;
+  border-radius: 0.35rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1.5px solid transparent;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.btn-primary:hover {
+  background: #000;
+}
+
+.btn-ghost {
+  border-color: color-mix(in srgb, var(--ink) 28%, transparent);
+  color: var(--ink);
+  background: transparent;
+}
+
+.btn-ghost:hover {
+  border-color: var(--ink);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(1.1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* —— Below fold —— */
+.sections {
+  padding: 0 0 5rem;
+  display: grid;
+  gap: 4.5rem;
+}
+
+.block {
+  max-width: 38rem;
+}
+
+.block h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.65rem, 3vw, 2.15rem);
+  font-weight: 550;
+  letter-spacing: -0.03em;
+  margin: 0 0 0.75rem;
+}
+
+.block p {
+  margin: 0;
+  color: var(--quiet);
+  font-size: 1.05rem;
+}
+
+.block a {
+  color: var(--signal-deep);
+  text-underline-offset: 0.18em;
+}
+
+.footer {
+  padding: 0 0 2.5rem;
+  color: var(--quiet);
+  font-size: 0.9rem;
+}
+
+.footer code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.85em;
+  color: var(--ink);
+}
+
+.confetti-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 40;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
