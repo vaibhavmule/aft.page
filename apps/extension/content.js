@@ -76,16 +76,18 @@ function setIconState(btn, state) {
   btn.classList.toggle("aft-deploy-btn--err", state === "err");
   btn.classList.toggle("aft-deploy-btn--ok", state === "ok");
   btn.classList.toggle("aft-deploy-btn--busy", state === "busy");
+  // Short labels match ChatGPT’s Copy tooltip (“Copy”).
   const label =
     state === "busy"
       ? "Publishing…"
       : state === "ok"
-        ? "Live on aft.page"
+        ? "Live"
         : state === "err"
-          ? "Deploy failed — try again"
-          : "Deploy to aft.page";
+          ? "Failed"
+          : "Share";
   btn.title = label;
   btn.setAttribute("aria-label", label);
+  btn.setAttribute("data-tooltip", label);
 }
 
 async function publishHtml(html) {
