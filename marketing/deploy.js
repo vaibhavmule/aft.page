@@ -65,10 +65,15 @@ form?.addEventListener("submit", async (e) => {
       return;
     }
 
-    urlEl.href = data.url;
-    urlEl.textContent = data.url.replace(/^https:\/\//, "");
+    const liveUrl = data.url;
+    const preview =
+      "https://aft.page/preview?url=" + encodeURIComponent(liveUrl);
+    urlEl.href = preview;
+    urlEl.textContent = liveUrl.replace(/^https:\/\//, "");
+    urlEl.dataset.liveUrl = liveUrl;
     result.hidden = false;
     setStatus("Live.", "ok");
+    window.open(preview, "_blank", "noopener,noreferrer");
   } catch (err) {
     setStatus(
       err instanceof Error ? err.message : "Network error — try again.",
@@ -80,7 +85,7 @@ form?.addEventListener("submit", async (e) => {
 });
 
 copyBtn?.addEventListener("click", async () => {
-  const url = urlEl.href;
+  const url = urlEl.dataset.liveUrl || urlEl.href;
   if (!url || url === "#") return;
   try {
     await navigator.clipboard.writeText(url);
