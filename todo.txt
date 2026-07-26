@@ -14,11 +14,16 @@
 - [x] MCP server (`deploy_html`, `deploy_files`, `aft_health`)
 - [ ] Email capture on marketing (tomorrow)
 - [ ] Edit token + D1 registry (own/update a slug)
+- [ ] Auth / claim (sites are anonymous today — prerequisite for private sharing)
+- [ ] Visibility: public vs private sites
+- [ ] Private sites: invite by email (view/edit), revoke without rotating a shared password
 - [ ] Auth / custom domains (later)
 - [ ] Publish extension to Chrome Web Store
 - [ ] Publish `@aft.page/mcp` to npm (optional)
+- [ ] Future: editable preview (CodeMirror 6 + live iframe srcdoc; redeploy later) — not now
 
 ## Notes
 - Apex aft.page = marketing (Pages)
 - api.aft.page + *.aft.page = Worker
 - Sibling OSS CLI: ../aft (github.com/vaibhavmule/aft)
+- Sharing goal (rfs.txt): as easy as a Google Doc — see docs/SHARING.md

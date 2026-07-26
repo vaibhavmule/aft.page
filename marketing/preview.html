@@ -79,14 +79,16 @@
         flex-wrap: wrap;
         align-items: center;
       }
-      .view-toggle {
+      .view-toggle,
+      .visibility-toggle {
         display: inline-flex;
         padding: 0.2rem;
         border: 1.5px solid rgba(20, 17, 15, 0.2);
         border-radius: 0.45rem;
         background: rgba(255, 255, 255, 0.35);
       }
-      .view-toggle button {
+      .view-toggle button,
+      .visibility-toggle button {
         appearance: none;
         border: 0;
         border-radius: 0.28rem;
@@ -96,9 +98,16 @@
         cursor: pointer;
         font: 600 0.78rem "Sora", sans-serif;
       }
-      .view-toggle button[aria-pressed="true"] {
+      .view-toggle button[aria-pressed="true"],
+      .visibility-toggle button[aria-pressed="true"] {
         background: var(--ink);
         color: var(--paper);
+      }
+      .share-cluster {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        flex-wrap: wrap;
       }
       .btn {
         appearance: none;
@@ -288,6 +297,13 @@
         .slug {
           max-width: 55vw;
         }
+        .actions {
+          margin-left: 0;
+          width: 100%;
+        }
+        .share-cluster {
+          width: 100%;
+        }
       }
     </style>
   </head>
@@ -303,7 +319,14 @@
         <a class="btn btn-ghost" id="back" hidden>Back to chat</a>
         <button class="btn btn-ghost" id="copy">Copy link</button>
         <a class="btn btn-ghost" id="open" target="_blank" rel="noopener noreferrer">Open live</a>
-        <button class="btn btn-claim" id="claim">Claim this site</button>
+        <div class="share-cluster" id="share-cluster">
+          <div class="visibility-toggle" id="visibility-toggle" role="group" aria-label="Site visibility (coming soon)">
+            <button id="vis-public" type="button" aria-pressed="true">Public</button>
+            <button id="vis-private" type="button" aria-pressed="false">Private</button>
+          </div>
+          <button class="btn btn-ghost" id="invite" type="button" hidden>Invite by email</button>
+          <button class="btn btn-claim" id="claim">Claim this site</button>
+        </div>
       </div>
     </div>
 
@@ -375,6 +398,10 @@
       const copyBtn = document.getElementById("copy");
       const openA = document.getElementById("open");
       const claimBtn = document.getElementById("claim");
+      const shareCluster = document.getElementById("share-cluster");
+      const visPublic = document.getElementById("vis-public");
+      const visPrivate = document.getElementById("vis-private");
+      const inviteBtn = document.getElementById("invite");
       const viewToggle = document.getElementById("view-toggle");
       const previewTab = document.getElementById("preview-tab");
       const codeTab = document.getElementById("code-tab");
@@ -391,11 +418,25 @@
 
       let sourceHtml = "";
       let sourceRequested = false;
+      // UI-only stub — sites are not actually private server-side yet.
+      let visibility = "public";
 
       function showToast(text) {
         toast.textContent = text;
         toast.classList.add("show");
-        setTimeout(() => toast.classList.remove("show"), 1800);
+        setTimeout(() => toast.classList.remove("show"), 2200);
+      }
+
+      function comingSoonClaimFirst() {
+        showToast("Coming soon — claim a site first");
+      }
+
+      function setVisibility(next) {
+        visibility = next;
+        const isPrivate = next === "private";
+        visPublic.setAttribute("aria-pressed", String(!isPrivate));
+        visPrivate.setAttribute("aria-pressed", String(isPrivate));
+        inviteBtn.hidden = !isPrivate;
       }
 
       function chatLabel(href) {
@@ -414,6 +455,127 @@
           .replace(/>/g, "&gt;");
       }
 
+      const VOID_TAGS = new Set([
+        "area", "base", "br", "col", "embed", "hr", "img", "input", "link",
+        "meta", "param", "source", "track", "wbr",
+      ]);
+      const RAW_TAGS = new Set(["script", "style", "pre", "textarea"]);
+
+      /** True when source looks minified / flat — skip reformatting well-indented HTML. */
+      function needsHtmlIndent(html) {
+        const lines = html.replace(/\r\n?/g, "\n").split("\n").filter((l) => l.trim());
+        if (lines.length <= 1) return html.trim().length > 0;
+        const indented = lines.filter((l) => /^\s{2,}/.test(l)).length;
+        if (indented >= Math.max(2, Math.floor(lines.length * 0.2))) return false;
+        const avg = lines.reduce((n, l) => n + l.length, 0) / lines.length;
+        return avg > 80 || indented === 0;
+      }
+
+      /**
+       * Tiny dependency-free HTML pretty-printer (2-space indent).
+       * Leaves already-indented source alone; preserves raw blocks (script/style/pre/textarea).
+       */
+      function formatHtml(html) {
+        if (!needsHtmlIndent(html)) return html;
+
+        const src = html.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
+        const out = [];
+        let depth = 0;
+        let i = 0;
+
+        function pushLine(text, level) {
+          const t = text.replace(/[ \t]+$/g, "");
+          if (!t.trim()) {
+            out.push("");
+            return;
+          }
+          out.push(`${"  ".repeat(Math.max(0, level))}${t.trim()}`);
+        }
+
+        while (i < src.length) {
+          if (src.startsWith("<!--", i)) {
+            const end = src.indexOf("-->", i + 4);
+            const block = end === -1 ? src.slice(i) : src.slice(i, end + 3);
+            pushLine(block, depth);
+            i += block.length;
+            continue;
+          }
+
+          if (src[i] === "<") {
+            const gt = src.indexOf(">", i + 1);
+            if (gt === -1) {
+              pushLine(src.slice(i), depth);
+              break;
+            }
+            const tag = src.slice(i, gt + 1);
+            const m = /^<\/?\s*([a-zA-Z][a-zA-Z0-9:-]*)/.exec(tag);
+            const name = m ? m[1].toLowerCase() : "";
+            const isClose = tag.startsWith("</");
+            const isVoid = VOID_TAGS.has(name) || /\/>\s*$/.test(tag);
+
+            if (isClose) {
+              depth = Math.max(0, depth - 1);
+              pushLine(tag, depth);
+              i = gt + 1;
+              continue;
+            }
+
+            if (RAW_TAGS.has(name) && !isVoid) {
+              const closeRe = new RegExp(`</${name}\\s*>`, "i");
+              const rest = src.slice(gt + 1);
+              const closeMatch = closeRe.exec(rest);
+              const rawInner = closeMatch ? rest.slice(0, closeMatch.index) : rest;
+              const closeTag = closeMatch ? closeMatch[0] : "";
+              pushLine(tag, depth);
+              if (rawInner.length) {
+                // Keep raw block body as-is (trimmed outer blank lines only).
+                const body = rawInner.replace(/^\n/, "").replace(/\n$/, "");
+                for (const line of body.split("\n")) {
+                  out.push(line);
+                }
+              }
+              if (closeTag) pushLine(closeTag, depth);
+              i = gt + 1 + rawInner.length + closeTag.length;
+              continue;
+            }
+
+            // Keep short single-line text inline: <title>Hi</title>
+            if (!isVoid && name) {
+              const after = src.slice(gt + 1);
+              const textEnd = after.indexOf("<");
+              if (textEnd !== -1) {
+                const inner = after.slice(0, textEnd);
+                const close = after.slice(textEnd);
+                const closeM = new RegExp(`^</${name}\\s*>`, "i").exec(close);
+                if (
+                  closeM &&
+                  inner.length > 0 &&
+                  !inner.includes("\n") &&
+                  inner.trim().length <= 80
+                ) {
+                  pushLine(`${tag}${inner.trim()}${closeM[0]}`, depth);
+                  i = gt + 1 + textEnd + closeM[0].length;
+                  continue;
+                }
+              }
+            }
+
+            pushLine(tag, depth);
+            if (!isVoid && name && !/^!/.test(name)) depth += 1;
+            i = gt + 1;
+            continue;
+          }
+
+          const next = src.indexOf("<", i);
+          const text = next === -1 ? src.slice(i) : src.slice(i, next);
+          if (text.trim()) pushLine(text, depth);
+          else if (text.includes("\n\n")) out.push("");
+          i += text.length;
+        }
+
+        return out.join("\n").replace(/\n{3,}/g, "\n\n").trim() + "\n";
+      }
+
       /** Light HTML syntax coloring — tags, attrs, strings, comments. */
       function highlightHtml(src) {
         return escapeHtml(src)
@@ -429,7 +591,7 @@
         try {
           const response = await fetch(url);
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          sourceHtml = await response.text();
+          sourceHtml = formatHtml(await response.text());
           codeEl.innerHTML = highlightHtml(sourceHtml);
           codeStatus.textContent = "index.html";
           copyCodeBtn.disabled = false;
@@ -519,6 +681,18 @@
           showToast("Downloaded");
         });
 
+        setVisibility("public");
+
+        visPublic.addEventListener("click", () => {
+          setVisibility("public");
+          comingSoonClaimFirst();
+        });
+        visPrivate.addEventListener("click", () => {
+          setVisibility("private");
+          comingSoonClaimFirst();
+        });
+        inviteBtn.addEventListener("click", comingSoonClaimFirst);
+
         claimBtn.addEventListener("click", () => {
           showToast("Claiming with an account is coming soon — link saved on this device");
         });
@@ -530,7 +704,7 @@
         viewToggle.hidden = true;
         copyBtn.style.display = "none";
         openA.style.display = "none";
-        claimBtn.style.display = "none";
+        shareCluster.style.display = "none";
       }
     </script>
   </body>

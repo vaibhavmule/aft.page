@@ -1,0 +1,20 @@
+A Cloud for Small Software#
+By Pete Koomen
+
+Using agents to build personal software to solve your own problems is a lot of fun.
+
+This is "Small Software". Purpose-built tools that will only ever have one or a small handful of users.
+
+Small software is useful for teams too: Every team does things differently, and there's unlimited demand for bespoke tools for running workflows, tracking important numbers, managing sprints, sharing prototypes, and so on.
+
+Software like this is now very easy to build, but still hard to deploy and share.
+
+Incumbent clouds like Azure and AWS were designed for shipping Big Software that scales with many users… at the cost of complexity.
+
+A cloud designed for small software could delete most of this complexity and unlock a big set of new use cases that agents have only recently made possible.
+
+At the same time, there are other hard problems to solve: every company will want to customize the environment this software runs in, auth & permissions are hard, and allowing nontechnical users to share arbitrary code is tricky to do securely.
+
+Small software should be as easy to share with your colleagues as a Google Doc.
+
+If you're working on something like this, we'd love to hear from you.
