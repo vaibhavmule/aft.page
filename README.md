@@ -7,6 +7,7 @@ Hosted deploy + share for small software. Paste or upload → live `*.aft.page` 
 | [`marketing/`](marketing/) | Apex landing (Cloudflare Pages) |
 | [`apps/api/`](apps/api/) | Worker: `POST /v1/deploy` + `*.aft.page` static serve |
 | [`apps/extension/`](apps/extension/) | Chrome: Deploy button on ChatGPT / Claude |
+| [`apps/mcp/`](apps/mcp/) | MCP: any agent can `deploy_html` / `deploy_files` |
 
 OSS CLI that deploys into *your* AWS/Cloudflare: [vaibhavmule/aft](https://github.com/vaibhavmule/aft).
 
