@@ -473,7 +473,9 @@
 
       /**
        * Tiny dependency-free HTML pretty-printer (2-space indent).
-       * Leaves already-indented source alone; preserves raw blocks (script/style/pre/textarea).
+       * Only reformats when needsHtmlIndent() says the source looks flat/minified,
+       * so already well-indented HTML is left alone. Preserves raw blocks
+       * (script/style/pre/textarea). Copy/Download use this formatted string.
        */
       function formatHtml(html) {
         if (!needsHtmlIndent(html)) return html;
