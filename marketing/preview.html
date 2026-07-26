@@ -153,6 +153,7 @@
       <a class="brand" href="/">aft<span>.</span>page</a>
       <span class="slug" id="slug"></span>
       <div class="actions">
+        <a class="btn btn-ghost" id="back" hidden>Back to chat</a>
         <button class="btn btn-ghost" id="copy">Copy link</button>
         <a class="btn btn-ghost" id="open" target="_blank" rel="noopener noreferrer">Open live</a>
         <button class="btn btn-claim" id="claim">Claim this site</button>
@@ -172,11 +173,27 @@
     <script>
       const params = new URLSearchParams(location.search);
       const raw = params.get("url") || "";
+      const fromRaw = params.get("from") || "";
 
       // Only preview our own tenant sites — never arbitrary URLs.
       const m = raw.match(/^https:\/\/([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\.aft\.page\/?$/i);
 
+      // Only allow known chat hosts as “Back to chat” (no open redirects).
+      let chatFrom = null;
+      try {
+        const f = new URL(fromRaw);
+        if (
+          ["chatgpt.com", "www.chatgpt.com", "chat.openai.com", "claude.ai", "www.claude.ai"].includes(
+            f.hostname,
+          ) &&
+          f.protocol === "https:"
+        ) {
+          chatFrom = f.toString();
+        }
+      } catch (_) {}
+
       const slugEl = document.getElementById("slug");
+      const backA = document.getElementById("back");
       const copyBtn = document.getElementById("copy");
       const openA = document.getElementById("open");
       const claimBtn = document.getElementById("claim");
@@ -191,6 +208,15 @@
         setTimeout(() => toast.classList.remove("show"), 1800);
       }
 
+      function chatLabel(href) {
+        try {
+          const h = new URL(href).hostname;
+          if (h.includes("claude")) return "Back to Claude";
+          if (h.includes("openai") || h.includes("chatgpt")) return "Back to ChatGPT";
+        } catch (_) {}
+        return "Back to chat";
+      }
+
       if (m) {
         const url = `https://${m[1].toLowerCase()}.aft.page/`;
         const slug = m[1].toLowerCase();
@@ -200,14 +226,29 @@
         wrap.hidden = false;
         empty.hidden = true;
 
+        if (chatFrom) {
+          backA.hidden = false;
+          backA.href = chatFrom;
+          backA.textContent = chatLabel(chatFrom);
+        }
+
         // Remember locally so "my sites" has a seed before real accounts.
         try {
           const key = "aft.mySites";
           const list = JSON.parse(localStorage.getItem(key) || "[]");
-          if (!list.some((s) => s.slug === slug)) {
-            list.unshift({ slug, url, seenAt: new Date().toISOString() });
-            localStorage.setItem(key, JSON.stringify(list.slice(0, 100)));
+          const existing = list.find((s) => s.slug === slug);
+          if (existing) {
+            if (chatFrom) existing.from = chatFrom;
+            existing.seenAt = new Date().toISOString();
+          } else {
+            list.unshift({
+              slug,
+              url,
+              from: chatFrom || undefined,
+              seenAt: new Date().toISOString(),
+            });
           }
+          localStorage.setItem(key, JSON.stringify(list.slice(0, 100)));
         } catch (_) {}
 
         copyBtn.addEventListener("click", async () => {
@@ -226,6 +267,7 @@
         wrap.hidden = true;
         empty.hidden = false;
         slugEl.textContent = "";
+        backA.hidden = true;
         copyBtn.style.display = "none";
         openA.style.display = "none";
         claimBtn.style.display = "none";

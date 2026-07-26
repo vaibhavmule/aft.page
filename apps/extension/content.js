@@ -108,7 +108,16 @@ async function publishHtml(html) {
 
 /** Land on the aft.page preview shell (claim / copy / manage) not the raw site. */
 function previewUrl(liveUrl) {
-  return `https://aft.page/preview?url=${encodeURIComponent(liveUrl)}`;
+  const u = new URL("https://aft.page/preview");
+  u.searchParams.set("url", liveUrl);
+  // So preview can offer “Back to chat” → edit → redeploy.
+  try {
+    const chat = location.href;
+    if (/^https:\/\/(chatgpt\.com|claude\.ai|chat\.openai\.com)\//i.test(chat)) {
+      u.searchParams.set("from", chat);
+    }
+  } catch (_) {}
+  return u.toString();
 }
 
 function createIconButton(getHtml) {
