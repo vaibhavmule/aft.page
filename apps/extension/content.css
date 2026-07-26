@@ -32,3 +32,30 @@
   top: 0.45rem;
   right: 0.45rem;
 }
+
+/* Claude artifact Copy dropdown: inherit the native menu typography/layout. */
+.aft-deploy-menu-item {
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.aft-deploy-menu-item:not([class*="bg-"]):not([class*="rounded"]) {
+  appearance: none;
+  display: block;
+  padding: 0.55rem 0.75rem;
+  border: 0;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.aft-deploy-menu-item:hover {
+  background: rgba(196, 92, 38, 0.18);
+}
+
+.aft-deploy-menu-item.aft-deploy-btn--err {
+  color: #ef8f72;
+}

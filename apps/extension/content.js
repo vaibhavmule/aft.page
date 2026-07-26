@@ -74,12 +74,30 @@ function findClaudeBlocks(root = document) {
   return out;
 }
 
-function createButton(getHtml) {
+async function publishHtml(html) {
+  const slug = slugFromHtml(html);
+  const url = slug
+    ? `${API}?slug=${encodeURIComponent(slug)}`
+    : API;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "text/html; charset=utf-8" },
+    body: html,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.url) {
+    throw new Error(data.message || data.error || `Deploy failed (${res.status})`);
+  }
+  return data;
+}
+
+function createButton(getHtml, options = {}) {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.setAttribute(BTN_ATTR, "1");
-  btn.className = "aft-deploy-btn";
-  btn.textContent = "Deploy";
+  btn.className = options.className || "aft-deploy-btn";
+  btn.dataset.aftIdleLabel = options.label || "Deploy";
+  btn.textContent = btn.dataset.aftIdleLabel;
   btn.title = "Publish to aft.page";
 
   btn.addEventListener("click", async (e) => {
@@ -97,29 +115,18 @@ function createButton(getHtml) {
 
     btn.disabled = true;
     setBtn(btn, "…");
-
-    const slug = slugFromHtml(html);
-    const url = slug
-      ? `${API}?slug=${encodeURIComponent(slug)}`
-      : API;
+    // Open synchronously so Chrome does not block the tab after the fetch.
+    const opened = window.open("about:blank", "_blank");
 
     try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "content-type": "text/html; charset=utf-8" },
-        body: html,
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.url) {
-        setBtn(btn, "Failed", true);
-        console.error("[aft.page]", data);
-        return;
-      }
-      setBtn(btn, "Live ✓");
-      window.open(data.url, "_blank", "noopener,noreferrer");
-      setTimeout(() => setBtn(btn, "Deploy"), 2500);
+      const data = await publishHtml(html);
+      setBtn(btn, options.successLabel || "Live ✓");
+      if (opened) opened.location.replace(data.url);
+      else window.open(data.url, "_blank", "noopener,noreferrer");
+      setTimeout(() => setBtn(btn, btn.dataset.aftIdleLabel), 2500);
     } catch (err) {
       console.error("[aft.page]", err);
+      opened?.close();
       setBtn(btn, "Failed", true);
     } finally {
       btn.disabled = false;
@@ -132,7 +139,9 @@ function createButton(getHtml) {
 function setBtn(btn, label, err = false) {
   btn.textContent = label;
   btn.classList.toggle("aft-deploy-btn--err", err);
-  if (err) setTimeout(() => setBtn(btn, "Deploy"), 2000);
+  if (err) {
+    setTimeout(() => setBtn(btn, btn.dataset.aftIdleLabel || "Deploy"), 2000);
+  }
 }
 
 function inject(block) {
@@ -159,8 +168,67 @@ function inject(block) {
   }
 }
 
+/**
+ * Claude's artifact editor is CodeMirror today, but keep fallbacks for
+ * Monaco and regular code blocks because its DOM changes frequently.
+ */
+function getOpenClaudeArtifactHtml() {
+  const selectors = [
+    ".cm-content",
+    ".view-lines",
+    "[data-language='html']",
+    "[class*='language-html']",
+    "pre code",
+    "pre",
+  ];
+  const candidates = [];
+  const seen = new Set();
+  for (const selector of selectors) {
+    for (const el of document.querySelectorAll(selector)) {
+      if (seen.has(el)) continue;
+      seen.add(el);
+      const text = (el.innerText || el.textContent || "").trim();
+      if (looksLikeHtml(text)) candidates.push(text);
+    }
+  }
+  // The open artifact is normally the largest HTML candidate on the page.
+  candidates.sort((a, b) => b.length - a.length);
+  return candidates[0] || "";
+}
+
+function exactTextElement(text) {
+  const candidates = document.querySelectorAll(
+    "button, [role='menuitem'], [role='option'], [role='menu'] > div",
+  );
+  return [...candidates].find((el) => el.textContent?.trim() === text) || null;
+}
+
+/** Add aft.page to Claude's Copy dropdown beside Download as HTML. */
+function injectClaudeArtifactMenu() {
+  const download = exactTextElement("Download as HTML");
+  const publish = exactTextElement("Publish artifact");
+  const anchor = download || publish;
+  if (!anchor) return;
+
+  const menu = anchor.parentElement;
+  if (!menu || menu.querySelector(`[${BTN_ATTR}='claude-menu']`)) return;
+
+  const btn = createButton(getOpenClaudeArtifactHtml, {
+    label: "Deploy to aft.page",
+    successLabel: "Live — opening…",
+    className: `${anchor.className || ""} aft-deploy-menu-item`,
+  });
+  btn.setAttribute(BTN_ATTR, "claude-menu");
+  btn.setAttribute("role", anchor.getAttribute("role") || "menuitem");
+  btn.title = "Publish this HTML to a new *.aft.page URL";
+
+  if (download) download.insertAdjacentElement("afterend", btn);
+  else menu.appendChild(btn);
+}
+
 function scan() {
   const host = location.hostname;
+  if (host.includes("claude.ai")) injectClaudeArtifactMenu();
   const blocks =
     host.includes("claude.ai")
       ? findClaudeBlocks()
