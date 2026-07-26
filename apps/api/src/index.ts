@@ -1,9 +1,8 @@
 /**
  * aft.page API + static serve Worker.
  *
- * Storage today: KV for slug→deploy pointers and file blobs (R2 not yet
- * enabled on the account — enable once in the CF dashboard, then switch
- * putObject/getObject to the R2 binding).
+ * Site files live in R2; KV holds the slug → deploy pointer. Reads fall back
+ * to KV blobs so sites uploaded before R2 existed keep serving.
  *
  * Hosts:
  * - *.aft.page → serve site for slug
@@ -11,7 +10,6 @@
  */
 export interface Env {
   SITES: KVNamespace;
-  /** Optional; set after R2 is enabled in the dashboard. */
   BUCKET?: R2Bucket;
   ROOT_DOMAIN: string;
 }
@@ -311,13 +309,14 @@ async function getObject(
 ): Promise<{ body: ArrayBuffer | ReadableStream; contentType: string } | null> {
   if (env.BUCKET) {
     const obj = await env.BUCKET.get(r2Key(slug, deployId, path));
-    if (!obj) return null;
-    return {
-      body: obj.body,
-      contentType:
-        obj.httpMetadata?.contentType || guessMime(path),
-    };
+    if (obj) {
+      return {
+        body: obj.body,
+        contentType: obj.httpMetadata?.contentType || guessMime(path),
+      };
+    }
   }
+  // Pre-R2 deploys stored blobs directly in KV.
   const key = kvFileKey(slug, deployId, path);
   const got = await env.SITES.getWithMetadata<ArrayBuffer>(key, "arrayBuffer");
   if (!got.value) return null;

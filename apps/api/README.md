@@ -33,14 +33,9 @@ Limits: 50 files, 2 MB/file, 5 MB total. No auth yet.
 
 ## Storage
 
-- **KV** (`SITES`): slug → deploy pointer + file blobs (current default).
-- **R2** (`BUCKET`): enable once in the Cloudflare dashboard (R2 → Get started), then:
-
-```bash
-npx wrangler r2 bucket create aft-page-sites
-```
-
-Uncomment `r2_buckets` in `wrangler.jsonc` and redeploy. Code already prefers R2 when `env.BUCKET` is bound.
+- **R2** (`BUCKET` → `aft-page-sites`): site files at `sites/{slug}/{deployId}/…`.
+- **KV** (`SITES`): slug → deploy pointer. Reads also fall back to KV blobs so
+  sites uploaded before R2 was enabled keep serving.
 
 ## Deploy this Worker
 

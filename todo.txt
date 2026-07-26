@@ -3,12 +3,12 @@
 
 ## Hosted wedge
 - [x] Domain + landing live
-- [x] Scaffold Worker + KV (R2 pending dashboard enable)
+- [x] Scaffold Worker + KV
 - [x] POST /v1/deploy → slug
 - [x] *.aft.page serve path (+ /s/{slug}/ fallback)
 - [x] Curl smoke (https://hello.aft.page)
+- [x] R2 enabled; files in aft-page-sites, KV keeps pointers
 - [ ] Email capture on marketing (tomorrow)
-- [ ] Enable R2 in CF dashboard + switch BUCKET binding
 - [ ] Chrome extension / paste UI
 - [ ] MCP wrapper
 - [ ] Auth / custom domains (later)
