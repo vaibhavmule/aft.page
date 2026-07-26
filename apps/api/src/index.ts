@@ -141,21 +141,20 @@ async function deploy(request: Request, env: Env): Promise<Response> {
     return json({ error: "payload_too_large", max: MAX_TOTAL_BYTES }, 400);
   }
 
-  const requested = new URL(request.url).searchParams.get("slug")?.toLowerCase();
-  let slug = requested && /^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$/.test(requested)
-    ? requested
-    : randomSlug();
-  if (RESERVED_SLUGS.has(slug)) {
-    return json({ error: "reserved_slug", slug }, 400);
+  // Preferred name from <title> — never overwrite an existing site.
+  // Collision → Vercel-style suffix: about-me-blue, about-me-soft-rose, …
+  const preferred = new URL(request.url).searchParams.get("slug")?.toLowerCase();
+  const base =
+    preferred && isValidSlug(preferred) && !RESERVED_SLUGS.has(preferred)
+      ? preferred
+      : undefined;
+  if (preferred && RESERVED_SLUGS.has(preferred)) {
+    return json({ error: "reserved_slug", slug: preferred }, 400);
   }
 
-  // If slug already taken and caller did not explicitly pass it, mint another.
-  if (!requested) {
-    for (let i = 0; i < 5; i++) {
-      const existing = await env.SITES.get(`site:${slug}`);
-      if (!existing) break;
-      slug = randomSlug();
-    }
+  const slug = await allocateUniqueSlug(env, base);
+  if (!slug) {
+    return json({ error: "slug_exhausted" }, 503);
   }
 
   const deployId = `dep_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
@@ -344,6 +343,77 @@ function randomSlug(): string {
   let s = "";
   for (const b of bytes) s += alphabet[b % alphabet.length];
   return s;
+}
+
+const SLUG_COLORS = [
+  "blue",
+  "rose",
+  "mist",
+  "amber",
+  "coral",
+  "sage",
+  "ink",
+  "dune",
+  "jade",
+  "plum",
+  "sand",
+  "sky",
+] as const;
+
+const SLUG_ADJECTIVES = [
+  "soft",
+  "bold",
+  "calm",
+  "bright",
+  "quiet",
+  "swift",
+  "warm",
+  "clear",
+] as const;
+
+function isValidSlug(slug: string): boolean {
+  return /^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$/.test(slug);
+}
+
+function pick<T extends string>(list: readonly T[]): T {
+  const bytes = crypto.getRandomValues(new Uint8Array(1));
+  return list[bytes[0]! % list.length]!;
+}
+
+function trimSlug(slug: string): string {
+  return slug.slice(0, 58).replace(/-+$/g, "");
+}
+
+/** Prefer base, then base-color, then base-adj-color, then random — never reuse. */
+async function allocateUniqueSlug(
+  env: Env,
+  base: string | undefined,
+): Promise<string | null> {
+  const candidates: string[] = [];
+  if (base) {
+    candidates.push(base);
+    for (let i = 0; i < 8; i++) {
+      candidates.push(trimSlug(`${base}-${pick(SLUG_COLORS)}`));
+    }
+    for (let i = 0; i < 8; i++) {
+      candidates.push(
+        trimSlug(`${base}-${pick(SLUG_ADJECTIVES)}-${pick(SLUG_COLORS)}`),
+      );
+    }
+  }
+  for (let i = 0; i < 5; i++) candidates.push(randomSlug());
+
+  const seen = new Set<string>();
+  for (const candidate of candidates) {
+    if (!candidate || seen.has(candidate) || RESERVED_SLUGS.has(candidate)) {
+      continue;
+    }
+    if (!isValidSlug(candidate)) continue;
+    seen.add(candidate);
+    const existing = await env.SITES.get(`site:${candidate}`);
+    if (!existing) return candidate;
+  }
+  return null;
 }
 
 function guessMime(path: string): string {
