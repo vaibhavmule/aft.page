@@ -3,15 +3,17 @@
 
 ## Hosted wedge
 - [x] Domain + landing live
-- [ ] Scaffold Worker + R2 + KV
-- [ ] POST /v1/deploy → slug
-- [ ] *.aft.page serve path
-- [ ] Curl smoke + phone check
+- [x] Scaffold Worker + KV (R2 pending dashboard enable)
+- [x] POST /v1/deploy → slug
+- [x] *.aft.page serve path (+ /s/{slug}/ fallback)
+- [x] Curl smoke (https://hello.aft.page)
 - [ ] Email capture on marketing (tomorrow)
+- [ ] Enable R2 in CF dashboard + switch BUCKET binding
 - [ ] Chrome extension / paste UI
 - [ ] MCP wrapper
 - [ ] Auth / custom domains (later)
 
 ## Notes
 - Apex aft.page = marketing (Pages)
-- *.aft.page = Worker serve + deploy API
+- api.aft.page + *.aft.page = Worker
+- Sibling OSS CLI: ../aft (github.com/vaibhavmule/aft)

@@ -1,0 +1,43 @@
+/**
+ * aft.page Worker — deploy API + *.aft.page static serve.
+ *
+ * R2: enable once in the Cloudflare dashboard (R2 → Get started), then
+ * uncomment the r2_buckets block and redeploy. Until then, files live in KV.
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "aft-page-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-26",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "vars": {
+    "ROOT_DOMAIN": "aft.page"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "SITES",
+      "id": "3bc4889e9e974a2bbb09433c8b932870"
+    }
+  ],
+  // After enabling R2 in the dashboard:
+  // npx wrangler r2 bucket create aft-page-sites
+  // then uncomment:
+  // "r2_buckets": [
+  //   { "binding": "BUCKET", "bucket_name": "aft-page-sites" }
+  // ],
+  "routes": [
+    {
+      "pattern": "api.aft.page",
+      "custom_domain": true
+    },
+    {
+      "pattern": "*.aft.page/*",
+      "zone_name": "aft.page"
+    }
+  ]
+}

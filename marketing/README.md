@@ -15,10 +15,9 @@ Both are loaded from Google Fonts in `index.html`. The CSS fallbacks are `"Times
 # once: npx wrangler login
 export CLOUDFLARE_ACCOUNT_ID=…   # from `npx wrangler whoami`
 
-cd sites/aft-page
-# from repo root:
-npm run build
-node ../../dist/bin.js deploy --provider cloudflare --domain aft.page
+# from sibling aft repo after npm run build:
+cd marketing
+node ../../aft/dist/bin.js deploy --provider cloudflare --domain aft.page
 ```
 
 `aft.json` sets `"provider": "cloudflare"`, so `--provider` can be omitted after that.
@@ -26,7 +25,7 @@ node ../../dist/bin.js deploy --provider cloudflare --domain aft.page
 ## Redeploy (AWS)
 
 ```bash
-node ../../dist/bin.js deploy --provider aws --profile aft
+node ../../aft/dist/bin.js deploy --provider aws --profile aft
 ```
 
 ## Custom domain
