@@ -57,16 +57,15 @@ function extractPreHtml(pre, fallback = "") {
   return sanitizeHtml(raw);
 }
 
-/** Quiet "a." glyph — same weight as ChatGPT’s Copy / Play icons. */
+/** ChatGPT-native share icon (sprites-core #630ca2) — muted via currentColor. */
 function aftIconSvg() {
   const wrap = document.createElement("span");
   wrap.setAttribute(ICON_MARK, "idle");
   wrap.setAttribute("aria-hidden", "true");
   wrap.className = "aft-icon";
   wrap.innerHTML = `
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M4.6 13.5L7.85 4.8h1.55l3.25 8.7H11.1l-.7-1.95H6.85L6.15 13.5H4.6zm2.85-3.35h2.7L8.7 6.7h-.1l-1.15 3.45z" fill="currentColor"/>
-      <circle cx="13.35" cy="12.85" r="1.2" fill="currentColor"/>
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="aft-icon-svg">
+      <path d="M2.668 12.666V12.5a.665.665 0 0 1 1.33 0v.166c0 .711.001 1.205.033 1.588.03.376.087.587.167.745l.07.127c.177.288.43.522.732.676l.13.056c.144.051.333.089.615.112.384.031.877.031 1.588.031h5.333c.711 0 1.205 0 1.588-.031.376-.03.587-.088.745-.168l.127-.071c.288-.176.522-.43.676-.732l.056-.13c.051-.143.089-.333.112-.615.031-.383.031-.877.031-1.588V12.5a.665.665 0 0 1 1.33 0v.166c0 .69 0 1.246-.036 1.697-.033.4-.098.762-.242 1.098l-.066.143c-.266.52-.67.957-1.165 1.26l-.218.123c-.377.192-.783.27-1.241.308-.45.037-1.008.036-1.697.036H7.333c-.689 0-1.246.001-1.696-.036-.4-.033-.761-.097-1.098-.241l-.142-.067a3.17 3.17 0 0 1-1.262-1.165l-.122-.218c-.192-.377-.271-.783-.309-1.241-.036-.45-.036-1.008-.036-1.697m6.667-.166V4.94L7.137 7.137a.665.665 0 0 1-.94-.94L9.53 2.863l.101-.083a.666.666 0 0 1 .839.083l3.334 3.334a.666.666 0 0 1-.941.94L10.665 4.94v7.56a.666.666 0 0 1-1.33 0"/>
     </svg>
   `.trim();
   return wrap;
