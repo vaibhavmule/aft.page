@@ -55,6 +55,12 @@ describe("serving files", () => {
     expect(res.headers.get("x-aft-deploy")).toBe(out.deployId);
   });
 
+  it("allows the preview page to fetch source across subdomains", async () => {
+    await deployPaste("<h1>View source</h1>", "source-view");
+    const res = await fetchSite("source-view");
+    expect(res.headers.get("access-control-allow-origin")).toBe("*");
+  });
+
   it("serves nested index.html for a directory path", async () => {
     await call(
       uploadJson(

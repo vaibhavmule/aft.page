@@ -266,12 +266,21 @@ async function serveSite(
   slug: string,
   pathname: string,
 ): Promise<Response> {
+  if (request.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders() });
+  }
+
   if (RESERVED_SLUGS.has(slug)) {
     return json({ error: "reserved" }, 404);
   }
 
   const raw = await env.SITES.get(`site:${slug}`);
-  if (!raw) return new Response("Not found", { status: 404 });
+  if (!raw) {
+    return new Response("Not found", {
+      status: 404,
+      headers: corsHeaders(),
+    });
+  }
   const meta = JSON.parse(raw) as SiteMeta;
 
   let path = decodeURIComponent(pathname);
@@ -294,6 +303,9 @@ async function serveSite(
   headers.set("cache-control", "public, max-age=60");
   headers.set("x-aft-slug", slug);
   headers.set("x-aft-deploy", meta.deployId);
+  for (const [name, value] of corsHeaders()) {
+    headers.set(name, value);
+  }
   return new Response(obj.body, { status: 200, headers });
 }
 

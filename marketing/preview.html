@@ -15,9 +15,16 @@
       :root {
         --ink: #14110f;
         --paper: #f3efe6;
+        --mist: #e4ddd0;
         --signal: #c45c26;
         --signal-deep: #9a3f12;
         --quiet: #5c554c;
+        --code-bg: #1c1916;
+        --code-fg: #ebe6da;
+        --tok-tag: #e8a06a;
+        --tok-attr: #c9b896;
+        --tok-str: #9ec9a0;
+        --tok-comment: #8a8278;
       }
       * {
         box-sizing: border-box;
@@ -42,6 +49,7 @@
         background: var(--paper);
         border-bottom: 1.5px solid rgba(20, 17, 15, 0.12);
         flex-wrap: wrap;
+        flex-shrink: 0;
       }
       .brand {
         font-family: "Fraunces", serif;
@@ -69,11 +77,13 @@
         gap: 0.5rem;
         margin-left: auto;
         flex-wrap: wrap;
+        align-items: center;
       }
       .btn {
         appearance: none;
         display: inline-flex;
         align-items: center;
+        gap: 0.35rem;
         padding: 0.45rem 0.85rem;
         border-radius: 0.35rem;
         border: 1.5px solid transparent;
@@ -103,9 +113,133 @@
       .btn-claim:hover {
         background: var(--signal-deep);
       }
-      .frame-wrap {
+      .btn-icon {
+        padding: 0.4rem 0.55rem;
+        border-color: rgba(235, 230, 218, 0.22);
+        color: var(--code-fg);
+        background: transparent;
+      }
+      .btn-icon:hover {
+        border-color: rgba(235, 230, 218, 0.5);
+        background: rgba(235, 230, 218, 0.08);
+      }
+      .btn-icon:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .btn-icon svg {
+        width: 1rem;
+        height: 1rem;
+        display: block;
+      }
+
+      .workspace {
         flex: 1;
         min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .mobile-tabs {
+        display: none;
+        gap: 0.25rem;
+        padding: 0.45rem 1rem;
+        background: var(--mist);
+        border-bottom: 1px solid rgba(20, 17, 15, 0.1);
+        flex-shrink: 0;
+      }
+      .mobile-tabs button {
+        appearance: none;
+        flex: 1;
+        border: 0;
+        border-radius: 0.35rem;
+        padding: 0.45rem 0.75rem;
+        background: transparent;
+        color: var(--quiet);
+        cursor: pointer;
+        font: 600 0.85rem "Sora", sans-serif;
+      }
+      .mobile-tabs button[aria-pressed="true"] {
+        background: var(--ink);
+        color: var(--paper);
+      }
+      .split {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      }
+      body.code-hidden .split {
+        grid-template-columns: 1fr;
+      }
+      body.code-hidden .code-pane {
+        display: none;
+      }
+      .code-pane,
+      .preview-pane {
+        min-width: 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .code-pane {
+        background: var(--code-bg);
+        border-right: 1px solid rgba(235, 230, 218, 0.1);
+        color: var(--code-fg);
+      }
+      .code-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.45rem 0.75rem;
+        border-bottom: 1px solid rgba(235, 230, 218, 0.1);
+        flex-shrink: 0;
+      }
+      .code-toolbar .label {
+        font-size: 0.78rem;
+        color: var(--tok-comment);
+        margin-right: auto;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .code {
+        flex: 1;
+        min-height: 0;
+        margin: 0;
+        padding: 1rem 1.1rem;
+        overflow: auto;
+        background: var(--code-bg);
+        color: var(--code-fg);
+        font: 0.8rem/1.55 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        tab-size: 2;
+        white-space: pre;
+      }
+      .code .tok-tag {
+        color: var(--tok-tag);
+      }
+      .code .tok-attr {
+        color: var(--tok-attr);
+      }
+      .code .tok-str {
+        color: var(--tok-str);
+      }
+      .code .tok-comment {
+        color: var(--tok-comment);
+        font-style: italic;
+      }
+      .code-error {
+        flex: 1;
+        display: grid;
+        place-items: center;
+        padding: 2rem;
+        text-align: center;
+        color: var(--tok-comment);
+        font-size: 0.9rem;
+      }
+      .code-error a {
+        color: var(--tok-tag);
+      }
+      .preview-pane {
         background: #fff;
       }
       iframe {
@@ -122,8 +256,7 @@
         color: var(--quiet);
         padding: 2rem;
       }
-      .empty[hidden],
-      .frame-wrap[hidden] {
+      [hidden] {
         display: none !important;
       }
       .empty a {
@@ -142,9 +275,35 @@
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.2s ease;
+        z-index: 20;
       }
       .toast.show {
         opacity: 1;
+      }
+
+      @media (max-width: 800px) {
+        .mobile-tabs {
+          display: flex;
+        }
+        .split {
+          grid-template-columns: 1fr !important;
+        }
+        body.code-hidden .code-pane,
+        body.mobile-preview .code-pane {
+          display: none;
+        }
+        body.mobile-code .preview-pane {
+          display: none;
+        }
+        body.mobile-code .code-pane {
+          display: flex;
+        }
+        #toggle-code {
+          display: none;
+        }
+        .slug {
+          max-width: 55vw;
+        }
       }
     </style>
   </head>
@@ -153,15 +312,51 @@
       <a class="brand" href="/">aft<span>.</span>page</a>
       <span class="slug" id="slug"></span>
       <div class="actions">
+        <button class="btn btn-ghost" id="toggle-code" type="button" hidden>Hide code</button>
         <a class="btn btn-ghost" id="back" hidden>Back to chat</a>
         <button class="btn btn-ghost" id="copy">Copy link</button>
         <a class="btn btn-ghost" id="open" target="_blank" rel="noopener noreferrer">Open live</a>
         <button class="btn btn-claim" id="claim">Claim this site</button>
       </div>
     </div>
-    <div class="frame-wrap" id="wrap" hidden>
-      <iframe id="frame" title="Site preview" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+
+    <div class="workspace" id="workspace" hidden>
+      <div class="mobile-tabs" role="tablist" aria-label="View">
+        <button id="tab-code" type="button" role="tab" aria-pressed="true">Code</button>
+        <button id="tab-preview" type="button" role="tab" aria-pressed="false">Preview</button>
+      </div>
+      <div class="split">
+        <section class="code-pane" id="code-pane" aria-label="Source HTML">
+          <div class="code-toolbar">
+            <span class="label" id="code-status">Loading…</span>
+            <button class="btn btn-icon" id="copy-code" type="button" title="Copy code" aria-label="Copy code" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+            </button>
+            <button class="btn btn-icon" id="download-code" type="button" title="Download HTML" aria-label="Download HTML" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M12 3v12" />
+                <path d="m7 10 5 5 5-5" />
+                <path d="M5 21h14" />
+              </svg>
+            </button>
+          </div>
+          <pre class="code" id="code" aria-live="polite"></pre>
+          <div class="code-error" id="code-error" hidden>
+            <p>
+              Couldn’t load this site’s code.<br />
+              <a id="code-error-link" target="_blank" rel="noopener noreferrer">Open the live site instead</a>
+            </p>
+          </div>
+        </section>
+        <section class="preview-pane" id="preview-pane" aria-label="Live preview">
+          <iframe id="frame" title="Site preview" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+        </section>
+      </div>
     </div>
+
     <div class="empty" id="empty">
       <p>
         No site to preview.<br />
@@ -197,10 +392,23 @@
       const copyBtn = document.getElementById("copy");
       const openA = document.getElementById("open");
       const claimBtn = document.getElementById("claim");
-      const wrap = document.getElementById("wrap");
+      const toggleCodeBtn = document.getElementById("toggle-code");
+      const workspace = document.getElementById("workspace");
       const empty = document.getElementById("empty");
       const frame = document.getElementById("frame");
       const toast = document.getElementById("toast");
+      const codeEl = document.getElementById("code");
+      const codeStatus = document.getElementById("code-status");
+      const copyCodeBtn = document.getElementById("copy-code");
+      const downloadCodeBtn = document.getElementById("download-code");
+      const codeError = document.getElementById("code-error");
+      const codeErrorLink = document.getElementById("code-error-link");
+      const tabCode = document.getElementById("tab-code");
+      const tabPreview = document.getElementById("tab-preview");
+
+      let sourceHtml = "";
+      let codeVisible = true;
+      let mobileView = "code";
 
       function showToast(text) {
         toast.textContent = text;
@@ -217,14 +425,49 @@
         return "Back to chat";
       }
 
+      function escapeHtml(s) {
+        return s
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      /** Light HTML syntax coloring — tags, attrs, strings, comments. */
+      function highlightHtml(src) {
+        return escapeHtml(src)
+          .replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="tok-comment">$1</span>')
+          .replace(/(&lt;\/?[a-zA-Z][a-zA-Z0-9:-]*)/g, '<span class="tok-tag">$1</span>')
+          .replace(/\s([a-zA-Z_:][-a-zA-Z0-9_:]*)(=)/g, ' <span class="tok-attr">$1</span>$2')
+          .replace(/=("[\s\S]*?"|'[\s\S]*?')/g, '=<span class="tok-str">$1</span>');
+      }
+
+      function setCodeVisible(visible) {
+        codeVisible = visible;
+        document.body.classList.toggle("code-hidden", !visible);
+        toggleCodeBtn.textContent = visible ? "Hide code" : "Show code";
+        toggleCodeBtn.setAttribute("aria-pressed", String(visible));
+      }
+
+      function setMobileView(view) {
+        mobileView = view;
+        document.body.classList.toggle("mobile-code", view === "code");
+        document.body.classList.toggle("mobile-preview", view === "preview");
+        tabCode.setAttribute("aria-pressed", String(view === "code"));
+        tabPreview.setAttribute("aria-pressed", String(view === "preview"));
+      }
+
       if (m) {
-        const url = `https://${m[1].toLowerCase()}.aft.page/`;
         const slug = m[1].toLowerCase();
+        const url = `https://${slug}.aft.page/`;
         slugEl.textContent = url.replace(/^https:\/\//, "").replace(/\/$/, "");
         openA.href = url;
         frame.src = url;
-        wrap.hidden = false;
+        codeErrorLink.href = url;
+        workspace.hidden = false;
         empty.hidden = true;
+        toggleCodeBtn.hidden = false;
+        setCodeVisible(true);
+        setMobileView("code");
 
         if (chatFrom) {
           backA.hidden = false;
@@ -251,6 +494,26 @@
           localStorage.setItem(key, JSON.stringify(list.slice(0, 100)));
         } catch (_) {}
 
+        (async () => {
+          try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            sourceHtml = await response.text();
+            codeEl.innerHTML = highlightHtml(sourceHtml);
+            codeStatus.textContent = "index.html";
+            copyCodeBtn.disabled = false;
+            downloadCodeBtn.disabled = false;
+          } catch (_) {
+            codeStatus.textContent = "Source unavailable";
+            codeEl.hidden = true;
+            codeError.hidden = false;
+          }
+        })();
+
+        toggleCodeBtn.addEventListener("click", () => setCodeVisible(!codeVisible));
+        tabCode.addEventListener("click", () => setMobileView("code"));
+        tabPreview.addEventListener("click", () => setMobileView("preview"));
+
         copyBtn.addEventListener("click", async () => {
           try {
             await navigator.clipboard.writeText(url);
@@ -260,14 +523,35 @@
           }
         });
 
+        copyCodeBtn.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(sourceHtml);
+            showToast("Code copied");
+          } catch (_) {
+            showToast("Couldn’t copy");
+          }
+        });
+
+        downloadCodeBtn.addEventListener("click", () => {
+          if (!sourceHtml) return;
+          const blob = new Blob([sourceHtml], { type: "text/html;charset=utf-8" });
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = `${slug}.html`;
+          a.click();
+          URL.revokeObjectURL(a.href);
+          showToast("Downloaded");
+        });
+
         claimBtn.addEventListener("click", () => {
           showToast("Claiming with an account is coming soon — link saved on this device");
         });
       } else {
-        wrap.hidden = true;
+        workspace.hidden = true;
         empty.hidden = false;
         slugEl.textContent = "";
         backA.hidden = true;
+        toggleCodeBtn.hidden = true;
         copyBtn.style.display = "none";
         openA.style.display = "none";
         claimBtn.style.display = "none";
