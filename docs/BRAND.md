@@ -111,7 +111,9 @@ See [SHARING.md](./SHARING.md) and [STRATEGY.md](./STRATEGY.md).
 
 ## Implementation debt
 
-Marketing landing rebuilt to dark platform + control-plane copy + Prized-structure footer (Aug 2026). Keep SEO subpages (`paste-html/`, etc.) in sync when touching voice.
+Marketing landing rebuilt to dark platform craft (Fraunces wordmark, DM Sans,
+beacon orange, full-bleed product stage, harbor footer) — Aug 2026. Keep SEO
+subpages (`paste-html/`, etc.) in sync when touching voice.
 
 ## Files
 
