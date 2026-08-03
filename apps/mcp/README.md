@@ -1,14 +1,27 @@
 # aft.page MCP
 
-MCP server so **any agent** (Cursor, Claude Desktop, etc.) can deploy small
-software to a live `*.aft.page` URL — no account, no GitHub, no Vercel.
+MCP server so **any agent** can deploy small software to a live `*.aft.page`
+URL — no account required.
 
-## Tools
+## Live docs (start here)
+
+| Format | URL |
+| --- | --- |
+| HTML | https://aft.page/mcp |
+| Markdown (agents) | https://aft.page/mcp.md |
+| Agent index | https://aft.page/llms.txt |
+| API | https://api.aft.page |
+| Health | https://api.aft.page/health |
+
+Those pages document tools, schemas, HTTP fallbacks, limits, slugs, and examples
+in full. Prefer linking agents to **`mcp.md`** or **`llms.txt`**.
+
+## Tools (summary)
 
 | Tool | What it does |
 | --- | --- |
 | `deploy_html` | Publish one HTML document → `https://{slug}.aft.page` |
-| `deploy_files` | Publish multiple static files (SPA / Vite `dist`) |
+| `deploy_files` | Publish multiple static files (SPA / `dist`) |
 | `aft_health` | Ping the API |
 
 Also registers a prompt: `deploy_to_aft`.
@@ -21,9 +34,7 @@ npm install
 npm start   # stdio MCP server
 ```
 
-## Cursor
-
-Add to `~/.cursor/mcp.json` (or project `.cursor/mcp.json`):
+## MCP host config
 
 ```json
 {
@@ -39,16 +50,10 @@ Add to `~/.cursor/mcp.json` (or project `.cursor/mcp.json`):
 }
 ```
 
-Then restart Cursor / reload MCP. Ask the agent:
+Then reload the host. Ask:
 
 > Deploy this HTML to aft.page
-
-It should call `deploy_html` and return a live URL.
 
 Optional env:
 
 - `AFT_API_BASE` — override API (default `https://api.aft.page`)
-
-## Claude Desktop
-
-Same command/args shape under `mcpServers` in Claude's config JSON.

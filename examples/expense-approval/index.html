@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Expense approval — aft dogfood</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #0d1117;
+        --paper: #f6f7f9;
+        --line: #d8dde6;
+        --accent: #e85d1a;
+        --ok: #1a7f4b;
+        --warn: #7a3a12;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font: 15px/1.45 system-ui, sans-serif;
+        color: var(--ink);
+        background: var(--paper);
+        padding: 1.5rem;
+      }
+      main {
+        max-width: 32rem;
+        margin: 0 auto;
+      }
+      h1 { font-size: 1.35rem; margin: 0 0 0.35rem; }
+      .sub { color: #5c6570; margin: 0 0 1.25rem; font-size: 0.92rem; }
+      .card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 0.5rem;
+        padding: 1rem 1.1rem;
+        margin-bottom: 0.75rem;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: baseline;
+      }
+      .amt { font-weight: 650; }
+      .meta { color: #5c6570; font-size: 0.85rem; }
+      button {
+        border: none;
+        border-radius: 0.35rem;
+        padding: 0.45rem 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        background: var(--accent);
+        color: #fff;
+      }
+      button.ghost {
+        background: transparent;
+        color: var(--ink);
+        border: 1px solid var(--line);
+      }
+      .actions { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+      .banner {
+        background: #fff4ec;
+        border: 1px solid #f0c9ae;
+        color: var(--warn);
+        padding: 0.75rem 0.9rem;
+        border-radius: 0.45rem;
+        margin-bottom: 1rem;
+        font-size: 0.88rem;
+      }
+      .banner.ok {
+        background: #eef8f1;
+        border-color: #b7e0c4;
+        color: var(--ok);
+      }
+      .banner.err {
+        background: #fdeeee;
+        border-color: #f0c0c0;
+        color: #8a1f1f;
+      }
+      .done { color: var(--ok); font-weight: 600; font-size: 0.85rem; }
+      #list:empty::before {
+        content: "Loading via connector…";
+        display: block;
+        color: #5c6570;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Expense approval</h1>
+      <p class="sub">
+        Live list via connector capability
+        <code>expenses:read</code> — data stays on the connector host, not in aft cloud.
+      </p>
+      <div class="banner" id="status-banner">Checking connector…</div>
+      <div id="list"></div>
+    </main>
+    <script>
+      const API = "https://api.aft.page";
+      const slug = location.hostname.split(".")[0];
+      const banner = document.getElementById("status-banner");
+      const list = document.getElementById("list");
+
+      function setBanner(text, kind) {
+        banner.textContent = text;
+        banner.className = "banner" + (kind ? " " + kind : "");
+      }
+
+      function formatAmount(n, currency) {
+        if (currency === "INR") return "₹" + Number(n).toLocaleString("en-IN");
+        return String(n);
+      }
+
+      function renderExpenses(expenses) {
+        list.innerHTML = "";
+        if (!expenses.length) {
+          list.innerHTML = '<p class="meta">No expenses from connector.</p>';
+          return;
+        }
+        for (const e of expenses) {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML =
+            '<div class="row"><div><div></div><div class="meta"></div></div><div class="amt"></div></div>' +
+            '<div class="actions"><button type="button" class="approve">Approve</button>' +
+            '<button type="button" class="ghost deny">Deny</button></div>';
+          card.querySelector(".row div div").textContent = e.title || "Expense";
+          card.querySelector(".meta").textContent =
+            [e.submitter, e.team, e.when].filter(Boolean).join(" · ");
+          card.querySelector(".amt").textContent = formatAmount(
+            e.amount,
+            e.currency || "INR",
+          );
+          card.querySelector(".approve").addEventListener("click", () => {
+            card.querySelector(".actions").innerHTML =
+              '<span class="done">Approved · would notify Slack</span>';
+          });
+          card.querySelector(".deny").addEventListener("click", () => {
+            card.querySelector(".actions").innerHTML =
+              '<span class="meta">Denied</span>';
+          });
+          list.appendChild(card);
+        }
+      }
+
+      async function sleep(ms) {
+        return new Promise((r) => setTimeout(r, ms));
+      }
+
+      async function loadViaConnector() {
+        const statusRes = await fetch(`${API}/v1/sites/${slug}/connector`, {
+          credentials: "include",
+        });
+        if (statusRes.ok) {
+          const st = await statusRes.json();
+          if (st.capabilities?.status !== "approved") {
+            setBanner(
+              "Capabilities pending approval. Owner must POST /capabilities before live data.",
+              "err",
+            );
+          } else if (!st.online) {
+            setBanner(
+              "Connector offline. Run apps/connector with AFT_CONNECTOR_TOKEN for this slug.",
+              "err",
+            );
+          } else {
+            setBanner("Connector online — fetching expenses:read…", "ok");
+          }
+        }
+
+        const inv = await fetch(`${API}/v1/sites/${slug}/connector/invoke`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ capability: "expenses:read", action: "list" }),
+        });
+        const invBody = await inv.json().catch(() => ({}));
+        if (!inv.ok) {
+          setBanner(
+            invBody.hint || invBody.error || "Invoke failed (" + inv.status + ")",
+            "err",
+          );
+          list.innerHTML = "";
+          return;
+        }
+
+        const id = invBody.id;
+        const deadline = Date.now() + 35000;
+        while (Date.now() < deadline) {
+          const poll = await fetch(
+            `${API}/v1/sites/${slug}/connector/invokes/${id}`,
+            { credentials: "include" },
+          );
+          const body = await poll.json();
+          if (body.status === "done") {
+            const expenses = body.result?.expenses || [];
+            setBanner(
+              "Loaded " +
+                expenses.length +
+                " expense(s) through connector (local data).",
+              "ok",
+            );
+            renderExpenses(expenses);
+            return;
+          }
+          if (body.status === "error") {
+            setBanner(body.error || "Connector returned an error", "err");
+            list.innerHTML = "";
+            return;
+          }
+          await sleep(600);
+        }
+        setBanner(
+          "Timed out waiting for connector. Is the agent polling?",
+          "err",
+        );
+      }
+
+      loadViaConnector().catch((err) => {
+        setBanner(String(err), "err");
+      });
+    </script>
+  </body>
+</html>

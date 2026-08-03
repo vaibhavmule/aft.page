@@ -3,140 +3,258 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>aft.page — Happy birthday, Payal</title>
+    <title>aft.page — The secure home for AI-built apps</title>
     <meta
       name="description"
-      content="Happy birthday, Payal. aft.page was born on July 26, 2026 — on Payal’s birthday. Agents build small software; we make it live and shareable."
+      content="AI agents build the apps. aft.page gives them a live URL, company login, and rules for what they can access — on any cloud."
     />
     <link rel="canonical" href="https://aft.page/" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#09090b" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="aft.page" />
-    <meta property="og:title" content="aft.page — Happy birthday, Payal" />
+    <meta property="og:title" content="aft.page — The secure home for AI-built apps" />
     <meta
       property="og:description"
-      content="Born on July 26, 2026 — on Payal’s birthday. Agents build small software. We make it live and shareable."
+      content="Deploy from Claude, Codex, Cursor, and more. Live links in seconds. Company login and approvals when you need them."
     />
     <meta property="og:url" content="https://aft.page/" />
     <meta property="og:image" content="https://aft.page/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Happy birthday, Payal — aft.page born July 26, 2026" />
+    <meta property="og:image:alt" content="aft.page — the secure home for AI-built apps" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="aft.page — Happy birthday, Payal" />
+    <meta name="twitter:title" content="aft.page — The secure home for AI-built apps" />
     <meta
       name="twitter:description"
-      content="Born on July 26, 2026 — on Payal’s birthday."
+      content="AI agents build the apps. aft.page makes them live, shared, and safe for work."
     />
     <meta name="twitter:image" content="https://aft.page/og.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Sora:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="site">
-      <header class="hero">
-        <div class="hero-copy">
-          <p class="celebrate">Happy birthday, Payal</p>
-          <h1 class="brand">aft<span>.</span>page</h1>
-          <p class="lede">Born on July 26, 2026 — on Payal’s birthday.</p>
-          <p class="support">
-            Agents build small software. We make it live and shareable — without
-            GitHub ceremony or an AWS console.
-          </p>
-          <div class="cta">
-            <a class="btn btn-primary" href="#paste">Paste HTML → live URL</a>
-            <a
-              class="btn btn-ghost"
-              href="https://github.com/vaibhavmule/aft"
-              rel="noopener noreferrer"
-              >OSS CLI on GitHub</a
-            >
+    <nav class="topnav" aria-label="Primary">
+      <a class="topnav-brand" href="/">aft<span>.</span>page</a>
+      <div class="topnav-links">
+        <a href="#pillars">Product</a>
+        <a href="/mcp">MCP</a>
+        <a href="/inventory">Your sites</a>
+        <a class="topnav-account" href="/login">Log in</a>
+        <a href="https://github.com/vaibhavmule/aft">CLI</a>
+        <a class="topnav-cta" href="/mcp">Deploy <span aria-hidden="true">↗</span></a>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div class="hero-inner">
+        <p class="eyebrow">The secure home for AI-built apps</p>
+        <h1 class="hero-title">
+          AI agents build the apps. aft.page makes them live, shared, and safe
+          for work.
+        </h1>
+        <p class="support">
+          Works with Claude, Codex, Cursor, and more. Get a link in seconds —
+          then add company login, approvals, and your own data when you’re ready.
+        </p>
+        <div class="cta">
+          <a class="btn btn-primary" href="/mcp">Deploy with MCP</a>
+          <a class="btn btn-ghost" href="#try">Try a live URL</a>
+        </div>
+      </div>
+
+      <div class="hero-stage" aria-hidden="true">
+        <div class="terminal">
+          <div class="terminal-bar">
+            <span class="terminal-dot"></span>
+            <span class="terminal-dot"></span>
+            <span class="terminal-dot"></span>
+            <span class="terminal-title">deploy.sh</span>
+          </div>
+          <div class="terminal-body">
+            <pre class="terminal-line" style="--chars: 39; --delay: 0.2s">$ curl -X POST api.aft.page/v1/deploy \</pre>
+            <pre class="terminal-line" style="--chars: 36; --delay: 1.15s">  --data '&lt;h1&gt;shipped by agent&lt;/h1&gt;'</pre>
+            <pre class="terminal-out" style="--chars: 26; --delay: 2.1s">→ <span class="out-ok">https://shipped.aft.page</span></pre>
+
+            <div class="terminal-gate" style="--delay: 2.75s">
+              <p class="gate-label">before it goes live</p>
+              <p class="gate-body">this app wants to:</p>
+              <ul class="gate-list">
+                <li>read <code>customers</code></li>
+                <li><code>POST /refunds</code></li>
+                <li>message <code>Slack</code></li>
+              </ul>
+              <p class="gate-actions">
+                <span class="gate-approve">[ approve ]</span>
+                <span class="gate-deny">deny</span>
+                <span class="cursor" style="--delay: 3.2s"></span>
+              </p>
+            </div>
           </div>
         </div>
+      </div>
+    </header>
 
-        <section class="paste" id="paste" aria-labelledby="paste-title">
-          <h2 id="paste-title">Paste HTML. Get a link.</h2>
-          <p class="paste-lede">
-            No Vercel account. No GitHub. Copy what Claude (or you) made — we
-            mint a name and put it live on <code>*.aft.page</code>.
+    <main>
+      <section class="pillars" id="pillars">
+        <p class="section-tag">$ ls capabilities/</p>
+        <h2 class="section-title">What you get</h2>
+        <p class="section-lede">
+          A live URL isn’t enough anymore. aft.page is where AI-built apps get
+          a home your company can actually <strong>trust</strong>.
+        </p>
+        <ol class="pillar-list">
+          <li>
+            <h3>Deploy fast</h3>
+            <p>
+              From any agent — or paste HTML. Live
+              <code>*.aft.page</code> link in seconds.
+            </p>
+          </li>
+          <li>
+            <h3>Share like a Doc</h3>
+            <p>
+              Google or Microsoft login. Invite a teammate. Revoke access when
+              you’re done.
+            </p>
+          </li>
+          <li>
+            <h3>Approve access</h3>
+            <p>
+              See what the app wants — data, APIs, Slack — and approve before it
+              runs. No surprises.
+            </p>
+          </li>
+          <li>
+            <h3>Keep data yours</h3>
+            <p>
+              Connect to systems inside your network without handing us the keys.
+              Run on our cloud today; yours when you need it.
+            </p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="try" id="try" aria-labelledby="try-title">
+        <div class="try-copy">
+          <p class="eyebrow">$ paste-html</p>
+          <h2 id="try-title">Get a live URL</h2>
+          <p>
+            Paste HTML or drop files — same path agents use via
+            <a href="/mcp">MCP</a>. Add login and approvals as you grow.
           </p>
-          <form class="paste-form" id="paste-form">
-            <label class="sr-only" for="html-input">HTML</label>
-            <textarea
-              id="html-input"
-              name="html"
-              rows="12"
-              spellcheck="false"
-              autocomplete="off"
-              placeholder="<!DOCTYPE html>&#10;<html>&#10;  <body>&#10;    <h1>Hello</h1>&#10;  </body>&#10;</html>"
-              required
-            ></textarea>
-            <div class="paste-actions">
-              <button type="submit" class="btn btn-primary" id="paste-submit">
-                Generate URL
-              </button>
-              <p class="paste-status" id="paste-status" role="status" aria-live="polite"></p>
+        </div>
+
+        <form class="paste-form" id="paste-form">
+          <label class="sr-only" for="html-input">HTML from your agent</label>
+          <textarea
+            id="html-input"
+            name="html"
+            rows="4"
+            spellcheck="false"
+            autocomplete="off"
+            placeholder="Paste the HTML your agent just wrote…"
+          ></textarea>
+
+          <div class="paste-or"><span>or</span></div>
+
+          <div
+            class="paste-drop"
+            id="paste-drop"
+            role="button"
+            tabindex="0"
+            aria-label="Upload HTML or site files. Drop files here or click to browse. Up to 50 files, 5 MB total."
+          >
+            <input
+              type="file"
+              id="file-input"
+              multiple
+              accept=".html,.htm,.css,.js,.json,.svg,.png,.jpg,.jpeg,.gif,.webp,.ico,.txt,.woff,.woff2"
+              hidden
+            />
+            <div class="paste-drop-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                />
+              </svg>
             </div>
-            <div class="paste-result" id="paste-result" hidden>
-              <a id="paste-url" href="#" target="_blank" rel="noopener noreferrer"></a>
-              <button type="button" class="btn btn-ghost" id="paste-copy">
-                Copy link
-              </button>
-            </div>
-          </form>
-        </section>
-      </header>
+            <p class="paste-drop-title" id="paste-drop-title">Drop files here</p>
+            <p class="paste-hint">Drag &amp; drop or <span>click to browse</span></p>
+            <p class="paste-drop-meta">
+              <code>.html</code> or a folder · up to 50 files · 5 MB
+            </p>
+          </div>
 
-      <main class="sections">
-        <section class="block">
-          <h2>What it is</h2>
-          <p>
-            A home for throwaway and team-sized tools: one-pagers, workflows,
-            prototypes. Built in Claude, Cursor, or ChatGPT — then put on the
-            internet in a minute.
-          </p>
-        </section>
+          <ul class="paste-files" id="file-list" hidden></ul>
 
-        <section class="block">
-          <h2>Not Lovable</h2>
-          <p>
-            We don’t generate your app. We deploy and share what you (or your
-            agent) already built — closer to “paste → live link” than another
-            builder.
-          </p>
-        </section>
+          <div class="paste-actions">
+            <p class="paste-status" id="paste-status" role="status" aria-live="polite"></p>
+            <button type="submit" class="btn btn-primary" id="paste-submit">
+              Get live URL
+            </button>
+          </div>
+          <div class="paste-result" id="paste-result" hidden>
+            <a id="paste-url" href="#" target="_blank" rel="noopener noreferrer"></a>
+          </div>
+        </form>
+      </section>
+    </main>
 
-        <section class="block">
-          <h2>Already on AWS?</h2>
-          <p>
-            The open-source
-            <a href="https://github.com/vaibhavmule/aft" rel="noopener noreferrer"
-              >aft</a
-            >
-            CLI deploys static sites and Next.js into <em>your</em> account —
-            Vercel-like DX, AWS ownership. This page was deployed with it.
-          </p>
-        </section>
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-top">
+          <div class="footer-brand-block">
+            <a class="footer-mark" href="/" aria-label="aft.page home">
+              <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                <circle cx="16" cy="16" r="3" fill="currentColor" />
+                <circle cx="16" cy="6" r="2" fill="currentColor" opacity="0.9" />
+                <circle cx="16" cy="26" r="2" fill="currentColor" opacity="0.9" />
+                <circle cx="6" cy="16" r="2" fill="currentColor" opacity="0.9" />
+                <circle cx="26" cy="16" r="2" fill="currentColor" opacity="0.9" />
+                <circle cx="9" cy="9" r="1.5" fill="currentColor" opacity="0.7" />
+                <circle cx="23" cy="9" r="1.5" fill="currentColor" opacity="0.7" />
+                <circle cx="9" cy="23" r="1.5" fill="currentColor" opacity="0.7" />
+                <circle cx="23" cy="23" r="1.5" fill="currentColor" opacity="0.7" />
+              </svg>
+              <span class="footer-wordmark">aft<span>.</span>page</span>
+            </a>
+            <p class="footer-tagline">
+              The secure home for AI-built apps.<br />
+              Live links. Company login. Clear approvals.
+            </p>
+          </div>
+          <nav class="footer-nav" aria-label="Footer">
+            <a href="#pillars">Product</a>
+            <a href="/mcp">MCP</a>
+            <a href="https://github.com/vaibhavmule/aft">CLI</a>
+            <a href="mailto:hello@aft.page">Contact</a>
+            <a class="footer-cta" href="/mcp">Deploy <span aria-hidden="true">↗</span></a>
+          </nav>
+        </div>
+        <p class="footer-status">
+          <span class="status-dot" aria-hidden="true"></span>
+          all systems live
+          <span class="footer-sep">·</span>
+          <code>*.aft.page</code> on Cloudflare
+        </p>
+        <div class="footer-bottom">
+          <div class="footer-legal">
+            <a href="/privacy/">Privacy</a>
+            <a href="/terms/">Terms</a>
+          </div>
+          <p class="footer-copy">© 2026 aft.page</p>
+        </div>
+      </div>
+    </footer>
 
-        <section class="block">
-          <h2>Why aft?</h2>
-          <p>
-            As in <em>after</em> Vercel — and the <em>aft</em> of a ship: your
-            infra, your cloud. Short enough to own, punchy as a CLI:
-            <code>aft deploy</code>.
-          </p>
-        </section>
-      </main>
-
-      <footer class="footer">
-        <p>Paste → <code>*.aft.page</code> · OSS CLI for your own cloud</p>
-      </footer>
-    </div>
-    <script src="./confetti.js" defer></script>
     <script src="./deploy.js" defer></script>
   </body>
 </html>

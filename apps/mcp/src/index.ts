@@ -65,11 +65,11 @@ server.registerTool(
             type: "text" as const,
             text: [
               `Live: ${result.url}`,
-              `Manage/claim: https://aft.page/preview?url=${encodeURIComponent(result.url)}`,
+              `Manage/claim: https://aft.page/preview?url=${encodeURIComponent(result.url)}&token=${encodeURIComponent(result.editToken)}`,
+              `editToken: ${result.editToken} (keep secret — redeploy + claim)`,
               `slug: ${result.slug}`,
               `deploy: ${result.deployId}`,
               `files: ${result.files}`,
-              `storage: ${result.storage}`,
             ].join("\n"),
           },
         ],
@@ -134,11 +134,11 @@ server.registerTool(
             type: "text" as const,
             text: [
               `Live: ${result.url}`,
-              `Manage/claim: https://aft.page/preview?url=${encodeURIComponent(result.url)}`,
+              `Manage/claim: https://aft.page/preview?url=${encodeURIComponent(result.url)}&token=${encodeURIComponent(result.editToken)}`,
+              `editToken: ${result.editToken} (keep secret — redeploy + claim)`,
               `slug: ${result.slug}`,
               `deploy: ${result.deployId}`,
               `files: ${result.files}`,
-              `storage: ${result.storage}`,
             ].join("\n"),
           },
         ],
@@ -158,7 +158,7 @@ server.registerTool(
   "aft_health",
   {
     title: "Check aft.page API",
-    description: "Ping the aft.page deploy API and report storage mode (r2+kv).",
+    description: "Ping the aft.page deploy API.",
     inputSchema: {},
   },
   async () => {
@@ -168,7 +168,7 @@ server.registerTool(
         content: [
           {
             type: "text" as const,
-            text: `ok=${h.ok} storage=${h.storage ?? "unknown"} api=${apiBase}`,
+            text: `ok=${h.ok} api=${apiBase}`,
           },
         ],
         structuredContent: { ...h, apiBase },

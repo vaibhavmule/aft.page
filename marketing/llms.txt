@@ -1,0 +1,43 @@
+# aft.page
+
+> Your agent made the page. aft.page gets you the live URL.
+
+AI agents build small software. aft.page turns it into a shareable HTTPS link in seconds — no account, no website builder, no repository ceremony.
+
+The name comes from the aft of a ship (the back of the vessel).
+
+## Primary docs for agents
+
+- MCP + API (Markdown, preferred): https://aft.page/mcp.md
+- MCP + API (HTML): https://aft.page/mcp
+- This index: https://aft.page/llms.txt
+
+## Endpoints
+
+- API root: https://api.aft.page
+- Health: https://api.aft.page/health
+- Deploy: POST https://api.aft.page/v1/deploy
+- Redeploy: PATCH https://api.aft.page/v1/deploy?slug={slug} (header X-Aft-Edit-Token)
+- Claim: POST https://api.aft.page/v1/claim/start · GET /v1/claim/verify
+- Site info: GET https://api.aft.page/v1/sites/{slug}
+- Serve: https://{slug}.aft.page/
+- Preview: https://aft.page/preview?url=https://{slug}.aft.page&token={editToken}
+- Human paste UI: https://aft.page/paste-html/
+- SEO / human landings (same product): https://aft.page/paste-html/ · /host-html/ · /share-html/ · /upload-html/
+
+## MCP tools
+
+- deploy_html — publish one HTML document
+- deploy_files — publish multiple static files (include index.html)
+- aft_health — ping the API
+- prompt: deploy_to_aft
+
+## Limits
+
+50 files · 2 MB / file · 5 MB total · anonymous deploy · editToken on each deploy · email claim on preview
+
+## Optional
+
+- Open-source CLI (bring your own cloud): https://github.com/vaibhavmule/aft — not a hosted aft.page CLI
+- Chrome extension / paste form for humans without MCP
+- SEO landings: /paste-html/ · /host-html/ · /share-html/ · /upload-html/

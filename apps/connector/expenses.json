@@ -1,0 +1,29 @@
+[
+  {
+    "id": "1",
+    "title": "Team offsite lunch",
+    "amount": 4280,
+    "currency": "INR",
+    "submitter": "Priya",
+    "team": "Marketing",
+    "when": "yesterday"
+  },
+  {
+    "id": "2",
+    "title": "AWS sandbox credits",
+    "amount": 12000,
+    "currency": "INR",
+    "submitter": "Arjun",
+    "team": "Eng",
+    "when": "2 days ago"
+  },
+  {
+    "id": "3",
+    "title": "Design tool seats",
+    "amount": 8900,
+    "currency": "INR",
+    "submitter": "Maya",
+    "team": "Design",
+    "when": "today"
+  }
+]

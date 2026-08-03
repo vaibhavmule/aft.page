@@ -3,8 +3,10 @@
 Adds an **aft icon** beside Copy on ChatGPT / Claude artifact headers, plus
 **Deploy to aft.page** inside Claude's Copy dropdown (next to Download as HTML).
 
-One click → `POST https://api.aft.page/v1/deploy` → opens
-`https://{slug}.aft.page`.
+One click → `POST https://api.aft.page/v1/deploy` (header `X-Aft-Client: extension`)
+→ opens the **preview shell**:
+`https://aft.page/preview?url=https://{slug}.aft.page`
+(live site remains `https://{slug}.aft.page`).
 
 No copy. No paste. No account.
 
@@ -21,5 +23,5 @@ No copy. No paste. No account.
 
 - Icon has no text label in the DOM (avoids scraping `Deploy` into published HTML)
 - Rescans after fullscreen / minimize / resize — Claude remounts the artifact chrome
-- Slug comes from `<title>` / `<h1>` (same as the landing paste UI)
+- Slug hint comes from `<title>` / `<h1>` client-side (passed as `?slug=`) — same as the landing paste UI
 - ChatGPT and Claude DOMs change often — if the icon disappears, retarget selectors in `content.js`

@@ -98,7 +98,10 @@ async function publishHtml(html) {
     : API;
   const res = await fetch(url, {
     method: "POST",
-    headers: { "content-type": "text/html; charset=utf-8" },
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "x-aft-client": "extension",
+    },
     body: clean,
   });
   const data = await res.json().catch(() => ({}));
@@ -109,9 +112,10 @@ async function publishHtml(html) {
 }
 
 /** Land on the aft.page preview shell (claim / copy / manage) not the raw site. */
-function previewUrl(liveUrl) {
+function previewUrl(liveUrl, editToken) {
   const u = new URL("https://aft.page/preview");
   u.searchParams.set("url", liveUrl);
+  if (editToken) u.searchParams.set("token", editToken);
   // So preview can offer “Back to chat” → edit → redeploy.
   try {
     const chat = location.href;
@@ -147,8 +151,8 @@ function createIconButton(getHtml) {
     try {
       const data = await publishHtml(html);
       setIconState(btn, "ok");
-      if (opened) opened.location.replace(previewUrl(data.url));
-      else window.open(previewUrl(data.url), "_blank", "noopener,noreferrer");
+      if (opened) opened.location.replace(previewUrl(data.url, data.editToken));
+      else window.open(previewUrl(data.url, data.editToken), "_blank", "noopener,noreferrer");
       setTimeout(() => setIconState(btn, "idle"), 2200);
     } catch (err) {
       console.error("[aft.page]", err);
@@ -189,8 +193,8 @@ function createMenuItem(getHtml) {
     try {
       const data = await publishHtml(html);
       btn.textContent = "Live — opening…";
-      if (opened) opened.location.replace(previewUrl(data.url));
-      else window.open(previewUrl(data.url), "_blank", "noopener,noreferrer");
+      if (opened) opened.location.replace(previewUrl(data.url, data.editToken));
+      else window.open(previewUrl(data.url, data.editToken), "_blank", "noopener,noreferrer");
     } catch (err) {
       console.error("[aft.page]", err);
       opened?.close();

@@ -1,8 +1,5 @@
 /**
  * aft.page Worker — deploy API + *.aft.page static serve.
- *
- * Site files live in R2; KV holds the slug → deploy pointer. Reads fall back
- * to KV so sites uploaded before R2 was enabled still serve.
  */
 {
   "$schema": "node_modules/wrangler/config-schema.json",
@@ -28,6 +25,25 @@
     {
       "binding": "BUCKET",
       "bucket_name": "aft-page-sites"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "aft-page",
+      "database_id": "49430d21-12f7-44dd-bd74-fb649148b34c",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "send_email": [
+    {
+      "name": "EMAIL"
+    }
+  ],
+  "analytics_engine_datasets": [
+    {
+      "binding": "METRICS",
+      "dataset": "aft_page_metrics"
     }
   ],
   "routes": [

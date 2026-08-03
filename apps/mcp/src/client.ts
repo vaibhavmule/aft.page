@@ -9,7 +9,7 @@ export type DeployResult = {
   url: string;
   files: number;
   bytes: number;
-  storage: string;
+  editToken: string;
 };
 
 export type DeployError = {
@@ -21,11 +21,10 @@ export type DeployError = {
 
 export async function health(apiBase = DEFAULT_API): Promise<{
   ok: boolean;
-  storage?: string;
 }> {
   const res = await fetch(`${apiBase}/health`);
   if (!res.ok) throw new Error(`health check failed (${res.status})`);
-  return (await res.json()) as { ok: boolean; storage?: string };
+  return (await res.json()) as { ok: boolean };
 }
 
 export async function deployHtml(
@@ -38,7 +37,10 @@ export async function deployHtml(
     : `${apiBase}/v1/deploy`;
   const res = await fetch(url, {
     method: "POST",
-    headers: { "content-type": "text/html; charset=utf-8" },
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "x-aft-client": "mcp",
+    },
     body: html,
   });
   const body = (await res.json()) as DeployResult | DeployError;
@@ -59,7 +61,10 @@ export async function deployFiles(
     : `${apiBase}/v1/deploy`;
   const res = await fetch(url, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      "x-aft-client": "mcp",
+    },
     body: JSON.stringify({ files }),
   });
   const body = (await res.json()) as DeployResult | DeployError;

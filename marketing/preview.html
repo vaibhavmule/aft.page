@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Preview — aft.page</title>
     <meta name="robots" content="noindex" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#14110f" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -143,6 +147,95 @@
       .btn-claim:hover {
         background: var(--signal-deep);
       }
+      .claim-dialog {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        background: rgba(13, 17, 23, 0.55);
+        z-index: 50;
+      }
+      .claim-dialog.open {
+        display: flex;
+      }
+      .claim-panel {
+        width: min(26rem, 100%);
+        padding: 1.35rem 1.4rem 1.25rem;
+        border-radius: 0.5rem;
+        background: var(--paper);
+        color: var(--ink);
+        box-shadow: 0 20px 50px rgba(13, 17, 23, 0.25);
+      }
+      .claim-panel h2 {
+        margin: 0 0 0.5rem;
+        font: 600 1.1rem "DM Sans", system-ui, sans-serif;
+      }
+      .claim-panel p {
+        margin: 0 0 1rem;
+        font-size: 0.92rem;
+        color: var(--quiet);
+      }
+      .claim-panel input[type="email"],
+      .claim-panel select {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.65rem 0.75rem;
+        border: 1.5px solid rgba(13, 17, 23, 0.2);
+        border-radius: 0.35rem;
+        font: 0.95rem "DM Sans", system-ui, sans-serif;
+        margin-bottom: 0.85rem;
+        background: #fff;
+      }
+      .claim-panel .claim-actions {
+        display: flex;
+        gap: 0.65rem;
+        justify-content: flex-end;
+      }
+      .invite-list {
+        list-style: none;
+        margin: 0 0 1rem;
+        padding: 0;
+        max-height: 10rem;
+        overflow: auto;
+        font-size: 0.88rem;
+      }
+      .invite-list li {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid rgba(13, 17, 23, 0.08);
+      }
+      .invite-list .meta {
+        color: var(--quiet);
+        margin-left: auto;
+        font-size: 0.78rem;
+      }
+      .invite-list button {
+        border: none;
+        background: transparent;
+        color: var(--signal-deep);
+        cursor: pointer;
+        font-size: 0.78rem;
+        text-decoration: underline;
+      }
+      .cap-banner {
+        margin: 0;
+        padding: 0.75rem 1.1rem;
+        background: #fff4ec;
+        border-bottom: 1px solid #f0c9ae;
+        color: #7a3a12;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.65rem 1rem;
+        font-size: 0.88rem;
+      }
+      .cap-banner[hidden] { display: none !important; }
+      .cap-banner p { margin: 0; flex: 1; min-width: 12rem; }
+      .cap-banner strong { font-size: 0.82rem; }
       .btn-icon {
         padding: 0.4rem 0.55rem;
         border-color: rgba(235, 230, 218, 0.22);
@@ -320,7 +413,7 @@
         <button class="btn btn-ghost" id="copy">Copy link</button>
         <a class="btn btn-ghost" id="open" target="_blank" rel="noopener noreferrer">Open live</a>
         <div class="share-cluster" id="share-cluster">
-          <div class="visibility-toggle" id="visibility-toggle" role="group" aria-label="Site visibility (coming soon)">
+          <div class="visibility-toggle" id="visibility-toggle" role="group" aria-label="Site visibility">
             <button id="vis-public" type="button" aria-pressed="true">Public</button>
             <button id="vis-private" type="button" aria-pressed="false">Private</button>
           </div>
@@ -371,10 +464,49 @@
     </div>
     <div class="toast" id="toast"></div>
 
+    <div class="cap-banner" id="cap-banner" hidden>
+      <strong>Capabilities pending approval</strong>
+      <p id="cap-summary"></p>
+      <button type="button" class="btn btn-claim" id="cap-approve">Approve</button>
+    </div>
+
+    <div class="claim-dialog" id="claim-dialog" role="dialog" aria-modal="true" aria-labelledby="claim-title" hidden>
+      <div class="claim-panel">
+        <h2 id="claim-title">Claim this site</h2>
+        <p id="claim-desc">We’ll email you a link to own <strong id="claim-slug-label"></strong>.</p>
+        <input type="email" id="claim-email" placeholder="you@company.com" autocomplete="email" />
+        <div class="claim-actions">
+          <button class="btn btn-ghost" type="button" id="claim-cancel">Cancel</button>
+          <button class="btn btn-claim" type="button" id="claim-send">Send link</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="claim-dialog" id="invite-dialog" role="dialog" aria-modal="true" aria-labelledby="invite-title" hidden>
+      <div class="claim-panel">
+        <h2 id="invite-title">Invite people</h2>
+        <p>Google Doc–style access for this private site.</p>
+        <ul class="invite-list" id="invite-list"></ul>
+        <input type="email" id="invite-email" placeholder="colleague@company.com" autocomplete="email" />
+        <select id="invite-role" aria-label="Access level">
+          <option value="view">Can view</option>
+          <option value="edit">Can edit</option>
+        </select>
+        <div class="claim-actions">
+          <button class="btn btn-ghost" type="button" id="invite-cancel">Done</button>
+          <button class="btn btn-claim" type="button" id="invite-send">Send invite</button>
+        </div>
+      </div>
+    </div>
+
     <script>
       const params = new URLSearchParams(location.search);
       const raw = params.get("url") || "";
       const fromRaw = params.get("from") || "";
+      const editToken = params.get("token") || "";
+      const claimedParam = params.get("claimed") === "1";
+      const invitedParam = params.get("invited") === "1";
+      const API = "https://api.aft.page";
 
       // Only preview our own tenant sites — never arbitrary URLs.
       const m = raw.match(/^https:\/\/([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\.aft\.page\/?$/i);
@@ -402,6 +534,20 @@
       const visPublic = document.getElementById("vis-public");
       const visPrivate = document.getElementById("vis-private");
       const inviteBtn = document.getElementById("invite");
+      const claimDialog = document.getElementById("claim-dialog");
+      const claimEmail = document.getElementById("claim-email");
+      const claimSend = document.getElementById("claim-send");
+      const claimCancel = document.getElementById("claim-cancel");
+      const claimSlugLabel = document.getElementById("claim-slug-label");
+      const inviteDialog = document.getElementById("invite-dialog");
+      const inviteEmail = document.getElementById("invite-email");
+      const inviteRole = document.getElementById("invite-role");
+      const inviteSend = document.getElementById("invite-send");
+      const inviteCancel = document.getElementById("invite-cancel");
+      const inviteList = document.getElementById("invite-list");
+      const capBanner = document.getElementById("cap-banner");
+      const capSummary = document.getElementById("cap-summary");
+      const capApprove = document.getElementById("cap-approve");
       const viewToggle = document.getElementById("view-toggle");
       const previewTab = document.getElementById("preview-tab");
       const codeTab = document.getElementById("code-tab");
@@ -418,8 +564,12 @@
 
       let sourceHtml = "";
       let sourceRequested = false;
-      // UI-only stub — sites are not actually private server-side yet.
       let visibility = "public";
+      let isOwner = false;
+      let siteMembers = [];
+      let siteInvites = [];
+      let slug = "";
+      let url = "";
 
       function showToast(text) {
         toast.textContent = text;
@@ -427,8 +577,157 @@
         setTimeout(() => toast.classList.remove("show"), 2200);
       }
 
-      function comingSoonClaimFirst() {
-        showToast("Coming soon — claim a site first");
+      function tokenForSlug(siteSlug) {
+        if (editToken) return editToken;
+        try {
+          const map = JSON.parse(localStorage.getItem("aft.editTokens") || "{}");
+          return map[siteSlug] || "";
+        } catch (_) {
+          return "";
+        }
+      }
+
+      function saveToken(siteSlug, token) {
+        if (!token) return;
+        try {
+          const map = JSON.parse(localStorage.getItem("aft.editTokens") || "{}");
+          map[siteSlug] = token;
+          localStorage.setItem("aft.editTokens", JSON.stringify(map));
+        } catch (_) {}
+      }
+
+      if (editToken && m) {
+        saveToken(m[1].toLowerCase(), editToken);
+      }
+
+      async function refreshSiteInfo(siteSlug) {
+        try {
+          const res = await fetch(`${API}/v1/sites/${encodeURIComponent(siteSlug)}`, {
+            credentials: "include",
+          });
+          if (!res.ok) return null;
+          return await res.json();
+        } catch (_) {
+          return null;
+        }
+      }
+
+      function setClaimOwned() {
+        isOwner = true;
+        claimBtn.textContent = "Owned";
+        claimBtn.disabled = true;
+        claimBtn.classList.remove("btn-claim");
+        claimBtn.classList.add("btn-ghost");
+      }
+
+      function openClaimDialog() {
+        const token = tokenForSlug(slug);
+        if (!token) {
+          showToast("Need the deploy link with token to claim");
+          return;
+        }
+        claimSlugLabel.textContent = slug + ".aft.page";
+        claimDialog.hidden = false;
+        claimDialog.classList.add("open");
+        claimEmail.focus();
+      }
+
+      function closeClaimDialog() {
+        claimDialog.hidden = true;
+        claimDialog.classList.remove("open");
+      }
+
+      function renderInviteList() {
+        inviteList.innerHTML = "";
+        for (const mem of siteMembers) {
+          const li = document.createElement("li");
+          li.innerHTML = `<span></span><span class="meta"></span><button type="button">Remove</button>`;
+          li.querySelector("span").textContent = mem.email;
+          li.querySelector(".meta").textContent = mem.role;
+          li.querySelector("button").addEventListener("click", async () => {
+            const res = await fetch(
+              `${API}/v1/sites/${encodeURIComponent(slug)}/members/${encodeURIComponent(mem.userId)}`,
+              { method: "DELETE", credentials: "include" },
+            );
+            if (!res.ok) {
+              showToast("Couldn’t remove");
+              return;
+            }
+            showToast("Removed");
+            await applySiteInfo(await refreshSiteInfo(slug));
+          });
+          inviteList.appendChild(li);
+        }
+        for (const inv of siteInvites) {
+          const li = document.createElement("li");
+          li.innerHTML = `<span></span><span class="meta"></span><button type="button">Revoke</button>`;
+          li.querySelector("span").textContent = inv.email;
+          li.querySelector(".meta").textContent = `pending · ${inv.role}`;
+          li.querySelector("button").addEventListener("click", async () => {
+            const res = await fetch(
+              `${API}/v1/sites/${encodeURIComponent(slug)}/invites/${encodeURIComponent(inv.id)}`,
+              { method: "DELETE", credentials: "include" },
+            );
+            if (!res.ok) {
+              showToast("Couldn’t revoke");
+              return;
+            }
+            showToast("Invite revoked");
+            await applySiteInfo(await refreshSiteInfo(slug));
+          });
+          inviteList.appendChild(li);
+        }
+        if (!siteMembers.length && !siteInvites.length) {
+          const li = document.createElement("li");
+          li.innerHTML = `<span class="meta">No one invited yet</span>`;
+          inviteList.appendChild(li);
+        }
+      }
+
+      function openInviteDialog() {
+        if (!isOwner) {
+          showToast("Claim the site first");
+          return;
+        }
+        renderInviteList();
+        inviteDialog.hidden = false;
+        inviteDialog.classList.add("open");
+        inviteEmail.focus();
+      }
+
+      function closeInviteDialog() {
+        inviteDialog.hidden = true;
+        inviteDialog.classList.remove("open");
+      }
+
+      async function applySiteInfo(info) {
+        if (!info) return;
+        if (info.owner) setClaimOwned();
+        else if (info.owned) {
+          claimBtn.textContent = "Claimed";
+          claimBtn.disabled = true;
+          claimBtn.classList.remove("btn-claim");
+          claimBtn.classList.add("btn-ghost");
+        }
+        if (info.visibility) setVisibility(info.visibility);
+        if (info.owner) {
+          siteMembers = info.members || [];
+          siteInvites = info.invites || [];
+          inviteBtn.hidden = info.visibility !== "private";
+        }
+        if (info.owner && info.capabilities && info.capabilities.status === "pending") {
+          const req = info.capabilities.requested || {};
+          const lines = [];
+          for (const s of req.secrets || []) lines.push(`secret:${s}`);
+          for (const e of req.egress || []) lines.push(`egress:${e}`);
+          for (const d of req.data || []) lines.push(`data:${d}`);
+          capSummary.textContent = lines.length
+            ? `This app requests: ${lines.join(", ")}`
+            : "This app requested capabilities.";
+          capBanner.hidden = false;
+        } else {
+          capBanner.hidden = true;
+        }
       }
 
       function setVisibility(next) {
@@ -436,15 +735,38 @@
         const isPrivate = next === "private";
         visPublic.setAttribute("aria-pressed", String(!isPrivate));
         visPrivate.setAttribute("aria-pressed", String(isPrivate));
-        inviteBtn.hidden = !isPrivate;
+        inviteBtn.hidden = !(isPrivate && isOwner);
+      }
+
+      async function patchVisibility(next) {
+        if (!isOwner) {
+          showToast("Claim the site first");
+          setVisibility(visibility === "private" ? "private" : "public");
+          return;
+        }
+        const prev = visibility;
+        setVisibility(next);
+        try {
+          const res = await fetch(`${API}/v1/sites/${encodeURIComponent(slug)}`, {
+            method: "PATCH",
+            credentials: "include",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ visibility: next }),
+          });
+          if (!res.ok) {
+            setVisibility(prev);
+            showToast("Couldn’t update visibility");
+            return;
+          }
+          showToast(next === "private" ? "Site is private" : "Site is public");
+          frame.src = url;
+        } catch (_) {
+          setVisibility(prev);
+          showToast("Network error");
+        }
       }
 
       function chatLabel(href) {
-        try {
-          const h = new URL(href).hostname;
-          if (h.includes("claude")) return "Back to Claude";
-          if (h.includes("openai") || h.includes("chatgpt")) return "Back to ChatGPT";
-        } catch (_) {}
         return "Back to chat";
       }
 
@@ -606,8 +928,8 @@
       }
 
       if (m) {
-        const slug = m[1].toLowerCase();
-        const url = `https://${slug}.aft.page/`;
+        slug = m[1].toLowerCase();
+        url = `https://${slug}.aft.page/`;
         slugEl.textContent = url.replace(/^https:\/\//, "").replace(/\/$/, "");
         openA.href = url;
         frame.src = url;
@@ -685,19 +1007,124 @@
 
         setVisibility("public");
 
-        visPublic.addEventListener("click", () => {
-          setVisibility("public");
-          comingSoonClaimFirst();
-        });
-        visPrivate.addEventListener("click", () => {
-          setVisibility("private");
-          comingSoonClaimFirst();
-        });
-        inviteBtn.addEventListener("click", comingSoonClaimFirst);
+        visPublic.addEventListener("click", () => patchVisibility("public"));
+        visPrivate.addEventListener("click", () => patchVisibility("private"));
+        inviteBtn.addEventListener("click", openInviteDialog);
 
-        claimBtn.addEventListener("click", () => {
-          showToast("Claiming with an account is coming soon — link saved on this device");
+        claimCancel.addEventListener("click", closeClaimDialog);
+        claimDialog.addEventListener("click", (e) => {
+          if (e.target === claimDialog) closeClaimDialog();
         });
+        inviteCancel.addEventListener("click", closeInviteDialog);
+        inviteDialog.addEventListener("click", (e) => {
+          if (e.target === inviteDialog) closeInviteDialog();
+        });
+
+        claimSend.addEventListener("click", async () => {
+          const email = claimEmail.value.trim();
+          const token = tokenForSlug(slug);
+          if (!email || !token) {
+            showToast("Email and deploy token required");
+            return;
+          }
+          claimSend.disabled = true;
+          try {
+            const res = await fetch(`${API}/v1/claim/start`, {
+              method: "POST",
+              credentials: "include",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ slug, email, editToken: token }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              showToast(
+                data.error === "already_claimed"
+                  ? "Already claimed"
+                  : data.error === "email_failed"
+                    ? "Email not configured — try again later"
+                    : "Couldn’t send email",
+              );
+              return;
+            }
+            closeClaimDialog();
+            showToast("Check your email");
+          } catch (_) {
+            showToast("Network error");
+          } finally {
+            claimSend.disabled = false;
+          }
+        });
+
+        inviteSend.addEventListener("click", async () => {
+          const email = inviteEmail.value.trim();
+          const role = inviteRole.value === "edit" ? "edit" : "view";
+          if (!email) {
+            showToast("Email required");
+            return;
+          }
+          inviteSend.disabled = true;
+          try {
+            const res = await fetch(
+              `${API}/v1/sites/${encodeURIComponent(slug)}/invites`,
+              {
+                method: "POST",
+                credentials: "include",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ email, role }),
+              },
+            );
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              showToast(
+                data.error === "email_failed"
+                  ? "Email not configured"
+                  : "Couldn’t send invite",
+              );
+              return;
+            }
+            inviteEmail.value = "";
+            showToast("Invite sent");
+            await applySiteInfo(await refreshSiteInfo(slug));
+            renderInviteList();
+          } catch (_) {
+            showToast("Network error");
+          } finally {
+            inviteSend.disabled = false;
+          }
+        });
+
+        claimBtn.addEventListener("click", openClaimDialog);
+
+        capApprove.addEventListener("click", async () => {
+          capApprove.disabled = true;
+          try {
+            const res = await fetch(
+              `${API}/v1/sites/${encodeURIComponent(slug)}/capabilities`,
+              {
+                method: "POST",
+                credentials: "include",
+                headers: { "content-type": "application/json" },
+                body: "{}",
+              },
+            );
+            if (!res.ok) {
+              showToast("Couldn’t approve");
+              return;
+            }
+            showToast("Capabilities approved");
+            capBanner.hidden = true;
+            await applySiteInfo(await refreshSiteInfo(slug));
+          } catch (_) {
+            showToast("Network error");
+          } finally {
+            capApprove.disabled = false;
+          }
+        });
+
+        if (claimedParam) showToast("Site claimed — you own it");
+        if (invitedParam) showToast("Invite accepted");
+
+        refreshSiteInfo(slug).then((info) => applySiteInfo(info));
       } else {
         workspace.hidden = true;
         empty.hidden = false;

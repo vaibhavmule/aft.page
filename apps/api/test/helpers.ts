@@ -39,12 +39,13 @@ export function uploadJson(
 export async function deployPaste(
   html: string,
   slug?: string,
-): Promise<{ slug: string; deployId: string; url: string }> {
+): Promise<{ slug: string; deployId: string; url: string; editToken: string }> {
   const res = await call(pasteHtml(html, slug));
   const body = (await res.json()) as {
     slug: string;
     deployId: string;
     url: string;
+    editToken: string;
   };
   if (res.status !== 200) {
     throw new Error(`deploy failed ${res.status}: ${JSON.stringify(body)}`);

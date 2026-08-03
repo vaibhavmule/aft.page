@@ -2,6 +2,18 @@
 
 Static landing for [aft.page](https://aft.page). Prefer Cloudflare Pages (`--provider cloudflare`); AWS CloudFront remains available via `--provider aws`.
 
+## Pages
+
+| Path | Role |
+| --- | --- |
+| `/` | Agent-first home |
+| `/login` | Magic-link login → inventory |
+| `/inventory` | Owned sites (session) |
+| `/mcp`, `/mcp.md`, `/llms.txt` | Agent / MCP docs |
+| `/paste-html/`, `/host-html/`, `/share-html/`, `/upload-html/` | SEO / human intent landings (same paste form) |
+| `/preview` | Preview / claim stub shell |
+| `/sitemap.xml`, `/robots.txt` | Discovery |
+
 ## Typography
 
 - **Fraunces** (`500`, `600`) — display face for the `aft.page` wordmark and headings. Its warm, editorial character makes the brand feel personal rather than like a generic AI/SaaS landing page.
@@ -15,7 +27,17 @@ Both are loaded from Google Fonts in `index.html`. The CSS fallbacks are `"Times
 # once: npx wrangler login
 export CLOUDFLARE_ACCOUNT_ID=…   # from `npx wrangler whoami`
 
-# from sibling aft repo after npm run build:
+# Custom domain aft.page tracks the **production** branch — deploy there:
+cd marketing
+npx wrangler pages deploy . --project-name=aft-page --branch=production
+
+# Preview only (main.aft-page.pages.dev), not the apex:
+# npx wrangler pages deploy . --project-name=aft-page
+```
+
+Or from sibling aft repo after `npm run build`:
+
+```bash
 cd marketing
 node ../../aft/dist/bin.js deploy --provider cloudflare --domain aft.page
 ```
@@ -27,6 +49,12 @@ node ../../aft/dist/bin.js deploy --provider cloudflare --domain aft.page
 ```bash
 node ../../aft/dist/bin.js deploy --provider aws --profile aft
 ```
+
+## AWS CloudFront URL — DO NOT DESTROY
+
+**Keep this distribution alive. Never run `aft destroy` against it.**
+
+- Live: https://d47sjb4tuyzd5.cloudfront.net/
 
 ## Custom domain
 

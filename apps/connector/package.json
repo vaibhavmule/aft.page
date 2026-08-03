@@ -1,0 +1,22 @@
+{
+  "name": "@aft.page/connector",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "aft.page outbound connector agent (Week 3 v0)",
+  "bin": {
+    "aft-connector": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsc -p tsconfig.json && node dist/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "typescript": "^5.8.3"
+  }
+}

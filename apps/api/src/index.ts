@@ -1,41 +1,27 @@
 /**
  * aft.page API + static serve Worker.
- *
- * Site files live in R2; KV holds the slug → deploy pointer. Reads fall back
- * to KV blobs so sites uploaded before R2 existed keep serving.
- *
- * Hosts:
- * - *.aft.page → serve site for slug
- * - api.aft.page / workers.dev → POST /v1/deploy
  */
-export interface Env {
-  SITES: KVNamespace;
-  BUCKET?: R2Bucket;
-  ROOT_DOMAIN: string;
-}
+import type { Env } from "./env";
+import { handleClaimRoute, getSiteInfo } from "./claim";
+import { deploy } from "./deploy";
+import { ensureDb } from "./db";
+import {
+  corsHeaders,
+  isApiHost,
+  json,
+  optionsResponse,
+  subdomainSlug,
+} from "./http";
+import { serveSite } from "./serve";
+import { handleSharingRoute, sharingNeedsCredentials } from "./sharing";
+import { handleLifecycleRoute } from "./lifecycle";
+import {
+  handleConnectorRoute,
+  connectorNeedsCredentials,
+} from "./connector";
+import { handleAuthRoute, authNeedsCredentials } from "./auth-login";
 
-const MAX_FILES = 50;
-const MAX_TOTAL_BYTES = 5 * 1024 * 1024;
-const MAX_FILE_BYTES = 2 * 1024 * 1024;
-const RESERVED_SLUGS = new Set([
-  "www",
-  "api",
-  "app",
-  "mail",
-  "ftp",
-  "cdn",
-  "static",
-  "admin",
-  "dashboard",
-  "status",
-  "docs",
-]);
-
-type SiteMeta = {
-  deployId: string;
-  createdAt: string;
-  fileCount: number;
-};
+export { sanitizeHtmlDocument } from "./upload";
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -44,6 +30,8 @@ export default {
     const root = (env.ROOT_DOMAIN || "aft.page").toLowerCase();
 
     try {
+      await ensureDb(env);
+
       if (isApiHost(host, root)) {
         return await handleApi(request, env, url);
       }
@@ -64,45 +52,63 @@ export default {
   },
 };
 
-function isApiHost(host: string, root: string): boolean {
-  if (host === `api.${root}`) return true;
-  if (host.endsWith(".workers.dev")) return true;
-  if (host === "localhost" || host === "127.0.0.1") return true;
-  return false;
-}
-
-function subdomainSlug(host: string, root: string): string | null {
-  if (host === root || host === `www.${root}`) return null;
-  if (!host.endsWith(`.${root}`)) return null;
-  const sub = host.slice(0, -(root.length + 1));
-  if (!sub || sub.includes(".")) return null;
-  return sub.toLowerCase();
-}
-
 async function handleApi(
   request: Request,
   env: Env,
   url: URL,
 ): Promise<Response> {
+  const origin = request.headers.get("origin");
+  const creds =
+    sharingNeedsCredentials(url.pathname) ||
+    connectorNeedsCredentials(url.pathname) ||
+    authNeedsCredentials(url.pathname) ||
+    url.pathname.startsWith("/v1/me/") ||
+    url.pathname.includes("/deploys") ||
+    url.pathname.includes("/rollback") ||
+    url.pathname.includes("/capabilities");
+
   if (request.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: corsHeaders(),
-    });
+    return optionsResponse(origin, creds);
   }
 
   if (url.pathname === "/health" && request.method === "GET") {
-    return json({ ok: true, storage: env.BUCKET ? "r2+kv" : "kv" });
+    return json({ ok: true });
   }
 
-  if (url.pathname === "/v1/deploy" && request.method === "POST") {
+  if (
+    (url.pathname === "/v1/deploy" && request.method === "POST") ||
+    (url.pathname === "/v1/deploy" && request.method === "PATCH")
+  ) {
     return deploy(request, env);
   }
 
-  // Path-based serve (works before wildcard DNS is fully live)
+  if (
+    url.pathname === "/v1/claim/start" ||
+    url.pathname === "/v1/claim/verify"
+  ) {
+    return handleClaimRoute(request, env, url);
+  }
+
+  const auth = await handleAuthRoute(request, env, url);
+  if (auth) return auth;
+
+  const lifecycle = await handleLifecycleRoute(request, env, url);
+  if (lifecycle) return lifecycle;
+
+  const connector = await handleConnectorRoute(request, env, url);
+  if (connector) return connector;
+
+  const sharing = await handleSharingRoute(request, env, url);
+  if (sharing) return sharing;
+
+  const siteMatch = url.pathname.match(/^\/v1\/sites\/([a-z0-9-]+)$/);
+  if (siteMatch && request.method === "GET") {
+    return getSiteInfo(request, env, siteMatch[1]!);
+  }
+
   const pathServe = url.pathname.match(/^\/s\/([a-z0-9-]+)(\/.*)?$/);
   if (pathServe && request.method === "GET") {
-    const slug = pathServe[1];
+    const slug = pathServe[1]!;
     const rest = pathServe[2] || "/";
     return serveSite(request, env, slug, rest);
   }
@@ -111,6 +117,15 @@ async function handleApi(
     return json({
       service: "aft.page",
       deploy: "POST /v1/deploy (multipart files, or text/html body)",
+      redeploy: "PATCH /v1/deploy?slug= (editToken or session owner/editor)",
+      claim: "POST /v1/claim/start, GET /v1/claim/verify",
+      auth: "POST /v1/auth/start, GET /v1/auth/verify",
+      sharing:
+        "PATCH /v1/sites/{slug}, POST/GET /v1/sites/{slug}/invites, GET /v1/invites/accept",
+      inventory: "GET /v1/me/sites, GET /v1/sites/{slug}/deploys, POST /v1/sites/{slug}/rollback",
+      capabilities: "GET|POST /v1/sites/{slug}/capabilities",
+      connector:
+        "POST /v1/sites/{slug}/connector/tokens, GET /v1/connector/poll, POST /v1/connector/result/{id}, POST /v1/sites/{slug}/connector/invoke",
       serve: "https://{slug}.aft.page or GET /s/{slug}/",
     });
   }
@@ -118,411 +133,4 @@ async function handleApi(
   return json({ error: "not_found" }, 404);
 }
 
-async function deploy(request: Request, env: Env): Promise<Response> {
-  const files = await parseUpload(request);
-  if (files.length === 0) {
-    return json({ error: "no_files", hint: "multipart field 'files' or raw text/html body" }, 400);
-  }
-  if (files.length > MAX_FILES) {
-    return json({ error: "too_many_files", max: MAX_FILES }, 400);
-  }
-
-  let total = 0;
-  for (const f of files) {
-    if (f.path.includes("..") || f.path.startsWith("/") || f.path.includes("\\")) {
-      return json({ error: "bad_path", path: f.path }, 400);
-    }
-    if (f.bytes.byteLength > MAX_FILE_BYTES) {
-      return json({ error: "file_too_large", path: f.path, max: MAX_FILE_BYTES }, 400);
-    }
-    total += f.bytes.byteLength;
-  }
-  if (total > MAX_TOTAL_BYTES) {
-    return json({ error: "payload_too_large", max: MAX_TOTAL_BYTES }, 400);
-  }
-
-  // Preferred name from <title> — never overwrite an existing site.
-  // Collision → Vercel-style suffix: about-me-blue, about-me-soft-rose, …
-  const preferred = new URL(request.url).searchParams.get("slug")?.toLowerCase();
-  const base =
-    preferred && isValidSlug(preferred) && !RESERVED_SLUGS.has(preferred)
-      ? preferred
-      : undefined;
-  if (preferred && RESERVED_SLUGS.has(preferred)) {
-    return json({ error: "reserved_slug", slug: preferred }, 400);
-  }
-
-  const slug = await allocateUniqueSlug(env, base);
-  if (!slug) {
-    return json({ error: "slug_exhausted" }, 503);
-  }
-
-  const deployId = `dep_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
-  const createdAt = new Date().toISOString();
-
-  for (const f of files) {
-    const keyPath = normalizePath(f.path);
-    await putObject(env, slug, deployId, keyPath, f.bytes, f.contentType);
-  }
-
-  const meta: SiteMeta = { deployId, createdAt, fileCount: files.length };
-  await env.SITES.put(`site:${slug}`, JSON.stringify(meta));
-
-  const root = env.ROOT_DOMAIN || "aft.page";
-  const url = `https://${slug}.${root}`;
-  return json({
-    ok: true,
-    slug,
-    deployId,
-    url,
-    files: files.length,
-    bytes: total,
-    storage: env.BUCKET ? "r2" : "kv",
-  });
-}
-
-type UploadFile = { path: string; bytes: ArrayBuffer; contentType: string };
-
-async function parseUpload(request: Request): Promise<UploadFile[]> {
-  const ct = request.headers.get("content-type") || "";
-
-  if (ct.includes("multipart/form-data")) {
-    const form = await request.formData();
-    const out: UploadFile[] = [];
-    for (const [name, value] of form.entries()) {
-      if (!(value instanceof File)) continue;
-      const path =
-        (typeof form.get(`${name}_path`) === "string"
-          ? String(form.get(`${name}_path`))
-          : null) ||
-        value.name ||
-        "index.html";
-      out.push({
-        path: normalizePath(path),
-        bytes: await value.arrayBuffer(),
-        contentType: value.type || guessMime(path),
-      });
-    }
-    // Also accept repeated "file" / "files"
-    return out;
-  }
-
-  if (ct.includes("application/json")) {
-    const body = (await request.json()) as {
-      files?: { path: string; content: string; encoding?: "utf8" | "base64" }[];
-    };
-    const out: UploadFile[] = [];
-    for (const f of body.files ?? []) {
-      const path = normalizePath(f.path);
-      if (f.encoding === "base64") {
-        const raw = base64ToArrayBuffer(f.content);
-        if (/\.html?$/i.test(path)) {
-          const text = sanitizeHtmlDocument(new TextDecoder().decode(raw));
-          out.push({
-            path,
-            bytes: new TextEncoder().encode(text).buffer,
-            contentType: guessMime(path),
-          });
-        } else {
-          out.push({
-            path,
-            bytes: raw,
-            contentType: guessMime(path),
-          });
-        }
-      } else {
-        const text =
-          /\.html?$/i.test(path) || looksLikeHtmlDoc(f.content)
-            ? sanitizeHtmlDocument(f.content)
-            : f.content;
-        out.push({
-          path,
-          bytes: new TextEncoder().encode(text).buffer,
-          contentType: guessMime(path),
-        });
-      }
-    }
-    return out;
-  }
-
-  if (ct.includes("text/html") || ct.includes("text/plain") || ct === "") {
-    const text = sanitizeHtmlDocument(await request.text());
-    if (!text.trim()) return [];
-    return [
-      {
-        path: "index.html",
-        bytes: new TextEncoder().encode(text).buffer,
-        contentType: "text/html; charset=utf-8",
-      },
-    ];
-  }
-
-  return [];
-}
-
-async function serveSite(
-  request: Request,
-  env: Env,
-  slug: string,
-  pathname: string,
-): Promise<Response> {
-  if (request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders() });
-  }
-
-  if (RESERVED_SLUGS.has(slug)) {
-    return json({ error: "reserved" }, 404);
-  }
-
-  const raw = await env.SITES.get(`site:${slug}`);
-  if (!raw) {
-    return new Response("Not found", {
-      status: 404,
-      headers: corsHeaders(),
-    });
-  }
-  const meta = JSON.parse(raw) as SiteMeta;
-
-  let path = decodeURIComponent(pathname);
-  if (path.endsWith("/")) path += "index.html";
-  if (path === "/" || path === "") path = "/index.html";
-  path = path.replace(/^\//, "");
-
-  let obj = await getObject(env, slug, meta.deployId, path);
-  if (!obj && !path.includes(".")) {
-    obj = await getObject(env, slug, meta.deployId, `${path}/index.html`);
-  }
-  if (!obj && path !== "index.html") {
-    // soft SPA fallback
-    obj = await getObject(env, slug, meta.deployId, "index.html");
-  }
-  if (!obj) return new Response("Not found", { status: 404 });
-
-  const headers = new Headers();
-  headers.set("content-type", obj.contentType);
-  headers.set("cache-control", "public, max-age=60");
-  headers.set("x-aft-slug", slug);
-  headers.set("x-aft-deploy", meta.deployId);
-  for (const [name, value] of corsHeaders()) {
-    headers.set(name, value);
-  }
-  return new Response(obj.body, { status: 200, headers });
-}
-
-async function putObject(
-  env: Env,
-  slug: string,
-  deployId: string,
-  path: string,
-  bytes: ArrayBuffer,
-  contentType: string,
-): Promise<void> {
-  if (env.BUCKET) {
-    await env.BUCKET.put(r2Key(slug, deployId, path), bytes, {
-      httpMetadata: { contentType },
-      customMetadata: { slug, deployId },
-    });
-    return;
-  }
-  // KV blob: store content-type in a sidecar key
-  const key = kvFileKey(slug, deployId, path);
-  await env.SITES.put(key, bytes, {
-    metadata: { contentType },
-  });
-}
-
-async function getObject(
-  env: Env,
-  slug: string,
-  deployId: string,
-  path: string,
-): Promise<{ body: ArrayBuffer | ReadableStream; contentType: string } | null> {
-  if (env.BUCKET) {
-    const obj = await env.BUCKET.get(r2Key(slug, deployId, path));
-    if (obj) {
-      return {
-        body: obj.body,
-        contentType: obj.httpMetadata?.contentType || guessMime(path),
-      };
-    }
-  }
-  // Pre-R2 deploys stored blobs directly in KV.
-  const key = kvFileKey(slug, deployId, path);
-  const got = await env.SITES.getWithMetadata<ArrayBuffer>(key, "arrayBuffer");
-  if (!got.value) return null;
-  const contentType =
-    (got.metadata as { contentType?: string } | null)?.contentType ||
-    guessMime(path);
-  return { body: got.value, contentType };
-}
-
-function r2Key(slug: string, deployId: string, path: string) {
-  return `sites/${slug}/${deployId}/${path}`;
-}
-
-function kvFileKey(slug: string, deployId: string, path: string) {
-  return `file:${slug}:${deployId}:${path}`;
-}
-
-function normalizePath(path: string): string {
-  return path.replace(/^(\.\/)+/, "").replace(/^\/+/, "").replace(/\\/g, "/");
-}
-
-/** Strip UI chrome accidentally scraped after </html> (e.g. extension "Deploy"). */
-export function sanitizeHtmlDocument(text: string): string {
-  let t = String(text ?? "").trim();
-  const close = t.search(/<\/html>\s*/i);
-  if (close !== -1) {
-    t = t.slice(0, close + "</html>".length);
-  }
-  t = t.replace(
-    /\s*(Deploy(?:\s+to\s+aft\.page)?|Live ✓|Publishing…|Failed|Empty|Not HTML)\s*$/i,
-    "",
-  );
-  return t.trim();
-}
-
-function looksLikeHtmlDoc(text: string): boolean {
-  return /<!DOCTYPE\s+html/i.test(text) || /<html[\s>]/i.test(text);
-}
-
-function randomSlug(): string {
-  const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
-  const bytes = crypto.getRandomValues(new Uint8Array(8));
-  let s = "";
-  for (const b of bytes) s += alphabet[b % alphabet.length];
-  return s;
-}
-
-const SLUG_COLORS = [
-  "blue",
-  "rose",
-  "mist",
-  "amber",
-  "coral",
-  "sage",
-  "ink",
-  "dune",
-  "jade",
-  "plum",
-  "sand",
-  "sky",
-] as const;
-
-const SLUG_ADJECTIVES = [
-  "soft",
-  "bold",
-  "calm",
-  "bright",
-  "quiet",
-  "swift",
-  "warm",
-  "clear",
-] as const;
-
-function isValidSlug(slug: string): boolean {
-  return /^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$/.test(slug);
-}
-
-function pick<T extends string>(list: readonly T[]): T {
-  const bytes = crypto.getRandomValues(new Uint8Array(1));
-  return list[bytes[0]! % list.length]!;
-}
-
-function trimSlug(slug: string): string {
-  return slug.slice(0, 58).replace(/-+$/g, "");
-}
-
-/** Prefer base, then base-color, then base-adj-color, then random — never reuse. */
-async function allocateUniqueSlug(
-  env: Env,
-  base: string | undefined,
-): Promise<string | null> {
-  const candidates: string[] = [];
-  if (base) {
-    candidates.push(base);
-    for (let i = 0; i < 8; i++) {
-      candidates.push(trimSlug(`${base}-${pick(SLUG_COLORS)}`));
-    }
-    for (let i = 0; i < 8; i++) {
-      candidates.push(
-        trimSlug(`${base}-${pick(SLUG_ADJECTIVES)}-${pick(SLUG_COLORS)}`),
-      );
-    }
-  }
-  for (let i = 0; i < 5; i++) candidates.push(randomSlug());
-
-  const seen = new Set<string>();
-  for (const candidate of candidates) {
-    if (!candidate || seen.has(candidate) || RESERVED_SLUGS.has(candidate)) {
-      continue;
-    }
-    if (!isValidSlug(candidate)) continue;
-    seen.add(candidate);
-    const existing = await env.SITES.get(`site:${candidate}`);
-    if (!existing) return candidate;
-  }
-  return null;
-}
-
-function guessMime(path: string): string {
-  const ext = path.split(".").pop()?.toLowerCase();
-  switch (ext) {
-    case "html":
-    case "htm":
-      return "text/html; charset=utf-8";
-    case "css":
-      return "text/css; charset=utf-8";
-    case "js":
-    case "mjs":
-      return "text/javascript; charset=utf-8";
-    case "json":
-      return "application/json";
-    case "svg":
-      return "image/svg+xml";
-    case "png":
-      return "image/png";
-    case "jpg":
-    case "jpeg":
-      return "image/jpeg";
-    case "gif":
-      return "image/gif";
-    case "webp":
-      return "image/webp";
-    case "ico":
-      return "image/x-icon";
-    case "woff":
-      return "font/woff";
-    case "woff2":
-      return "font/woff2";
-    case "txt":
-      return "text/plain; charset=utf-8";
-    default:
-      return "application/octet-stream";
-  }
-}
-
-function base64ToArrayBuffer(b64: string): ArrayBuffer {
-  const bin = atob(b64);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return bytes.buffer;
-}
-
-function json(data: unknown, status = 200): Response {
-  return new Response(JSON.stringify(data, null, 2), {
-    status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      ...Object.fromEntries(corsHeaders()),
-    },
-  });
-}
-
-function corsHeaders(): Headers {
-  const h = new Headers();
-  h.set("access-control-allow-origin", "*");
-  h.set("access-control-allow-methods", "GET, POST, OPTIONS");
-  h.set("access-control-allow-headers", "content-type");
-  return h;
-}
+export type { Env };

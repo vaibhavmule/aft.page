@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Paste HTML to make a site live — aft.page</title>
+    <meta
+      name="description"
+      content="Paste your HTML and get a live *.aft.page URL in seconds. No account, no repository. Free shareable link for one-pagers and agent output."
+    />
+    <link rel="canonical" href="https://aft.page/paste-html/" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#09090b" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="aft.page" />
+    <meta property="og:title" content="Paste HTML to make a site live — aft.page" />
+    <meta
+      property="og:description"
+      content="Paste HTML → live shareable URL. No account. No website builder."
+    />
+    <meta property="og:url" content="https://aft.page/paste-html/" />
+    <meta property="og:image" content="https://aft.page/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Paste HTML to make a site live — aft.page" />
+    <meta
+      name="twitter:description"
+      content="Paste HTML → live *.aft.page link in seconds. No account."
+    />
+    <meta name="twitter:image" content="https://aft.page/og.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "Paste HTML to make a site live",
+        "description": "Publish HTML to a live HTTPS URL on aft.page with no account.",
+        "step": [
+          {
+            "@type": "HowToStep",
+            "name": "Paste HTML",
+            "text": "Paste your HTML document into the form on aft.page."
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Get a live URL",
+            "text": "Submit the form to receive a unique https://{slug}.aft.page link."
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Share",
+            "text": "Open the link on any device or send it to someone else."
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <div class="site">
+      <header class="seo-top">
+        <a class="brand" href="/">aft<span>.</span>page</a>
+        <nav class="seo-nav" aria-label="Primary">
+          <a href="/">Agents</a>
+          <a href="/mcp">MCP</a>
+          <a href="/paste-html/" aria-current="page">Paste HTML</a>
+        </nav>
+      </header>
+
+      <div class="seo-hero">
+        <div class="seo-copy">
+          <p class="eyebrow">Instant publish</p>
+          <h1>Paste HTML to make a site live</h1>
+          <p class="lede">
+            Drop in a full HTML document. Get a public
+            <code>*.aft.page</code> URL in seconds.
+          </p>
+          <p class="support">
+            No account. No repository. No website builder — just paste and share.
+          </p>
+        </div>
+
+        <section class="paste" id="paste" aria-labelledby="paste-title">
+          <p class="paste-eyebrow">Try it</p>
+          <h2 id="paste-title">Paste your HTML</h2>
+          <p class="paste-lede">
+            We mint a unique slug and put the page live on
+            <code>*.aft.page</code>. Existing names are never overwritten.
+          </p>
+          <form class="paste-form" id="paste-form">
+            <label class="sr-only" for="html-input">HTML</label>
+            <textarea
+              id="html-input"
+              name="html"
+              rows="4"
+              spellcheck="false"
+              autocomplete="off"
+              placeholder="<!DOCTYPE html>&#10;<html>&#10;  <body>&#10;    <h1>Hello</h1>&#10;  </body>&#10;</html>"
+            ></textarea>
+            <div class="paste-or"><span>or</span></div>
+            <div
+              class="paste-drop"
+              id="paste-drop"
+              role="button"
+              tabindex="0"
+              aria-label="Upload HTML or site files. Drop files here or click to browse."
+            >
+              <input
+                type="file"
+                id="file-input"
+                multiple
+                accept=".html,.htm,.css,.js,.json,.svg,.png,.jpg,.jpeg,.gif,.webp,.ico,.txt,.woff,.woff2"
+                hidden
+              />
+              <div class="paste-drop-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+              </div>
+              <p class="paste-drop-title" id="paste-drop-title">Drop files here</p>
+              <p class="paste-hint">Drag &amp; drop or <span>click to browse</span></p>
+              <p class="paste-drop-meta"><code>.html</code> or a folder · up to 50 files · 5 MB</p>
+            </div>
+            <ul class="paste-files" id="file-list" hidden></ul>
+            <div class="paste-actions">
+              <p class="paste-status" id="paste-status" role="status" aria-live="polite"></p>
+              <button type="submit" class="btn btn-primary" id="paste-submit">
+                Make it live
+              </button>
+            </div>
+            <div class="paste-result" id="paste-result" hidden>
+              <a id="paste-url" href="#" target="_blank" rel="noopener noreferrer"></a>
+            </div>
+          </form>
+        </section>
+      </div>
+
+      <main class="sections">
+        <section class="block">
+          <h2>How it works</h2>
+          <ol class="steps">
+            <li>
+              <strong>Paste</strong>
+              <span>Put your HTML (or a small site folder) in the form.</span>
+            </li>
+            <li>
+              <strong>Publish</strong>
+              <span>aft.page hosts it on HTTPS at a unique slug.</span>
+            </li>
+            <li>
+              <strong>Share</strong>
+              <span>Send the link — phone, Slack, email, whatever.</span>
+            </li>
+          </ol>
+        </section>
+
+        <section class="block" aria-labelledby="faq-title">
+          <h2 id="faq-title">FAQ</h2>
+          <div class="seo-faq">
+            <details open>
+              <summary>Do I need an account?</summary>
+              <p>No. Anonymous deploys work today. Claiming a site comes later.</p>
+            </details>
+            <details>
+              <summary>Will someone overwrite my page?</summary>
+              <p>
+                No. If a slug is taken, we add a suffix (e.g.
+                <code>about-me-mist</code>). Existing sites stay put.
+              </p>
+            </details>
+            <details>
+              <summary>What can I paste?</summary>
+              <p>
+                A single HTML document, or up to 50 static files (HTML, CSS, JS,
+                images) totaling 5 MB.
+              </p>
+            </details>
+          </div>
+        </section>
+
+        <aside class="agent-bridge">
+          <p>
+            Building with an AI agent instead?
+            <a href="/">Start on the agent-first home</a>
+            or wire <a href="/mcp">MCP</a> so the agent publishes the URL for you.
+          </p>
+        </aside>
+
+        <nav class="block" aria-label="Related">
+          <h2>Related</h2>
+          <ul class="related">
+            <li><a href="/host-html/">Host HTML online</a></li>
+            <li><a href="/share-html/">Share HTML as a link</a></li>
+            <li><a href="/upload-html/">Upload HTML files</a></li>
+            <li><a href="/mcp">MCP for agents</a></li>
+          </ul>
+        </nav>
+      </main>
+
+      <footer class="footer">
+        <p>
+          <a href="/">aft.page</a>
+          · Paste HTML → <code>*.aft.page</code>
+          ·
+          <a href="/mcp">MCP</a>
+        </p>
+      </footer>
+    </div>
+    <script src="/deploy.js" defer></script>
+  </body>
+</html>

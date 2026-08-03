@@ -29,13 +29,45 @@ curl -X POST https://api.aft.page/v1/deploy \
   -d '{"files":[{"path":"index.html","content":"<h1>hi</h1>"}]}'
 ```
 
-Limits: 50 files, 2 MB/file, 5 MB total. No auth yet.
+Limits: 50 files, 2 MB/file, 5 MB total. Deploy is anonymous; each deploy returns
+an **`editToken`** for redeploy and claim. Never overwrites an existing slug on
+first deploy (collision → suffix like `about-me-mist`).
+
+### Redeploy + claim
+
+```bash
+# Redeploy same slug (agent or human with editToken)
+curl -X PATCH 'https://api.aft.page/v1/deploy?slug=my-demo' \
+  -H 'X-Aft-Edit-Token: aft_edit_…' \
+  -H 'Content-Type: text/html' \
+  --data '<h1>updated</h1>'
+
+# Start email claim (from preview)
+curl -X POST https://api.aft.page/v1/claim/start \
+  -H 'Content-Type: application/json' \
+  -d '{"slug":"my-demo","email":"you@example.com","editToken":"aft_edit_…"}'
+```
+
+Claim verify: user clicks link in email → `GET /v1/claim/verify?token=…&slug=…`
+→ session cookie → redirect to preview.
+
+Requires D1 (`aft-page`), `AUTH_SECRET` (wrangler secret), and Email Sending on
+`aft.page` (`npx wrangler email sending enable aft.page`).
+
+Optional header: `X-Aft-Client: mcp|web|extension|curl|cli` (product metrics).
 
 ## Storage
 
 - **R2** (`BUCKET` → `aft-page-sites`): site files at `sites/{slug}/{deployId}/…`.
 - **KV** (`SITES`): slug → deploy pointer. Reads also fall back to KV blobs so
   sites uploaded before R2 was enabled keep serving.
+
+## Metrics
+
+Workers Analytics Engine dataset `aft_page_metrics` (binding `METRICS`) — see
+[`docs/METRICS.md`](../../docs/METRICS.md). Binding is commented out in
+`wrangler.jsonc` until Analytics Engine is enabled on the account; until then
+instrumentation no-ops.
 
 ## Tests
 

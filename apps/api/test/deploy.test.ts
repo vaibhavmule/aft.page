@@ -42,6 +42,34 @@ describe("deploy input", () => {
     expect((await res.json() as { files: number }).files).toBe(2);
   });
 
+  it("types uploads by extension when the part is generic", async () => {
+    const form = new FormData();
+    form.append(
+      "file0",
+      new File(["<h1>Styled</h1>"], "index.html", { type: "application/octet-stream" }),
+    );
+    form.append("file0_path", "index.html");
+    form.append(
+      "file1",
+      new File(["body{color:red}"], "style.css", { type: "application/octet-stream" }),
+    );
+    form.append("file1_path", "style.css");
+
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/deploy?slug=mime-by-ext`, {
+        method: "POST",
+        body: form,
+      }),
+    );
+    expect(res.status).toBe(200);
+    const { slug } = (await res.json()) as { slug: string };
+
+    const css = await fetchSite(slug, "/style.css");
+    expect(css.headers.get("content-type")).toContain("text/css");
+    const html = await fetchSite(slug, "/");
+    expect(html.headers.get("content-type")).toContain("text/html");
+  });
+
   it("decodes base64 content", async () => {
     const content = btoa("<h1>Base64</h1>");
     await call(

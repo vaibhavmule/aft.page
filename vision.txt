@@ -1,0 +1,41 @@
+# aft.page — vision
+# Updated: 2026-07-26
+
+The product expands with what AI creates — not with website-builder features.
+
+## Today
+
+Deploy HTML.
+
+Paste, upload, or MCP → live `*.aft.page` URL.
+No account. No website builder. Agent-first.
+
+## Tomorrow
+
+Deploy anything an AI creates.
+
+Same job: turn agent output into something you can open and share.
+Wider formats, same shareable-URL shape.
+
+## Eventually
+
+- HTML
+- docs
+- portfolios
+- presentations
+- dashboards
+- reports
+- mini apps
+- MCP outputs
+
+The constant: agent (or human) made it → aft.page makes it live and shareable.
+The variable: what “it” is.
+
+## Not the vision
+
+Not “build your website.”
+Not another Carrd / page builder.
+Not ads on user pages.
+
+Positioning test: the first five seconds should scream
+“AI generated this” — not “build a site.”

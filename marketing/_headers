@@ -1,0 +1,8 @@
+# Cloudflare Pages — serve agent docs as plain text/markdown
+/mcp.md
+  Content-Type: text/markdown; charset=utf-8
+  Cache-Control: public, max-age=60
+
+/llms.txt
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=60

@@ -4,6 +4,7 @@
 interface __BaseEnv_Env {
 	SITES: KVNamespace;
 	BUCKET: R2Bucket;
+	METRICS: AnalyticsEngineDataset;
 	ROOT_DOMAIN: "aft.page";
 }
 declare namespace Cloudflare {

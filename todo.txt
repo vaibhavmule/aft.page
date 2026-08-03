@@ -1,29 +1,44 @@
 # aft.page — todo
-# Updated: 2026-07-26
+# Updated: 2026-07-27
 
-## Hosted wedge
+## Hosted wedge (plan seed)
 - [x] Domain + landing live
-- [x] Scaffold Worker + KV
+- [x] Scaffold Worker + R2 + KV
 - [x] POST /v1/deploy → slug
 - [x] *.aft.page serve path (+ /s/{slug}/ fallback)
-- [x] Curl smoke (https://hello.aft.page)
-- [x] R2 enabled; files in aft-page-sites, KV keeps pointers
-- [x] Unique slugs on collision (about-me-mist) — no overwrite
-- [x] Worker test suite (vitest-pool-workers, 29 tests)
-- [x] Chrome extension MVP (Deploy on ChatGPT / Claude HTML blocks)
-- [x] MCP server (`deploy_html`, `deploy_files`, `aft_health`)
-- [ ] Email capture on marketing (tomorrow)
-- [ ] Edit token + D1 registry (own/update a slug)
-- [ ] Auth / claim (sites are anonymous today — prerequisite for private sharing)
-- [ ] Visibility: public vs private sites
-- [ ] Private sites: invite by email (view/edit), revoke without rotating a shared password
+- [x] Curl smoke + phone check (https://hello.aft.page)
+- [x] Chrome extension / paste UI
+- [x] MCP wrapper (`deploy_html`, `deploy_files`, `aft_health`)
+- [x] MCP docs page (HTML + mcp.md + llms.txt) — agents first
+- [x] SEO intent pages (paste/host/share/upload HTML) → funnel to home/MCP
+- [ ] Email capture on marketing
 - [ ] Auth / custom domains (later)
+
+## Also shipped
+- [x] Unique slugs on collision (about-me-mist) — no overwrite
+- [x] Worker test suite (vitest-pool-workers)
+- [x] Preview page (code viewer, claim/copy/share stubs)
+- [x] Public/Private + Invite UI stubs (coming soon toasts)
+
+## Next
+- [x] Phase 1 metrics (Analytics Engine `aft_page_metrics`) — see docs/METRICS.md
+- [x] Edit token + D1 registry (own/update a slug)
+- [x] Auth / claim (magic-link email → session owner)
+- [x] Visibility: public vs private sites (real ACL on serve)
+- [x] Private sites: invite by email (view/edit), revoke without rotating a shared password
 - [ ] Publish extension to Chrome Web Store
 - [ ] Publish `@aft.page/mcp` to npm (optional)
 - [ ] Future: editable preview (CodeMirror 6 + live iframe srcdoc; redeploy later) — not now
+- [ ] Future: Claude plugin / marketplace listing — "Add from a repository" (not Anthropic partners yet)
+- [ ] Workspace / Entra org SSO (after email claim path)
+- [x] Immutable deploys + rollback + owner inventory
+- [x] Magic-link login + inventory UX (Week 4 / Phase 1)
+- [x] Capabilities approve-on-deploy via aft.json
+- [x] Connector agent v0 (Week 3)
 
 ## Notes
 - Apex aft.page = marketing (Pages)
 - api.aft.page + *.aft.page = Worker
 - Sibling OSS CLI: ../aft (github.com/vaibhavmule/aft)
 - Sharing goal (rfs.txt): as easy as a Google Doc — see docs/SHARING.md
+- AWS CloudFront (DO NOT DESTROY): https://d47sjb4tuyzd5.cloudfront.net/

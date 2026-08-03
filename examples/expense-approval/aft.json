@@ -1,0 +1,8 @@
+{
+  "name": "expense-approval",
+  "capabilities": {
+    "data": ["expenses:read", "expenses:approve"],
+    "secrets": ["slack-webhook"],
+    "egress": ["hooks.slack.com"]
+  }
+}
