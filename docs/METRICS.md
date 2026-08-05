@@ -22,12 +22,13 @@ Instrument before more features. These numbers beat another feature:
 | MCP vs Web | `blob1` source on `deploy` |
 | Avg deploy time | avg `double1` (ms) on successful deploys |
 | Failed deploys | `deploy` where status ≠ `ok` |
+| Waitlist conversions | `waitlist` where status = `new` (duplicates are separate) |
 
 ## Schema
 
 | Field | Alias | Values |
 | --- | --- | --- |
-| `index1` | event | `deploy`, `page_view`, `claim`, `redeploy` |
+| `index1` | event | `deploy`, `page_view`, `claim`, `redeploy`, `waitlist` |
 | `blob1` | source | `mcp`, `web`, `extension`, `curl`, `cli`, `other` |
 | `blob2` | status | `ok`, or error code (`no_files`, `too_many_files`, …) |
 | `blob3` | slug | site slug when known |
@@ -155,6 +156,23 @@ GROUP BY event
 Cloudflare dashboard → Analytics & Logs → Workers Analytics Engine, or paste the SQL above into the SQL API.
 
 Grafana: use the [Analytics Engine SQL datasource](https://developers.cloudflare.com/analytics/analytics-engine/grafana/) if you want a standing board.
+
+### Waitlist outcomes
+
+```sql
+SELECT
+  blob2 AS status,
+  count() AS submissions
+FROM aft_page_metrics
+WHERE index1 = 'waitlist'
+  AND timestamp > NOW() - INTERVAL '30' DAY
+GROUP BY status
+ORDER BY submissions DESC
+```
+
+Statuses are `new`, `duplicate`, `honeypot`, validation/request errors,
+`rate_limited`, or `temporarily_unavailable`. Waitlist metrics never contain the
+submitted email, IP address, or derived rate-limit identifier.
 
 ## Privacy
 

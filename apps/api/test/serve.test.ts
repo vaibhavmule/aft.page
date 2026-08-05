@@ -124,4 +124,42 @@ describe("serving files", () => {
     const res = await fetchSite("admin");
     expect(res.status).toBe(404);
   });
+
+  it("injects a default og:image when the page has a head but no social meta", async () => {
+    await call(
+      uploadJson(
+        [
+          {
+            path: "index.html",
+            content:
+              "<!doctype html><html><head><title>BK Offers</title></head><body><div id='root'></div></body></html>",
+          },
+        ],
+        "og-default",
+      ),
+    );
+    const res = await fetchSite("og-default");
+    const html = await res.text();
+    expect(html).toContain('property="og:image" content="https://aft.page/og.png"');
+    expect(html).toContain('property="og:title" content="BK Offers"');
+    expect(html).toContain('name="twitter:image" content="https://aft.page/og.png"');
+  });
+
+  it("leaves an existing og:image alone", async () => {
+    await call(
+      uploadJson(
+        [
+          {
+            path: "index.html",
+            content:
+              '<!doctype html><html><head><title>Custom</title><meta property="og:image" content="https://cdn.example/hero.png" /></head><body></body></html>',
+          },
+        ],
+        "og-custom",
+      ),
+    );
+    const html = await (await fetchSite("og-custom")).text();
+    expect(html).toContain('content="https://cdn.example/hero.png"');
+    expect(html).not.toContain("https://aft.page/og.png");
+  });
 });

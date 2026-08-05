@@ -142,6 +142,45 @@
         </ol>
       </section>
 
+      <section class="waitlist" id="early-access" aria-labelledby="waitlist-title">
+        <div class="waitlist-copy">
+          <p class="eyebrow">EARLY ACCESS</p>
+          <h2 id="waitlist-title">Bring AI-built apps safely into your company.</h2>
+          <p>
+            Get product updates and invitations to help shape identity,
+            approvals, and private-data access for agent-built software.
+          </p>
+        </div>
+        <form class="waitlist-form" id="waitlist-form" novalidate>
+          <div class="waitlist-fields">
+            <label class="sr-only" for="waitlist-email">Work email</label>
+            <input
+              id="waitlist-email"
+              name="email"
+              type="email"
+              inputmode="email"
+              autocomplete="email"
+              maxlength="254"
+              placeholder="you@company.com"
+              aria-describedby="waitlist-note waitlist-status"
+              required
+            />
+            <div class="waitlist-trap" aria-hidden="true">
+              <label for="waitlist-company">Company website</label>
+              <input id="waitlist-company" name="company" type="text" tabindex="-1" autocomplete="off" />
+            </div>
+            <button type="submit" class="btn btn-primary" id="waitlist-submit">
+              Request early access
+            </button>
+          </div>
+          <p class="waitlist-note" id="waitlist-note">
+            Meaningful updates only. No spam. Unsubscribe anytime.
+            <a href="/privacy/">Privacy details.</a>
+          </p>
+          <p class="waitlist-status" id="waitlist-status" role="status" aria-live="polite" aria-atomic="true"></p>
+        </form>
+      </section>
+
       <section class="try" id="try" aria-labelledby="try-title">
         <div class="try-copy">
           <h2 id="try-title">Get a live URL</h2>

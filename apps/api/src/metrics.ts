@@ -2,7 +2,7 @@
  * Product metrics via Workers Analytics Engine.
  *
  * Schema (dataset: aft_page_metrics):
- *   indexes[0]  event        deploy | page_view | claim | redeploy
+ *   indexes[0]  event        deploy | page_view | claim | redeploy | waitlist
  *   blobs[0]    source       mcp | web | extension | curl | cli | other
  *   blobs[1]    status       ok | error code (no_files, …) | http status text
  *   blobs[2]    slug         site slug when known
@@ -15,7 +15,12 @@
  * claim / redeploy are reserved for later APIs (emit 0 until then).
  */
 
-export type MetricEvent = "deploy" | "page_view" | "claim" | "redeploy";
+export type MetricEvent =
+  | "deploy"
+  | "page_view"
+  | "claim"
+  | "redeploy"
+  | "waitlist";
 
 export type AftClient =
   | "mcp"
@@ -180,5 +185,18 @@ export function trackRedeploy(
     bytes: fields?.bytes,
     files: fields?.files,
     httpStatus: response.status,
+  });
+}
+
+export function trackWaitlist(
+  env: MetricsEnv,
+  status: string,
+  httpStatus: number,
+): void {
+  writeMetric(env, {
+    event: "waitlist",
+    source: "web",
+    status,
+    httpStatus,
   });
 }

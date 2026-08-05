@@ -2,6 +2,7 @@ import type { Env } from "./env";
 import { RESERVED_SLUGS } from "./env";
 import { corsHeaders, json } from "./http";
 import { trackPageView } from "./metrics";
+import { ensureDefaultOgMeta, isHtmlContentType } from "./og";
 import { canAccessSite, privateDeniedHtml } from "./sharing";
 import { getObject } from "./storage";
 import { touchLastServed } from "./db";
@@ -20,9 +21,10 @@ export async function serveSite(
     return json({ error: "reserved" }, 404);
   }
 
+  const root = env.ROOT_DOMAIN || "aft.page";
+
   const access = await canAccessSite(env, request, slug);
   if (!access.allowed) {
-    const root = env.ROOT_DOMAIN || "aft.page";
     const headers = new Headers({
       "content-type": "text/html; charset=utf-8",
       "cache-control": "private, no-store",
@@ -76,5 +78,19 @@ export async function serveSite(
     headers.set(name, value);
   }
   await trackPageView(env, request, slug, 200);
-  return new Response(obj.body, { status: 200, headers });
+
+  let body: ArrayBuffer | ReadableStream | string = obj.body;
+  if (isHtmlContentType(obj.contentType)) {
+    const html = await new Response(obj.body).text();
+    // Use the site-relative pathname (works for both subdomain and /s/{slug}/)
+    const sitePath = pathname.startsWith("/") ? pathname : `/${pathname}`;
+    const publicUrl = `https://${slug}.${root}${sitePath || "/"}`;
+    body = ensureDefaultOgMeta(html, {
+      slug,
+      pageUrl: publicUrl,
+      rootDomain: root,
+    });
+  }
+
+  return new Response(body, { status: 200, headers });
 }

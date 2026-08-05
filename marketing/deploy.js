@@ -5,6 +5,55 @@ const MAX_FILES = 50;
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 5 * 1024 * 1024;
 
+const waitlistForm = document.getElementById("waitlist-form");
+const waitlistEmail = document.getElementById("waitlist-email");
+const waitlistCompany = document.getElementById("waitlist-company");
+const waitlistSubmit = document.getElementById("waitlist-submit");
+const waitlistStatus = document.getElementById("waitlist-status");
+
+function setWaitlistStatus(text, kind) {
+  if (!waitlistStatus) return;
+  waitlistStatus.textContent = text;
+  waitlistStatus.dataset.kind = kind || "";
+}
+
+waitlistForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const email = waitlistEmail.value.trim();
+  if (!waitlistEmail.checkValidity()) {
+    setWaitlistStatus("Enter a valid email address.", "error");
+    waitlistEmail.focus();
+    return;
+  }
+
+  waitlistSubmit.disabled = true;
+  waitlistForm.setAttribute("aria-busy", "true");
+  setWaitlistStatus("Joining…", "pending");
+
+  try {
+    const response = await fetch("https://api.aft.page/v1/waitlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, company: waitlistCompany.value }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setWaitlistStatus(
+        data.message || "We couldn’t add you right now. Please try again.",
+        "error",
+      );
+      return;
+    }
+    waitlistEmail.value = "";
+    setWaitlistStatus(data.message || "You’re on the list.", "ok");
+  } catch {
+    setWaitlistStatus("Network error. Please try again.", "error");
+  } finally {
+    waitlistSubmit.disabled = false;
+    waitlistForm.removeAttribute("aria-busy");
+  }
+});
+
 const form = document.getElementById("paste-form");
 const input = document.getElementById("html-input");
 const submit = document.getElementById("paste-submit");

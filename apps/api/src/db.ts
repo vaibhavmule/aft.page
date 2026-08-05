@@ -11,6 +11,7 @@ export async function ensureDb(env: Env): Promise<void> {
     MIGRATION_0003,
     MIGRATION_0004,
     MIGRATION_0005,
+    MIGRATION_0006,
   ]) {
     const statements = migration
       .split(";")
@@ -397,6 +398,31 @@ CREATE TABLE IF NOT EXISTS connector_invokes (
 CREATE INDEX IF NOT EXISTS idx_connector_invokes_slug_status
   ON connector_invokes(slug, status, created_at);
 `;
+
+const MIGRATION_0006 = `
+CREATE TABLE IF NOT EXISTS waitlist_signups (
+  id TEXT PRIMARY KEY NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  source TEXT NOT NULL DEFAULT 'marketing',
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_waitlist_signups_created
+  ON waitlist_signups(created_at DESC);
+`;
+
+export async function addWaitlistSignup(
+  env: Env,
+  email: string,
+): Promise<boolean> {
+  await ensureDb(env);
+  const result = await env.DB.prepare(
+    `INSERT OR IGNORE INTO waitlist_signups (id, email, source, created_at)
+     VALUES (?, ?, 'marketing', ?)`,
+  )
+    .bind(crypto.randomUUID(), email, new Date().toISOString())
+    .run();
+  return (result.meta?.changes ?? 0) > 0;
+}
 
 export type ConnectorRow = {
   id: string;

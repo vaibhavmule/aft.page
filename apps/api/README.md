@@ -4,6 +4,7 @@ Deploy + serve for hosted sites.
 
 - **Deploy:** `POST https://api.aft.page/v1/deploy`
 - **Serve:** `https://{slug}.aft.page` (also `GET https://api.aft.page/s/{slug}/`)
+- **Early access:** `POST https://api.aft.page/v1/waitlist`
 
 ## Upload shapes
 
@@ -61,6 +62,13 @@ Optional header: `X-Aft-Client: mcp|web|extension|curl|cli` (product metrics).
 - **R2** (`BUCKET` → `aft-page-sites`): site files at `sites/{slug}/{deployId}/…`.
 - **KV** (`SITES`): slug → deploy pointer. Reads also fall back to KV blobs so
   sites uploaded before R2 was enabled keep serving.
+- **D1** (`DB`): accounts, site ownership, sharing, lifecycle, connectors, and
+normalized early-access emails. `waitlist_signups.email` is unique, so repeat
+submissions are idempotent. Waitlist abuse counters use HMAC-keyed identifiers
+in KV; neither raw addresses nor client IPs are used in rate-limit keys. Analytics
+Engine records aggregate waitlist outcomes without personal identifiers. The
+public signup preflight does not depend on D1, and storage failures return a
+non-cacheable, redacted `503` response.
 
 ## Metrics
 

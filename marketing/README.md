@@ -14,6 +14,15 @@ Static landing for [aft.page](https://aft.page). Prefer Cloudflare Pages (`--pro
 | `/preview` | Preview / claim stub shell |
 | `/sitemap.xml`, `/robots.txt` | Discovery |
 
+## Early-access signup
+
+The home page posts JSON to `https://api.aft.page/v1/waitlist`. The API
+normalizes and validates the address, stores it once in D1, and returns the same
+success response for new and duplicate submissions. A honeypot, request-size
+limit, and HMAC-keyed rate-limit identifiers provide basic abuse protection
+without logging personal information. The form includes accessible pending,
+success, and error announcements.
+
 ## Typography
 
 - **Fraunces** (`500`, `600`) — display face for the `aft.page` wordmark and headings. Its warm, editorial character makes the brand feel personal rather than like a generic AI/SaaS landing page.

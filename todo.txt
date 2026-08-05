@@ -1,5 +1,5 @@
 # aft.page — todo
-# Updated: 2026-07-27
+# Updated: 2026-08-06
 
 ## Hosted wedge (plan seed)
 - [x] Domain + landing live
@@ -11,7 +11,9 @@
 - [x] MCP wrapper (`deploy_html`, `deploy_files`, `aft_health`)
 - [x] MCP docs page (HTML + mcp.md + llms.txt) — agents first
 - [x] SEO intent pages (paste/host/share/upload HTML) → funnel to home/MCP
-- [ ] Email capture on marketing
+- [x] Email capture on marketing (D1, dedupe, validation, HMAC-keyed abuse controls, accessible states)
+- [x] Privacy-safe waitlist outcome metrics (new, duplicate, abuse, errors)
+- [x] Waitlist outage isolation (D1-independent preflight + redacted 503)
 - [ ] Auth / custom domains (later)
 
 ## Also shipped

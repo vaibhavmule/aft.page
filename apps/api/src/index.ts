@@ -20,6 +20,7 @@ import {
   connectorNeedsCredentials,
 } from "./connector";
 import { handleAuthRoute, authNeedsCredentials } from "./auth-login";
+import { handleWaitlistSignup } from "./waitlist";
 
 export { sanitizeHtmlDocument } from "./upload";
 
@@ -30,6 +31,19 @@ export default {
     const root = (env.ROOT_DOMAIN || "aft.page").toLowerCase();
 
     try {
+      // Keep the public signup's preflight and redacted storage-error response
+      // independent of the global schema bootstrap below.
+      if (
+        isApiHost(host, root) &&
+        url.pathname === "/v1/waitlist" &&
+        (request.method === "POST" || request.method === "OPTIONS")
+      ) {
+        if (request.method === "OPTIONS") {
+          return optionsResponse(request.headers.get("origin"), false);
+        }
+        return await handleWaitlistSignup(request, env);
+      }
+
       await ensureDb(env);
 
       if (isApiHost(host, root)) {
@@ -120,6 +134,7 @@ async function handleApi(
       redeploy: "PATCH /v1/deploy?slug= (editToken or session owner/editor)",
       claim: "POST /v1/claim/start, GET /v1/claim/verify",
       auth: "POST /v1/auth/start, GET /v1/auth/verify",
+      waitlist: "POST /v1/waitlist",
       sharing:
         "PATCH /v1/sites/{slug}, POST/GET /v1/sites/{slug}/invites, GET /v1/invites/accept",
       inventory: "GET /v1/me/sites, GET /v1/sites/{slug}/deploys, POST /v1/sites/{slug}/rollback",

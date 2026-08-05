@@ -55,7 +55,7 @@ export async function parseUploadBody(request: Request): Promise<UploadFile[]> {
           const text = sanitizeHtmlDocument(new TextDecoder().decode(raw));
           out.push({
             path,
-            bytes: new TextEncoder().encode(text).buffer,
+            bytes: await new Blob([text]).arrayBuffer(),
             contentType: guessMime(path),
           });
         } else {
@@ -72,7 +72,7 @@ export async function parseUploadBody(request: Request): Promise<UploadFile[]> {
             : f.content;
         out.push({
           path,
-          bytes: new TextEncoder().encode(text).buffer,
+          bytes: await new Blob([text]).arrayBuffer(),
           contentType: guessMime(path),
         });
       }
@@ -86,7 +86,7 @@ export async function parseUploadBody(request: Request): Promise<UploadFile[]> {
     return [
       {
         path: "index.html",
-        bytes: new TextEncoder().encode(text).buffer,
+        bytes: await new Blob([text]).arrayBuffer(),
         contentType: "text/html; charset=utf-8",
       },
     ];

@@ -5,8 +5,10 @@ export default defineConfig({
   plugins: [
     cloudflareTest({
       wrangler: { configPath: "./wrangler.jsonc" },
-      bindings: {
-        AUTH_SECRET: "test-auth-secret-for-vitest-only",
+      miniflare: {
+        bindings: {
+          AUTH_SECRET: "test-auth-secret-for-vitest-only",
+        },
       },
     }),
   ],

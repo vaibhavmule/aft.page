@@ -1,6 +1,6 @@
 /** Client header parsing + metric schema smoke (no AE network in tests). */
 import { describe, it, expect } from "vitest";
-import { resolveClient, writeMetric } from "../src/metrics";
+import { resolveClient, trackWaitlist, writeMetric } from "../src/metrics";
 
 describe("resolveClient", () => {
   it("reads X-Aft-Client", () => {
@@ -84,5 +84,31 @@ describe("writeMetric", () => {
       indexes: ["page_view"],
       blobs: ["other", "ok", "hello", "abcd"],
     });
+  });
+
+  it("records waitlist outcomes without personal identifiers", () => {
+    const points: Array<{
+      indexes?: string[];
+      blobs?: string[];
+      doubles?: number[];
+    }> = [];
+    trackWaitlist(
+      {
+        METRICS: {
+          writeDataPoint(point: unknown) {
+            points.push(point as (typeof points)[number]);
+          },
+        } as AnalyticsEngineDataset,
+      },
+      "new",
+      200,
+    );
+    expect(points).toEqual([
+      {
+        indexes: ["waitlist"],
+        blobs: ["web", "new", "", ""],
+        doubles: [0, 0, 0, 200],
+      },
+    ]);
   });
 });

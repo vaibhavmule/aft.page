@@ -561,10 +561,88 @@ strong {
 
 /* —— Sections —— */
 .pillars,
+.waitlist,
 .try {
   width: min(1120px, calc(100% - 2.5rem));
   margin: 0 auto;
   padding: 4rem 0;
+}
+
+/* —— Early access —— */
+.waitlist {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 5rem);
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  background:
+    radial-gradient(circle at 100% 0%, var(--beacon-dim), transparent 45%),
+    var(--panel);
+}
+
+.waitlist h2 {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.45rem, 2.8vw, 2rem);
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+}
+
+.waitlist-copy > p:last-child {
+  margin: 0;
+  color: var(--quiet);
+  max-width: 52ch;
+}
+
+.waitlist-fields {
+  display: flex;
+  gap: 0.65rem;
+}
+
+.waitlist-form input[type="email"] {
+  min-width: 0;
+  flex: 1;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--line-bright);
+  border-radius: 4px;
+  background: var(--bg-inset);
+  color: var(--ink);
+  font: inherit;
+  outline: none;
+}
+
+.waitlist-form input[type="email"]:focus {
+  border-color: var(--beacon);
+  box-shadow: 0 0 0 3px var(--beacon-dim);
+}
+
+.waitlist-trap {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.waitlist-note,
+.waitlist-status {
+  margin: 0.65rem 0 0;
+  min-height: 1.35em;
+  font-size: 0.78rem;
+  color: var(--faint);
+}
+
+.waitlist-status {
+  margin-top: 0.2rem;
+}
+
+.waitlist-status[data-kind="ok"] {
+  color: var(--good);
+}
+
+.waitlist-status[data-kind="error"] {
+  color: var(--danger);
 }
 
 .section-tag {
@@ -1470,6 +1548,7 @@ strong {
   }
 
   .try,
+  .waitlist,
   .seo-hero {
     grid-template-columns: 1fr;
   }
@@ -1502,6 +1581,7 @@ strong {
   .seo-top,
   .hero,
   .pillars,
+  .waitlist,
   .try,
   .footer-inner,
   .docs-hero,
@@ -1530,6 +1610,14 @@ strong {
 
   .pillar-list {
     grid-template-columns: 1fr;
+  }
+
+  .waitlist {
+    padding: 1.25rem;
+  }
+
+  .waitlist-fields {
+    flex-direction: column;
   }
 
   .footer-top {
