@@ -10,7 +10,9 @@ Quote **INR for India / SEA** calls; **USD for US / YC** calls. Same SKUs.
 - MCP / agent deploy
 - Claim + basic share for dogfooding
 
-**Funnel, not the company.**
+The free tier proves the Small Software activation loop. The company grows from
+retained applications that need persistence, private sharing, state, full-stack
+runtime, higher limits, and customization.
 
 ## Team
 
@@ -21,8 +23,9 @@ Quote **INR for India / SEA** calls; **USD for US / YC** calls. Same SKUs.
 Includes:
 
 - Private apps + invite ACL
-- Org inventory (owner, version, last-used)
-- `aft.json` capability approve-on-deploy
+- Durable projects (owner, version, last-used)
+- Updates and rollback
+- Stateful/full-stack runtime allowance as it ships
 - Email support (founder)
 
 ## Connector pilot / design partner
@@ -46,6 +49,7 @@ Listed as “available” — build when a customer documents **~$15K+/yr** or *
 
 ## What to say
 
-> Free URL for adoption. Team when you need private + governance. Connector pilot when apps must touch live internal data.
+> Free to make Small Software live. Pay when you keep more apps running, need
+> private sharing or full-stack runtime, or connect them to live internal data.
 
 Do not invent custom pricing mid-call. Discount only for a written pilot / LOI and a public quote.

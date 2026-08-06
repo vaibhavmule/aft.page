@@ -8,6 +8,7 @@ import {
   findOrCreateUser,
   isValidEmail,
   normalizeEmail,
+  resolveSessionUser,
   sendClaimEmail,
   sessionCookieHeader,
   verifyEditToken,
@@ -16,13 +17,14 @@ import {
   getEditTokenHash,
   getSiteMemberRole,
   getSiteOwnerId,
+  getSiteRow,
   getSiteVisibility,
   listSiteInvites,
   listSiteMembers,
   getCapabilityGrant,
   listDeploys,
 } from "./db";
-import { clientIp, corsHeaders, json, optionsResponse } from "./http";
+import { clientIp, corsHeaders, json, optionsResponse, privateJson } from "./http";
 import { rateLimit } from "./rate-limit";
 
 export async function handleClaimRoute(
@@ -39,6 +41,10 @@ export async function handleClaimRoute(
 
   if (url.pathname === "/v1/claim/start" && request.method === "POST") {
     return claimStart(request, env, origin, creds);
+  }
+
+  if (url.pathname === "/v1/claim/session" && request.method === "POST") {
+    return claimSession(request, env, origin, creds);
   }
 
   if (url.pathname === "/v1/claim/verify" && request.method === "GET") {
@@ -108,6 +114,78 @@ async function claimStart(
   return json({ ok: true, message: "check_your_email" }, 200, extra);
 }
 
+/** Claim (or confirm ownership) using the logged-in session — no second email. */
+async function claimSession(
+  request: Request,
+  env: Env,
+  origin: string | null,
+  creds: boolean,
+): Promise<Response> {
+  const extra = Object.fromEntries(corsHeaders(origin, creds));
+  const user = await resolveSessionUser(env, request);
+  if (!user) {
+    return privateJson({ error: "unauthorized" }, 401, extra);
+  }
+
+  let body: { slug?: string; editToken?: string };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return privateJson({ error: "invalid_json" }, 400, extra);
+  }
+
+  const slug = body.slug?.toLowerCase();
+  const editToken = body.editToken?.trim() || "";
+  if (!slug) {
+    return privateJson(
+      { error: "invalid_request", hint: "slug required" },
+      400,
+      extra,
+    );
+  }
+
+  const ownerId = await getSiteOwnerId(env, slug);
+  if (ownerId && ownerId === user.id) {
+    return privateJson(
+      { ok: true, slug, already: true, email: user.email },
+      200,
+      extra,
+    );
+  }
+  if (ownerId) {
+    return privateJson({ error: "already_claimed" }, 409, extra);
+  }
+
+  if (!editToken) {
+    return privateJson(
+      {
+        error: "edit_token_required",
+        hint: "Open the deploy preview link that includes ?token= to claim",
+      },
+      400,
+      extra,
+    );
+  }
+
+  const storedHash = await getEditTokenHash(env, slug);
+  if (!(await verifyEditToken(env, slug, editToken, storedHash))) {
+    return privateJson({ error: "unauthorized" }, 401, extra);
+  }
+
+  const ip = clientIp(request);
+  if (!(await rateLimit(env, `claim:ip:${ip}`, 20, 3600))) {
+    return privateJson({ error: "rate_limited" }, 429, extra);
+  }
+
+  const ok = await assignSiteOwner(env, slug, user.id);
+  if (!ok) {
+    return privateJson({ error: "already_claimed" }, 409, extra);
+  }
+
+  trackClaim(env, request, slug, user.id);
+  return privateJson({ ok: true, slug, email: user.email }, 200, extra);
+}
+
 async function claimVerify(
   request: Request,
   env: Env,
@@ -157,8 +235,16 @@ export async function getSiteInfo(
   const origin = request.headers.get("origin");
   const extra = Object.fromEntries(corsHeaders(origin, true));
 
-  const ownerId = await getSiteOwnerId(env, slug);
-  const visibility = await getSiteVisibility(env, slug);
+  const root = env.ROOT_DOMAIN || "aft.page";
+  const siteRow = await getSiteRow(env, slug);
+  const raw = await env.SITES.get(`site:${slug}`);
+  if (!siteRow && !raw) {
+    return privateJson({ error: "not_found" }, 404, extra);
+  }
+
+  const ownerId = siteRow?.ownerUserId ?? (await getSiteOwnerId(env, slug));
+  const visibility =
+    siteRow?.visibility ?? (await getSiteVisibility(env, slug));
   const user = await resolveSessionUserSafe(env, request);
   const owned = Boolean(ownerId);
   const owner = Boolean(user && ownerId && user.id === ownerId);
@@ -169,6 +255,7 @@ export async function getSiteInfo(
     if (memberRole) role = memberRole;
   }
 
+  const liveUrl = `https://${slug}.${root}`;
   const payload: Record<string, unknown> = {
     slug,
     owned,
@@ -176,12 +263,19 @@ export async function getSiteInfo(
     visibility,
     role,
     email: user?.email ?? null,
+    url: liveUrl,
+    preview: `https://${root}/preview?url=${encodeURIComponent(liveUrl)}`,
+    manage: `https://${root}/project/?slug=${encodeURIComponent(slug)}`,
+    createdAt: siteRow?.createdAt ?? null,
+    updatedAt: siteRow?.updatedAt ?? null,
+    lastServedAt: siteRow?.lastServedAt ?? null,
+    deployId: siteRow?.deployId ?? null,
   };
 
-  if (owner) {
+  if (owner || role === "edit" || role === "view") {
     payload.members = await listSiteMembers(env, slug);
     payload.invites = await listSiteInvites(env, slug);
-    payload.deploys = await listDeploys(env, slug, 10);
+    payload.deploys = await listDeploys(env, slug, 20);
     const caps = await getCapabilityGrant(env, slug);
     if (caps) {
       payload.capabilities = {
@@ -193,24 +287,22 @@ export async function getSiteInfo(
     }
   }
 
-  const raw = await env.SITES.get(`site:${slug}`);
   if (raw) {
     try {
       const meta = JSON.parse(raw) as { deployId?: string };
-      payload.deployId = meta.deployId ?? null;
+      if (meta.deployId) payload.deployId = meta.deployId;
     } catch {
-      payload.deployId = null;
+      /* keep D1 deployId */
     }
   }
 
-  return json(payload, 200, extra);
+  return privateJson(payload, 200, extra);
 }
 
 async function resolveSessionUserSafe(
   env: Env,
   request: Request,
 ): Promise<{ id: string; email: string } | null> {
-  const { resolveSessionUser } = await import("./auth");
   return resolveSessionUser(env, request);
 }
 

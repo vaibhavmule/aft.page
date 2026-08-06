@@ -1,16 +1,19 @@
 # aft.page — 30-day plan
 
-Internal. Goal: **compress Phase 1–2 into 30 days** and get **real customers (or design-partner teams) as fast as possible**.
+Internal. Goal: prove **A Cloud for Small Software** with real users in 30 days.
 
-Updated: 2026-08-03
+Updated: 2026-08-06
 
 Sam frame:
 
 > Seven minutes → app. Seven days → product. Seven weeks → customer evidence. Seven months → company.
 
-**Phase 0 (technical proof) is done** — stop rebuilding hosting. **Connector v0 is an early Phase 4 prototype** — freeze deepening until weekly two-person usage. Calendar is for Phase 1 success test + Phase 2 conversations.
+**Static technical proof is done.** Connector v0 is an enabling prototype—freeze
+deepening until a useful app demands it. The next product proof is repeat usage,
+Doc-simple sharing, and one full-stack runtime without cloud ceremony.
 
-North star: **orgs with an app used weekly by ≥2 people** (not deploy count).
+Mission: **agent output → durable app → share like a Google Doc.** Useful solo
+apps and small-team apps both count; one-shot deploys do not.
 
 Time split: ~50% product / ~40% customers / ~10% writing. After login ships, customers ≥ engineering.
 
@@ -24,12 +27,14 @@ By day 30:
 | --- | --- |
 | YC application submitted | YC interview invite |
 | Polymerize IP reviewed (personal hardware only) | — |
-| Identity + org + basic share working | Entra as well as Workspace |
+| Ownership + basic share working | Workspace/Entra domain login |
 | Capability approve-on-deploy visible (even ugly) | Connector v0 (outbound) on one dogfood app |
-| **≥5 teams** using aft weekly (not just one-off deploys) | **≥10 apps / ≥5 orgs** (eight-week bar pulled forward) |
+| **≥5 repeat deployers** and ≥3 apps used after 7 days | **≥1 full-stack/OpenNext app** without manual cloud setup |
 | **≥3 design-partner conversations** with a clear next step | **≥1 paying** or signed LOI / pilot letter |
 
-**Customer definition (be honest):** a team that deploys more than once **and** would notice if aft disappeared. Anonymous one-shot HTML ≠ customer.
+**User definition (be honest):** a person or small team that deploys more than
+once, returns to the app, or would notice if aft disappeared. Anonymous one-shot
+HTML is activation—not retained usage.
 
 Paid can wait until week 3–4; **weekly usage cannot.**
 
@@ -37,11 +42,13 @@ Paid can wait until week 3–4; **weekly usage cannot.**
 
 ## Positioning (say this every outreach)
 
-> Any coding agent → your company’s identity, your data via your network, governed lifecycle — hosted by us today, in your cloud when you need it.
+> Your agent made the software. aft makes it live, persistent, and shareable.
 
-> Prized builds for non-engineers. Sites hosts inside ChatGPT. We are the neutral runtime every builder deploys *to*.
+> A cloud for purpose-built software used by one person or a small handful—no
+> repository or cloud ceremony required.
 
-Free hosted URL = **funnel**. Company = **capabilities + inventory + connector path**.
+The URL is the first success. The company is the simplest durable runtime and
+lifecycle for Small Software. Identity, capabilities, and connectors serve it.
 
 ---
 
@@ -50,33 +57,33 @@ Free hosted URL = **funnel**. Company = **capabilities + inventory + connector p
 ### Week 1 (days 1–7) — Unlock + talk
 
 **Product (agent-speed)**
-- [ ] Ship users / orgs / sessions (Workspace OIDC first)
+- [ ] Ship users / ownership / sessions (magic link first)
 - [ ] Private + invite (good enough, not perfect)
 - [ ] Submit **YC late application** + 1-min video ([YC-APPLICATION.md](./YC-APPLICATION.md))
 - [ ] Read Polymerize employment agreement (IP / moonlighting)
 
 **Customers (human-speed — this is the bottleneck)**
-- [ ] List **50** targets: AI-forward startups, agent-using eng teams, internal-tools owners, YC/alumni-adjacent, Claude Code / Cursor power users
-- [ ] Send **30** outreaches (short: “agent-built apps need a governed home — 15 min?”)
+- [ ] List **50** targets: people already making personal or team apps with Claude, Codex, Cursor, ChatGPT, Lovable, Replit, or v0
+- [ ] Send **30** outreaches (short: “What did your agent build that never made it past localhost?”)
 - [ ] Book **5** calls
-- [ ] Dogfood one real app yourself daily (force inventory + pain)
+- [ ] Dogfood one real personal or team app daily (force runtime + lifecycle pain)
 
 **Exit week 1:** App in. IP read. ≥5 calls booked. Auth path live or days away.
 
 ### Week 2 (days 8–14) — Differentiator visible + first yeses
 
 **Product**
-- [x] Immutable deploy versions + **org inventory** (owner, version, last-used)
+- [x] Immutable deploy versions + **project list** (owner, version, last-used)
 - [x] `aft.json` `capabilities` + deploy prints requests → approve/deny (v1: secrets + egress allowlist OK)
 - [x] Expense/refund (or similar) dogfood app that *asks* for capabilities
 
 **Customers**
 - [ ] Run the 5+ calls; ask for **deploy this week**
 - [ ] Send **30** more outreaches
-- [ ] Convert **≥3 teams** to repeat deployers
+- [ ] Convert **≥3 people or teams** to repeat deployers
 - [ ] Start a shared “design partner” Notion/Sheet: name, agent they use, app, next step
 
-**Exit week 2:** Someone other than you has approved a capability screen. ≥3 weekly teams.
+**Exit week 2:** ≥3 repeat deployers; at least one app shared or used after seven days.
 
 ### Week 3 (days 15–21) — Connector story + paid path
 
@@ -88,7 +95,7 @@ Free hosted URL = **funnel**. Company = **capabilities + inventory + connector p
 **Customers**
 - [ ] **10** live demos (capability + connector if ready)
 - [ ] Push for **design partner MoU** or paid pilot ($99–500/mo or $2–5k pilot — pick one and stick)
-- [ ] Ask every user: “Who else on your team should deploy?”
+- [ ] Ask every user: “Will you use this again next week, and who would you share it with?”
 
 **Exit week 3:** Connector demoable once. ≥1 serious pilot conversation in writing.
 
@@ -102,12 +109,14 @@ Free hosted URL = **funnel**. Company = **capabilities + inventory + connector p
 - [ ] **No** connector deepen (v0 already demoable)
 
 **Customers**
-- [ ] Hit **≥5 weekly teams** (stretch 10 apps / 5 orgs)
-- [ ] ≥1 org with **two users** on one app (Phase 1 success test externally)
+- [ ] Hit **≥5 repeat deployers** (stretch: 10 retained apps)
+- [ ] ≥1 app shared with and used by another person
 - [ ] Close **≥1** paid or signed pilot / LOI (non-friend; ₹ or $ per [PRICING.md](./PRICING.md))
 - [ ] Evidence pack filled: screenshots, deploy counts, quotes, demo link
 
-**Exit day 30:** Usage evidence + at least one commercial yes (or dated written intent). Days 31–60 = more orgs + charge — deepen connector only on demand.
+**Exit day 30:** repeat-use evidence + at least one commercial yes (or dated
+written intent). Days 31–60 = improve the runtime people actually need; deepen
+connector or enterprise features only on demand.
 
 ---
 
@@ -115,7 +124,7 @@ Free hosted URL = **funnel**. Company = **capabilities + inventory + connector p
 
 | Block | Time | Job |
 | --- | --- | --- |
-| Build | 60–90 min | One shippable slice (auth, capabilities, connector) |
+| Build | 60–90 min | One shippable Small Software slice (activation, sharing, runtime) |
 | Outreach | **60 min** | 5–10 messages / follow-ups — every day |
 | Users | 30–60 min | Calls, demos, unblock a team |
 | Dogfood | 15 min | Deploy or use aft yourself |
@@ -128,11 +137,12 @@ Agents may compress build to “seven minutes.” **They cannot send your 30 mes
 
 ## Who to sell first (fastest path)
 
-1. **Builders already using Claude Code / Cursor / Codex** who ship internal tools weekly  
-2. **Small eng/product teams** drowning in agent-generated prototypes with no home  
-3. **One security-minded champion** who cares about “what can this app touch?”  
+1. **People already using Claude Code / Cursor / Codex** who make useful personal software
+2. **Small teams** with agent-generated prototypes stuck on localhost or in chat
+3. **One security-minded champion** when sharing or live data becomes the blocker
 
-Avoid: six-month enterprise procurement as week-1 motion. Promise BYOC on the pricing page; sell hosted + connector pilot now.
+Avoid six-month enterprise procurement as a week-1 motion. Sell the simplest
+hosted path first; discuss BYOC or connectors only when a real app requires them.
 
 ---
 
@@ -140,10 +150,10 @@ Avoid: six-month enterprise procurement as week-1 motion. Promise BYOC on the pr
 
 ```text
 Phase 0      Technical proof      DONE — agent → URL (do not rebuild)
-Phase 1      Trusted sharing      login, private, invite, inventory, deploys (closing now)
-Phase 2      External-user proof  conversations, weekly 2-person orgs (calendar)
-Phase 3      First paid           Team ₹/$; design partner (charge for ops pain)
-Phase 4      Connector proof      v0 early — deepen after weekly usage
+Phase 1      Durable ownership    login, projects, updates, rollback
+Phase 2      External-user proof  stranger deploys, repeat use, first share
+Phase 3      Runtime expansion    one full-stack app without cloud setup
+Phase 4      First paid           retained apps, private sharing, runtime limits
 Months 4–7   Company              GTM hire, retention, clear buyer
 Months 8–18  Scale proven part    BYOC only on signed demand
 ```
@@ -168,9 +178,9 @@ Polymerize: **do not resign** in the first seven-week proof.
 | --- | --- | --- | --- | --- |
 | Outreaches sent (cum) | 30 | 60 | 90 | 120 |
 | Calls held | 3 | 8 | 15 | 20 |
-| Weekly active teams | 1 | 3 | 5 | 5–10 |
-| Capability approvals (non-you) | 0 | 1 | 3 | 5+ |
-| Connector demos | 0 | 0 | 1 | 2+ |
+| Repeat deployers | 1 | 3 | 5 | 5–10 |
+| Apps used after 7 days | 0 | 1 | 2 | 3+ |
+| Apps shared with another person | 0 | 1 | 2 | 3+ |
 | Paid / LOI / pilot | 0 | 0 | 0–1 | ≥1 |
 | YC app | done | — | — | — |
 
@@ -185,4 +195,4 @@ Polymerize: **do not resign** in the first seven-week proof.
 - [PRICING.md](./PRICING.md) — Free / Team $99 or ₹9,999 / connector pilot  
 - [EVIDENCE-PACK.md](./EVIDENCE-PACK.md) — Week 4 close checklist + Phase 1 success test  
 
-**Rule:** Ship with agents. **Fill the calendar with customers.**
+**Rule:** Ship with agents. Watch what strangers keep and share.

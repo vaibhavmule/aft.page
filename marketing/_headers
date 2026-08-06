@@ -6,3 +6,10 @@
 /llms.txt
   Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=60
+
+# Keep CSS/JS short-lived so marketing deploys aren't stuck behind 4h edge cache
+/styles.css
+  Cache-Control: public, max-age=60, must-revalidate
+
+/*.js
+  Cache-Control: public, max-age=60, must-revalidate

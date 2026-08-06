@@ -8,30 +8,22 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#14110f" />
+    <meta name="theme-color" content="#07080a" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Sora:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,600&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="/app.css" />
     <style>
       :root {
-        --ink: #14110f;
-        --paper: #f3efe6;
-        --mist: #e4ddd0;
-        --signal: #c45c26;
-        --signal-deep: #9a3f12;
-        --quiet: #5c554c;
-        --code-bg: #1c1916;
-        --code-fg: #ebe6da;
+        --code-bg: #0b0d11;
+        --code-fg: #e8eaef;
         --tok-tag: #e8a06a;
         --tok-attr: #c9b896;
         --tok-str: #9ec9a0;
         --tok-comment: #8a8278;
-      }
-      * {
-        box-sizing: border-box;
       }
       html,
       body {
@@ -41,34 +33,35 @@
       body {
         display: flex;
         flex-direction: column;
-        font-family: "Sora", "Segoe UI", sans-serif;
-        background: var(--paper);
-        color: var(--ink);
+        min-height: 100%;
       }
       .bar {
         display: flex;
         align-items: center;
         gap: 0.75rem;
         padding: 0.6rem 1rem;
-        background: var(--paper);
-        border-bottom: 1.5px solid rgba(20, 17, 15, 0.12);
+        background: var(--void);
+        border-bottom: 1px solid var(--line);
         flex-wrap: wrap;
         flex-shrink: 0;
       }
       .brand {
-        font-family: "Fraunces", serif;
+        font-family: var(--font-display);
         font-weight: 600;
         font-size: 1.15rem;
-        letter-spacing: -0.03em;
+        letter-spacing: -0.02em;
         text-decoration: none;
         color: var(--ink);
         margin-right: 0.25rem;
+        line-height: 1;
       }
       .brand span {
-        color: var(--signal);
+        color: var(--beacon);
+        font-family: var(--font-sans);
+        font-weight: 700;
       }
       .slug {
-        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-family: var(--font-mono);
         font-size: 0.85rem;
         color: var(--quiet);
         overflow: hidden;
@@ -83,30 +76,6 @@
         flex-wrap: wrap;
         align-items: center;
       }
-      .view-toggle,
-      .visibility-toggle {
-        display: inline-flex;
-        padding: 0.2rem;
-        border: 1.5px solid rgba(20, 17, 15, 0.2);
-        border-radius: 0.45rem;
-        background: rgba(255, 255, 255, 0.35);
-      }
-      .view-toggle button,
-      .visibility-toggle button {
-        appearance: none;
-        border: 0;
-        border-radius: 0.28rem;
-        padding: 0.32rem 0.65rem;
-        background: transparent;
-        color: var(--quiet);
-        cursor: pointer;
-        font: 600 0.78rem "Sora", sans-serif;
-      }
-      .view-toggle button[aria-pressed="true"],
-      .visibility-toggle button[aria-pressed="true"] {
-        background: var(--ink);
-        color: var(--paper);
-      }
       .share-cluster {
         display: inline-flex;
         align-items: center;
@@ -114,38 +83,23 @@
         flex-wrap: wrap;
       }
       .btn {
-        appearance: none;
+        padding: 0.45rem 0.85rem;
+        font-size: 0.85rem;
+      }
+      .btn.is-busy {
         display: inline-flex;
         align-items: center;
-        gap: 0.35rem;
-        padding: 0.45rem 0.85rem;
-        border-radius: 0.35rem;
-        border: 1.5px solid transparent;
-        font: 600 0.85rem "Sora", sans-serif;
-        text-decoration: none;
-        cursor: pointer;
-        color: var(--ink);
-        background: transparent;
+        gap: 0.45rem;
+        opacity: 0.75;
+        pointer-events: none;
       }
-      .btn-primary {
-        background: var(--ink);
-        color: var(--paper);
-      }
-      .btn-primary:hover {
-        background: #000;
-      }
-      .btn-ghost {
-        border-color: rgba(20, 17, 15, 0.28);
-      }
-      .btn-ghost:hover {
-        border-color: var(--ink);
-      }
-      .btn-claim {
-        background: var(--signal);
-        color: #fbfaf7;
-      }
-      .btn-claim:hover {
-        background: var(--signal-deep);
+      .btn-spinner {
+        width: 0.85rem;
+        height: 0.85rem;
+        border-radius: 999px;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        animation: app-spin 0.65s linear infinite;
       }
       .claim-dialog {
         position: fixed;
@@ -154,23 +108,35 @@
         align-items: center;
         justify-content: center;
         padding: 1rem;
-        background: rgba(13, 17, 23, 0.55);
+        background: rgba(7, 8, 10, 0.72);
         z-index: 50;
+        opacity: 0;
       }
       .claim-dialog.open {
         display: flex;
+        animation: dialog-backdrop 0.18s ease both;
       }
       .claim-panel {
         width: min(26rem, 100%);
         padding: 1.35rem 1.4rem 1.25rem;
         border-radius: 0.5rem;
-        background: var(--paper);
+        background: var(--panel);
         color: var(--ink);
-        box-shadow: 0 20px 50px rgba(13, 17, 23, 0.25);
+        border: 1px solid var(--line-bright);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        animation: dialog-panel 0.22s ease both;
+      }
+      @keyframes dialog-backdrop {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes dialog-panel {
+        from { opacity: 0; transform: translateY(8px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
       }
       .claim-panel h2 {
         margin: 0 0 0.5rem;
-        font: 600 1.1rem "DM Sans", system-ui, sans-serif;
+        font: 600 1.1rem var(--font-sans);
       }
       .claim-panel p {
         margin: 0 0 1rem;
@@ -182,11 +148,12 @@
         width: 100%;
         box-sizing: border-box;
         padding: 0.65rem 0.75rem;
-        border: 1.5px solid rgba(13, 17, 23, 0.2);
-        border-radius: 0.35rem;
-        font: 0.95rem "DM Sans", system-ui, sans-serif;
+        border: 1px solid var(--line-bright);
+        border-radius: 4px;
+        font: 0.95rem var(--font-sans);
         margin-bottom: 0.85rem;
-        background: #fff;
+        background: var(--bg-inset);
+        color: var(--ink);
       }
       .claim-panel .claim-actions {
         display: flex;
@@ -206,7 +173,7 @@
         align-items: center;
         gap: 0.5rem;
         padding: 0.4rem 0;
-        border-bottom: 1px solid rgba(13, 17, 23, 0.08);
+        border-bottom: 1px solid var(--line);
       }
       .invite-list .meta {
         color: var(--quiet);
@@ -216,7 +183,7 @@
       .invite-list button {
         border: none;
         background: transparent;
-        color: var(--signal-deep);
+        color: var(--beacon-bright);
         cursor: pointer;
         font-size: 0.78rem;
         text-decoration: underline;
@@ -224,9 +191,9 @@
       .cap-banner {
         margin: 0;
         padding: 0.75rem 1.1rem;
-        background: #fff4ec;
-        border-bottom: 1px solid #f0c9ae;
-        color: #7a3a12;
+        background: var(--beacon-dim);
+        border-bottom: 1px solid color-mix(in srgb, var(--beacon) 35%, transparent);
+        color: var(--beacon-bright);
         display: flex;
         flex-wrap: wrap;
         align-items: center;
@@ -238,13 +205,13 @@
       .cap-banner strong { font-size: 0.82rem; }
       .btn-icon {
         padding: 0.4rem 0.55rem;
-        border-color: rgba(235, 230, 218, 0.22);
+        border-color: var(--line-bright);
         color: var(--code-fg);
         background: transparent;
       }
       .btn-icon:hover {
-        border-color: rgba(235, 230, 218, 0.5);
-        background: rgba(235, 230, 218, 0.08);
+        border-color: var(--beacon);
+        background: color-mix(in srgb, var(--ink) 6%, transparent);
       }
       .btn-icon:disabled {
         opacity: 0.4;
@@ -296,7 +263,7 @@
         align-items: center;
         gap: 0.5rem;
         padding: 0.45rem 0.75rem;
-        border-bottom: 1px solid rgba(235, 230, 218, 0.1);
+        border-bottom: 1px solid var(--line);
         flex-shrink: 0;
       }
       .code-toolbar .label {
@@ -306,6 +273,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        font-family: var(--font-mono);
       }
       .code {
         flex: 1;
@@ -315,19 +283,13 @@
         overflow: auto;
         background: var(--code-bg);
         color: var(--code-fg);
-        font: 0.8rem/1.55 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        font: 0.8rem/1.55 var(--font-mono);
         tab-size: 2;
         white-space: pre;
       }
-      .code .tok-tag {
-        color: var(--tok-tag);
-      }
-      .code .tok-attr {
-        color: var(--tok-attr);
-      }
-      .code .tok-str {
-        color: var(--tok-str);
-      }
+      .code .tok-tag { color: var(--tok-tag); }
+      .code .tok-attr { color: var(--tok-attr); }
+      .code .tok-str { color: var(--tok-str); }
       .code .tok-comment {
         color: var(--tok-comment);
         font-style: italic;
@@ -341,9 +303,7 @@
         color: var(--tok-comment);
         font-size: 0.9rem;
       }
-      .code-error a {
-        color: var(--tok-tag);
-      }
+      .code-error a { color: var(--tok-tag); }
       .preview-pane {
         background: #fff;
       }
@@ -360,23 +320,102 @@
         text-align: center;
         color: var(--quiet);
         padding: 2rem;
+        background: var(--void);
+        border: none;
+        border-radius: 0;
       }
-      [hidden] {
-        display: none !important;
+      .empty-card {
+        width: min(26rem, 100%);
+        text-align: left;
+        animation: app-fade-up 0.3s ease both;
+      }
+      .empty-card h1 {
+        margin: 0 0 0.35rem;
+        font: 650 1.25rem/1.3 var(--font-sans);
+        color: var(--ink);
+      }
+      .empty-card .lead {
+        margin: 0 0 1.25rem;
+        font-size: 0.92rem;
+      }
+      .empty-card label {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: 0.35rem;
+      }
+      .empty-card input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.65rem 0.75rem;
+        border: 1px solid var(--line-bright);
+        border-radius: 4px;
+        font: 0.95rem var(--font-sans);
+        background: var(--bg-inset);
+        color: var(--ink);
+      }
+      .empty-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+      }
+      .empty-links {
+        margin-top: 1.25rem;
+        font-size: 0.88rem;
+      }
+      .empty-links a {
+        color: var(--beacon-bright);
+        margin-right: 0.85rem;
+      }
+      .hub-projects {
+        margin-top: 1.5rem;
+        padding-top: 1.15rem;
+        border-top: 1px solid var(--line);
+      }
+      .hub-projects h2 {
+        margin: 0 0 0.65rem;
+        font: 600 0.82rem/1.3 var(--font-sans);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--quiet);
+      }
+      .hub-projects ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .hub-projects li {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.45rem 0;
+        border-bottom: 1px solid var(--line);
+        font-size: 0.9rem;
+        color: var(--ink);
+      }
+      .hub-projects li a {
+        margin-left: auto;
+        color: var(--beacon-bright);
+        font-size: 0.82rem;
+        font-weight: 600;
+        text-decoration: none;
       }
       .empty a {
-        color: var(--signal-deep);
+        color: var(--beacon-bright);
       }
       .toast {
         position: fixed;
         bottom: 1rem;
         left: 50%;
         transform: translateX(-50%);
-        background: var(--ink);
-        color: var(--paper);
+        background: var(--panel);
+        color: var(--ink);
+        border: 1px solid var(--line-bright);
         font-size: 0.85rem;
         padding: 0.5rem 0.9rem;
-        border-radius: 0.35rem;
+        border-radius: 4px;
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.2s ease;
@@ -385,18 +424,18 @@
       .toast.show {
         opacity: 1;
       }
-
-      @media (max-width: 800px) {
-        .slug {
-          max-width: 55vw;
+      @media (prefers-reduced-motion: reduce) {
+        .claim-dialog.open, .claim-panel, .btn-spinner, .toast, .empty-card {
+          animation: none !important;
         }
+      }
+      @media (max-width: 800px) {
+        .slug { max-width: 55vw; }
         .actions {
           margin-left: 0;
           width: 100%;
         }
-        .share-cluster {
-          width: 100%;
-        }
+        .share-cluster { width: 100%; }
       }
     </style>
   </head>
@@ -410,16 +449,15 @@
       </div>
       <div class="actions">
         <a class="btn btn-ghost" id="back" hidden>Back to chat</a>
-        <button class="btn btn-ghost" id="copy">Copy link</button>
-        <a class="btn btn-ghost" id="open" target="_blank" rel="noopener noreferrer">Open live</a>
-        <div class="share-cluster" id="share-cluster">
-          <div class="visibility-toggle" id="visibility-toggle" role="group" aria-label="Site visibility">
-            <button id="vis-public" type="button" aria-pressed="true">Public</button>
-            <button id="vis-private" type="button" aria-pressed="false">Private</button>
-          </div>
-          <button class="btn btn-ghost" id="invite" type="button" hidden>Invite by email</button>
-          <button class="btn btn-claim" id="claim">Claim this site</button>
+        <button class="btn btn-ghost" id="copy" hidden>Copy link</button>
+        <a class="btn btn-ghost" id="open" target="_blank" rel="noopener noreferrer" hidden>Open live</a>
+        <div class="share-cluster" id="share-cluster" hidden>
+          <button class="btn btn-ghost is-busy" id="access" type="button" disabled aria-busy="true">
+            <span class="btn-spinner" aria-hidden="true"></span> Checking…
+          </button>
         </div>
+        <a class="btn btn-ghost" href="/projects">Projects</a>
+        <a class="btn btn-ghost" href="/login" data-aft-auth="login">Log in</a>
       </div>
     </div>
 
@@ -457,10 +495,35 @@
     </div>
 
     <div class="empty" id="empty">
-      <p>
-        No site to preview.<br />
-        Deploy something on <a href="/#paste">aft.page</a> first.
-      </p>
+      <div class="empty-card">
+        <h1>Preview a site</h1>
+        <p class="lead">
+          Paste a live <code>*.aft.page</code> URL to manage visibility, invites, and claim.
+        </p>
+        <form id="hub-form">
+          <label for="hub-url">Site URL</label>
+          <input
+            id="hub-url"
+            name="url"
+            type="url"
+            required
+            placeholder="https://your-app.aft.page"
+            autocomplete="off"
+          />
+          <div class="empty-actions">
+            <button type="submit" class="btn btn-claim" id="hub-open">Open preview</button>
+          </div>
+        </form>
+        <div class="hub-projects" id="hub-projects" hidden>
+          <h2>Your projects</h2>
+          <ul id="hub-list"></ul>
+        </div>
+        <p class="empty-links">
+          <a href="/projects">Projects</a>
+          <a href="/paste-html/">Paste HTML</a>
+          <a href="/login">Log in</a>
+        </p>
+      </div>
     </div>
     <div class="toast" id="toast"></div>
 
@@ -484,17 +547,26 @@
 
     <div class="claim-dialog" id="invite-dialog" role="dialog" aria-modal="true" aria-labelledby="invite-title" hidden>
       <div class="claim-panel">
-        <h2 id="invite-title">Invite people</h2>
-        <p>Google Doc–style access for this private site.</p>
-        <ul class="invite-list" id="invite-list"></ul>
-        <input type="email" id="invite-email" placeholder="colleague@company.com" autocomplete="email" />
-        <select id="invite-role" aria-label="Access level">
-          <option value="view">Can view</option>
-          <option value="edit">Can edit</option>
-        </select>
+        <h2 id="invite-title">Access</h2>
+        <p id="invite-lead">Who can open this site.</p>
+        <div class="visibility-toggle" id="visibility-toggle" role="group" aria-label="Site visibility">
+          <button id="vis-public" type="button" aria-pressed="true">Public</button>
+          <button id="vis-private" type="button" aria-pressed="false">Private</button>
+        </div>
+        <p class="invite-hint" id="invite-hint" style="margin:0.65rem 0 0;font-size:0.85rem;color:var(--muted,#8b939e)">
+          Anyone with the link can open this site.
+        </p>
+        <div id="invite-block" hidden>
+          <ul class="invite-list" id="invite-list"></ul>
+          <input type="email" id="invite-email" placeholder="colleague@company.com" autocomplete="email" />
+          <select id="invite-role" aria-label="Access level">
+            <option value="view">Can view</option>
+            <option value="edit">Can edit</option>
+          </select>
+        </div>
         <div class="claim-actions">
           <button class="btn btn-ghost" type="button" id="invite-cancel">Done</button>
-          <button class="btn btn-claim" type="button" id="invite-send">Send invite</button>
+          <button class="btn btn-claim" type="button" id="invite-send" hidden>Send invite</button>
         </div>
       </div>
     </div>
@@ -529,11 +601,12 @@
       const backA = document.getElementById("back");
       const copyBtn = document.getElementById("copy");
       const openA = document.getElementById("open");
-      const claimBtn = document.getElementById("claim");
+      const claimBtn = document.getElementById("access");
       const shareCluster = document.getElementById("share-cluster");
       const visPublic = document.getElementById("vis-public");
       const visPrivate = document.getElementById("vis-private");
-      const inviteBtn = document.getElementById("invite");
+      const inviteHint = document.getElementById("invite-hint");
+      const inviteBlock = document.getElementById("invite-block");
       const claimDialog = document.getElementById("claim-dialog");
       const claimEmail = document.getElementById("claim-email");
       const claimSend = document.getElementById("claim-send");
@@ -566,6 +639,7 @@
       let sourceRequested = false;
       let visibility = "public";
       let isOwner = false;
+      let sessionEmail = null;
       let siteMembers = [];
       let siteInvites = [];
       let slug = "";
@@ -614,19 +688,105 @@
 
       function setClaimOwned() {
         isOwner = true;
-        claimBtn.textContent = "Owned";
-        claimBtn.disabled = true;
-        claimBtn.classList.remove("btn-claim");
+        claimBtn.disabled = false;
+        claimBtn.classList.remove("btn-claim", "is-busy");
         claimBtn.classList.add("btn-ghost");
+        claimBtn.removeAttribute("aria-busy");
+        claimBtn.textContent = "Access";
+        claimBtn.title = "Manage visibility and invites";
+        claimBtn.dataset.mode = "access";
+      }
+
+      function setClaimTaken() {
+        isOwner = false;
+        claimBtn.disabled = true;
+        claimBtn.classList.remove("btn-claim", "is-busy");
+        claimBtn.classList.add("btn-ghost");
+        claimBtn.removeAttribute("aria-busy");
+        claimBtn.textContent = "Taken";
+        claimBtn.title = "Someone else already owns this site";
+        claimBtn.dataset.mode = "taken";
+      }
+
+      function setClaimAvailable(sessionEmail) {
+        isOwner = false;
+        claimBtn.disabled = false;
+        claimBtn.classList.remove("is-busy", "btn-ghost");
+        claimBtn.classList.add("btn-claim");
+        claimBtn.removeAttribute("aria-busy");
+        claimBtn.dataset.mode = "claim";
+        if (sessionEmail) {
+          const short =
+            sessionEmail.length > 22
+              ? sessionEmail.slice(0, 20) + "…"
+              : sessionEmail;
+          claimBtn.textContent = `Claim as ${short}`;
+          claimBtn.title = `Claim this site for ${sessionEmail}`;
+        } else {
+          claimBtn.textContent = "Claim this site";
+          claimBtn.title = "Claim ownership via email";
+        }
+      }
+
+      async function claimWithSession() {
+        const token = tokenForSlug(slug);
+        claimBtn.disabled = true;
+        claimBtn.classList.add("is-busy");
+        claimBtn.innerHTML =
+          `<span class="btn-spinner" aria-hidden="true"></span> Claiming…`;
+        try {
+          const res = await fetch(`${API}/v1/claim/session`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ slug, editToken: token || undefined }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok) {
+            showToast(data.already ? "Already yours" : "Claimed — it’s yours");
+            await applySiteInfo(await refreshSiteInfo(slug));
+            return;
+          }
+          if (data.error === "edit_token_required") {
+            showToast("Open the deploy link that includes ?token= to claim");
+            setClaimAvailable(sessionEmail);
+            return;
+          }
+          if (data.error === "already_claimed") {
+            setClaimTaken();
+            showToast("Already claimed");
+            return;
+          }
+          if (data.error === "unauthorized") {
+            showToast("Log in again, then claim");
+            setClaimAvailable(null);
+            return;
+          }
+          showToast("Couldn’t claim");
+          setClaimAvailable(sessionEmail);
+        } catch (_) {
+          showToast("Network error");
+          setClaimAvailable(sessionEmail);
+        }
       }
 
       function openClaimDialog() {
+        if (claimBtn.dataset.mode === "access") {
+          openInviteDialog();
+          return;
+        }
+        if (isOwner || claimBtn.dataset.mode === "taken") return;
+        if (sessionEmail) {
+          claimWithSession();
+          return;
+        }
         const token = tokenForSlug(slug);
         if (!token) {
           showToast("Need the deploy link with token to claim");
           return;
         }
         claimSlugLabel.textContent = slug + ".aft.page";
+        claimEmail.value = sessionEmail || "";
         claimDialog.hidden = false;
         claimDialog.classList.add("open");
         claimEmail.focus();
@@ -643,7 +803,8 @@
           const li = document.createElement("li");
           li.innerHTML = `<span></span><span class="meta"></span><button type="button">Remove</button>`;
           li.querySelector("span").textContent = mem.email;
-          li.querySelector(".meta").textContent = mem.role;
+          li.querySelector(".meta").textContent =
+            mem.role === "edit" ? "Can edit" : "Can view";
           li.querySelector("button").addEventListener("click", async () => {
             const res = await fetch(
               `${API}/v1/sites/${encodeURIComponent(slug)}/members/${encodeURIComponent(mem.userId)}`,
@@ -662,7 +823,8 @@
           const li = document.createElement("li");
           li.innerHTML = `<span></span><span class="meta"></span><button type="button">Revoke</button>`;
           li.querySelector("span").textContent = inv.email;
-          li.querySelector(".meta").textContent = `pending · ${inv.role}`;
+          li.querySelector(".meta").textContent =
+            `Pending · ${inv.role === "edit" ? "Can edit" : "Can view"}`;
           li.querySelector("button").addEventListener("click", async () => {
             const res = await fetch(
               `${API}/v1/sites/${encodeURIComponent(slug)}/invites/${encodeURIComponent(inv.id)}`,
@@ -686,13 +848,13 @@
 
       function openInviteDialog() {
         if (!isOwner) {
-          showToast("Claim the site first");
+          showToast("Only the owner can manage access");
           return;
         }
+        setVisibility(visibility);
         renderInviteList();
         inviteDialog.hidden = false;
         inviteDialog.classList.add("open");
-        inviteEmail.focus();
       }
 
       function closeInviteDialog() {
@@ -701,19 +863,22 @@
       }
 
       async function applySiteInfo(info) {
-        if (!info) return;
-        if (info.owner) setClaimOwned();
-        else if (info.owned) {
-          claimBtn.textContent = "Claimed";
-          claimBtn.disabled = true;
-          claimBtn.classList.remove("btn-claim");
-          claimBtn.classList.add("btn-ghost");
+        if (!info) {
+          setClaimAvailable(null);
+          return;
+        }
+        sessionEmail = info.email || null;
+        if (info.owner) {
+          setClaimOwned();
+        } else if (info.owned) {
+          setClaimTaken();
+        } else {
+          setClaimAvailable(sessionEmail);
         }
         if (info.visibility) setVisibility(info.visibility);
         if (info.owner) {
           siteMembers = info.members || [];
           siteInvites = info.invites || [];
-          inviteBtn.hidden = info.visibility !== "private";
         }
         if (info.owner && info.capabilities && info.capabilities.status === "pending") {
           const req = info.capabilities.requested || {};
@@ -735,12 +900,18 @@
         const isPrivate = next === "private";
         visPublic.setAttribute("aria-pressed", String(!isPrivate));
         visPrivate.setAttribute("aria-pressed", String(isPrivate));
-        inviteBtn.hidden = !(isPrivate && isOwner);
+        if (inviteHint) {
+          inviteHint.textContent = isPrivate
+            ? "Only invited people (and you) can open the live site."
+            : "Anyone with the link can open this site.";
+        }
+        if (inviteBlock) inviteBlock.hidden = !isPrivate;
+        if (inviteSend) inviteSend.hidden = !isPrivate;
       }
 
       async function patchVisibility(next) {
         if (!isOwner) {
-          showToast("Claim the site first");
+          showToast("Only the owner can change visibility");
           setVisibility(visibility === "private" ? "private" : "public");
           return;
         }
@@ -760,6 +931,10 @@
           }
           showToast(next === "private" ? "Site is private" : "Site is public");
           frame.src = url;
+          if (!inviteDialog.hidden) {
+            setVisibility(next);
+            renderInviteList();
+          }
         } catch (_) {
           setVisibility(prev);
           showToast("Network error");
@@ -932,7 +1107,9 @@
         url = `https://${slug}.aft.page/`;
         slugEl.textContent = url.replace(/^https:\/\//, "").replace(/\/$/, "");
         openA.href = url;
-        frame.src = url;
+        openA.hidden = false;
+        copyBtn.hidden = false;
+        shareCluster.hidden = false;
         codeErrorLink.href = url;
         workspace.hidden = false;
         empty.hidden = true;
@@ -1009,7 +1186,6 @@
 
         visPublic.addEventListener("click", () => patchVisibility("public"));
         visPrivate.addEventListener("click", () => patchVisibility("private"));
-        inviteBtn.addEventListener("click", openInviteDialog);
 
         claimCancel.addEventListener("click", closeClaimDialog);
         claimDialog.addEventListener("click", (e) => {
@@ -1027,7 +1203,11 @@
             showToast("Email and deploy token required");
             return;
           }
+          const claimLabel = claimSend.textContent;
           claimSend.disabled = true;
+          claimSend.classList.add("is-busy");
+          claimSend.innerHTML =
+            `<span class="btn-spinner" aria-hidden="true"></span> Sending…`;
           try {
             const res = await fetch(`${API}/v1/claim/start`, {
               method: "POST",
@@ -1052,6 +1232,8 @@
             showToast("Network error");
           } finally {
             claimSend.disabled = false;
+            claimSend.classList.remove("is-busy");
+            claimSend.textContent = claimLabel;
           }
         });
 
@@ -1062,7 +1244,11 @@
             showToast("Email required");
             return;
           }
+          const inviteLabel = inviteSend.textContent;
           inviteSend.disabled = true;
+          inviteSend.classList.add("is-busy");
+          inviteSend.innerHTML =
+            `<span class="btn-spinner" aria-hidden="true"></span> Sending…`;
           try {
             const res = await fetch(
               `${API}/v1/sites/${encodeURIComponent(slug)}/invites`,
@@ -1090,13 +1276,19 @@
             showToast("Network error");
           } finally {
             inviteSend.disabled = false;
+            inviteSend.classList.remove("is-busy");
+            inviteSend.textContent = inviteLabel;
           }
         });
 
         claimBtn.addEventListener("click", openClaimDialog);
 
         capApprove.addEventListener("click", async () => {
+          const capLabel = capApprove.textContent;
           capApprove.disabled = true;
+          capApprove.classList.add("is-busy");
+          capApprove.innerHTML =
+            `<span class="btn-spinner" aria-hidden="true"></span> Approving…`;
           try {
             const res = await fetch(
               `${API}/v1/sites/${encodeURIComponent(slug)}/capabilities`,
@@ -1118,23 +1310,113 @@
             showToast("Network error");
           } finally {
             capApprove.disabled = false;
+            capApprove.classList.remove("is-busy");
+            capApprove.textContent = capLabel;
           }
         });
 
         if (claimedParam) showToast("Site claimed — you own it");
         if (invitedParam) showToast("Invite accepted");
 
-        refreshSiteInfo(slug).then((info) => applySiteInfo(info));
+        let autoClaimStarted = false;
+
+        function needsLoginForPrivate(info) {
+          return Boolean(
+            info &&
+              info.visibility === "private" &&
+              !info.owner &&
+              !info.role &&
+              !info.email,
+          );
+        }
+
+        function redirectToAccessLogin() {
+          const login = new URL("/login", location.origin);
+          login.searchParams.set("next", location.href);
+          location.replace(login.toString());
+        }
+
+        async function maybeAutoClaim(info) {
+          if (autoClaimStarted) return;
+          if (!info || info.owner || info.owned) return;
+          if (!info.email || !tokenForSlug(slug)) return;
+          autoClaimStarted = true;
+          await claimWithSession();
+        }
+
+        async function gateAndLoad(info) {
+          if (needsLoginForPrivate(info)) {
+            redirectToAccessLogin();
+            return;
+          }
+          await applySiteInfo(info);
+          await maybeAutoClaim(info);
+          if (!frame.getAttribute("src")) frame.src = url;
+        }
+
+        refreshSiteInfo(slug).then((info) => gateAndLoad(info));
+        // Re-check after auth-nav settles (same cookie session).
+        setTimeout(() => {
+          refreshSiteInfo(slug).then((info) => gateAndLoad(info));
+        }, 400);
       } else {
         workspace.hidden = true;
         empty.hidden = false;
         slugEl.textContent = "";
         backA.hidden = true;
         viewToggle.hidden = true;
-        copyBtn.style.display = "none";
-        openA.style.display = "none";
-        shareCluster.style.display = "none";
+        copyBtn.hidden = true;
+        openA.hidden = true;
+        shareCluster.hidden = true;
+
+        const hubForm = document.getElementById("hub-form");
+        const hubUrl = document.getElementById("hub-url");
+        const hubProjects = document.getElementById("hub-projects");
+        const hubList = document.getElementById("hub-list");
+
+        hubForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+          let rawUrl = hubUrl.value.trim();
+          if (!/^https?:\/\//i.test(rawUrl) && /^[a-z0-9-]+$/i.test(rawUrl)) {
+            rawUrl = `https://${rawUrl.toLowerCase()}.aft.page`;
+          }
+          const match = rawUrl.match(
+            /^https:\/\/([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\.aft\.page\/?$/i,
+          );
+          if (!match) {
+            showToast("Use a https://{slug}.aft.page URL");
+            return;
+          }
+          const next = new URL("/preview", location.origin);
+          next.searchParams.set("url", `https://${match[1].toLowerCase()}.aft.page`);
+          location.href = next.toString();
+        });
+
+        (async () => {
+          try {
+            const res = await fetch(`${API}/v1/me/sites?page=1&limit=8`, {
+              credentials: "include",
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            const sites = data.sites || [];
+            if (!sites.length) return;
+            hubProjects.hidden = false;
+            for (const s of sites) {
+              const live = s.url || `https://${s.slug}.aft.page`;
+              const li = document.createElement("li");
+              li.innerHTML = `<strong></strong><a href=""></a>`;
+              li.querySelector("strong").textContent = s.slug;
+              const a = li.querySelector("a");
+              a.textContent = "Preview";
+              a.href = `/preview?url=${encodeURIComponent(live)}`;
+              hubList.appendChild(li);
+            }
+          } catch (_) {}
+        })();
       }
     </script>
+    <script src="/auth-me.js" defer></script>
+    <script src="/auth-nav.js" defer></script>
   </body>
 </html>

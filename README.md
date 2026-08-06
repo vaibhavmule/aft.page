@@ -1,6 +1,11 @@
 # aft.page
 
-Hosted deploy + share for small software. Paste or upload → live `*.aft.page` URL.
+**Your agent made the app. aft makes it real.** Give aft.page what an agent made
+→ get a durable `*.aft.page` URL → share it like a Google Doc.
+
+Today the hosted path accepts HTML/files through MCP, paste, upload, or API.
+The product grows toward stateful and full-stack Small Software without exposing
+Big Software cloud complexity. See [`rfs.txt`](rfs.txt).
 
 | Path | Role |
 | --- | --- |

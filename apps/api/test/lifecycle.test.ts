@@ -131,17 +131,29 @@ describe("capabilities", () => {
   });
 });
 
-describe("inventory", () => {
-  it("lists owned sites", async () => {
+describe("projects", () => {
+  it("lists owned sites with pagination metadata", async () => {
     const { slug } = await deployPaste("<h1>inv</h1>", "me-sites");
     const cookie = await ownSite(slug, "me@example.com");
     const res = await call(
-      new Request(`${API_ORIGIN}/v1/me/sites`, {
+      new Request(`${API_ORIGIN}/v1/me/sites?page=1&limit=10`, {
         headers: { cookie, origin: "https://aft.page" },
       }),
     );
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { sites: { slug: string }[] };
+    const body = (await res.json()) as {
+      user: { email: string };
+      sites: { slug: string }[];
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+    expect(body.user.email).toBe("me@example.com");
+    expect(body.page).toBe(1);
+    expect(body.limit).toBe(10);
+    expect(body.total).toBeGreaterThanOrEqual(1);
+    expect(body.totalPages).toBeGreaterThanOrEqual(1);
     expect(body.sites.some((s) => s.slug === slug)).toBe(true);
   });
 });

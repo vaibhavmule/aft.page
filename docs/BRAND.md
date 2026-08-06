@@ -2,17 +2,22 @@
 
 ## What we are
 
+**Category:** A cloud for small software.
+
 **Public line (YC / TechCrunch voice):**
 
-> The secure home for AI-built apps.
+> Your agent made the software. aft makes it real.
 
-> AI agents build the apps. aft.page makes them live, shared, and safe for work.
+> Deploy personal and small-team software. Get a durable URL. Share it like a
+> Google Doc.
 
-**Internal architecture** may still say “control plane” — don’t put that on the homepage.
+Identity, permissions, capabilities, isolation, and connectors are supporting
+machinery. Do not let “control plane” replace the Small Software category.
 
 Not a chat product. Not a website builder. Not a background coding-agent runner ([Ona](https://ona.com/)). Not “another ChatGPT Sites.”
 
-The name is the **aft** of a ship: what was built gets carried out as a **live, shareable, company-owned URL**.
+The name is the **aft** of a ship: what was built gets carried out as a **live,
+durable, shareable URL**.
 
 ## Design north star: Ona-grade platform craft
 
@@ -28,7 +33,9 @@ Reference: [ona.com](https://ona.com/) — visual and information-architecture *
 | Primary + secondary CTA (`Get started` / `Talk to us`) | “Request a demo” as the only path — keep self-serve deploy |
 | Sparse chrome, high contrast, serious type | Warm cream + terracotta “AI essay” look |
 
-**Positioning test:** first five seconds = *infrastructure for agent-built software* — not *paste HTML toy*, not *chat*, not *Ona competitor*.
+**Positioning test:** first five seconds = *a cloud for small software*—not a
+paste-HTML toy, chat product, website builder, enterprise governance suite, or
+Ona competitor.
 
 Live marketing today still reads “indie paste tool.” Target reads **platform**.
 
@@ -76,7 +83,7 @@ family=JetBrains+Mono:wght@400;500
 ### Layout motifs (Ona-informed)
 
 1. **Full-bleed product stage** — hero shows deploy → live URL → share (video or interactive), edge-to-edge visual plane.
-2. **Capability row** — Deploy · Share · Govern · Run-in-your-cloud (as shipped).
+2. **Capability row** — Deploy · Keep · Share · Grow (as shipped).
 3. **Beacon wordmark** — Fraunces `aft` + beacon `.` + `page` in UI sans.
 4. **Flow line** — `agent → deploy → live URL` in mono.
 5. Cards only when they hold interaction (paste, login) — not decorative feature cards piled in the hero.
@@ -84,9 +91,9 @@ family=JetBrains+Mono:wght@400;500
 ### Voice
 
 - Short. Declarative. Startup-plain — sounds like TechCrunch / YC, not infra docs.
-- “The secure home for AI-built apps.”
-- “AI agents build the apps. aft.page makes them live, shared, and safe for work.”
-- Prefer: deploy, share, approve, login, trust, home, live URL.
+- “A cloud for small software.”
+- “Your agent made the software. aft makes it live, persistent, and shareable.”
+- Prefer: deploy, keep, use, share, update, app, live URL.
 - Avoid on marketing: control plane, egress, BYOC, capability grants, inventory (say “app list”), VPC.
 - Not: “Start building”, “Create your website”, “Powered by AI”, “Background agents.”
 
@@ -103,7 +110,8 @@ Keep body dark (Ona-grade). Footer is the color moment.
 
 ## Product identity (auth)
 
-Deploy can stay **fast / low-friction**. Login for **claim, orgs, private share** — ownership and governance, not a wall before first URL.
+Deploy stays **fast / low-friction**. Login is for ownership, persistence, and
+private sharing—not a wall before the first URL.
 
 Agents call MCP. Humans auth when they own or invite.
 
@@ -115,12 +123,17 @@ Marketing landing rebuilt to dark platform craft (Fraunces wordmark, DM Sans,
 beacon orange, full-bleed product stage, harbor footer) — Aug 2026. Keep SEO
 subpages (`paste-html/`, etc.) in sync when touching voice.
 
+Dashboard + preview + private-access gate (`projects*`, `preview.html`,
+`sharing.ts`, `auth-nav.js`) brought onto the same tokens via `marketing/app.css`
+— Aug 2026. OG / `og-source.html` still on the older light system (follow-up).
+
 ## Files
 
 | Asset | Path |
 | --- | --- |
-| Tokens + layout | `marketing/styles.css` |
+| Tokens + marketing / content layout | `marketing/styles.css` |
+| App / dashboard chrome | `marketing/app.css` |
 | Favicon | `marketing/favicon.svg` |
 | OG | `marketing/og-source.html` → `og.png` |
-| Preview shell | `marketing/preview.html` |
+| Preview shell | `marketing/preview/` |
 | Strategy | `docs/STRATEGY.md` |

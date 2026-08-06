@@ -12,9 +12,9 @@ Fill founder bio / equity / location / video yourself. Below = company narrative
 
 ## Describe what your company does in 50 characters or less
 
-`Secure home for apps AI agents build`
+`A cloud for small software`
 
-(38 chars — alt: `Home for AI-built apps companies trust`)
+(26 chars — alt: `Make agent-built software real`)
 
 ## Company URL
 
@@ -22,25 +22,36 @@ https://aft.page
 
 ## What is your company going to make? Explain what your product does as if to a potential user. (longer)
 
-People and AI coding agents (Claude Code, Codex, Cursor, ChatGPT, internal bots) can now spit out useful small software in minutes — expense tools, dashboards, refund flows, sprint trackers. Deploying and governing that software is still broken.
+People and AI coding agents can now create useful personal and small-team
+software in minutes—trackers, dashboards, focused workflows, prototypes, and
+tiny full-stack apps. Deploying it still assumes Big Software: repositories,
+cloud accounts, build settings, infrastructure, identity, and operations.
 
-ChatGPT Sites hosts apps *inside* one vendor. Prized helps non-engineers *build*. Neither is a neutral place every agent deploys *to*, with company identity, an inventory of every agent-built app, and approval for what each app may touch (databases, internal APIs, secrets, egress) — including live data that stays on the company’s network.
+**aft.page is a cloud designed for Small Software:** give it what any agent made,
+get a durable URL, and share it as easily as a Google Doc. No repository or cloud
+ceremony is required for the default path.
 
-**aft.page** is that control plane:
+The product grows with the application:
 
-1. Deploy from any agent (MCP today; CLI for your own cloud) → live URL in seconds.
-2. Company identity (Google Workspace / Microsoft Entra) and Doc-style sharing.
-3. On deploy: the app declares **capabilities**; a human approves or denies before it runs.
-4. Org-wide inventory: owner, version, capabilities, last used.
-5. **Connector agent** in the customer VPC (outbound-only) so apps can use live org data without shipping raw credentials to us. Full BYOC later when a customer pays for it.
+1. Static HTML or files from any agent → live URL in seconds today.
+2. Ownership, updates, rollback, public/private sharing, invite, and revoke.
+3. Next: state, APIs, secrets, files, background work, and full-stack runtimes
+   without exposing their infrastructure.
+4. Capabilities, isolation, connectors, and customer-cloud execution make
+   arbitrary code safe and customizable when an application needs them.
 
-One line users feel: *Any coding agent → your identity, your data via your network, governed lifecycle.*
+One line users feel: *Your agent made the software. aft makes it live,
+persistent, and shareable.*
 
 ## Why did you pick this idea? Do you have domain expertise?
 
 I spent years shipping and operating secure multi-tenant enterprise software (auth, tenancy, customer-specific controls, infra). I also built **aft**, an open-source CLI that deploys frontends into the customer’s own AWS — so “run it in *their* cloud” is not theoretical.
 
-Separately, agents made building trivial; Claude Artifacts still mostly exited to Copy/Download. I shipped **aft.page** (hosted deploy + MCP + Chrome extension) so agent output becomes a live URL immediately. Then ChatGPT Sites and Prized made clear that auth+hosting alone is table stakes. The durable gap is the **neutral control plane**: capability approval, inventory, and customer-network data — which OpenAI structurally cannot own across Claude/Cursor without governing competitors.
+Separately, agents made building trivial; useful output still dies in chat,
+localhost, or a downloaded folder. I shipped **aft.page** (hosted deploy + MCP +
+Chrome extension) so agent output becomes a live URL immediately. The broader
+opportunity is not HTML hosting or an enterprise control plane: it is deleting
+the cloud complexity between generated software and the few people who need it.
 
 YC’s Fall 2026 RFS (“A Cloud for Small Software”) names the category. We were already building the rails; the RFS sharpened the company, it didn’t invent the insight.
 
@@ -48,17 +59,22 @@ YC’s Fall 2026 RFS (“A Cloud for Small Software”) names the category. We w
 
 | Competitor | What they are | What we are not / are |
 | --- | --- | --- |
-| ChatGPT Sites | Great inside OpenAI’s surface | Vendor-locked; not neutral; launch gaps on live org data — they’ll close some; they won’t prioritize Claude/Cursor as first-class |
-| Prized (YC S26) | Builder for non-engineers | We are the **runtime they (and engineers) deploy to** |
+| ChatGPT Sites / Claude Artifacts | Easy inside one creation surface | We are cross-agent and own the durable application lifecycle |
+| Prized (YC S26) | Governed builder for company internal tools | We serve broader personal + team Small Software without requiring our builder |
 | Ona / OpenAI | Secure execution for long-running coding agents | Different layer — we govern *deployed small software*, not background PR factories |
-| Vercel / Netlify / Cloudflare Pages | Excellent general hosting | Not agent-native capability grants + org inventory of *agent-built* apps |
+| Vercel / Netlify / AWS / Azure | Excellent general hosting | Designed for projects and scale; we optimize for tiny audiences and remove configuration |
 | Superblocks / internal-tool platforms | Hybrid connectors exist | We’re agent-first + lightweight small-software cloud, not a heavy IDE for ops teams |
 
-Insight: the buyer isn’t “host my HTML.” It’s “employees are generating software with five agents — make it visible, approved, and owned by us.”
+Insight: software for three users should not require infrastructure designed for
+three million. The cloud can infer and manage the machinery from the artifact an
+agent already produced.
 
 ## How do or will you make money?
 
-Free hosted funnel (agent → URL) for adoption. Paid: team/org seats, private apps, capability governance, inventory, connector for live data. Enterprise: SSO, policies, later BYOC when willingness to pay is documented (~$15K+/yr signal). OSS CLI stays distribution/trust for customer-cloud deploy.
+Free agent → URL activation. Paid for retained applications, private sharing,
+state/full-stack runtime, higher limits, custom domains, and team ownership.
+Later: customized environments and customer-cloud execution. OSS CLI remains a
+distribution, trust, and portability path.
 
 Early: design partners on team plans; not chasing enterprise procurement before weekly usage.
 
@@ -77,10 +93,11 @@ aft CLI + aft.page: concentrated build from mid/late July 2026 (nights/weekends 
 ## What is the next step for your product / company?
 
 1. Submit this application; clear employment IP (personal hardware/accounts only).
-2. Ship identity + sharing + inventory.
-3. Ship capability approval on deploy + connector agent (outbound VPC) enforcing those capabilities.
-4. Dogfood expense/refund app with live data through connector — demo Sites can’t match today.
-5. ~10 real apps / ~5 orgs as evidence bar; YC batch if accepted → SF full-time.
+2. Prove strangers reach a URL and return to the app.
+3. Prove Doc-style sharing with one app used by its owner and another person.
+4. Ship one full-stack runtime (OpenNext is the first feasibility candidate)
+   without manual cloud configuration.
+5. Reach ~10 real apps, ≥5 repeat deployers, and ≥3 apps used after seven days.
 
 ## Something surprising / impressive you’ve done (founder)
 
@@ -92,17 +109,21 @@ Show, don’t lecture:
 
 1. Agent builds a tiny expense/refund tool (or show existing).
 2. `aft deploy` / MCP → URL live.
-3. (Even mock/UI) capability list: read X, POST Y, egress Z → Approve.
-4. Say one line: *Prized builds; Sites hosts inside ChatGPT; we are the neutral control plane every agent deploys to — your identity, your data on your network.*
+3. Update it, share it, and show the same stable application URL.
+4. Say one line: *A cloud for software used by one person or a small handful—your agent made it; aft makes it real.*
 5. End on aft.page wordmark + URL.
 
 ---
 
 ## Application do / don’t
 
-**Do:** Lead with shipped MCP + live URLs. Name Sites and Prized directly. Capability + connector as the wedge. Solo OK; GTM is the gap you’ll hire.
+**Do:** Lead with shipped MCP + live URLs. Show the Small Software lifecycle.
+Name Sites, Prized, and general clouds directly. Solo apps count; repeat use is
+the evidence.
 
-**Don’t:** Claim you invented the YC RFS. Promise full BYOC as built. Position as “Claude hosting.” Pretend auth+private share is the moat. Overstate users if you don’t have them — under-promise traction, over-prove infra.
+**Don’t:** Claim you invented the YC RFS. Promise full BYOC as built. Position
+as “Claude hosting,” an enterprise control plane, or static HTML hosting. Do not
+overstate users—under-promise traction and over-prove the experience.
 
 ## After submit
 

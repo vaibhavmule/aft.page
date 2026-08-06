@@ -1,155 +1,127 @@
 # aft.page — strategy
 
-Internal north star. Not a public README.
+Internal north star. Canonical mission: [`../rfs.txt`](../rfs.txt).
 
-Updated: 2026-08-03
-
-## Goal
-
-**Employee → builder → business owner → investable founder → capital allocator.**
-
-- **aft.page** is the company others invest in.
-- **cubicL** is first allocator practice.
-- **Polymerize** is runway. Do **not** resign during the first **seven-week** proof. Reassess ~month 3 with ESOP/runway/MRR clarity.
-- Past GitHub / job commit volume is irrelevant to this scoreboard.
-
-## Sam frame
-
-> **Seven minutes can produce the app.  
-> Seven days can produce a product.  
-> Seven weeks can produce customer evidence.  
-> Seven months can produce a real company.**
-
-Coding is compressed. Do not shrink the company to seven minutes — spend calendar on customers + trust.
-
-| Stage | Meaning | Status |
-| --- | --- | --- |
-| **Phase 0** Technical proof | Agent → live `*.aft.page` | **Done** — API/MCP/CLI/extension/hosting. Stop rebuilding this layer. |
-| **Phase 1** Trusted sharing | Two coworkers safely use one app | **~80%** — private/invite/owner/deploys/rollback live; magic-link login + inventory UX closing the success test |
-| **Phase 2** External-user proof | Conversations + weekly use | **Behind** — calendar, not code |
-| **Phase 3** First paid | Charge for operational pain | Pricing written; nobody paid yet |
-| **Phase 4** Connector proof | Live org data via outbound agent | **Early prototype shipped** — freeze deepening until Phase 2/3 demand |
-
-North-star metric (not deploy count):
-
-> **Organisations with an application used weekly by at least two people.**
+Updated: 2026-08-06
 
 ## Company thesis
 
-Simple hosting (auth + URL + private share) is **dead as a paid product** — free onboarding funnel only. ChatGPT Sites in the Work surface killed that wedge as a company.
+> **A cloud for small software.**
+>
+> Any agent → a working application → a durable URL → share it like a Google Doc.
 
-Company:
+Agents have compressed creation. They can produce personal tools, focused team
+workflows, dashboards, reports, prototypes, and small full-stack applications in
+minutes. Deployment still assumes Big Software: repositories, build settings,
+cloud accounts, infrastructure choices, identity wiring, secrets, and ongoing
+operations.
 
-> **The control plane for agent-built software.**  
-> Any coding agent → your company’s identity, your data via your network, governed lifecycle — hosted by us today, in your cloud when you need it.
+aft deletes that complexity for software with one or a small handful of users.
 
-Enterprise line:
+## Product job
 
-> **Your employees are creating software with AI. aft.page makes it visible, secure, and owned by your company.**
+The user gives aft what an agent produced. aft determines how to run it, returns
+a URL, and keeps the application usable for as long as it matters.
 
-Spine of the pitch (structural, not launch gaps):
+```text
+Claude / Codex / Cursor / ChatGPT / Git / human
+                         │
+                         ▼
+                    aft.page
+        detect → build → isolate → deploy → URL
+                         │
+              own → share → update → stop
+```
 
-1. **Neutrality** across Claude / Codex / Cursor / Git — OpenAI will not govern competitors’ apps as first-class.
-2. **Customer-controlled data path** — live org data and private networks via a connector (and later full BYOC), not raw credentials in a vendor cloud.
+The public promise is simplicity. The machinery underneath may include identity,
+permissions, capabilities, sandboxes, connectors, inventory, rollback, and
+customer-cloud execution. Those are enabling capabilities—not the category.
 
-Caveat: “Sites has no live data connections” is a **launch limitation**, not a moat. They will ship connectors. Neutrality + customer-controlled execution stay the durable spine; the connector proves we are serious about the second.
+## Who it serves
+
+1. A person making software for themselves
+2. Two or three colleagues sharing a bespoke workflow
+3. An agent user who has useful output but no deployment expertise
+4. A small team that needs a safe home for many tiny applications
+
+Gated internal tools are a strong use case. Enterprise agent governance is a
+possible expansion, not the starting definition.
+
+## Product progression
+
+| Layer | User outcome | Status / next proof |
+| --- | --- | --- |
+| Static | HTML or SPA → URL | Shipped |
+| Ownership | Claim, list, update, rollback | Shipped / polish |
+| Sharing | Public, private, invite, revoke | Shipped / outsider proof |
+| Full stack | State, API routes, secrets, files | Next runtime proof |
+| Jobs | Schedules and background work | Build on demonstrated need |
+| Custom environment | Runtime/container customization | Later |
+| Portability | Hosted default; customer cloud when needed | CLI proof exists |
+
+OpenNext is a useful feasibility test because agents frequently create Next.js
+apps and it exercises APIs, state, secrets, assets, and runtime lifecycle. It is
+one runtime behind aft’s abstraction, not the mission itself.
 
 ## Competitive map
 
-| Player | Layer |
-| --- | --- |
-| Ona → OpenAI | Agent **execution** runtime |
-| ChatGPT Sites | Lightweight apps **inside** ChatGPT Work |
-| Prized (YC S26) | Builder for non-engineers |
-| **aft.page** | Neutral **control plane + runtime** every builder deploys *to* |
+| Category | Examples | AFT response |
+| --- | --- | --- |
+| Integrated AI builders | Lovable, Replit, Bolt, v0 | Remain builder-neutral; accept what they export |
+| Artifact publishing | ChatGPT Sites, Claude Artifacts | Own the durable, cross-agent URL and lifecycle |
+| General cloud | Vercel, Netlify, AWS, Azure | Optimize for tiny audience and delete configuration |
+| Internal-tool platforms | Retool, Superblocks, Prized | Serve broader personal + team Small Software; do not require their builder |
+| Runtime primitives | Cloudflare Workers, Platforms, Containers, Sandbox | Build on them where they erase undifferentiated infrastructure |
 
-YC line: *Prized builds for non-engineers; we are the neutral runtime every builder deploys to.*
+Neutrality alone is not a moat. The experience must be dramatically simpler for
+small applications and support more of what agents actually generate.
 
-**Do not build for acquisition.** Build so OpenAI / Cloudflare / Vercel / MS / Anthropic / etc. must integrate, compete, or maybe buy — and so the company stands alone.
+## Sequencing
 
-## Sequencing (do not reverse)
+1. Keep agent → URL fast and dependable.
+2. Prove strangers can deploy without founder help.
+3. Prove repeat use: applications still used after 7 and 30 days.
+4. Prove sharing: at least one application used by its owner and another person.
+5. Add one full-stack runtime without exposing cloud complexity.
+6. Deepen identity, capabilities, connectors, and customer-cloud execution only
+   where real Small Software demands them.
 
-Risk #3: overbuilding a generic cloud before anyone uses apps weekly. Full BYOC = **6–12 months for a funded team**. Wrong for solo nights/weekends pre-customer.
+Do not reverse the sequence by building a generic enterprise control plane,
+multi-region BYOC platform, or perfect sandbox protocol before repeat usage.
 
-### Phase 1 close (now)
-
-| Item | Why |
-| --- | --- |
-| Magic-link login → inventory | Unblocks outsider success test |
-| Invite + private share | Already shipped — keep demoable |
-| Workspace / Entra OIDC | After magic-link; only if &lt;2 days |
-
-### Clever middle (Phase 4 — freeze deepen)
-
-**Connector agent** v0 exists (poll-based Node). Do not expand protocol until private apps are used weekly. Go/WebSocket later.
-
-### Promise now, build on demand
-
-Full BYOC data plane + formal residency. Build when a customer documents **~$15K+/yr** (or ₹12–40L) willingness.
-
-## Product trio
-
-| Surface | Role |
-| --- | --- |
-| **aft.page hosted** | Free funnel + small apps — not the paid company |
-| **Control plane** | Identity, capabilities, inventory, lifecycle, approvals |
-| **aft OSS + connector** | Portability + customer-network data path |
-
-## Architecture
-
-```
-ChatGPT / Codex ─┐
-Claude Code      ├──▶ aft.page (hosted control plane)
-Cursor           │          │
-Gemini           │          ├── Identity (magic-link now; Workspace later)
-Internal agents ─┘          ├── Sharing (table stakes)
-                            ├── Capabilities + approve-on-deploy
-                            ├── Inventory + lifecycle
-                            └── Connector agent (customer VPC) ──▶ live data / private APIs
-                                         │
-                                         └── later: full BYOC data plane (on demand)
-```
-
-## Operating model
-
-Next month: **~50% product / ~40% customers / ~10% writing.**  
-After trust product works: **~35% eng / ~50% customers / ~15% content.**
-
-See **[30-DAY-PLAN.md](./30-DAY-PLAN.md)** and **[EVIDENCE-PACK.md](./EVIDENCE-PACK.md)**.
-
-## Design bar
-
-[ona.com](https://ona.com/) = craft bar, not product. See [BRAND.md](./BRAND.md).
-
-## Funding & resignation
-
-$4M now unlikely. Pre-seed / YC after evidence. Resign only with ESOP clarity, runway or signed funding, IP cleared — not after a working deploy command.
-
-## Solo / geography
-
-Sole founder for now. No YC → Pune. YC in → SF. Europe later via trips.
-
-## Near-term mission
-
-> Finish Phase 1 success test. Fill calendar with Phase 2 conversations. Charge when an operational problem is solved — not friend-money.
-
-### Explicitly not optimising for
-
-- Paid product = simple hosting
-- Deepening connector before weekly two-person usage
-- Full BYOC before weekly usage
-- OpenAI acquisition as the plan
-- Competing with Ona on agent execution / Prized on builders
-
-## Scoreboard
+## Evidence scoreboard
 
 | Metric | Why |
 | --- | --- |
-| Orgs with 2+ weekly users on one app | North star |
-| YC application in | Deadline |
-| Capability approval in deploy | Differentiator |
-| Connector demo available (v0) | Whitespace vs Sites — not this week’s build |
-| Polymerize IP reviewed | Diligence |
-| Paid / LOI (non-friend) | Phase 3 |
+| Stranger deploys reaching a working URL | Core activation |
+| Median agent-output → URL time | Simplicity promise |
+| Repeat deployers | More than a novelty |
+| Apps used after 7 / 30 days | Durable utility |
+| Solo apps used repeatedly | Personal Small Software proof |
+| Apps shared with another person | Google-Doc sharing proof |
+| Full-stack apps deployed without cloud setup | Category expansion |
+| Users who would notice if aft disappeared | Real value |
 
-Ship the wedge. Prove strangers care. Capital follows.
+Deploy count is diagnostic, not the north star. A one-shot anonymous page and a
+weekly personal tool are not equivalent.
+
+## Operating model
+
+Use agents to compress engineering. Spend founder time on observing what people
+make, where deployment breaks, and whether the resulting software remains useful.
+
+Near-term mission:
+
+> Get useful Small Software from an agent to a durable URL, then prove people
+> return to it and share it.
+
+## Explicitly not optimizing for
+
+- “Control plane” as the public category
+- Enterprise procurement before product evidence
+- Full BYOC or residency without signed demand
+- Deep connector work before a live application needs it
+- Static HTML as the final product boundary
+- An acquisition narrative
+
+Ship the smallest cloud that makes Small Software real. Prove strangers care.

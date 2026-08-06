@@ -86,8 +86,10 @@ describe("private visibility", () => {
     );
 
     const site = await fetchSite(slug);
-    expect(site.status).toBe(401);
-    expect(await site.text()).toContain("private");
+    expect(site.status).toBe(302);
+    expect(site.headers.get("location") || "").toContain(
+      "https://aft.page/login?next=",
+    );
   });
 
   it("owner can view private site with session cookie", async () => {
@@ -117,7 +119,10 @@ describe("private visibility", () => {
     const memberCookie = await sessionCookieFor("member@example.com");
 
     const denied = await fetchSite(slug);
-    expect(denied.status).toBe(401);
+    expect(denied.status).toBe(302);
+    expect(denied.headers.get("location")).toBe(
+      `https://aft.page/login?next=${encodeURIComponent(`https://${slug}.aft.page/`)}`,
+    );
 
     const allowed = await call(
       new Request(`https://${slug}.aft.page/`, {
@@ -190,5 +195,72 @@ describe("invites", () => {
       }),
     );
     expect([200, 503]).toContain(res.status);
+  });
+});
+
+describe("private access gate", () => {
+  it("anonymous visitors redirect to login with next", async () => {
+    const { slug } = await deployPaste("<h1>gate</h1>", "priv-gate");
+    await ownSite(slug, "owner-gate@example.com");
+    await setSiteVisibility(env, slug, "private");
+    const res = await fetchSite(slug);
+    expect(res.status).toBe(302);
+    const loc = res.headers.get("location") || "";
+    expect(loc.startsWith("https://aft.page/login?next=")).toBe(true);
+    expect(decodeURIComponent(new URL(loc).searchParams.get("next") || "")).toBe(
+      `https://${slug}.aft.page/`,
+    );
+  });
+
+  it("logged-in stranger sees branded deny HTML", async () => {
+    const { slug } = await deployPaste("<h1>gate2</h1>", "priv-gate2");
+    await ownSite(slug, "owner-gate2@example.com");
+    await setSiteVisibility(env, slug, "private");
+    const strangerCookie = await sessionCookieFor("stranger-gate@example.com");
+    const res = await call(
+      new Request(`https://${slug}.aft.page/`, {
+        headers: { cookie: strangerCookie },
+      }),
+    );
+    expect(res.status).toBe(401);
+    const html = await res.text();
+    expect(html).toContain("This site is private");
+    expect(html).toContain('class="brand"');
+    expect(html).toContain("aft<span>.</span>page");
+    expect(html).toContain('id="email"');
+    expect(html).toContain("/access");
+  });
+
+  it("POST access returns check_your_email for any valid email", async () => {
+    const { slug } = await deployPaste("<h1>access</h1>", "priv-access");
+    await ownSite(slug, "owner-access@example.com");
+    await setSiteVisibility(env, slug, "private");
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/sites/${slug}/access`, {
+        method: "POST",
+        headers: {
+          origin: `https://${slug}.aft.page`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ email: "stranger@example.com" }),
+      }),
+    );
+    expect([200, 503]).toContain(res.status);
+    if (res.status === 200) {
+      const body = (await res.json()) as { message: string };
+      expect(body.message).toBe("check_your_email");
+    }
+  });
+
+  it("OPTIONS allows DELETE", async () => {
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/sites/x/invites/y`, {
+        method: "OPTIONS",
+        headers: { origin: "https://aft.page" },
+      }),
+    );
+    expect(res.status).toBe(204);
+    const allow = res.headers.get("access-control-allow-methods") || "";
+    expect(allow).toMatch(/DELETE/i);
   });
 });

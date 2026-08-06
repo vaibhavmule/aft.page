@@ -76,7 +76,9 @@ async function handleApi(
     sharingNeedsCredentials(url.pathname) ||
     connectorNeedsCredentials(url.pathname) ||
     authNeedsCredentials(url.pathname) ||
+    url.pathname === "/v1/me" ||
     url.pathname.startsWith("/v1/me/") ||
+    url.pathname === "/v1/deploy" ||
     url.pathname.includes("/deploys") ||
     url.pathname.includes("/rollback") ||
     url.pathname.includes("/capabilities");
@@ -98,6 +100,7 @@ async function handleApi(
 
   if (
     url.pathname === "/v1/claim/start" ||
+    url.pathname === "/v1/claim/session" ||
     url.pathname === "/v1/claim/verify"
   ) {
     return handleClaimRoute(request, env, url);
@@ -132,12 +135,12 @@ async function handleApi(
       service: "aft.page",
       deploy: "POST /v1/deploy (multipart files, or text/html body)",
       redeploy: "PATCH /v1/deploy?slug= (editToken or session owner/editor)",
-      claim: "POST /v1/claim/start, GET /v1/claim/verify",
-      auth: "POST /v1/auth/start, GET /v1/auth/verify",
+      claim: "POST /v1/claim/start, POST /v1/claim/session, GET /v1/claim/verify",
+      auth: "POST /v1/auth/start, GET /v1/auth/verify, POST /v1/auth/logout, GET /v1/me",
       waitlist: "POST /v1/waitlist",
       sharing:
-        "PATCH /v1/sites/{slug}, POST/GET /v1/sites/{slug}/invites, GET /v1/invites/accept",
-      inventory: "GET /v1/me/sites, GET /v1/sites/{slug}/deploys, POST /v1/sites/{slug}/rollback",
+        "PATCH /v1/sites/{slug}, POST /v1/sites/{slug}/access, POST/GET/DELETE /v1/sites/{slug}/invites, GET /v1/invites/accept",
+      inventory: "GET /v1/me, GET /v1/me/sites?page=&limit=, GET /v1/sites/{slug}/deploys, POST /v1/sites/{slug}/rollback",
       capabilities: "GET|POST /v1/sites/{slug}/capabilities",
       connector:
         "POST /v1/sites/{slug}/connector/tokens, GET /v1/connector/poll, POST /v1/connector/result/{id}, POST /v1/sites/{slug}/connector/invoke",

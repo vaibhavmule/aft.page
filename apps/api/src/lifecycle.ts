@@ -6,10 +6,14 @@ import {
   getCapabilityGrant,
   listDeploys,
   listSitesByOwner,
+  countSitesByOwner,
   approveCapabilities,
   type CapabilityDoc,
 } from "./db";
-import { corsHeaders, json } from "./http";
+import { corsHeaders, json, privateJson } from "./http";
+
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 50;
 
 export async function handleLifecycleRoute(
   request: Request,
@@ -19,7 +23,7 @@ export async function handleLifecycleRoute(
   const origin = request.headers.get("origin");
 
   if (url.pathname === "/v1/me/sites" && request.method === "GET") {
-    return meSites(request, env, origin);
+    return meSites(request, env, url, origin);
   }
 
   const deploysMatch = url.pathname.match(
@@ -52,20 +56,42 @@ export async function handleLifecycleRoute(
 async function meSites(
   request: Request,
   env: Env,
+  url: URL,
   origin: string | null,
 ): Promise<Response> {
   const extra = Object.fromEntries(corsHeaders(origin, true));
   const user = await resolveSessionUser(env, request);
-  if (!user) return json({ error: "unauthorized" }, 401, extra);
-  const sites = await listSitesByOwner(env, user.id);
+  if (!user) return privateJson({ error: "unauthorized" }, 401, extra);
+
+  const pageRaw = Number(url.searchParams.get("page") || "1");
+  const limitRaw = Number(
+    url.searchParams.get("limit") || String(DEFAULT_PAGE_SIZE),
+  );
+  const page = Number.isFinite(pageRaw) && pageRaw > 0 ? Math.floor(pageRaw) : 1;
+  const limit = Number.isFinite(limitRaw)
+    ? Math.min(Math.max(Math.floor(limitRaw), 1), MAX_PAGE_SIZE)
+    : DEFAULT_PAGE_SIZE;
+  const offset = (page - 1) * limit;
+
+  const [total, sites] = await Promise.all([
+    countSitesByOwner(env, user.id),
+    listSitesByOwner(env, user.id, { limit, offset }),
+  ]);
+  const totalPages = Math.max(1, Math.ceil(total / limit));
   const root = env.ROOT_DOMAIN || "aft.page";
-  return json(
+  return privateJson(
     {
+      user: { id: user.id, email: user.email },
       sites: sites.map((s) => ({
         ...s,
         url: `https://${s.slug}.${root}`,
         preview: `https://${root}/preview?url=${encodeURIComponent(`https://${s.slug}.${root}`)}`,
       })),
+      page,
+      limit,
+      total,
+      totalPages,
+      hasMore: page < totalPages,
     },
     200,
     extra,

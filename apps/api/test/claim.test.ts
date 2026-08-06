@@ -105,6 +105,15 @@ describe("PATCH redeploy", () => {
 });
 
 describe("GET /v1/sites/{slug}", () => {
+  it("404s for unknown slug", async () => {
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/sites/no-such-site-zzzz`, {
+        headers: { origin: "https://aft.page" },
+      }),
+    );
+    expect(res.status).toBe(404);
+  });
+
   it("reports unowned site", async () => {
     await deployPaste("<h1>info</h1>", "site-info");
     const res = await call(
@@ -117,10 +126,65 @@ describe("GET /v1/sites/{slug}", () => {
       owned: boolean;
       owner: boolean;
       visibility: string;
+      url: string;
+      manage: string;
     };
     expect(body.owned).toBe(false);
     expect(body.owner).toBe(false);
     expect(body.visibility).toBe("public");
+    expect(body.url).toBe("https://site-info.aft.page");
+    expect(body.manage).toContain("/project/?slug=site-info");
+    expect(res.headers.get("cache-control")).toMatch(/no-store/i);
+  });
+
+  it("reports owner when session matches", async () => {
+    const { createSession, findOrCreateUser, assignSiteOwner } = await import(
+      "../src/auth"
+    );
+    const site = await deployPaste("<h1>mine</h1>", "site-owner-info");
+    const user = await findOrCreateUser(env, "owner-info@example.com");
+    await assignSiteOwner(env, site.slug, user.id);
+    const session = await createSession(env, user.id);
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/sites/${site.slug}`, {
+        headers: {
+          origin: "https://aft.page",
+          cookie: `aft_session=${session.token}`,
+        },
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      owned: boolean;
+      owner: boolean;
+      email: string;
+    };
+    expect(body.owned).toBe(true);
+    expect(body.owner).toBe(true);
+    expect(body.email).toBe("owner-info@example.com");
+  });
+});
+
+describe("POST /v1/claim/session", () => {
+  it("claims unowned site for logged-in user with editToken", async () => {
+    const { createSession, findOrCreateUser } = await import("../src/auth");
+    const { getSiteOwnerId } = await import("../src/db");
+    const site = await deployPaste("<h1>sess claim</h1>", "sess-claim");
+    const user = await findOrCreateUser(env, "sess-claim@example.com");
+    const session = await createSession(env, user.id);
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/claim/session`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: "https://aft.page",
+          cookie: `aft_session=${session.token}`,
+        },
+        body: JSON.stringify({ slug: site.slug, editToken: site.editToken }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(await getSiteOwnerId(env, site.slug)).toBe(user.id);
   });
 });
 

@@ -205,6 +205,10 @@ export function sessionCookieHeader(
   return `aft_session=${token}; Path=/; Domain=${cookieDomain(env)}; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
 }
 
+export function clearSessionCookieHeader(env: Env): string {
+  return `aft_session=; Path=/; Domain=${cookieDomain(env)}; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+}
+
 export function parseSessionCookie(request: Request): string | null {
   const cookie = request.headers.get("cookie") || "";
   const m = cookie.match(/(?:^|;\s*)aft_session=([^;]+)/);
@@ -276,6 +280,7 @@ export async function sendLoginEmail(
   env: Env,
   to: string,
   magicToken: string,
+  opts?: { next?: string },
 ): Promise<void> {
   if (!env.EMAIL) {
     throw new Error("EMAIL binding not configured");
@@ -283,22 +288,37 @@ export async function sendLoginEmail(
   const root = env.ROOT_DOMAIN || "aft.page";
   const verifyUrl = new URL(`https://api.${root}/v1/auth/verify`);
   verifyUrl.searchParams.set("token", magicToken);
-  const inventoryUrl = `https://${root}/inventory`;
+  if (opts?.next) {
+    verifyUrl.searchParams.set("next", opts.next);
+  }
+  const after =
+    opts?.next && opts.next.startsWith("http")
+      ? opts.next
+      : `https://${root}${opts?.next?.startsWith("/") ? opts.next : "/projects"}`;
 
-  const subject = "Log in to aft.page";
+  // Access framing when returning to a private site / preview — not "create account".
+  const isAccess =
+    Boolean(opts?.next) &&
+    (/^https:\/\/[a-z0-9.-]+\.aft\.page(?:\/|$)/i.test(opts!.next!) ||
+      /\/preview\?/.test(opts!.next!));
+  const subject = isAccess ? "Access your aft.page site" : "Log in to aft.page";
+  const lead = isAccess
+    ? "Use this link to access your private aft.page site."
+    : "Log in to aft.page.";
+  const cta = isAccess ? "Continue" : "Log in";
   const text = [
-    `Log in to aft.page to see your sites.`,
+    lead,
     "",
     `Open this link within 15 minutes:`,
     verifyUrl.toString(),
     "",
-    `After login: ${inventoryUrl}`,
+    `Then: ${after}`,
   ].join("\n");
 
   const html = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;line-height:1.5;color:#0d1117">
-<p>Log in to <strong>aft.page</strong> to see your sites.</p>
-<p><a href="${verifyUrl}" style="display:inline-block;padding:12px 20px;background:#e85d1a;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">Log in</a></p>
-<p style="color:#4a5568;font-size:14px">This link expires in 15 minutes. If you didn't request this, ignore this email.</p>
+<p>${lead}</p>
+<p><a href="${verifyUrl}" style="display:inline-block;padding:12px 20px;background:#e85d1a;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">${cta}</a></p>
+<p style="color:#4a5568;font-size:14px">This link expires in 15 minutes. No password or signup — just this email. If you didn't request this, ignore it.</p>
 </body></html>`;
 
   await env.EMAIL.send({

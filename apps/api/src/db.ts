@@ -1,34 +1,12 @@
 import type { Env } from "./env";
 
-let migrated = false;
-
-/** Run D1 migrations once per isolate (vitest + prod). */
-export async function ensureDb(env: Env): Promise<void> {
-  if (migrated) return;
-  for (const migration of [
-    MIGRATION_0001,
-    MIGRATION_0002,
-    MIGRATION_0003,
-    MIGRATION_0004,
-    MIGRATION_0005,
-    MIGRATION_0006,
-  ]) {
-    const statements = migration
-      .split(";")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    for (const sql of statements) {
-      await env.DB.prepare(sql).run();
-    }
-  }
-  try {
-    await env.DB.prepare(
-      `ALTER TABLE sites ADD COLUMN last_served_at TEXT`,
-    ).run();
-  } catch {
-    /* column may already exist */
-  }
-  migrated = true;
+/**
+ * Schema comes from `migrations/` via wrangler D1 (deploy + vitest pool).
+ * Kept as a no-op so call sites stay stable — never reintroduce per-request DDL
+ * (cold isolates were paying multi-second CREATE TABLE tax).
+ */
+export async function ensureDb(_env: Env): Promise<void> {
+  /* no-op */
 }
 
 export type SiteVisibility = "public" | "private";
@@ -42,6 +20,45 @@ export async function getSiteVisibility(
     .bind(slug)
     .first<{ visibility: string }>();
   return row?.visibility === "private" ? "private" : "public";
+}
+
+export async function getSiteRow(
+  env: Env,
+  slug: string,
+): Promise<{
+  slug: string;
+  deployId: string;
+  ownerUserId: string | null;
+  visibility: SiteVisibility;
+  createdAt: string;
+  updatedAt: string;
+  lastServedAt: string | null;
+} | null> {
+  await ensureDb(env);
+  const row = await env.DB.prepare(
+    `SELECT slug, deploy_id, owner_user_id, visibility, created_at, updated_at, last_served_at
+     FROM sites WHERE slug = ?`,
+  )
+    .bind(slug)
+    .first<{
+      slug: string;
+      deploy_id: string;
+      owner_user_id: string | null;
+      visibility: string;
+      created_at: string;
+      updated_at: string;
+      last_served_at: string | null;
+    }>();
+  if (!row) return null;
+  return {
+    slug: row.slug,
+    deployId: row.deploy_id,
+    ownerUserId: row.owner_user_id ?? null,
+    visibility: row.visibility === "private" ? "private" : "public",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    lastServedAt: row.last_served_at ?? null,
+  };
 }
 
 export async function setSiteVisibility(
@@ -108,6 +125,49 @@ export async function listSiteInvites(
     role: r.role,
     expiresAt: r.expires_at,
   }));
+}
+
+export async function findPendingInviteByEmail(
+  env: Env,
+  slug: string,
+  email: string,
+): Promise<{ id: string; email: string; role: string } | null> {
+  await ensureDb(env);
+  const row = await env.DB.prepare(
+    `SELECT id, email, role FROM site_invites
+     WHERE slug = ? AND email = ? AND accepted_at IS NULL
+     ORDER BY created_at DESC LIMIT 1`,
+  )
+    .bind(slug, email)
+    .first<{ id: string; email: string; role: string }>();
+  return row ?? null;
+}
+
+export async function findMemberByEmail(
+  env: Env,
+  slug: string,
+  email: string,
+): Promise<{ userId: string; email: string; role: string } | null> {
+  await ensureDb(env);
+  const row = await env.DB.prepare(
+    `SELECT user_id, email, role FROM site_members
+     WHERE slug = ? AND email = ? LIMIT 1`,
+  )
+    .bind(slug, email)
+    .first<{ user_id: string; email: string; role: string }>();
+  if (!row) return null;
+  return { userId: row.user_id, email: row.email, role: row.role };
+}
+
+export async function findUserByEmail(
+  env: Env,
+  email: string,
+): Promise<{ id: string; email: string } | null> {
+  await ensureDb(env);
+  const row = await env.DB.prepare(`SELECT id, email FROM users WHERE email = ?`)
+    .bind(email)
+    .first<{ id: string; email: string }>();
+  return row ?? null;
 }
 
 export async function upsertSiteMember(
@@ -230,15 +290,20 @@ export async function upsertSiteRow(
   env: Env,
   slug: string,
   deployId: string,
+  ownerUserId?: string | null,
 ): Promise<void> {
   await ensureDb(env);
   const now = new Date().toISOString();
+  // Assign owner only when currently null; never steal an existing owner.
   await env.DB.prepare(
     `INSERT INTO sites (slug, deploy_id, owner_user_id, visibility, created_at, updated_at)
-     VALUES (?, ?, NULL, 'public', ?, ?)
-     ON CONFLICT(slug) DO UPDATE SET deploy_id = excluded.deploy_id, updated_at = excluded.updated_at`,
+     VALUES (?, ?, ?, 'public', ?, ?)
+     ON CONFLICT(slug) DO UPDATE SET
+       deploy_id = excluded.deploy_id,
+       updated_at = excluded.updated_at,
+       owner_user_id = COALESCE(sites.owner_user_id, excluded.owner_user_id)`,
   )
-    .bind(slug, deployId, now, now)
+    .bind(slug, deployId, ownerUserId ?? null, now, now)
     .run();
 }
 
@@ -283,132 +348,6 @@ export async function getEditTokenHash(
     .first<{ edit_token_hash: string }>();
   return row?.edit_token_hash ?? null;
 }
-
-const MIGRATION_0001 = `
-CREATE TABLE IF NOT EXISTS users (
-  id TEXT PRIMARY KEY NOT NULL,
-  email TEXT NOT NULL UNIQUE,
-  created_at TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS sites (
-  slug TEXT PRIMARY KEY NOT NULL,
-  deploy_id TEXT NOT NULL,
-  owner_user_id TEXT REFERENCES users(id),
-  visibility TEXT NOT NULL DEFAULT 'public',
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_sites_owner ON sites(owner_user_id);
-CREATE TABLE IF NOT EXISTS site_secrets (
-  slug TEXT PRIMARY KEY NOT NULL,
-  edit_token_hash TEXT NOT NULL,
-  created_at TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS magic_links (
-  id TEXT PRIMARY KEY NOT NULL,
-  token_hash TEXT NOT NULL UNIQUE,
-  slug TEXT NOT NULL,
-  email TEXT NOT NULL,
-  expires_at TEXT NOT NULL,
-  used_at TEXT
-);
-CREATE INDEX IF NOT EXISTS idx_magic_links_slug ON magic_links(slug);
-CREATE TABLE IF NOT EXISTS sessions (
-  id TEXT PRIMARY KEY NOT NULL,
-  user_id TEXT NOT NULL REFERENCES users(id),
-  token_hash TEXT NOT NULL UNIQUE,
-  expires_at TEXT NOT NULL,
-  created_at TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
-`;
-
-const MIGRATION_0002 = `
-CREATE TABLE IF NOT EXISTS site_members (
-  slug TEXT NOT NULL REFERENCES sites(slug) ON DELETE CASCADE,
-  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  email TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'view',
-  created_at TEXT NOT NULL,
-  PRIMARY KEY (slug, user_id)
-);
-CREATE INDEX IF NOT EXISTS idx_site_members_email ON site_members(email);
-CREATE TABLE IF NOT EXISTS site_invites (
-  id TEXT PRIMARY KEY NOT NULL,
-  slug TEXT NOT NULL REFERENCES sites(slug) ON DELETE CASCADE,
-  email TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'view',
-  token_hash TEXT NOT NULL UNIQUE,
-  invited_by TEXT NOT NULL REFERENCES users(id),
-  expires_at TEXT NOT NULL,
-  accepted_at TEXT,
-  created_at TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_site_invites_slug ON site_invites(slug);
-CREATE INDEX IF NOT EXISTS idx_site_invites_email ON site_invites(email);
-`;
-
-const MIGRATION_0003 = `
-CREATE TABLE IF NOT EXISTS deploys (
-  id TEXT PRIMARY KEY NOT NULL,
-  slug TEXT NOT NULL REFERENCES sites(slug) ON DELETE CASCADE,
-  created_at TEXT NOT NULL,
-  file_count INTEGER NOT NULL DEFAULT 0,
-  bytes INTEGER NOT NULL DEFAULT 0,
-  created_by_user_id TEXT REFERENCES users(id),
-  source TEXT NOT NULL DEFAULT 'post'
-);
-CREATE INDEX IF NOT EXISTS idx_deploys_slug_created ON deploys(slug, created_at DESC);
-`;
-
-const MIGRATION_0004 = `
-CREATE TABLE IF NOT EXISTS site_capability_grants (
-  slug TEXT PRIMARY KEY NOT NULL REFERENCES sites(slug) ON DELETE CASCADE,
-  requested_json TEXT NOT NULL,
-  approved_json TEXT,
-  status TEXT NOT NULL DEFAULT 'pending',
-  deploy_id TEXT,
-  approved_at TEXT,
-  approved_by TEXT REFERENCES users(id),
-  updated_at TEXT NOT NULL
-);
-`;
-
-const MIGRATION_0005 = `
-CREATE TABLE IF NOT EXISTS connectors (
-  id TEXT PRIMARY KEY NOT NULL,
-  slug TEXT NOT NULL REFERENCES sites(slug) ON DELETE CASCADE,
-  token_hash TEXT NOT NULL UNIQUE,
-  label TEXT,
-  last_seen_at TEXT,
-  created_at TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_connectors_slug ON connectors(slug);
-CREATE TABLE IF NOT EXISTS connector_invokes (
-  id TEXT PRIMARY KEY NOT NULL,
-  slug TEXT NOT NULL REFERENCES sites(slug) ON DELETE CASCADE,
-  capability TEXT NOT NULL,
-  payload_json TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pending',
-  result_json TEXT,
-  error TEXT,
-  created_at TEXT NOT NULL,
-  completed_at TEXT
-);
-CREATE INDEX IF NOT EXISTS idx_connector_invokes_slug_status
-  ON connector_invokes(slug, status, created_at);
-`;
-
-const MIGRATION_0006 = `
-CREATE TABLE IF NOT EXISTS waitlist_signups (
-  id TEXT PRIMARY KEY NOT NULL,
-  email TEXT NOT NULL UNIQUE,
-  source TEXT NOT NULL DEFAULT 'marketing',
-  created_at TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_waitlist_signups_created
-  ON waitlist_signups(created_at DESC);
-`;
 
 export async function addWaitlistSignup(
   env: Env,
@@ -688,9 +627,23 @@ export async function deployExists(
   return Boolean(row);
 }
 
+export async function countSitesByOwner(
+  env: Env,
+  ownerUserId: string,
+): Promise<number> {
+  await ensureDb(env);
+  const row = await env.DB.prepare(
+    `SELECT COUNT(*) AS n FROM sites WHERE owner_user_id = ?`,
+  )
+    .bind(ownerUserId)
+    .first<{ n: number }>();
+  return Number(row?.n ?? 0);
+}
+
 export async function listSitesByOwner(
   env: Env,
   ownerUserId: string,
+  opts?: { limit?: number; offset?: number },
 ): Promise<
   {
     slug: string;
@@ -701,12 +654,15 @@ export async function listSitesByOwner(
   }[]
 > {
   await ensureDb(env);
+  const limit = Math.min(Math.max(opts?.limit ?? 1000, 1), 100);
+  const offset = Math.max(opts?.offset ?? 0, 0);
   const { results } = await env.DB.prepare(
     `SELECT slug, deploy_id, visibility, updated_at, last_served_at
      FROM sites WHERE owner_user_id = ?
-     ORDER BY updated_at DESC`,
+     ORDER BY updated_at DESC
+     LIMIT ? OFFSET ?`,
   )
-    .bind(ownerUserId)
+    .bind(ownerUserId, limit, offset)
     .all<{
       slug: string;
       deploy_id: string;

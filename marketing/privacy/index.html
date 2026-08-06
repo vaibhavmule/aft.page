@@ -5,22 +5,80 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Privacy — aft.page</title>
     <meta name="robots" content="noindex" />
-    <link rel="stylesheet" href="../styles.css" />
+    <link rel="canonical" href="https://aft.page/privacy/" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#07080a" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <nav class="topnav">
-      <a class="topnav-brand" href="/">aft<span>.</span>page</a>
-    </nav>
-    <main class="pillars">
-      <h1 class="section-title">Privacy</h1>
-      <p class="section-lede">
-        If you request early access, we store your normalized email address so
-        we can send relevant product updates and invitations. We do not sell it,
-        and you can ask us to remove it at any time. Deployed site content is
-        stored to serve your live URL. Contact
-        <a href="mailto:hello@aft.page">hello@aft.page</a> for access, deletion,
-        or other privacy questions.
-      </p>
-    </main>
+    <div class="site">
+      <nav class="topnav" aria-label="Primary">
+        <a class="topnav-brand" href="/">aft<span>.</span>page</a>
+        <div class="topnav-links">
+          <a href="/#pillars">Product</a>
+          <a href="/mcp">MCP</a>
+          <a href="/login" data-aft-auth="login">Log in</a>
+          <a class="topnav-cta" href="/mcp">Get started</a>
+        </div>
+      </nav>
+
+      <main class="content">
+        <h1 class="section-title">Privacy</h1>
+        <p class="section-lede">
+          If you request early access, we store your normalized email address so
+          we can send relevant product updates and invitations. We do not sell it,
+          and you can ask us to remove it at any time. Deployed site content is
+          stored to serve your live URL. Contact
+          <a href="mailto:hello@aft.page">hello@aft.page</a> for access, deletion,
+          or other privacy questions.
+        </p>
+      </main>
+
+      <footer class="site-footer">
+        <div class="footer-dither" aria-hidden="true"></div>
+        <div class="footer-inner">
+          <div class="footer-top">
+            <div class="footer-brand-block">
+              <a class="footer-mark" href="/" aria-label="aft.page home">
+                <span class="footer-wordmark">aft<span>.</span>page</span>
+              </a>
+              <p class="footer-tagline">
+                Your agent made the app. aft makes it real.<br />
+                Live links. Company login. Clear approvals.
+              </p>
+            </div>
+            <nav class="footer-nav" aria-label="Footer">
+              <a href="/#pillars">Product</a>
+              <a href="/mcp">MCP</a>
+              <a href="/projects">Projects</a>
+              <a href="mailto:hello@aft.page">Contact</a>
+              <a class="footer-cta" href="/mcp">Get started</a>
+            </nav>
+          </div>
+          <p class="footer-status">
+            <span class="status-dot" aria-hidden="true"></span>
+            all systems live
+            <span class="footer-sep">·</span>
+            <code>*.aft.page</code> on Cloudflare
+          </p>
+          <div class="footer-bottom">
+            <div class="footer-legal">
+              <a href="/privacy/">Privacy</a>
+              <a href="/terms/">Terms</a>
+            </div>
+            <p class="footer-copy">© 2026 aft.page</p>
+          </div>
+          <p class="footer-giant" aria-hidden="true">aft</p>
+        </div>
+      </footer>
+    </div>
+    <script src="/auth-me.js" defer></script>
+    <script src="/auth-nav.js" defer></script>
   </body>
 </html>

@@ -179,6 +179,8 @@ strong {
 .topnav-links a:hover,
 .docs-nav a:hover,
 .seo-nav a:hover,
+.topnav-links a[aria-current="page"],
+.docs-nav a[aria-current="page"],
 .seo-nav a[aria-current="page"] {
   color: var(--ink);
 }
@@ -244,6 +246,25 @@ strong {
   margin: 0 auto;
   padding: 1.5rem 0 2.5rem;
   animation: hero-rise 0.65s ease both;
+}
+
+.hero-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: end;
+}
+
+.hero-aside .support {
+  margin-bottom: 0;
+}
+
+.hero-aside .cta {
+  margin-top: 1.25rem;
+}
+
+.hero-aside .hero-flow {
+  margin-top: 1.25rem;
 }
 
 @keyframes hero-rise {
@@ -502,6 +523,14 @@ strong {
   color: var(--ink);
 }
 
+.gate-role {
+  margin-left: 0.45rem;
+  font-size: 0.72rem;
+  color: var(--faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .gate-actions {
   margin: 0;
   display: flex;
@@ -561,8 +590,10 @@ strong {
 
 /* —— Sections —— */
 .pillars,
-.waitlist,
-.try {
+.lifecycle,
+.ways,
+.trust,
+.waitlist {
   width: min(1120px, calc(100% - 2.5rem));
   margin: 0 auto;
   padding: 4rem 0;
@@ -729,7 +760,164 @@ strong {
   color: var(--ink);
 }
 
-/* —— Try / paste —— */
+/* —— Lifecycle —— */
+.lifecycle {
+  border-top: none;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--line) 0 6px,
+    transparent 6px 13px
+  );
+  background-size: 100% 1px;
+  background-position: top;
+  background-repeat: no-repeat;
+}
+
+.lifecycle-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.5rem 1.75rem;
+}
+
+.lifecycle-list li {
+  padding: 1.15rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--panel) 70%, transparent);
+}
+
+.lifecycle-num {
+  display: block;
+  margin: 0 0 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--beacon);
+}
+
+.lifecycle-list h3 {
+  margin: 0 0 0.45rem;
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+.lifecycle-list p {
+  margin: 0;
+  color: var(--quiet);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.lifecycle-list code {
+  color: var(--ink);
+}
+
+/* —— Ways in (deploy + paste) —— */
+.ways {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(2rem, 4vw, 3.5rem);
+  align-items: start;
+  border-top: none;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--line) 0 6px,
+    transparent 6px 13px
+  );
+  background-size: 100% 1px;
+  background-position: top;
+  background-repeat: no-repeat;
+}
+
+.ways .section-lede {
+  margin-bottom: 1.5rem;
+}
+
+.ways-paths {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.ways-paths li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.ways-paths li:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+.ways-paths a {
+  text-decoration: none;
+}
+
+.ways-paths a:hover strong {
+  color: var(--beacon-bright);
+}
+
+.ways-paths strong {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ways-paths span {
+  font-size: 0.88rem;
+  color: var(--quiet);
+}
+
+.ways-paths code {
+  color: var(--ink);
+  font-size: 0.82em;
+}
+
+/* —— Trust / identity —— */
+.trust {
+  border-top: none;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--line) 0 6px,
+    transparent 6px 13px
+  );
+  background-size: 100% 1px;
+  background-position: top;
+  background-repeat: no-repeat;
+}
+
+.trust-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.5rem 1.75rem;
+}
+
+.trust-list h3 {
+  margin: 0 0 0.45rem;
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+.trust-list p {
+  margin: 0;
+  color: var(--quiet);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+/* —— Try / paste (legacy class kept for SEO pages) —— */
 .try {
   display: grid;
   grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
@@ -946,6 +1134,10 @@ strong {
   background: var(--harbor);
   color: #e8eef6;
   overflow: hidden;
+}
+
+.site > .site-footer {
+  margin-top: auto;
 }
 
 .footer-dither {
@@ -1490,6 +1682,34 @@ strong {
   border-color: var(--accent);
 }
 
+/* —— Simple content / legal pages —— */
+.content {
+  width: min(40rem, calc(100% - 2.5rem));
+  margin: 0 auto;
+  padding: 2.5rem 0 4rem;
+}
+
+.content .section-title {
+  margin: 0 0 1rem;
+}
+
+.content .section-lede {
+  margin: 0;
+  color: var(--quiet);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  max-width: none;
+}
+
+.content .section-lede a {
+  color: var(--beacon-bright);
+  text-decoration: none;
+}
+
+.content .section-lede a:hover {
+  text-decoration: underline;
+}
+
 /* —— Simple footer (docs / seo pages) —— */
 .footer {
   margin-top: auto;
@@ -1543,10 +1763,17 @@ strong {
     border-right: none;
   }
 
-  .pillar-list {
+  .pillar-list,
+  .lifecycle-list {
     grid-template-columns: 1fr 1fr;
   }
 
+  .trust-list {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-split,
+  .ways,
   .try,
   .waitlist,
   .seo-hero {
@@ -1581,6 +1808,9 @@ strong {
   .seo-top,
   .hero,
   .pillars,
+  .lifecycle,
+  .ways,
+  .trust,
   .waitlist,
   .try,
   .footer-inner,
@@ -1592,23 +1822,18 @@ strong {
     width: min(100% - 1.5rem, 1120px);
   }
 
-  .topnav-links a:not(.topnav-cta):not(.topnav-account),
+  .topnav-links a:not(.topnav-cta):not(.topnav-account):not([data-aft-auth="login"]),
   .docs-nav a,
   .seo-nav a {
     display: none;
   }
 
-  .topnav-links a.topnav-account {
+  .topnav.aft-signed-in .aft-auth-wrap {
     display: inline-flex;
-    align-items: center;
-    padding: 0.35rem 0.75rem;
-    border-radius: 3px;
-    border: 1px solid var(--line);
-    color: var(--ink) !important;
-    font-weight: 600;
   }
 
-  .pillar-list {
+  .pillar-list,
+  .lifecycle-list {
     grid-template-columns: 1fr;
   }
 

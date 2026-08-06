@@ -39,14 +39,15 @@
   </head>
   <body>
     <div class="site">
-      <header class="seo-top">
-        <a class="brand" href="/">aft<span>.</span>page</a>
-        <nav class="seo-nav" aria-label="Primary">
-          <a href="/">Agents</a>
+      <nav class="topnav" aria-label="Primary">
+        <a class="topnav-brand" href="/">aft<span>.</span>page</a>
+        <div class="topnav-links">
+          <a href="/#pillars">Product</a>
           <a href="/mcp">MCP</a>
-          <a href="/paste-html/">Paste HTML</a>
-        </nav>
-      </header>
+          <a href="/login" data-aft-auth="login">Log in</a>
+          <a class="topnav-cta" href="/mcp">Get started</a>
+        </div>
+      </nav>
 
       <div class="seo-hero">
         <div class="seo-copy">
@@ -174,16 +175,46 @@
           </ul>
         </nav>
       </main>
-
-      <footer class="footer">
-        <p>
-          <a href="/">aft.page</a>
-          · Upload HTML → <code>*.aft.page</code>
-          ·
-          <a href="/mcp">MCP</a>
-        </p>
+      <footer class="site-footer">
+        <div class="footer-dither" aria-hidden="true"></div>
+        <div class="footer-inner">
+          <div class="footer-top">
+            <div class="footer-brand-block">
+              <a class="footer-mark" href="/" aria-label="aft.page home">
+                <span class="footer-wordmark">aft<span>.</span>page</span>
+              </a>
+              <p class="footer-tagline">
+                Your agent made the app. aft makes it real.<br />
+                Live links. Company login. Clear approvals.
+              </p>
+            </div>
+            <nav class="footer-nav" aria-label="Footer">
+              <a href="/#pillars">Product</a>
+              <a href="/mcp">MCP</a>
+              <a href="/projects">Projects</a>
+              <a href="mailto:hello@aft.page">Contact</a>
+              <a class="footer-cta" href="/mcp">Get started</a>
+            </nav>
+          </div>
+          <p class="footer-status">
+            <span class="status-dot" aria-hidden="true"></span>
+            all systems live
+            <span class="footer-sep">·</span>
+            <code>*.aft.page</code> on Cloudflare
+          </p>
+          <div class="footer-bottom">
+            <div class="footer-legal">
+              <a href="/privacy/">Privacy</a>
+              <a href="/terms/">Terms</a>
+            </div>
+            <p class="footer-copy">© 2026 aft.page</p>
+          </div>
+          <p class="footer-giant" aria-hidden="true">aft</p>
+        </div>
       </footer>
     </div>
     <script src="/deploy.js" defer></script>
+      <script src="/auth-me.js" defer></script>
+    <script src="/auth-nav.js" defer></script>
   </body>
 </html>

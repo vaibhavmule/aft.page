@@ -9,7 +9,7 @@ import {
   upsertCapabilityRequest,
   upsertSiteRow,
 } from "./db";
-import { corsHeaders, json } from "./http";
+import { corsHeaders, isAllowedWebOrigin, json } from "./http";
 import { trackDeploy, trackRedeploy } from "./metrics";
 import { allocateUniqueSlug, isValidSlug } from "./slug";
 import { putObject } from "./storage";
@@ -17,6 +17,17 @@ import { putObject } from "./storage";
 export { sanitizeHtmlDocument } from "./upload";
 
 type UploadFile = { path: string; bytes: ArrayBuffer; contentType: string };
+
+/** Credentialed CORS for aft.page web; open CORS for agents/CLI. */
+function deployJson(
+  request: Request,
+  data: unknown,
+  status = 200,
+): Response {
+  const origin = request.headers.get("origin");
+  const useCreds = isAllowedWebOrigin(origin);
+  return json(data, status, Object.fromEntries(corsHeaders(origin, useCreds)));
+}
 
 export async function deploy(request: Request, env: Env): Promise<Response> {
   const started = Date.now();
@@ -32,15 +43,22 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
 
     if (isPatch) {
       if (!patchSlug || !isValidSlug(patchSlug)) {
-        return done(json({ error: "invalid_slug" }, 400), { error: "invalid_slug" });
+        return done(deployJson(request, { error: "invalid_slug" }, 400), {
+          error: "invalid_slug",
+        });
       }
       const auth = await authorizeDeployUpdate(env, request, patchSlug);
       if (!auth.ok) {
-        return done(json({ error: auth.error }, auth.status), { error: auth.error });
+        return done(deployJson(request, { error: auth.error }, auth.status), {
+          error: auth.error,
+        });
       }
       const existing = await env.SITES.get(`site:${patchSlug}`);
       if (!existing) {
-        return done(json({ error: "not_found" }, 404), { error: "not_found", slug: patchSlug });
+        return done(
+          deployJson(request, { error: "not_found" }, 404),
+          { error: "not_found", slug: patchSlug },
+        );
       }
       return redeployToSlug(request, env, patchSlug, done, started);
     }
@@ -48,7 +66,8 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
     const files = await parseUpload(request);
     if (files.length === 0) {
       return done(
-        json(
+        deployJson(
+          request,
           { error: "no_files", hint: "multipart field 'files' or raw text/html body" },
           400,
         ),
@@ -56,7 +75,7 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
       );
     }
     if (files.length > MAX_FILES) {
-      return done(json({ error: "too_many_files", max: MAX_FILES }, 400), {
+      return done(deployJson(request, { error: "too_many_files", max: MAX_FILES }, 400), {
         error: "too_many_files",
         files: files.length,
       });
@@ -65,25 +84,32 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
     let total = 0;
     for (const f of files) {
       if (f.path.includes("..") || f.path.startsWith("/") || f.path.includes("\\")) {
-        return done(json({ error: "bad_path", path: f.path }, 400), {
+        return done(deployJson(request, { error: "bad_path", path: f.path }, 400), {
           error: "bad_path",
           files: files.length,
         });
       }
       if (f.bytes.byteLength > MAX_FILE_BYTES) {
         return done(
-          json({ error: "file_too_large", path: f.path, max: MAX_FILE_BYTES }, 400),
+          deployJson(
+            request,
+            { error: "file_too_large", path: f.path, max: MAX_FILE_BYTES },
+            400,
+          ),
           { error: "file_too_large", files: files.length },
         );
       }
       total += f.bytes.byteLength;
     }
     if (total > MAX_TOTAL_BYTES) {
-      return done(json({ error: "payload_too_large", max: MAX_TOTAL_BYTES }, 400), {
-        error: "payload_too_large",
-        bytes: total,
-        files: files.length,
-      });
+      return done(
+        deployJson(request, { error: "payload_too_large", max: MAX_TOTAL_BYTES }, 400),
+        {
+          error: "payload_too_large",
+          bytes: total,
+          files: files.length,
+        },
+      );
     }
 
     const preferred = url.searchParams.get("slug")?.toLowerCase();
@@ -92,7 +118,7 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
         ? preferred
         : undefined;
     if (preferred && RESERVED_SLUGS.has(preferred)) {
-      return done(json({ error: "reserved_slug", slug: preferred }, 400), {
+      return done(deployJson(request, { error: "reserved_slug", slug: preferred }, 400), {
         error: "reserved_slug",
         bytes: total,
         files: files.length,
@@ -101,7 +127,7 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
 
     const slug = await allocateUniqueSlug(env, base);
     if (!slug) {
-      return done(json({ error: "slug_exhausted" }, 503), {
+      return done(deployJson(request, { error: "slug_exhausted" }, 503), {
         error: "slug_exhausted",
         bytes: total,
         files: files.length,
@@ -119,13 +145,15 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
     await env.SITES.put(`site:${slug}`, JSON.stringify(meta));
 
     const editToken = randomToken("aft_edit_");
-    await upsertSiteRow(env, slug, deployId);
+    const sessionUser = await resolveSessionUser(env, request);
+    await upsertSiteRow(env, slug, deployId, sessionUser?.id ?? null);
     await setSiteEditTokenHash(env, slug, await hashEditToken(env, slug, editToken));
     await insertDeploy(env, {
       id: deployId,
       slug,
       fileCount: files.length,
       bytes: total,
+      createdByUserId: sessionUser?.id ?? null,
       source: "post",
     });
 
@@ -134,7 +162,7 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
     const root = env.ROOT_DOMAIN || "aft.page";
     const liveUrl = `https://${slug}.${root}`;
     return done(
-      json({
+      deployJson(request, {
         ok: true,
         slug,
         deployId,
@@ -150,7 +178,9 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(JSON.stringify({ level: "error", where: "deploy", message }));
-    return done(json({ error: "internal", message }, 500), { error: "internal" });
+    return done(deployJson(request, { error: "internal", message }, 500), {
+      error: "internal",
+    });
   }
 }
 
@@ -166,7 +196,7 @@ async function redeployToSlug(
 ): Promise<Response> {
   const files = await parseUpload(request);
   if (files.length === 0) {
-    const res = json({ error: "no_files" }, 400);
+    const res = deployJson(request, { error: "no_files" }, 400);
     trackRedeploy(env, request, started, res, { slug, error: "no_files" });
     return done(res, { error: "no_files", slug });
   }
@@ -175,7 +205,7 @@ async function redeployToSlug(
   for (const f of files) {
     total += f.bytes.byteLength;
     if (f.bytes.byteLength > MAX_FILE_BYTES || total > MAX_TOTAL_BYTES) {
-      const res = json({ error: "payload_too_large" }, 400);
+      const res = deployJson(request, { error: "payload_too_large" }, 400);
       trackRedeploy(env, request, started, res, { slug, error: "payload_too_large" });
       return done(res, { error: "payload_too_large", slug });
     }
@@ -190,9 +220,8 @@ async function redeployToSlug(
 
   const meta: SiteMeta = { deployId, createdAt, fileCount: files.length };
   await env.SITES.put(`site:${slug}`, JSON.stringify(meta));
-  await upsertSiteRow(env, slug, deployId);
-
   const user = await resolveSessionUser(env, request);
+  await upsertSiteRow(env, slug, deployId, user?.id ?? null);
   await insertDeploy(env, {
     id: deployId,
     slug,
@@ -205,7 +234,7 @@ async function redeployToSlug(
   const capsPayload = await maybeCapabilities(env, slug, deployId, files);
 
   const root = env.ROOT_DOMAIN || "aft.page";
-  const res = json({
+  const res = deployJson(request, {
     ok: true,
     slug,
     deployId,

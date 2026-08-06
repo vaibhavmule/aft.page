@@ -140,12 +140,35 @@ describe("serving files", () => {
     );
     const res = await fetchSite("og-default");
     const html = await res.text();
-    expect(html).toContain('property="og:image" content="https://aft.page/og.png"');
+    expect(html).toContain('property="og:image" content="https://og-default.aft.page/__aft/og.png"');
     expect(html).toContain('property="og:title" content="BK Offers"');
-    expect(html).toContain('name="twitter:image" content="https://aft.page/og.png"');
+    expect(html).toContain('name="twitter:image" content="https://og-default.aft.page/__aft/og.png"');
+    expect(html).toContain('name="description" content="BK Offers — live on aft.page"');
+    expect(html).toContain('property="og:description" content="BK Offers — live on aft.page"');
+    expect(html).toContain('name="twitter:description" content="BK Offers — live on aft.page"');
   });
 
-  it("leaves an existing og:image alone", async () => {
+  it("serves a generated OG PNG for the site card", async () => {
+    await call(
+      uploadJson(
+        [
+          {
+            path: "index.html",
+            content:
+              "<!doctype html><html><head><title>BK Offers</title></head><body></body></html>",
+          },
+        ],
+        "og-card",
+      ),
+    );
+    const res = await fetchSite("og-card", "/__aft/og.png");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type") || "").toMatch(/image\/png/);
+    const bytes = await res.arrayBuffer();
+    expect(bytes.byteLength).toBeGreaterThan(1000);
+  });
+
+  it("leaves an existing og:image alone but still fills descriptions", async () => {
     await call(
       uploadJson(
         [
@@ -160,6 +183,8 @@ describe("serving files", () => {
     );
     const html = await (await fetchSite("og-custom")).text();
     expect(html).toContain('content="https://cdn.example/hero.png"');
+    expect(html).not.toContain("__aft/og.png");
     expect(html).not.toContain("https://aft.page/og.png");
+    expect(html).toContain('name="description" content="Custom — live on aft.page"');
   });
 });

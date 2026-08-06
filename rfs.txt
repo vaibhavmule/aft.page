@@ -1,20 +1,66 @@
-A Cloud for Small Software#
-By Pete Koomen
+# aft.page mission — a cloud for small software
 
-Using agents to build personal software to solve your own problems is a lot of fun.
+Canonical source: https://www.ycombinator.com/rfs#a-cloud-for-small-software
+YC RFS: “A Cloud for Small Software,” Pete Koomen, Fall 2026.
 
-This is "Small Software". Purpose-built tools that will only ever have one or a small handful of users.
+## Mission
 
-Small software is useful for teams too: Every team does things differently, and there's unlimited demand for bespoke tools for running workflows, tracking important numbers, managing sprints, sharing prototypes, and so on.
+Make purpose-built software for one person or a small handful of people as easy
+to deploy and share as a Google Doc.
 
-Software like this is now very easy to build, but still hard to deploy and share.
+Agents have made small software easy to create: personal tools, focused team
+workflows, trackers, dashboards, prototypes, reports, and tiny full-stack apps.
+The remaining friction is turning that output into a durable application that
+someone can open, use again, and share without learning a cloud platform.
 
-Incumbent clouds like Azure and AWS were designed for shipping Big Software that scales with many users… at the cost of complexity.
+aft.page is the cloud for that software.
 
-A cloud designed for small software could delete most of this complexity and unlock a big set of new use cases that agents have only recently made possible.
+> Agent made it → aft makes it live, persistent, and shareable.
 
-At the same time, there are other hard problems to solve: every company will want to customize the environment this software runs in, auth & permissions are hard, and allowing nontechnical users to share arbitrary code is tricky to do securely.
+## Product principles
 
-Small software should be as easy to share with your colleagues as a Google Doc.
+1. **Agent-neutral.** Accept output from Claude, Codex, Cursor, ChatGPT, local
+   tools, Git, or a human—not only an integrated builder.
+2. **URL first.** The first success is a working HTTPS URL in minutes, with no
+   repository, account, or cloud ceremony when it is not needed.
+3. **Small by design.** Optimize for one to a handful of users, not Big Software
+   scale or infrastructure teams.
+4. **Grow with the app.** Start with static output; support state, APIs,
+   background work, secrets, and full-stack runtimes as useful apps require.
+5. **Doc-simple sharing.** Public, private, invite, revoke, and ownership should
+   feel like sharing a document.
+6. **Safe arbitrary code.** Isolation, permissions, capability approval, and
+   observable lifecycle are enabling infrastructure, not the headline product.
+7. **Portable when needed.** Hosted by aft.page by default; customer-cloud paths
+   exist for trust, customization, and applications that outgrow the default.
 
-If you're working on something like this, we'd love to hear from you.
+## Hard problems we accept
+
+- Running arbitrary agent-generated code safely
+- Environment and runtime customization without exposing cloud complexity
+- Authentication, permissions, ownership, sharing, and revocation
+- State, secrets, data access, background work, rollback, and teardown
+- Keeping tiny applications inexpensive and understandable over their lifetime
+
+## What this is not
+
+- Primarily an enterprise agent-governance product
+- An internal-tools builder or low-code IDE
+- A website builder
+- A cloud for internet-scale Big Software
+- A static HTML paste service as the final product
+
+Governance, inventory, connectors, and customer-cloud execution remain useful.
+They serve the Small Software mission; they do not replace it.
+
+## Evidence
+
+Track:
+
+- Strangers who reach a working URL without founder help
+- Time from agent output to working URL
+- Repeat deployers and applications still used after 7 and 30 days
+- Solo applications used repeatedly
+- Applications shared with at least one other person
+- Full-stack applications deployed without manual cloud configuration
+- Users who would notice if aft disappeared

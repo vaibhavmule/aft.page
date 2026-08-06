@@ -13,6 +13,18 @@ export function json(
   return new Response(JSON.stringify(data, null, 2), { status, headers });
 }
 
+/** Auth / session-scoped JSON — never cache across users. */
+export function privateJson(
+  data: unknown,
+  status = 200,
+  extraHeaders?: Record<string, string>,
+): Response {
+  return json(data, status, {
+    "cache-control": "private, no-store",
+    ...extraHeaders,
+  });
+}
+
 /** True for apex aft.page, marketing localhost, or https://{slug}.aft.page. */
 export function isAllowedWebOrigin(origin: string | null): boolean {
   if (!origin) return false;
@@ -49,7 +61,7 @@ export function corsHeaders(
   } else {
     h.set("access-control-allow-origin", "*");
   }
-  h.set("access-control-allow-methods", "GET, POST, PATCH, OPTIONS");
+  h.set("access-control-allow-methods", "GET, POST, PATCH, DELETE, OPTIONS");
   h.set(
     "access-control-allow-headers",
     "content-type, authorization, x-aft-client, x-aft-edit-token",

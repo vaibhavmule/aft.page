@@ -1,19 +1,21 @@
 # Evidence pack (Week 4 / Phase 1 close)
 
-Fill this for YC, investors, and yourself. North star:
+Fill this for YC, investors, and yourself. Mission:
 
-> **Organisations with an application used weekly by at least two people.**
+> **Make Small Software as easy to deploy and share as a Google Doc.**
 
-Deploy count alone does not count.
+Evidence includes useful solo software and shared team software. Deploy count
+alone does not count; repeat use does.
 
 ## Phase 1 success test (scripted demo)
 
-Goal: an outsider completes this **without you operating their session**.
+Goal: an outsider completes this **without you operating their session** and
+returns to the resulting application later.
 
 ```text
 1. Deploy (paste-html, MCP, or CLI) → live https://{slug}.aft.page
 2. Claim from /preview (magic link) OR already own → /login
-3. Open /inventory — site appears
+3. Open /projects — site appears
 4. From preview: set private, invite colleague by email
 5. Colleague opens invite link, signs in, opens the app
 6. Owner redeploys (PATCH / edit) and rolls back from preview or API
@@ -22,7 +24,8 @@ Goal: an outsider completes this **without you operating their session**.
 ### Checklist
 
 - [ ] Recorded once (screen + slug)
-- [ ] Second person is **not** you / not a fake alt you control for the “external” bar
+- [ ] Builder is **not** you / not a fake account you control
+- [ ] Builder returns to the app or redeploys within seven days
 - [ ] Both can open the private URL while invited
 - [ ] Redeploy or rollback done by owner without founder help
 
@@ -31,8 +34,8 @@ Goal: an outsider completes this **without you operating their session**.
 | Item | URL / note |
 | --- | --- |
 | Login | https://aft.page/login |
-| Inventory | https://aft.page/inventory |
-| Paste (anonymous funnel) | https://aft.page/paste-html/ |
+| Projects | https://aft.page/projects |
+| Paste (anonymous activation) | https://aft.page/paste-html/ |
 | Connector docs | [CONNECTOR.md](./CONNECTOR.md) |
 | Pricing | [PRICING.md](./PRICING.md) |
 | Expense dogfood (example) | deploy `examples/expense-approval/` |
@@ -45,7 +48,8 @@ Goal: an outsider completes this **without you operating their session**.
 
 Ask every call:
 
-> “What useful internal tool did you create with an AI coding agent but fail to share or maintain properly?”
+> “What useful personal or team software did an AI agent create that you could
+> not easily deploy, keep running, or share?”
 
 ## Numbers (day 30 target)
 
@@ -53,8 +57,11 @@ Ask every call:
 | --- | --- | --- |
 | Outreaches (cum) | 120 | |
 | Calls held | 20 | |
-| Weekly active teams | ≥5 | |
-| Orgs with 2+ users on one app | ≥1 | |
+| Stranger deployments reaching a URL | ≥10 | |
+| Repeat deployers | ≥5 | |
+| Apps still used after 7 days | ≥3 | |
+| Apps shared with another person | ≥1 | |
+| Full-stack app without manual cloud setup | ≥1 | |
 | Capability approvals (non-you) | ≥5 | |
 | Connector demos (if asked) | ≥2 | |
 | Paid / LOI / pilot (non-friend) | ≥1 | |
@@ -62,7 +69,7 @@ Ask every call:
 
 ## Screenshots / artifacts
 
-- [ ] Inventory with ≥1 owned site
+- [ ] Projects with ≥1 owned site
 - [ ] Private invite accept
 - [ ] Capability approve screen
 - [ ] Connector live list (optional for pack; available if asked)

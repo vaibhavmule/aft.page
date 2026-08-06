@@ -3,9 +3,16 @@ import { RESERVED_SLUGS } from "./env";
 import { corsHeaders, json } from "./http";
 import { trackPageView } from "./metrics";
 import { ensureDefaultOgMeta, isHtmlContentType } from "./og";
+import { renderSiteOgImage, siteOgImagePath } from "./og-image";
 import { canAccessSite, privateDeniedHtml } from "./sharing";
 import { getObject } from "./storage";
 import { touchLastServed } from "./db";
+
+function pageTitleFromHtml(html: string, fallback: string): string {
+  const match = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+  const title = match?.[1]?.replace(/\s+/g, " ").trim();
+  return title || fallback;
+}
 
 export async function serveSite(
   request: Request,
@@ -26,13 +33,27 @@ export async function serveSite(
   const access = await canAccessSite(env, request, slug);
   if (!access.allowed) {
     const headers = new Headers({
-      "content-type": "text/html; charset=utf-8",
       "cache-control": "private, no-store",
       "x-aft-slug": slug,
     });
     for (const [name, value] of corsHeaders(null, false)) {
       headers.set(name, value);
     }
+
+    // Cold hit: send strangers to login; return here after magic link.
+    if (!access.authenticated) {
+      const next = new URL(request.url);
+      next.hostname = `${slug}.${root}`;
+      next.protocol = "https:";
+      const login = new URL(`https://${root}/login`);
+      login.searchParams.set("next", next.toString());
+      headers.set("location", login.toString());
+      await trackPageView(env, request, slug, 302);
+      return new Response(null, { status: 302, headers });
+    }
+
+    // Logged in but not invited — avoid login redirect loop.
+    headers.set("content-type", "text/html; charset=utf-8");
     await trackPageView(env, request, slug, 401);
     return new Response(privateDeniedHtml(slug, root), {
       status: 401,
@@ -53,6 +74,22 @@ export async function serveSite(
   if (path.endsWith("/")) path += "index.html";
   if (path === "/" || path === "") path = "/index.html";
   path = path.replace(/^\//, "");
+
+  // Dynamic per-site OG card: https://{slug}.aft.page/__aft/og.png
+  if (path === siteOgImagePath()) {
+    let title = slug;
+    const index = await getObject(env, slug, meta.deployId, "index.html");
+    if (index) {
+      title = pageTitleFromHtml(await new Response(index.body).text(), slug);
+    }
+    const img = await renderSiteOgImage({ title, slug, rootDomain: root });
+    img.headers.set("x-aft-slug", slug);
+    img.headers.set("x-aft-deploy", meta.deployId);
+    for (const [name, value] of corsHeaders(null, false)) {
+      img.headers.set(name, value);
+    }
+    return img;
+  }
 
   let obj = await getObject(env, slug, meta.deployId, path);
   if (!obj && !path.includes(".")) {

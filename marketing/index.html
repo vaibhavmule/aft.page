@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>aft.page — The secure home for AI-built apps</title>
+    <title>aft.page — Your agent made the app. aft makes it real.</title>
     <meta
       name="description"
-      content="AI agents build the apps. aft.page gives them a live URL, company login, and rules for what they can access — on any cloud."
+      content="Your agent made the software. aft.page makes it live, persistent, and shareable."
     />
     <link rel="canonical" href="https://aft.page/" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -15,21 +15,21 @@
     <meta name="theme-color" content="#07080a" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="aft.page" />
-    <meta property="og:title" content="aft.page — The secure home for AI-built apps" />
+    <meta property="og:title" content="aft.page — Your agent made the app. aft makes it real." />
     <meta
       property="og:description"
-      content="Deploy from Claude, Codex, Cursor, and more. Live links in seconds. Company login and approvals when you need them."
+      content="Turn software from Claude, Codex, Cursor, and more into a durable URL you can use and share."
     />
     <meta property="og:url" content="https://aft.page/" />
     <meta property="og:image" content="https://aft.page/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="aft.page — the secure home for AI-built apps" />
+    <meta property="og:image:alt" content="aft.page — your agent made the app; aft makes it real" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="aft.page — The secure home for AI-built apps" />
+    <meta name="twitter:title" content="aft.page — Your agent made the app. aft makes it real." />
     <meta
       name="twitter:description"
-      content="AI agents build the apps. aft.page makes them live, shared, and safe for work."
+      content="Your agent made the software. aft.page makes it live, persistent, and shareable."
     />
     <meta name="twitter:image" content="https://aft.page/og.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -38,7 +38,7 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,600&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <nav class="topnav" aria-label="Primary">
@@ -46,29 +46,33 @@
       <div class="topnav-links">
         <a href="#pillars">Product</a>
         <a href="/mcp">MCP</a>
-        <a href="/login">Log in</a>
+        <a href="/login" data-aft-auth="login">Log in</a>
         <a class="topnav-cta" href="/mcp">Get started</a>
       </div>
     </nav>
 
     <header class="hero">
       <div class="hero-atmosphere" aria-hidden="true"></div>
-      <div class="hero-inner">
-        <p class="hero-brand">aft<span>.</span>page</p>
-        <h1 class="hero-title">The secure home for AI-built apps.</h1>
-        <p class="support">
-          Deploy from Claude, Codex, or Cursor. Live URL in seconds — company
-          login and approvals when you’re ready.
-        </p>
-        <div class="cta">
-          <a class="btn btn-primary" href="/mcp">Get started</a>
-          <a class="btn btn-ghost" href="#try">Try a live URL</a>
+      <div class="hero-inner hero-split">
+        <div class="hero-copy">
+          <p class="hero-brand">aft<span>.</span>page</p>
+          <h1 class="hero-title">Your agent made the app. aft makes it real.</h1>
         </div>
-        <p class="hero-flow" aria-hidden="true">
-          <span>agent</span><span class="flow-arrow">→</span><span>deploy</span
-          ><span class="flow-arrow">→</span
-          ><span class="flow-live">live URL</span>
-        </p>
+        <div class="hero-aside">
+          <p class="support">
+            Your agent made the software. aft.page makes it live, persistent,
+            and shareable.
+          </p>
+          <div class="cta">
+            <a class="btn btn-primary" href="/mcp">Get started</a>
+            <a class="btn btn-ghost" href="#ways">Try a live URL</a>
+          </div>
+          <p class="hero-flow" aria-hidden="true">
+            <span>agent</span><span class="flow-arrow">→</span><span>deploy</span
+            ><span class="flow-arrow">→</span
+            ><span class="flow-live">live URL</span>
+          </p>
+        </div>
       </div>
 
       <div class="hero-stage" aria-hidden="true">
@@ -77,24 +81,23 @@
             <span class="terminal-dot"></span>
             <span class="terminal-dot"></span>
             <span class="terminal-dot"></span>
-            <span class="terminal-title">deploy → approve → live</span>
+            <span class="terminal-title">deploy → share → live</span>
           </div>
           <div class="terminal-body">
             <pre class="terminal-line" style="--chars: 39; --delay: 0.2s">$ curl -X POST api.aft.page/v1/deploy \</pre>
             <pre class="terminal-line" style="--chars: 36; --delay: 1.15s">  --data '&lt;h1&gt;shipped by agent&lt;/h1&gt;'</pre>
-            <pre class="terminal-out" style="--chars: 26; --delay: 2.1s">→ <span class="out-ok">https://shipped.aft.page</span></pre>
+            <pre class="terminal-out" style="--chars: 34; --delay: 2.1s">→ <span class="out-ok">https://vendor-review.aft.page</span></pre>
 
             <div class="terminal-gate" style="--delay: 2.75s">
-              <p class="gate-label">before it goes live</p>
-              <p class="gate-body">this app wants to:</p>
+              <p class="gate-label">share</p>
+              <p class="gate-body">private · invite by email</p>
               <ul class="gate-list">
-                <li>read <code>customers</code></li>
-                <li><code>POST /refunds</code></li>
-                <li>message <code>Slack</code></li>
+                <li>alex@company.com <span class="gate-role">edit</span></li>
+                <li>ops@company.com <span class="gate-role">view</span></li>
               </ul>
               <p class="gate-actions">
-                <span class="gate-approve">[ approve ]</span>
-                <span class="gate-deny">deny</span>
+                <span class="gate-approve">[ invite ]</span>
+                <span class="gate-deny">revoke</span>
                 <span class="cursor" style="--delay: 3.2s"></span>
               </p>
             </div>
@@ -107,8 +110,8 @@
       <section class="pillars" id="pillars">
         <h2 class="section-title">What you get</h2>
         <p class="section-lede">
-          A live URL isn’t enough. aft.page is where AI-built apps get a home
-          your company can trust.
+          Purpose-built software should not need a Big Software cloud. aft.page
+          makes agent-built apps live, durable, and easy to share.
         </p>
         <ol class="pillar-list">
           <li>
@@ -121,73 +124,90 @@
           <li>
             <h3>Share</h3>
             <p>
-              Google or Microsoft login. Invite a teammate. Revoke when you’re
-              done.
+              Public or private. Invite a teammate by email. Revoke when the job
+              is done.
             </p>
           </li>
           <li>
-            <h3>Approve</h3>
+            <h3>Keep</h3>
             <p>
-              See what the app wants — data, APIs, Slack — and approve before it
-              runs.
+              Own the app, update it, roll it back, and return to the same URL.
             </p>
           </li>
           <li>
             <h3>Your cloud</h3>
             <p>
-              Reach systems inside your network without handing us the keys.
-              Hosted today; yours when you need it.
+              Hosted today on aft.page. Bring your own cloud when you need it.
             </p>
           </li>
         </ol>
       </section>
 
-      <section class="waitlist" id="early-access" aria-labelledby="waitlist-title">
-        <div class="waitlist-copy">
-          <p class="eyebrow">EARLY ACCESS</p>
-          <h2 id="waitlist-title">Bring AI-built apps safely into your company.</h2>
-          <p>
-            Get product updates and invitations to help shape identity,
-            approvals, and private-data access for agent-built software.
-          </p>
-        </div>
-        <form class="waitlist-form" id="waitlist-form" novalidate>
-          <div class="waitlist-fields">
-            <label class="sr-only" for="waitlist-email">Work email</label>
-            <input
-              id="waitlist-email"
-              name="email"
-              type="email"
-              inputmode="email"
-              autocomplete="email"
-              maxlength="254"
-              placeholder="you@company.com"
-              aria-describedby="waitlist-note waitlist-status"
-              required
-            />
-            <div class="waitlist-trap" aria-hidden="true">
-              <label for="waitlist-company">Company website</label>
-              <input id="waitlist-company" name="company" type="text" tabindex="-1" autocomplete="off" />
-            </div>
-            <button type="submit" class="btn btn-primary" id="waitlist-submit">
-              Request early access
-            </button>
-          </div>
-          <p class="waitlist-note" id="waitlist-note">
-            Meaningful updates only. No spam. Unsubscribe anytime.
-            <a href="/privacy/">Privacy details.</a>
-          </p>
-          <p class="waitlist-status" id="waitlist-status" role="status" aria-live="polite" aria-atomic="true"></p>
-        </form>
+      <section class="lifecycle" id="lifecycle" aria-labelledby="lifecycle-title">
+        <h2 class="section-title" id="lifecycle-title">
+          Ship a focused UI on Tuesday. Turn it off on Friday.
+        </h2>
+        <p class="section-lede">
+          Small software should not require permanent infrastructure work.
+          Deploy it, use it, share it, and stop it when it no longer matters.
+        </p>
+        <ol class="lifecycle-list">
+          <li>
+            <span class="lifecycle-num" aria-hidden="true">01</span>
+            <h3>Ship the UI</h3>
+            <p>
+              An agent builds a focused screen — not another module in a giant
+              CMS.
+            </p>
+          </li>
+          <li>
+            <span class="lifecycle-num" aria-hidden="true">02</span>
+            <h3>Make it private</h3>
+            <p>
+              Claim the site, set visibility, invite the people who need it.
+            </p>
+          </li>
+          <li>
+            <span class="lifecycle-num" aria-hidden="true">03</span>
+            <h3>Share the link</h3>
+            <p>
+              Drop <code>*.aft.page</code> in Slack or chat. Teammates open it and
+              work.
+            </p>
+          </li>
+          <li>
+            <span class="lifecycle-num" aria-hidden="true">04</span>
+            <h3>Revoke when done</h3>
+            <p>
+              Access ends without redeploying or rotating secrets. No leftovers.
+            </p>
+          </li>
+        </ol>
       </section>
 
-      <section class="try" id="try" aria-labelledby="try-title">
-        <div class="try-copy">
-          <h2 id="try-title">Get a live URL</h2>
-          <p>
-            Paste HTML or drop files — same path agents use via
-            <a href="/mcp">MCP</a>. Add login and approvals as you grow.
+      <section class="ways" id="ways" aria-labelledby="ways-title">
+        <div class="ways-intro">
+          <h2 class="section-title" id="ways-title">
+            Three ways in. One live URL out.
+          </h2>
+          <p class="section-lede">
+            Same deploy path whether you’re an agent, a human with HTML, or a
+            script hitting the API.
           </p>
+          <ul class="ways-paths">
+            <li>
+              <a href="/mcp"><strong>MCP</strong></a>
+              <span>Claude, Cursor, Codex — <code>deploy_html</code> / <code>deploy_files</code></span>
+            </li>
+            <li>
+              <strong>Paste or upload</strong>
+              <span>Drop HTML or a small static folder below</span>
+            </li>
+            <li>
+              <a href="/mcp#http"><strong>HTTP API</strong></a>
+              <span><code>POST api.aft.page/v1/deploy</code></span>
+            </li>
+          </ul>
         </div>
 
         <form class="paste-form" id="paste-form">
@@ -244,6 +264,76 @@
           </div>
         </form>
       </section>
+
+      <section class="trust" id="trust" aria-labelledby="trust-title">
+        <h2 class="section-title" id="trust-title">
+          Safe for work means the right people can open the link.
+        </h2>
+        <p class="section-lede">
+          Sharing should feel like a Google Doc — not a public site with a
+          password in the chat thread.
+        </p>
+        <ul class="trust-list">
+          <li>
+            <h3>Private by choice</h3>
+            <p>
+              Publish public when you want. Flip to private when it’s internal.
+            </p>
+          </li>
+          <li>
+            <h3>Invite and revoke</h3>
+            <p>
+              Add a teammate by email. Remove access without redeploying.
+            </p>
+          </li>
+          <li>
+            <h3>Company login next</h3>
+            <p>
+              Google and Microsoft SSO for whole domains is on the roadmap —
+              join early access to shape it.
+            </p>
+          </li>
+        </ul>
+      </section>
+
+      <section class="waitlist" id="early-access" aria-labelledby="waitlist-title">
+        <div class="waitlist-copy">
+          <p class="eyebrow">EARLY ACCESS</p>
+          <h2 id="waitlist-title">Put your next small app somewhere real.</h2>
+          <p>
+            Get product updates as aft grows from instant URLs into the cloud
+            for persistent, shareable, full-stack Small Software.
+          </p>
+        </div>
+        <form class="waitlist-form" id="waitlist-form" novalidate>
+          <div class="waitlist-fields">
+            <label class="sr-only" for="waitlist-email">Work email</label>
+            <input
+              id="waitlist-email"
+              name="email"
+              type="email"
+              inputmode="email"
+              autocomplete="email"
+              maxlength="254"
+              placeholder="you@company.com"
+              aria-describedby="waitlist-note waitlist-status"
+              required
+            />
+            <div class="waitlist-trap" aria-hidden="true">
+              <label for="waitlist-company">Company website</label>
+              <input id="waitlist-company" name="company" type="text" tabindex="-1" autocomplete="off" />
+            </div>
+            <button type="submit" class="btn btn-primary" id="waitlist-submit">
+              Request early access
+            </button>
+          </div>
+          <p class="waitlist-note" id="waitlist-note">
+            Meaningful updates only. No spam. Unsubscribe anytime.
+            <a href="/privacy/">Privacy details.</a>
+          </p>
+          <p class="waitlist-status" id="waitlist-status" role="status" aria-live="polite" aria-atomic="true"></p>
+        </form>
+      </section>
     </main>
 
     <footer class="site-footer">
@@ -255,14 +345,14 @@
               <span class="footer-wordmark">aft<span>.</span>page</span>
             </a>
             <p class="footer-tagline">
-              The secure home for AI-built apps.<br />
-              Live links. Company login. Clear approvals.
+              Your agent made the app. aft makes it real.<br />
+              Live links. Invite teammates. Clear ownership.
             </p>
           </div>
           <nav class="footer-nav" aria-label="Footer">
             <a href="#pillars">Product</a>
             <a href="/mcp">MCP</a>
-            <a href="https://github.com/vaibhavmule/aft">CLI</a>
+            <a href="/projects">Projects</a>
             <a href="mailto:hello@aft.page">Contact</a>
             <a class="footer-cta" href="/mcp">Get started</a>
           </nav>
@@ -285,5 +375,7 @@
     </footer>
 
     <script src="./deploy.js" defer></script>
+    <script src="./auth-me.js" defer></script>
+    <script src="./auth-nav.js" defer></script>
   </body>
 </html>

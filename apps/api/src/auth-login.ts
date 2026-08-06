@@ -3,20 +3,22 @@
  */
 import type { Env } from "./env";
 import {
+  clearSessionCookieHeader,
   createLoginMagicLink,
   consumeLoginMagicLink,
   createSession,
   findOrCreateUser,
   isValidEmail,
   normalizeEmail,
+  resolveSessionUser,
   sendLoginEmail,
   sessionCookieHeader,
 } from "./auth";
-import { corsHeaders, json, optionsResponse, clientIp } from "./http";
+import { corsHeaders, json, optionsResponse, clientIp, privateJson } from "./http";
 import { rateLimit } from "./rate-limit";
 
 export function authNeedsCredentials(pathname: string): boolean {
-  return pathname.startsWith("/v1/auth/");
+  return pathname.startsWith("/v1/auth/") || pathname === "/v1/me";
 }
 
 export async function handleAuthRoute(
@@ -35,7 +37,45 @@ export async function handleAuthRoute(
   if (url.pathname === "/v1/auth/verify" && request.method === "GET") {
     return authVerify(request, env, url);
   }
+  if (url.pathname === "/v1/auth/logout" && request.method === "OPTIONS") {
+    return optionsResponse(origin, true);
+  }
+  if (url.pathname === "/v1/auth/logout" && request.method === "POST") {
+    return authLogout(env, origin);
+  }
+  if (url.pathname === "/v1/me" && request.method === "OPTIONS") {
+    return optionsResponse(origin, true);
+  }
+  if (url.pathname === "/v1/me" && request.method === "GET") {
+    return authMe(request, env, origin);
+  }
   return null;
+}
+
+async function authMe(
+  request: Request,
+  env: Env,
+  origin: string | null,
+): Promise<Response> {
+  const extra = Object.fromEntries(corsHeaders(origin, true));
+  const user = await resolveSessionUser(env, request);
+  if (!user) return privateJson({ error: "unauthorized" }, 401, extra);
+  return privateJson({ id: user.id, email: user.email }, 200, extra);
+}
+
+async function authLogout(
+  env: Env,
+  origin: string | null,
+): Promise<Response> {
+  const extra = Object.fromEntries(corsHeaders(origin, true));
+  return json(
+    { ok: true },
+    200,
+    {
+      ...extra,
+      "Set-Cookie": clearSessionCookieHeader(env),
+    },
+  );
 }
 
 async function authStart(
@@ -45,7 +85,7 @@ async function authStart(
 ): Promise<Response> {
   const extra = Object.fromEntries(corsHeaders(origin, true));
 
-  let body: { email?: string };
+  let body: { email?: string; next?: string };
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -62,17 +102,35 @@ async function authStart(
   }
 
   const ip = clientIp(request);
-  if (!(await rateLimit(env, `auth:ip:${ip}`, 20, 3600))) {
-    return json({ error: "rate_limited" }, 429, extra);
+  if (!(await rateLimit(env, `auth:ip:${ip}`, 40, 3600))) {
+    return json(
+      {
+        error: "rate_limited",
+        hint: "Too many login attempts from this network. Try again in about an hour.",
+      },
+      429,
+      extra,
+    );
   }
-  if (!(await rateLimit(env, `auth:email:${email}`, 5, 3600))) {
-    return json({ error: "rate_limited" }, 429, extra);
+  if (!(await rateLimit(env, `auth:email:${email}`, 10, 3600))) {
+    return json(
+      {
+        error: "rate_limited",
+        hint: "Too many login emails to this address. Try again in about an hour, or check your inbox for an earlier link.",
+      },
+      429,
+      extra,
+    );
   }
 
   const { token } = await createLoginMagicLink(env, email);
+  const next =
+    typeof body.next === "string" && body.next.trim()
+      ? body.next.trim()
+      : undefined;
 
   try {
-    await sendLoginEmail(env, email, token);
+    await sendLoginEmail(env, email, token, next ? { next } : undefined);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(
@@ -102,9 +160,8 @@ async function authVerify(
   const user = await findOrCreateUser(env, row.email);
   const session = await createSession(env, user.id);
   const root = env.ROOT_DOMAIN || "aft.page";
-  const next = url.searchParams.get("next") || "/inventory";
-  const redirectPath = next.startsWith("/") ? next : "/inventory";
-  const redirect = `https://${root}${redirectPath}`;
+  const next = url.searchParams.get("next") || "/projects";
+  const redirect = safeAuthRedirect(next, root);
 
   return new Response(null, {
     status: 302,
@@ -113,4 +170,22 @@ async function authVerify(
       "Set-Cookie": sessionCookieHeader(env, session.token, session.expiresAt),
     },
   });
+}
+
+/** Allow /path or https://{slug}.aft.page/... — never open redirects. */
+function safeAuthRedirect(next: string, root: string): string {
+  if (next.startsWith("/") && !next.startsWith("//")) {
+    return `https://${root}${next}`;
+  }
+  try {
+    const u = new URL(next);
+    if (u.protocol !== "https:") return `https://${root}/projects`;
+    const host = u.hostname.toLowerCase();
+    if (host === root || host.endsWith(`.${root}`)) {
+      return u.toString();
+    }
+  } catch {
+    /* fall through */
+  }
+  return `https://${root}/projects`;
 }

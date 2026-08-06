@@ -210,6 +210,7 @@ async function deployFiles() {
   const endpoint = slug ? `${API}?slug=${encodeURIComponent(slug)}` : API;
   return fetch(endpoint, {
     method: "POST",
+    credentials: "include",
     headers: { "X-Aft-Client": "web" },
     body,
   });
@@ -220,6 +221,7 @@ function deployPaste(html) {
   const endpoint = slug ? `${API}?slug=${encodeURIComponent(slug)}` : API;
   return fetch(endpoint, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "X-Aft-Client": "web",
