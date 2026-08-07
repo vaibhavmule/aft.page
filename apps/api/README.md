@@ -30,9 +30,31 @@ curl -X POST https://api.aft.page/v1/deploy \
   -d '{"files":[{"path":"index.html","content":"<h1>hi</h1>"}]}'
 ```
 
-Limits: 50 files, 2 MB/file, 5 MB total. Deploy is anonymous; each deploy returns
-an **`editToken`** for redeploy and claim. Never overwrites an existing slug on
-first deploy (collision → suffix like `about-me-mist`).
+Limits (static): 50 files, 2 MB/file, 5 MB total.  
+Limits (`runtime` ≠ `static` in `aft.json`): 200 files, 10 MB/file, 25 MB total.
+
+Deploy is anonymous; each deploy returns an **`editToken`** for redeploy and claim.
+Never overwrites an existing slug on first deploy (collision → suffix like `about-me-mist`).
+Response includes `runtime` when `aft.json` declares one.
+
+### Secrets
+
+```bash
+curl https://api.aft.page/v1/sites/my-demo/secrets -H 'Cookie: …'
+curl -X PUT https://api.aft.page/v1/sites/my-demo/secrets/ANTHROPIC_API_KEY \
+  -H 'Content-Type: application/json' -H 'Cookie: …' \
+  -d '{"value":"sk-…"}'
+```
+
+Owner/editor only. Names listed; values never returned. Used by `lattice-js` and declared via `capabilities.secrets`.
+
+### Runtimes
+
+| `aft.json` runtime | Behavior |
+| --- | --- |
+| `static` (default) | R2 file serve |
+| `lattice-js` | Hosted `/api/health` + `/api/convert`; UI from R2 |
+| `worker` / `next` | Proxy to `upstream` URL after ACL |
 
 ### Redeploy + claim
 
@@ -62,8 +84,9 @@ Optional header: `X-Aft-Client: mcp|web|extension|curl|cli` (product metrics).
 - **R2** (`BUCKET` → `aft-page-sites`): site files at `sites/{slug}/{deployId}/…`.
 - **KV** (`SITES`): slug → deploy pointer. Reads also fall back to KV blobs so
   sites uploaded before R2 was enabled keep serving.
-- **D1** (`DB`): accounts, site ownership, sharing, lifecycle, connectors, and
-normalized early-access emails. `waitlist_signups.email` is unique, so repeat
+- **D1** (`DB`): accounts, site ownership, sharing, lifecycle, connectors,
+  runtimes metadata, encrypted site secret values, and normalized early-access
+emails. `waitlist_signups.email` is unique, so repeat
 submissions are idempotent. Waitlist abuse counters use HMAC-keyed identifiers
 in KV; neither raw addresses nor client IPs are used in rate-limit keys. Analytics
 Engine records aggregate waitlist outcomes without personal identifiers. The
