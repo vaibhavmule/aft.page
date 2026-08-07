@@ -2,20 +2,24 @@
 
 Internal. Goal: prove **A Cloud for Small Software** with real users in 30 days.
 
-Updated: 2026-08-06
+Updated: 2026-08-07
 
 Sam frame:
 
 > Seven minutes → app. Seven days → product. Seven weeks → customer evidence. Seven months → company.
 
-**Static technical proof is done.** Connector v0 is an enabling prototype—freeze
-deepening until a useful app demands it. The next product proof is repeat usage,
-Doc-simple sharing, and one full-stack runtime without cloud ceremony.
+**Static Drop-class deploy is done and commoditized by Cloudflare Drop.** Connector v0
+stays demoable. **Proof and platform run in parallel:** repeat usage + Doc-simple
+sharing *and* full-stack orchestration (Lattice JS live; OpenNext via CF adapter).
 
 Mission: **agent output → durable app → share like a Google Doc.** Useful solo
 apps and small-team apps both count; one-shot deploys do not.
 
-Time split: ~50% product / ~40% customers / ~10% writing. After login ships, customers ≥ engineering.
+Time split: ~40% platform (runtimes + sharing) / ~40% customers / ~20% writing.
+Neither track may starve the other for a full week.
+
+Lifecycle above CF primitives — see [ADR-TEMP-ACCOUNTS.md](./ADR-TEMP-ACCOUNTS.md),
+[OPENNEXT-ORCHESTRATION.md](./OPENNEXT-ORCHESTRATION.md).
 
 ---
 
@@ -28,9 +32,10 @@ By day 30:
 | YC application submitted | YC interview invite |
 | Polymerize IP reviewed (personal hardware only) | — |
 | Ownership + basic share working | Workspace/Entra domain login |
-| Capability approve-on-deploy visible (even ugly) | Connector v0 (outbound) on one dogfood app |
-| **≥5 repeat deployers** and ≥3 apps used after 7 days | **≥1 full-stack/OpenNext app** without manual cloud setup |
-| **≥3 design-partner conversations** with a clear next step | **≥1 paying** or signed LOI / pilot letter |
+| Capability approve-on-deploy visible (even ugly) | Connector deepen beyond v0 |
+| **≥5 repeat deployers** and ≥3 apps used after 7 days | **≥1 paying** or signed LOI / pilot letter |
+| **≥3 design-partner conversations** with a clear next step | Custom domains / editable preview |
+| **≥1 full-stack/OpenNext app** without manual cloud setup | Claude marketplace listing |
 
 **User definition (be honest):** a person or small team that deploys more than
 once, returns to the app, or would notice if aft disappeared. Anonymous one-shot
@@ -85,38 +90,40 @@ lifecycle for Small Software. Identity, capabilities, and connectors serve it.
 
 **Exit week 2:** ≥3 repeat deployers; at least one app shared or used after seven days.
 
-### Week 3 (days 15–21) — Connector story + paid path
+### Week 3 (days 15–21) — Runtime + paid path
 
-**Product**
+**Product (platform track)**
 - [x] Connector agent v0: one outbound binary/container; one declared capability enforced (e.g. read one table or hit one internal URL)
 - [x] Dogfood app pulls **live data through connector** (Sites can’t match this demo)
 - [x] Ugly paid offer: team plan / private apps / connector pilot price written down
+- [ ] OpenNext / full-stack path: first dogfood Next app → durable URL without manual cloud setup
 
-**Customers**
-- [ ] **10** live demos (capability + connector if ready)
+**Customers (proof track)**
+- [ ] **10** live demos (capability + connector if ready; full-stack if ready)
 - [ ] Push for **design partner MoU** or paid pilot ($99–500/mo or $2–5k pilot — pick one and stick)
 - [ ] Ask every user: “Will you use this again next week, and who would you share it with?”
 
-**Exit week 3:** Connector demoable once. ≥1 serious pilot conversation in writing.
+**Exit week 3:** Connector demoable once. Full-stack path started or demoable. ≥1 serious pilot conversation in writing.
 
-### Week 4 (days 22–30) — Phase 1 close + evidence pack
+### Week 4 (days 22–30) — Phase 1 close + dual-track evidence
 
-**Product**
+**Product (platform track)**
 - [x] Magic-link login → inventory (Phase 1 success-test unblocker)
 - [x] Inventory UX: login CTA, site actions, paste / preview links
 - [x] Evidence pack + Phase 1 success-test runbook ([EVIDENCE-PACK.md](./EVIDENCE-PACK.md))
+- [ ] OpenNext dogfood complete: ≥1 full-stack app live without manual cloud setup
 - [ ] **No** full BYOC / residency / SBOM theatre
-- [ ] **No** connector deepen (v0 already demoable)
+- [ ] **No** connector deepen unless a design partner’s app requires it
 
-**Customers**
+**Customers (proof track)**
 - [ ] Hit **≥5 repeat deployers** (stretch: 10 retained apps)
 - [ ] ≥1 app shared with and used by another person
 - [ ] Close **≥1** paid or signed pilot / LOI (non-friend; ₹ or $ per [PRICING.md](./PRICING.md))
 - [ ] Evidence pack filled: screenshots, deploy counts, quotes, demo link
 
-**Exit day 30:** repeat-use evidence + at least one commercial yes (or dated
-written intent). Days 31–60 = improve the runtime people actually need; deepen
-connector or enterprise features only on demand.
+**Exit day 30:** repeat-use evidence + full-stack runtime proof + at least one
+commercial yes (or dated written intent). Days 31–60 deepen what design partners
+actually need (domains, SSO, connector) — still dual-track with outreach.
 
 ---
 
@@ -124,12 +131,13 @@ connector or enterprise features only on demand.
 
 | Block | Time | Job |
 | --- | --- | --- |
-| Build | 60–90 min | One shippable Small Software slice (activation, sharing, runtime) |
+| Build | 60–90 min | Platform slice (OpenNext, sharing polish, distribution) |
 | Outreach | **60 min** | 5–10 messages / follow-ups — every day |
 | Users | 30–60 min | Calls, demos, unblock a team |
-| Dogfood | 15 min | Deploy or use aft yourself |
+| Dogfood | 15 min | Deploy or use aft yourself (prefer full-stack when path exists) |
 
-If build > outreach two days in a row, you are failing the 30-day goal.
+If build > outreach two days in a row **or** outreach with zero platform progress
+for a full week, you are failing the dual-track plan.
 
 Agents may compress build to “seven minutes.” **They cannot send your 30 messages.**
 
@@ -151,8 +159,8 @@ hosted path first; discuss BYOC or connectors only when a real app requires them
 ```text
 Phase 0      Technical proof      DONE — agent → URL (do not rebuild)
 Phase 1      Durable ownership    login, projects, updates, rollback
-Phase 2      External-user proof  stranger deploys, repeat use, first share
-Phase 3      Runtime expansion    one full-stack app without cloud setup
+Phase 2∥3    Proof ∥ runtime      stranger deploys + repeat use + share
+                                  AND one full-stack app without cloud setup
 Phase 4      First paid           retained apps, private sharing, runtime limits
 Months 4–7   Company              GTM hire, retention, clear buyer
 Months 8–18  Scale proven part    BYOC only on signed demand
@@ -167,8 +175,9 @@ Polymerize: **do not resign** in the first seven-week proof.
 - Full BYOC data plane / multi-region residency
 - Perfect design system / Ona-clone marketing rebuild (unless it unblocks demos)
 - Waiting for YC reply before talking to users
-- Building features nobody asked for on a call
+- Building features nobody asked for on a call (except the agreed OpenNext track)
 - Treating one-shot anonymous deploys as “customers”
+- Running proof-only or platform-only for a full week
 
 ---
 
@@ -181,6 +190,7 @@ Polymerize: **do not resign** in the first seven-week proof.
 | Repeat deployers | 1 | 3 | 5 | 5–10 |
 | Apps used after 7 days | 0 | 1 | 2 | 3+ |
 | Apps shared with another person | 0 | 1 | 2 | 3+ |
+| Full-stack / OpenNext dogfood | started | path | demo | live |
 | Paid / LOI / pilot | 0 | 0 | 0–1 | ≥1 |
 | YC app | done | — | — | — |
 
@@ -188,11 +198,11 @@ Polymerize: **do not resign** in the first seven-week proof.
 
 ## Related
 
-- [STRATEGY.md](./STRATEGY.md) — north star, sequencing buckets, competitive map  
+- [STRATEGY.md](./STRATEGY.md) — north star, dual-track (proof ∥ platform), competitive map  
 - [YC-APPLICATION.md](./YC-APPLICATION.md) — paste into apply form  
 - [BRAND.md](./BRAND.md) — craft bar (Ona-grade), not this month’s blocker  
 - [CONNECTOR.md](./CONNECTOR.md) — Week 3 connector protocol + demo  
 - [PRICING.md](./PRICING.md) — Free / Team $99 or ₹9,999 / connector pilot  
 - [EVIDENCE-PACK.md](./EVIDENCE-PACK.md) — Week 4 close checklist + Phase 1 success test  
 
-**Rule:** Ship with agents. Watch what strangers keep and share.
+**Rule:** Ship platform with agents. Prove with strangers. Both every week.

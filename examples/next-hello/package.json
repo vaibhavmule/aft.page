@@ -1,0 +1,11 @@
+/**
+ * Minimal Next.js app placeholder for OpenNext orchestration docs.
+ * Real deploy: point scripts/opennext-orchestrate.sh at a full Next app.
+ */
+{
+  "name": "aft-next-hello",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Use a real Next.js app directory with scripts/opennext-orchestrate.sh'"
+  }
+}

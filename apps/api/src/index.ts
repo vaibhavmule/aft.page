@@ -81,7 +81,8 @@ async function handleApi(
     url.pathname === "/v1/deploy" ||
     url.pathname.includes("/deploys") ||
     url.pathname.includes("/rollback") ||
-    url.pathname.includes("/capabilities");
+    url.pathname.includes("/capabilities") ||
+    url.pathname.includes("/secrets");
 
   if (request.method === "OPTIONS") {
     return optionsResponse(origin, creds);
@@ -142,6 +143,7 @@ async function handleApi(
         "PATCH /v1/sites/{slug}, POST /v1/sites/{slug}/access, POST/GET/DELETE /v1/sites/{slug}/invites, GET /v1/invites/accept",
       inventory: "GET /v1/me, GET /v1/me/sites?page=&limit=, GET /v1/sites/{slug}/deploys, POST /v1/sites/{slug}/rollback",
       capabilities: "GET|POST /v1/sites/{slug}/capabilities",
+      secrets: "GET /v1/sites/{slug}/secrets, PUT|DELETE /v1/sites/{slug}/secrets/{name}",
       connector:
         "POST /v1/sites/{slug}/connector/tokens, GET /v1/connector/poll, POST /v1/connector/result/{id}, POST /v1/sites/{slug}/connector/invoke",
       serve: "https://{slug}.aft.page or GET /s/{slug}/",

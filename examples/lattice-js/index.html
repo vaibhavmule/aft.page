@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Polymerize Lattice on aft.page</title>
+  <style>
+    :root { color-scheme: light; font-family: "DM Sans", system-ui, sans-serif; }
+    body { margin: 0; background: #f7f4ef; color: #1c1917; }
+    main { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+    h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 600; font-size: 1.75rem; }
+    .card { background: #fff; border: 1px solid #e7e5e4; border-radius: 12px; padding: 1.25rem; margin-top: 1.25rem; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.35rem; color: #57534e; }
+    input[type=file], textarea { width: 100%; box-sizing: border-box; }
+    button { background: #c2410c; color: #fff; border: 0; border-radius: 8px; padding: 0.65rem 1rem; font-weight: 600; cursor: pointer; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    pre { white-space: pre-wrap; word-break: break-word; font-size: 0.8rem; background: #fafaf9; padding: 0.75rem; border-radius: 8px; }
+    .ok { color: #15803d; }
+    .err { color: #b91c1c; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Lattice → Labs vertical</h1>
+    <p>Upload a spreadsheet. aft.page runs the JS convert path (Anthropic + SheetJS) — no Docker.</p>
+    <div class="card">
+      <div id="health">Checking /api/health…</div>
+    </div>
+    <div class="card">
+      <label for="file">Excel / CSV</label>
+      <input id="file" type="file" accept=".xlsx,.xls,.csv,.tsv" />
+      <label for="hint" style="margin-top:0.75rem">Hint (optional)</label>
+      <textarea id="hint" rows="2" placeholder="e.g. first sheet is trials, properties in columns G–K"></textarea>
+      <p style="margin-top:1rem">
+        <button id="go" type="button">Convert</button>
+      </p>
+      <pre id="out"></pre>
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+    const out = document.getElementById("out");
+    const healthEl = document.getElementById("health");
+    fetch("/api/health").then(r => r.json()).then(j => {
+      healthEl.innerHTML = j.hasAnthropicKey
+        ? '<span class="ok">Runtime ready (Anthropic key set).</span>'
+        : '<span class="err">Runtime up, but ANTHROPIC_API_KEY is missing. Owner must PUT the secret.</span>';
+      healthEl.innerHTML += '<pre>' + JSON.stringify(j, null, 2) + '</pre>';
+    }).catch(e => { healthEl.textContent = String(e); });
+
+    document.getElementById("go").onclick = async () => {
+      const file = document.getElementById("file").files[0];
+      if (!file) { out.textContent = "Choose a file"; return; }
+      out.textContent = "Reading…";
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const sheets = {};
+      const inspect = { sheets: [] };
+      for (const name of wb.SheetNames.slice(0, 8)) {
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: "", raw: false })
+          .map(r => r.map(c => c == null ? "" : String(c)));
+        sheets[name] = rows;
+        inspect.sheets.push({ name, rows: rows.length, cols: rows.reduce((m,r)=>Math.max(m,r.length),0), sample: rows.slice(0,15) });
+      }
+      out.textContent = "Calling /api/convert (script-only)…";
+      const res = await fetch("/api/convert", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-session-id": crypto.randomUUID() },
+        body: JSON.stringify({
+          mode: "script-only",
+          fileName: file.name,
+          hint: document.getElementById("hint").value,
+          inspect,
+          sheetNames: Object.keys(sheets),
+        }),
+      });
+      const data = await res.json();
+      if (!data.ok || !data.script) {
+        out.textContent = JSON.stringify(data, null, 2);
+        return;
+      }
+      out.textContent = "Running convert(sheets) in browser…";
+      try {
+        // eslint-disable-next-line no-new-func
+        const factory = new Function(data.script + "\n; return convert;");
+        const convert = factory();
+        const aoa = convert(sheets);
+        const outWb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(outWb, XLSX.utils.aoa_to_sheet(aoa), "Vertical Data");
+        XLSX.writeFile(outWb, data.filename || "output_vertical.xlsx");
+        out.textContent = "Downloaded " + (data.filename || "output_vertical.xlsx") + "\n\n" + JSON.stringify({ ok: true, notes: data.notes, previewRows: (aoa||[]).slice(0,6) }, null, 2);
+      } catch (e) {
+        out.textContent = "Browser convert failed: " + e + "\n\n" + data.script;
+      }
+    };
+  </script>
+</body>
+</html>

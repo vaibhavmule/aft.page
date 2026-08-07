@@ -33,10 +33,14 @@ export async function getSiteRow(
   createdAt: string;
   updatedAt: string;
   lastServedAt: string | null;
+  runtime: string;
+  upstreamUrl: string | null;
+  mainModule: string | null;
 } | null> {
   await ensureDb(env);
   const row = await env.DB.prepare(
-    `SELECT slug, deploy_id, owner_user_id, visibility, created_at, updated_at, last_served_at
+    `SELECT slug, deploy_id, owner_user_id, visibility, created_at, updated_at, last_served_at,
+            COALESCE(runtime, 'static') AS runtime, upstream_url, main_module
      FROM sites WHERE slug = ?`,
   )
     .bind(slug)
@@ -48,6 +52,9 @@ export async function getSiteRow(
       created_at: string;
       updated_at: string;
       last_served_at: string | null;
+      runtime: string;
+      upstream_url: string | null;
+      main_module: string | null;
     }>();
   if (!row) return null;
   return {
@@ -58,6 +65,9 @@ export async function getSiteRow(
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     lastServedAt: row.last_served_at ?? null,
+    runtime: row.runtime || "static",
+    upstreamUrl: row.upstream_url ?? null,
+    mainModule: row.main_module ?? null,
   };
 }
 
@@ -304,6 +314,35 @@ export async function upsertSiteRow(
        owner_user_id = COALESCE(sites.owner_user_id, excluded.owner_user_id)`,
   )
     .bind(slug, deployId, ownerUserId ?? null, now, now)
+    .run();
+}
+
+export async function setSiteRuntime(
+  env: Env,
+  slug: string,
+  opts: {
+    runtime: string;
+    upstreamUrl?: string | null;
+    mainModule?: string | null;
+  },
+): Promise<void> {
+  await ensureDb(env);
+  const now = new Date().toISOString();
+  await env.DB.prepare(
+    `UPDATE sites
+     SET runtime = ?,
+         upstream_url = ?,
+         main_module = ?,
+         updated_at = ?
+     WHERE slug = ?`,
+  )
+    .bind(
+      opts.runtime,
+      opts.upstreamUrl ?? null,
+      opts.mainModule ?? null,
+      now,
+      slug,
+    )
     .run();
 }
 
@@ -651,13 +690,15 @@ export async function listSitesByOwner(
     visibility: string;
     updatedAt: string;
     lastServedAt: string | null;
+    runtime: string;
   }[]
 > {
   await ensureDb(env);
   const limit = Math.min(Math.max(opts?.limit ?? 1000, 1), 100);
   const offset = Math.max(opts?.offset ?? 0, 0);
   const { results } = await env.DB.prepare(
-    `SELECT slug, deploy_id, visibility, updated_at, last_served_at
+    `SELECT slug, deploy_id, visibility, updated_at, last_served_at,
+            COALESCE(runtime, 'static') AS runtime
      FROM sites WHERE owner_user_id = ?
      ORDER BY updated_at DESC
      LIMIT ? OFFSET ?`,
@@ -669,6 +710,7 @@ export async function listSitesByOwner(
       visibility: string;
       updated_at: string;
       last_served_at: string | null;
+      runtime: string;
     }>();
   return (results || []).map((r) => ({
     slug: r.slug,
@@ -676,6 +718,7 @@ export async function listSitesByOwner(
     visibility: r.visibility,
     updatedAt: r.updated_at,
     lastServedAt: r.last_served_at ?? null,
+    runtime: r.runtime || "static",
   }));
 }
 

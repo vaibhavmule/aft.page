@@ -1,15 +1,25 @@
 import type { Env, SiteMeta } from "./env";
-import { MAX_FILE_BYTES, MAX_FILES, MAX_TOTAL_BYTES, RESERVED_SLUGS } from "./env";
+import {
+  MAX_FILE_BYTES,
+  MAX_FILE_BYTES_RUNTIME,
+  MAX_FILES,
+  MAX_FILES_RUNTIME,
+  MAX_TOTAL_BYTES,
+  MAX_TOTAL_BYTES_RUNTIME,
+  RESERVED_SLUGS,
+} from "./env";
 import { hashEditToken, randomToken, resolveSessionUser } from "./auth";
 import { extractCapabilities, formatCapabilitySummary } from "./capabilities";
 import { authorizeDeployUpdate } from "./claim";
 import {
   insertDeploy,
   setSiteEditTokenHash,
+  setSiteRuntime,
   upsertCapabilityRequest,
   upsertSiteRow,
 } from "./db";
 import { corsHeaders, isAllowedWebOrigin, json } from "./http";
+import { extractAftManifest } from "./manifest";
 import { trackDeploy, trackRedeploy } from "./metrics";
 import { allocateUniqueSlug, isValidSlug } from "./slug";
 import { putObject } from "./storage";
@@ -27,6 +37,19 @@ function deployJson(
   const origin = request.headers.get("origin");
   const useCreds = isAllowedWebOrigin(origin);
   return json(data, status, Object.fromEntries(corsHeaders(origin, useCreds)));
+}
+
+function limitsForFiles(files: UploadFile[]) {
+  const manifest = extractAftManifest(files);
+  const runtime = manifest?.runtime || "static";
+  const elevated = runtime !== "static";
+  return {
+    manifest,
+    runtime,
+    maxFiles: elevated ? MAX_FILES_RUNTIME : MAX_FILES,
+    maxFile: elevated ? MAX_FILE_BYTES_RUNTIME : MAX_FILE_BYTES,
+    maxTotal: elevated ? MAX_TOTAL_BYTES_RUNTIME : MAX_TOTAL_BYTES,
+  };
 }
 
 export async function deploy(request: Request, env: Env): Promise<Response> {
@@ -74,8 +97,12 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
         { error: "no_files" },
       );
     }
-    if (files.length > MAX_FILES) {
-      return done(deployJson(request, { error: "too_many_files", max: MAX_FILES }, 400), {
+
+    const { manifest, runtime, maxFiles, maxFile, maxTotal } =
+      limitsForFiles(files);
+
+    if (files.length > maxFiles) {
+      return done(deployJson(request, { error: "too_many_files", max: maxFiles }, 400), {
         error: "too_many_files",
         files: files.length,
       });
@@ -89,11 +116,11 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
           files: files.length,
         });
       }
-      if (f.bytes.byteLength > MAX_FILE_BYTES) {
+      if (f.bytes.byteLength > maxFile) {
         return done(
           deployJson(
             request,
-            { error: "file_too_large", path: f.path, max: MAX_FILE_BYTES },
+            { error: "file_too_large", path: f.path, max: maxFile },
             400,
           ),
           { error: "file_too_large", files: files.length },
@@ -101,9 +128,9 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
       }
       total += f.bytes.byteLength;
     }
-    if (total > MAX_TOTAL_BYTES) {
+    if (total > maxTotal) {
       return done(
-        deployJson(request, { error: "payload_too_large", max: MAX_TOTAL_BYTES }, 400),
+        deployJson(request, { error: "payload_too_large", max: maxTotal }, 400),
         {
           error: "payload_too_large",
           bytes: total,
@@ -141,12 +168,26 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
       await putObject(env, slug, deployId, f.path, f.bytes, f.contentType);
     }
 
-    const meta: SiteMeta = { deployId, createdAt, fileCount: files.length };
+    const upstreamUrl = manifest?.upstream ?? null;
+    const mainModule = manifest?.main ?? null;
+    const meta: SiteMeta = {
+      deployId,
+      createdAt,
+      fileCount: files.length,
+      runtime,
+      upstreamUrl,
+      mainModule,
+    };
     await env.SITES.put(`site:${slug}`, JSON.stringify(meta));
 
     const editToken = randomToken("aft_edit_");
     const sessionUser = await resolveSessionUser(env, request);
     await upsertSiteRow(env, slug, deployId, sessionUser?.id ?? null);
+    await setSiteRuntime(env, slug, {
+      runtime,
+      upstreamUrl,
+      mainModule,
+    });
     await setSiteEditTokenHash(env, slug, await hashEditToken(env, slug, editToken));
     await insertDeploy(env, {
       id: deployId,
@@ -169,6 +210,7 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
         url: liveUrl,
         files: files.length,
         bytes: total,
+        runtime,
         editToken,
         preview: `https://${root}/preview?url=${encodeURIComponent(liveUrl)}&token=${encodeURIComponent(editToken)}`,
         ...capsPayload,
@@ -201,10 +243,12 @@ async function redeployToSlug(
     return done(res, { error: "no_files", slug });
   }
 
+  const { manifest, runtime, maxFile, maxTotal } = limitsForFiles(files);
+
   let total = 0;
   for (const f of files) {
     total += f.bytes.byteLength;
-    if (f.bytes.byteLength > MAX_FILE_BYTES || total > MAX_TOTAL_BYTES) {
+    if (f.bytes.byteLength > maxFile || total > maxTotal) {
       const res = deployJson(request, { error: "payload_too_large" }, 400);
       trackRedeploy(env, request, started, res, { slug, error: "payload_too_large" });
       return done(res, { error: "payload_too_large", slug });
@@ -218,10 +262,24 @@ async function redeployToSlug(
     await putObject(env, slug, deployId, f.path, f.bytes, f.contentType);
   }
 
-  const meta: SiteMeta = { deployId, createdAt, fileCount: files.length };
+  const upstreamUrl = manifest?.upstream ?? null;
+  const mainModule = manifest?.main ?? null;
+  const meta: SiteMeta = {
+    deployId,
+    createdAt,
+    fileCount: files.length,
+    runtime,
+    upstreamUrl,
+    mainModule,
+  };
   await env.SITES.put(`site:${slug}`, JSON.stringify(meta));
   const user = await resolveSessionUser(env, request);
   await upsertSiteRow(env, slug, deployId, user?.id ?? null);
+  await setSiteRuntime(env, slug, {
+    runtime,
+    upstreamUrl,
+    mainModule,
+  });
   await insertDeploy(env, {
     id: deployId,
     slug,
@@ -241,6 +299,7 @@ async function redeployToSlug(
     url: `https://${slug}.${root}`,
     files: files.length,
     bytes: total,
+    runtime,
     ...capsPayload,
   });
   trackRedeploy(env, request, started, res, { slug, bytes: total, files: files.length });

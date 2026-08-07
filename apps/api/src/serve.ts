@@ -1,12 +1,14 @@
 import type { Env } from "./env";
 import { RESERVED_SLUGS } from "./env";
+import { getSiteRow, touchLastServed } from "./db";
 import { corsHeaders, json } from "./http";
 import { trackPageView } from "./metrics";
 import { ensureDefaultOgMeta, isHtmlContentType } from "./og";
 import { renderSiteOgImage, siteOgImagePath } from "./og-image";
+import { handleLatticeJsApi } from "./runtimes/lattice-js";
+import { proxyUpstream } from "./runtimes/proxy";
 import { canAccessSite, privateDeniedHtml } from "./sharing";
 import { getObject } from "./storage";
-import { touchLastServed } from "./db";
 
 function pageTitleFromHtml(html: string, fallback: string): string {
   const match = html.match(/<title[^>]*>([^<]*)<\/title>/i);
@@ -40,7 +42,6 @@ export async function serveSite(
       headers.set(name, value);
     }
 
-    // Cold hit: send strangers to login; return here after magic link.
     if (!access.authenticated) {
       const next = new URL(request.url);
       next.hostname = `${slug}.${root}`;
@@ -52,7 +53,6 @@ export async function serveSite(
       return new Response(null, { status: 302, headers });
     }
 
-    // Logged in but not invited — avoid login redirect loop.
     headers.set("content-type", "text/html; charset=utf-8");
     await trackPageView(env, request, slug, 401);
     return new Response(privateDeniedHtml(slug, root), {
@@ -68,14 +68,45 @@ export async function serveSite(
       headers: corsHeaders(null, false),
     });
   }
-  const meta = JSON.parse(raw) as { deployId: string };
+  const meta = JSON.parse(raw) as {
+    deployId: string;
+    runtime?: string;
+    upstreamUrl?: string | null;
+  };
+
+  const siteRow = await getSiteRow(env, slug);
+  const runtime = siteRow?.runtime || meta.runtime || "static";
+  const upstreamUrl = siteRow?.upstreamUrl || meta.upstreamUrl || null;
+
+  if (upstreamUrl && (runtime === "worker" || runtime === "next")) {
+    void touchLastServed(env, slug);
+    await trackPageView(env, request, slug, 200);
+    return proxyUpstream(request, upstreamUrl);
+  }
+
+  if (runtime === "lattice-js" && pathname.startsWith("/api/")) {
+    const api = await handleLatticeJsApi(request, env, slug, pathname);
+    if (api) {
+      void touchLastServed(env, slug);
+      return api;
+    }
+  }
+
+  if (pathname.startsWith("/api/")) {
+    return new Response(JSON.stringify({ error: "not_found", runtime }), {
+      status: 404,
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        ...Object.fromEntries(corsHeaders(null, false)),
+      },
+    });
+  }
 
   let path = decodeURIComponent(pathname);
   if (path.endsWith("/")) path += "index.html";
   if (path === "/" || path === "") path = "/index.html";
   path = path.replace(/^\//, "");
 
-  // Dynamic per-site OG card: https://{slug}.aft.page/__aft/og.png
   if (path === siteOgImagePath()) {
     let title = slug;
     const index = await getObject(env, slug, meta.deployId, "index.html");
@@ -100,7 +131,6 @@ export async function serveSite(
   }
   if (!obj) return new Response("Not found", { status: 404 });
 
-  // Fire-and-forget last-served (best-effort inventory signal)
   void touchLastServed(env, slug);
 
   const headers = new Headers();
@@ -111,6 +141,7 @@ export async function serveSite(
   );
   headers.set("x-aft-slug", slug);
   headers.set("x-aft-deploy", meta.deployId);
+  headers.set("x-aft-runtime", runtime);
   for (const [name, value] of corsHeaders(null, false)) {
     headers.set(name, value);
   }
@@ -119,7 +150,6 @@ export async function serveSite(
   let body: ArrayBuffer | ReadableStream | string = obj.body;
   if (isHtmlContentType(obj.contentType)) {
     const html = await new Response(obj.body).text();
-    // Use the site-relative pathname (works for both subdomain and /s/{slug}/)
     const sitePath = pathname.startsWith("/") ? pathname : `/${pathname}`;
     const publicUrl = `https://${slug}.${root}${sitePath || "/"}`;
     body = ensureDefaultOgMeta(html, {

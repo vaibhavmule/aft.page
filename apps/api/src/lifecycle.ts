@@ -50,6 +50,23 @@ export async function handleLifecycleRoute(
     return approveCaps(request, env, capsMatch[1]!, origin);
   }
 
+  const secretsListMatch = url.pathname.match(
+    /^\/v1\/sites\/([a-z0-9-]+)\/secrets$/,
+  );
+  if (secretsListMatch && request.method === "GET") {
+    return listSecrets(request, env, secretsListMatch[1]!, origin);
+  }
+
+  const secretMatch = url.pathname.match(
+    /^\/v1\/sites\/([a-z0-9-]+)\/secrets\/([A-Za-z0-9_.-]+)$/,
+  );
+  if (secretMatch && request.method === "PUT") {
+    return putSecret(request, env, secretMatch[1]!, secretMatch[2]!, origin);
+  }
+  if (secretMatch && request.method === "DELETE") {
+    return deleteSecret(request, env, secretMatch[1]!, secretMatch[2]!, origin);
+  }
+
   return null;
 }
 
@@ -244,4 +261,68 @@ function formatLines(caps: CapabilityDoc): string[] {
   for (const e of caps.egress) lines.push(`egress:${e}`);
   for (const d of caps.data) lines.push(`data:${d}`);
   return lines;
+}
+
+async function listSecrets(
+  request: Request,
+  env: Env,
+  slug: string,
+  origin: string | null,
+): Promise<Response> {
+  const extra = Object.fromEntries(corsHeaders(origin, true));
+  const auth = await authorizeDeployUpdate(env, request, slug);
+  if (!auth.ok) return json({ error: auth.error }, auth.status, extra);
+  const { listSiteSecretNames } = await import("./secrets");
+  const names = await listSiteSecretNames(env, slug);
+  return json({ slug, secrets: names }, 200, extra);
+}
+
+async function putSecret(
+  request: Request,
+  env: Env,
+  slug: string,
+  name: string,
+  origin: string | null,
+): Promise<Response> {
+  const extra = Object.fromEntries(corsHeaders(origin, true));
+  const auth = await authorizeDeployUpdate(env, request, slug);
+  if (!auth.ok) return json({ error: auth.error }, auth.status, extra);
+
+  let body: { value?: string };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return json({ error: "invalid_json" }, 400, extra);
+  }
+  const value = body.value;
+  if (typeof value !== "string" || value.length === 0 || value.length > 8192) {
+    return json(
+      { error: "invalid_request", hint: "value string required (1–8192 chars)" },
+      400,
+      extra,
+    );
+  }
+  if (!/^[A-Za-z0-9_.-]+$/.test(name)) {
+    return json({ error: "invalid_secret_name" }, 400, extra);
+  }
+
+  const { putSiteSecret } = await import("./secrets");
+  await putSiteSecret(env, slug, name, value);
+  return json({ ok: true, slug, name }, 200, extra);
+}
+
+async function deleteSecret(
+  request: Request,
+  env: Env,
+  slug: string,
+  name: string,
+  origin: string | null,
+): Promise<Response> {
+  const extra = Object.fromEntries(corsHeaders(origin, true));
+  const auth = await authorizeDeployUpdate(env, request, slug);
+  if (!auth.ok) return json({ error: auth.error }, auth.status, extra);
+  const { deleteSiteSecret } = await import("./secrets");
+  const ok = await deleteSiteSecret(env, slug, name);
+  if (!ok) return json({ error: "not_found" }, 404, extra);
+  return json({ ok: true, slug, name }, 200, extra);
 }

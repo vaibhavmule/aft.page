@@ -8,3 +8,4 @@ dist/
 
 # Syncthing / iCloud conflict leftovers
 *conflicted copy*
+wrangler-temporary-account.toml
