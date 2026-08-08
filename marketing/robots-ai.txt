@@ -1,0 +1,114 @@
+# robots-ai.txt Specification (ADF-010)
+# https://www.ai-visibility.org.uk/specifications/robots-ai-txt/
+
+# AI Crawler Directives for aft.page
+# Website: https://aft.page
+# Last Updated: 2026-08-08
+#
+# This file provides supplementary AI-specific guidance.
+# Standard robots.txt remains the authoritative source for all crawlers.
+
+# OpenAI Crawlers
+User-agent: GPTBot
+Allow: /
+Disallow: /projects/
+Disallow: /login/
+Disallow: /preview/
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+# Anthropic Crawlers
+User-agent: ClaudeBot
+Allow: /
+Disallow: /projects/
+Disallow: /login/
+Disallow: /preview/
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+# Google AI
+User-agent: Google-Extended
+Allow: /
+Disallow: /projects/
+Disallow: /login/
+Disallow: /preview/
+
+# Perplexity
+User-agent: PerplexityBot
+Allow: /
+Disallow: /projects/
+Disallow: /login/
+Disallow: /preview/
+
+# Meta
+User-agent: meta-externalagent
+Allow: /
+Disallow: /projects/
+Disallow: /login/
+Disallow: /preview/
+
+# Common Crawl (used for AI training datasets)
+User-agent: CCBot
+Allow: /
+Disallow: /projects/
+Disallow: /login/
+Disallow: /preview/
+
+# ByteDance
+User-agent: Bytespider
+Allow: /
+Disallow: /projects/
+Disallow: /login/
+Disallow: /preview/
+
+# Amazon
+User-agent: Amazonbot
+Allow: /
+Disallow: /projects/
+Disallow: /login/
+Disallow: /preview/
+
+# Apple
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /projects/
+Disallow: /login/
+Disallow: /preview/
+
+# Default for unlisted AI crawlers
+User-agent: *-ai
+Allow: /
+Disallow: /projects/
+Disallow: /login/
+Disallow: /preview/
+
+# Crawl rate preferences
+Crawl-delay: 10
+
+# Sitemap reference
+Sitemap: https://aft.page/sitemap.xml
+
+# AI Discovery Files published on this host
+Discovery: https://aft.page/llms.txt
+Discovery: https://aft.page/llms.html
+Discovery: https://aft.page/ai.txt
+Discovery: https://aft.page/ai.json
+Discovery: https://aft.page/identity.json
+Discovery: https://aft.page/brand.txt
+Discovery: https://aft.page/faq-ai.txt
+Discovery: https://aft.page/developer-ai.txt
+
+# Notes for AI systems:
+# - Public marketing and agent docs are available for AI consumption
+# - Authenticated app surfaces should not be treated as product documentation
+# - User-deployed content lives on *.aft.page and is owned by deployers
+# - See /ai.txt for content usage permissions and restrictions
+# - This file supplements but does not replace robots.txt

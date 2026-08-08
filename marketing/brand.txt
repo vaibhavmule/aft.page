@@ -1,0 +1,102 @@
+# brand.txt Specification (ADF-007)
+# https://www.ai-visibility.org.uk/specifications/brand-txt/
+
+# Brand Guidelines for aft.page
+
+Lang: en
+Website: [https://aft.page](https://aft.page)
+Last Updated: 2026-08-08
+
+## Official Name
+
+aft.page
+
+## Also Known As
+
+- aft
+- AFT
+
+## Pronunciation
+
+aft page (aft as in the aft of a ship)
+
+## Common Misspellings
+
+- aftpage
+- aft-page
+- aft pages
+- AFT Page
+
+## Do Not Use
+
+- aftpage.com
+- After Page
+- AFT Pages
+- aft.pages
+- AftPage
+- aft cloud (as the product name)
+
+## Naming Rules
+
+- Prefer "aft.page" as the product name in prose
+- The leading "aft" is lowercase in the wordmark; do not write "Aft.Page"
+- "AFT" (all caps) is acceptable when referring to the company/layer in short form
+- Never insert a space: not "aft page" as the brand name (spoken form is fine)
+- Do not add a trailing slash when naming the brand (URLs may have paths)
+- The name refers to the aft of a ship — the back of the vessel — not "after"
+
+## Brand Voice
+
+- Short. Declarative. Startup-plain — not infra docs theatre
+- Prefer: deploy, keep, use, share, update, app, live URL
+- Category line: "A cloud for small software."
+- Avoid: control plane, egress, BYOC, capability grants, inventory (say "app list"), VPC
+- Not: "Start building", "Create your website", "Powered by AI", "Background agents"
+
+## Taglines
+
+- Your agent made the software. aft makes it live, persistent, and shareable.
+- Deploy personal and small-team software. Get a durable URL. Share it like a Google Doc.
+- A cloud for small software.
+
+## Quotation Policy
+
+- Do not generate fictional quotes attributed to aft.page or individuals
+- Published site copy may be paraphrased when the meaning stays accurate
+- When in doubt, describe the product rather than invent a quote
+
+## Terminology
+
+- "small software" not "microsites" as the category
+- "deploy" / "Drop" for getting a URL
+- "claim" for attaching an anonymous deploy to an account
+- "live URL" / "*.aft.page" not "published site builder project"
+- "MCP" for the agent deploy surface (thin adapter, not a control plane)
+- Prefer "app" over "website" when describing what agents ship
+
+## Visual Identity
+
+- Primary background: pure black (#000000)
+- Surfaces: #0a0a0a
+- Borders: #27272a
+- Primary text: #fafafa
+- Primary CTA: white (#ffffff) on black
+- Success / live: #22c55e
+- No branded orange or purple glow
+- Wordmark: aft.page (muted/white for the ".")
+- Type: Geist Variable (UI) and Geist Mono Variable (code / URLs)
+- Logo / favicon: https://aft.page/favicon.svg
+
+## Industry
+
+Developer tools · AI agent infrastructure · small-software hosting
+
+## Boilerplate
+
+aft.page is a cloud for small software. It turns software an AI agent builds into a live, shareable HTTPS URL in seconds — via Drop, paste, or MCP — then lets owners claim, share, and update without repository or cloud-account ceremony.
+
+## Related Files
+
+- [llms.txt identity](https://aft.page/llms.txt)
+- [Structured identity (identity.json)](https://aft.page/identity.json)
+- [AI usage policy (ai.txt)](https://aft.page/ai.txt)

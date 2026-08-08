@@ -1,43 +1,87 @@
 # aft.page
 
-> Your agent made the page. aft.page gets you the live URL.
+Lang: en
 
-AI agents build small software. aft.page turns it into a shareable HTTPS link in seconds — no account, no website builder, no repository ceremony.
+> aft.page is a cloud for small software. It turns software an AI agent builds into a live, shareable HTTPS URL in seconds — no repository, cloud account, or build setup.
 
-The name comes from the aft of a ship (the back of the vessel).
+aft.page (also referred to as aft or AFT) hosts personal and small-team software created by AI agents. Deploy by Drop, paste, or MCP; then claim, share, and update the same durable `*.aft.page` URL. The name comes from the aft of a ship (the back of the vessel).
 
-## Primary docs for agents
+Specification: [AI Visibility](https://www.ai-visibility.org.uk/)
 
-- MCP + API (Markdown, preferred): https://aft.page/mcp.md
-- MCP + API (HTML): https://aft.page/mcp
-- This index: https://aft.page/llms.txt
+## Services
 
-## Endpoints
+- [Drop deploy](https://aft.page/drop/): Upload a folder or zip of static files and get a live `*.aft.page` URL instantly, no account required
+- [Agent MCP deploy](https://aft.page/mcp): Remote MCP at `https://mcp.aft.page/mcp` with `deploy_html`, `deploy_files`, and `aft_health`
+- [HTTP API deploy](https://api.aft.page): `POST /v1/deploy` and redeploy with an edit token for agents and scripts
+- [Claim and share](https://aft.page/preview): Attach an anonymous deploy to an account, make it private, or invite people by email
+- [Hosted small software](https://aft.page/): Serve agent-built HTML, static SPAs, and small apps at a durable HTTPS URL
 
-- API root: https://api.aft.page
+## What We Do Not Do
+
+aft.page does not provide:
+- A website builder or drag-and-drop page designer
+- A chat product or background coding-agent runner
+- General-purpose Big Software cloud accounts, repos, or CI setup
+- Guaranteed enterprise SLAs during free beta
+- Ownership of user content published on `*.aft.page` (that content belongs to the deployer)
+
+## Contact
+
+- General and AI enquiries: hello@aft.page
+- Product site: https://aft.page
+- Status: https://status.aft.page
+- Remote MCP: https://mcp.aft.page/mcp
+- API: https://api.aft.page
+
+## Key Information
+
+- [Home](https://aft.page/): Product overview and live Drop
+- [MCP docs](https://aft.page/mcp.md): Agent tools, HTTP API, and config (Markdown)
+- [MCP docs HTML](https://aft.page/mcp): Same docs for humans
+- [Drop](https://aft.page/drop/): Human upload UI
+- [Drop agent instructions](https://aft.page/drop/llms.txt): Agent-oriented Drop notes
+- [Privacy](https://aft.page/privacy/): Privacy policy
+- [Terms](https://aft.page/terms/): Terms of service
+
+## Endpoints for agents
+
+- Remote MCP: https://mcp.aft.page/mcp
 - Health: https://api.aft.page/health
 - Deploy: POST https://api.aft.page/v1/deploy
 - Redeploy: PATCH https://api.aft.page/v1/deploy?slug={slug} (header X-Aft-Edit-Token)
 - Claim: POST https://api.aft.page/v1/claim/start · GET /v1/claim/verify
 - Site info: GET https://api.aft.page/v1/sites/{slug}
 - Serve: https://{slug}.aft.page/
-- Preview: https://aft.page/preview?url=https://{slug}.aft.page&token={editToken}
-- Human paste UI: https://aft.page/paste-html/
-- SEO / human landings (same product): https://aft.page/paste-html/ · /host-html/ · /share-html/ · /upload-html/
 
 ## MCP tools
+
+Thin deploy adapter only (not a control plane):
 
 - deploy_html — publish one HTML document
 - deploy_files — publish multiple static files (include index.html)
 - aft_health — ping the API
-- prompt: deploy_to_aft
+
+```json
+{ "mcpServers": { "aft-page": { "url": "https://mcp.aft.page/mcp" } } }
+```
 
 ## Limits
 
-50 files · 2 MB / file · 5 MB total · anonymous deploy · editToken on each deploy · email claim on preview
+50 files · 2 MB / file · 5 MB total · anonymous deploy · editToken on each deploy · email claim on preview · free during beta
+
+## AI Discovery Files
+
+- [llms.txt](https://aft.page/llms.txt): This file (canonical machine-readable identity)
+- [llms.html](https://aft.page/llms.html): Human-readable twin
+- [ai.txt](https://aft.page/ai.txt): AI usage permissions
+- [ai.json](https://aft.page/ai.json): Machine-parseable AI permissions
+- [identity.json](https://aft.page/identity.json): Structured identity
+- [brand.txt](https://aft.page/brand.txt): Naming and brand voice
+- [faq-ai.txt](https://aft.page/faq-ai.txt): FAQ for AI systems
+- [developer-ai.txt](https://aft.page/developer-ai.txt): Technical context for agents
+- [robots-ai.txt](https://aft.page/robots-ai.txt): AI crawler directives
 
 ## Optional
 
-- Open-source CLI (bring your own cloud): https://github.com/vaibhavmule/aft — not a hosted aft.page CLI
-- Chrome extension / paste form for humans without MCP
-- SEO landings: /paste-html/ · /host-html/ · /share-html/ · /upload-html/
+- [Open-source CLI](https://github.com/vaibhavmule/aft): Bring-your-own-cloud CLI (not the hosted aft.page service)
+- [Sitemap](https://aft.page/sitemap.xml): Site structure for crawlers
