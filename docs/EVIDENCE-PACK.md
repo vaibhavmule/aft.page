@@ -13,12 +13,12 @@ Goal: an outsider completes this **without you operating their session** and
 returns to the resulting application later.
 
 ```text
-1. Deploy (paste-html, MCP, or CLI) → live https://{slug}.aft.page
-2. Claim from /preview (magic link) OR already own → /login
+1. Deploy (drop, MCP, or CLI) → live https://{slug}.aft.page
+2. Claim on the live slug URL (magic link) OR already own → /login
 3. Open /projects — site appears
-4. From preview: set private, invite colleague by email
+4. From /project: set private, invite colleague by email
 5. Colleague opens invite link, signs in, opens the app
-6. Owner redeploys (PATCH / edit) and rolls back from preview or API
+6. Owner redeploys (PATCH / edit) and rolls back from /project or API
 ```
 
 ### Checklist
@@ -35,16 +35,33 @@ returns to the resulting application later.
 | --- | --- |
 | Login | https://aft.page/login |
 | Projects | https://aft.page/projects |
-| Paste (anonymous activation) | https://aft.page/paste-html/ |
+| Drop (anonymous activation) | https://aft.page/drop/ |
 | Connector docs | [CONNECTOR.md](./CONNECTOR.md) |
 | Pricing | [PRICING.md](./PRICING.md) |
 | Expense dogfood (example) | deploy `examples/expense-approval/` |
+| Enterprise license dogfood | https://enterprise-license.aft.page — MCP deploy 2026-08-08 (founder, not a stranger) |
+
+## Founder loop (2026-08-08)
+
+Scripted: `apps/api/test/loop.test.ts` — deploy → claim → private → invite view+edit → redeploy → rollback. Passes in CI/local.
+
+Live (founder, counts as dogfood not stranger evidence):
+
+| Step | Result |
+| --- | --- |
+| MCP `aft_health` | `ok=true via=service-binding` |
+| MCP `deploy_html` → URL | https://enterprise-license.aft.page (~2s) |
+| Redeploy + rollback via editToken | ok (`dep_152fffaf71c6` → rolled back to `dep_499a1118d375`) |
+| Claim + private + invite | claim mail sent to hello@aft.page — finish from inbox, then private + invite a second human |
+| Status MCP probe | https://status.aft.page/ — MCP operational via Worker binding |
+
+Time-to-URL (agent MCP call → live HTTPS): **~2 seconds**. Seven-day return: not yet due.
 
 ## Customer evidence (fill weekly)
 
 | Date | Who | Agent they use | App | Next step | Paid? |
 | --- | --- | --- | --- | --- | --- |
-| | | | | | |
+| 2026-08-08 | founder (hello@aft.page) | remote MCP | [enterprise-license](https://enterprise-license.aft.page) | claim → private → invite one teammate; check return 2026-08-15 | no |
 
 Ask every call:
 

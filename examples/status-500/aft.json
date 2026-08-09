@@ -1,0 +1,6 @@
+{
+  "name": "status-500",
+  "runtime": "worker",
+  "upstream": "https://aft-status-500.vaibhavmule135.workers.dev",
+  "badge": false
+}

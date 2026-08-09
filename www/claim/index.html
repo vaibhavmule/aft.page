@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Claim this site — aft.page</title>
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        --void: #000000;
+        --panel: #0a0a0a;
+        --ink: #fafafa;
+        --quiet: #a1a1aa;
+        --line: #27272a;
+        --cta: #ffffff;
+        --cta-ink: #000000;
+        --cta-hover: #e4e4e7;
+        --beacon-bright: #22c55e;
+        --good: #22c55e;
+        --danger: #ff6b6b;
+        --font-sans: "Geist Variable", "Geist", "Segoe UI", system-ui, sans-serif;
+        --font-display: var(--font-sans);
+        --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, Menlo, Consolas, monospace;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; min-height: 100%; }
+      body {
+        font-family: var(--font-sans);
+        color: var(--ink);
+        background: var(--void);
+        -webkit-font-smoothing: antialiased;
+      }
+      a { color: inherit; text-decoration: none; }
+      .shell {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(20rem, 28rem);
+      }
+      .brand {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 1.5rem 2rem 2rem;
+        overflow: hidden;
+        background:
+          radial-gradient(ellipse 70% 55% at 20% 30%, rgba(250, 250, 250, 0.05), transparent 65%),
+          linear-gradient(180deg, #000000 0%, #0a0a0a 50%, #000000 100%);
+      }
+      .brand::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(242, 244, 247, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(242, 244, 247, 0.03) 1px, transparent 1px);
+        background-size: 48px 48px;
+        mask-image: radial-gradient(ellipse 70% 70% at 40% 40%, #000 20%, transparent 75%);
+        pointer-events: none;
+      }
+      .logo {
+        position: relative;
+        z-index: 1;
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 1.35rem;
+        letter-spacing: -0.02em;
+      }
+      .logo span { color: var(--good); }
+      .brand-body {
+        position: relative;
+        z-index: 1;
+        max-width: 28rem;
+        padding: 3rem 0 4rem;
+      }
+      .brand-body h1 {
+        margin: 0 0 0.85rem;
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: clamp(2rem, 4vw, 2.75rem);
+        line-height: 1.12;
+        letter-spacing: -0.03em;
+      }
+      .brand-body p {
+        margin: 0;
+        color: var(--quiet);
+        font-size: 1.05rem;
+        line-height: 1.55;
+        max-width: 24rem;
+      }
+      .panel {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 2rem 1.75rem;
+        background: var(--panel);
+        border-left: 1px solid var(--line);
+      }
+      .panel-inner { width: 100%; max-width: 22rem; margin: 0 auto; }
+      .panel h2 {
+        margin: 0 0 0.35rem;
+        font-size: 1.35rem;
+        font-weight: 650;
+        letter-spacing: -0.02em;
+      }
+      .sub {
+        margin: 0 0 1.5rem;
+        color: var(--quiet);
+        font-size: 0.92rem;
+        line-height: 1.5;
+      }
+      .sub .host {
+        display: block;
+        margin: 0.35rem 0 0.65rem;
+        font-family: var(--font-mono);
+        font-weight: 500;
+        font-size: 1rem;
+        line-height: 1.35;
+        word-break: break-all;
+      }
+      .sub .host .slug { color: var(--beacon-bright); font-weight: 600; }
+      .sub .host .dot, .sub .host .root { color: var(--quiet); }
+      label {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        margin-bottom: 0.4rem;
+        color: var(--quiet);
+      }
+      input[type="email"] {
+        width: 100%;
+        padding: 0.75rem 0.85rem;
+        border: 1px solid var(--line);
+        border-radius: 0.45rem;
+        font: inherit;
+        font-size: 0.95rem;
+        color: var(--ink);
+        background: #0b0d11;
+      }
+      input[type="email"]:focus {
+        outline: none;
+        border-color: #3f3f46;
+        box-shadow: 0 0 0 3px rgba(250, 250, 250, 0.08);
+      }
+      #submit, .btn-google {
+        margin-top: 0.9rem;
+        width: 100%;
+        border: none;
+        border-radius: 0.45rem;
+        padding: 0.75rem 1rem;
+        font: inherit;
+        font-weight: 650;
+        cursor: pointer;
+        background: var(--cta);
+        color: var(--cta-ink);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+      #submit:hover:not(:disabled) { background: var(--cta-hover); }
+      #submit:disabled { opacity: 0.65; cursor: default; }
+      .btn-google {
+        margin-top: 0;
+        margin-bottom: 0.15rem;
+        background: transparent;
+        color: var(--ink);
+        border: 1px solid var(--line);
+      }
+      .btn-google:hover { background: #141414; }
+      .btn-google svg { width: 1.1rem; height: 1.1rem; flex-shrink: 0; }
+      .or {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 1.05rem 0 0.85rem;
+        color: var(--quiet);
+        font-size: 0.78rem;
+      }
+      .or::before, .or::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--line);
+      }
+      .spinner {
+        width: 0.9rem;
+        height: 0.9rem;
+        border-radius: 999px;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        animation: spin 0.65s linear infinite;
+      }
+      .msg {
+        margin-top: 1rem;
+        padding: 0.75rem 0.9rem;
+        border-radius: 0.45rem;
+        font-size: 0.88rem;
+        display: none;
+        border: 1px solid transparent;
+      }
+      .msg.ok, .msg.err { display: block; }
+      .msg.ok {
+        background: color-mix(in srgb, var(--good) 12%, transparent);
+        border-color: color-mix(in srgb, var(--good) 35%, transparent);
+        color: var(--good);
+      }
+      .msg.err {
+        background: color-mix(in srgb, var(--danger) 12%, transparent);
+        border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+        color: var(--danger);
+      }
+      .hint {
+        margin: 1.5rem 0 0;
+        font-size: 0.82rem;
+        color: var(--quiet);
+        line-height: 1.45;
+      }
+      .hint a {
+        color: var(--ink);
+        text-decoration: underline;
+        text-underline-offset: 0.15em;
+      }
+      [hidden] { display: none !important; }
+      .back {
+        display: inline-block;
+        margin-bottom: 1.75rem;
+        font-size: 0.82rem;
+        color: var(--quiet);
+      }
+      .back:hover { color: var(--ink); }
+      .boot {
+        display: none;
+        min-height: 100vh;
+        margin: 0;
+        place-items: center;
+        color: var(--quiet);
+        font-size: 0.95rem;
+      }
+      html.aft-boot .boot { display: grid; }
+      html.aft-boot .shell { display: none; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @media (max-width: 820px) {
+        .shell { grid-template-columns: 1fr; }
+        .brand { min-height: auto; padding: 1.25rem 1.25rem 1.5rem; }
+        .brand-body { padding: 1.75rem 0 1.25rem; }
+        .brand-body h1 { font-size: 1.75rem; }
+        .panel {
+          border-left: none;
+          border-top: 1px solid var(--line);
+          padding: 1.75rem 1.25rem 2.5rem;
+          flex: 1;
+        }
+      }
+    </style>
+    <script>
+      if (new URLSearchParams(location.search).get("slug")) {
+        document.documentElement.classList.add("aft-boot");
+      }
+    </script>
+  </head>
+  <body>
+    <p class="boot" id="boot">Opening…</p>
+    <div class="shell">
+      <aside class="brand">
+        <a class="logo" href="/">aft<span>.</span>page</a>
+        <div class="brand-body">
+          <h1>Link it to your account.</h1>
+          <p>
+            Add your email or continue with Google. The live URL stays the same —
+            you’ll see it under Projects.
+          </p>
+        </div>
+      </aside>
+      <main class="panel">
+        <div class="panel-inner">
+          <a class="back" href="/">← aft.page</a>
+          <h2>Claim this site</h2>
+          <p class="sub" id="sub">Open the claim link from your deploy — it includes the slug and token.</p>
+          <p class="hint" id="noslug">
+            No site in this URL.
+            <a href="/drop/">Deploy first</a>, then Claim on the live page.
+          </p>
+          <div id="actions" hidden>
+            <a class="btn-google" id="google" href="https://api.aft.page/v1/auth/google">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              Continue with Google
+            </a>
+            <p class="or">or</p>
+            <form id="form">
+              <label for="email">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                autocomplete="email"
+                placeholder="you@company.com"
+                autofocus
+              />
+              <button type="submit" id="submit">
+                <span class="label">Send claim link</span>
+              </button>
+            </form>
+          </div>
+          <div class="msg" id="msg" role="status"></div>
+          <p class="hint" id="hint" hidden></p>
+        </div>
+      </main>
+    </div>
+    <script src="/auth-me.js"></script>
+    <script>
+      const API = "https://api.aft.page";
+      const KEY = "aft.editTokens";
+      const params = new URLSearchParams(location.search);
+      const slug = (params.get("slug") || "").toLowerCase();
+      const qToken = params.get("token") || "";
+      const form = document.getElementById("form");
+      const msg = document.getElementById("msg");
+      const submit = document.getElementById("submit");
+      const label = submit.querySelector(".label");
+      const subEl = document.getElementById("sub");
+      const hintEl = document.getElementById("hint");
+      const googleEl = document.getElementById("google");
+      const actions = document.getElementById("actions");
+
+      function tokenMap() {
+        try { return JSON.parse(localStorage.getItem(KEY) || "{}"); }
+        catch { return {}; }
+      }
+      function saveTok(t) {
+        if (!slug || !t) return;
+        try {
+          const m = tokenMap();
+          m[slug] = t;
+          localStorage.setItem(KEY, JSON.stringify(m));
+        } catch (_) {}
+      }
+      if (qToken) saveTok(qToken);
+      const token = qToken || tokenMap()[slug] || "";
+      const liveUrl = slug ? `https://${slug}.aft.page` : "";
+
+      function show(kind, text) {
+        msg.className = "msg " + kind;
+        msg.textContent = text;
+      }
+
+      function projectUrl() {
+        return `/project/?slug=${encodeURIComponent(slug)}`;
+      }
+
+      const noslugEl = document.getElementById("noslug");
+      if (slug) {
+        noslugEl.hidden = true;
+        subEl.innerHTML =
+          `<span class="host" aria-label="${liveUrl}">` +
+          `<span class="slug">${slug}</span><span class="dot">.</span>` +
+          `<span class="root">aft.page</span></span>` +
+          `Add your email so this site shows up when you log in.`;
+        hintEl.hidden = false;
+        hintEl.innerHTML =
+          `Skip for now — <a href="${liveUrl}">open the live site</a>. You can claim later.`;
+        const next = `/claim?slug=${encodeURIComponent(slug)}` +
+          (token ? `&token=${encodeURIComponent(token)}` : "");
+        googleEl.href = `${API}/v1/auth/google?next=${encodeURIComponent(next)}`;
+      }
+
+      async function claimSession() {
+        if (!slug || !token) return "skip";
+        const res = await fetch(`${API}/v1/claim/session`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ slug, editToken: token }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          location.replace(projectUrl());
+          return "ok";
+        }
+        if (data.error === "already_claimed") {
+          show("err", "Someone else already claimed this site.");
+          return "taken";
+        }
+        return "fail";
+      }
+
+      function showLogin() {
+        document.documentElement.classList.remove("aft-boot");
+        actions.hidden = false;
+      }
+
+      (async () => {
+        if (!slug) return;
+        const user = await (window.aftAuth && window.aftAuth.getMe
+          ? window.aftAuth.getMe()
+          : Promise.resolve(null));
+        if (user && token) {
+          const result = await claimSession();
+          if (result === "ok") return;
+          if (result === "taken") {
+            document.documentElement.classList.remove("aft-boot");
+            return;
+          }
+          show("err", "Couldn’t claim with this session. Try email.");
+        }
+        showLogin();
+      })();
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!slug || !token) {
+          show("err", "Missing edit token. Open the claim link from your deploy.");
+          return;
+        }
+        msg.className = "msg";
+        msg.textContent = "";
+        submit.disabled = true;
+        label.innerHTML = `<span class="spinner" aria-hidden="true"></span> Sending…`;
+        const email = document.getElementById("email").value.trim();
+        try {
+          const res = await fetch(`${API}/v1/claim/start`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ slug, email, editToken: token }),
+          });
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            show(
+              "err",
+              body.error === "already_claimed"
+                ? "Already claimed."
+                : body.error === "email_failed"
+                  ? "Email isn’t configured. Try Google."
+                  : body.hint || body.message || body.error || "Could not send email",
+            );
+            return;
+          }
+          show("ok", "Check your email for a claim link (15 minutes).");
+          form.reset();
+        } catch (err) {
+          show("err", String(err));
+        } finally {
+          submit.disabled = false;
+          label.textContent = "Send claim link";
+        }
+      });
+    </script>
+    <script src="/feedback.js?v=20260809-pill" defer></script>
+  </body>
+</html>

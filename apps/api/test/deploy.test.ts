@@ -1,6 +1,19 @@
 /** Upload shapes a human or an agent can send, plus the abuse limits. */
 import { describe, it, expect } from "vitest";
+import { env } from "cloudflare:test";
+import {
+  assignSiteOwner,
+  createSession,
+  findOrCreateUser,
+} from "../src/auth";
 import { call, deployPaste, pasteHtml, uploadJson, fetchSite, API_ORIGIN } from "./helpers";
+
+function manyTinyFiles(n: number) {
+  return Array.from({ length: n }, (_, i) => ({
+    path: `page-${i}.html`,
+    content: "x",
+  }));
+}
 
 describe("deploy input", () => {
   it("accepts a raw HTML paste", async () => {
@@ -8,6 +21,24 @@ describe("deploy input", () => {
     const res = await fetchSite(out.slug);
     expect(res.status).toBe(200);
     expect(await res.text()).toBe("<h1>Hello</h1>");
+  });
+
+  it("uses aft.json slug when ?slug= is omitted", async () => {
+    const res = await call(
+      uploadJson([
+        { path: "index.html", content: "<h1>from manifest</h1>" },
+        {
+          path: "aft.json",
+          content: JSON.stringify({ slug: "from-manifest", runtime: "static" }),
+        },
+      ]),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { slug: string };
+    expect(body.slug).toBe("from-manifest");
+    expect(await (await fetchSite("from-manifest")).text()).toBe(
+      "<h1>from manifest</h1>",
+    );
   });
 
   it("accepts a JSON file list from an agent", async () => {
@@ -98,30 +129,79 @@ describe("deploy limits", () => {
   });
 
   it("rejects too many files", async () => {
-    const files = Array.from({ length: 51 }, (_, i) => ({
-      path: `page-${i}.html`,
-      content: "x",
-    }));
-    const res = await call(uploadJson(files));
+    const res = await call(uploadJson(manyTinyFiles(201)));
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({ error: "too_many_files" });
   });
 
   it("rejects a single oversized file", async () => {
     const res = await call(
-      uploadJson([{ path: "big.html", content: "x".repeat(2 * 1024 * 1024 + 1) }]),
+      uploadJson([{ path: "big.bin", content: "x".repeat(10 * 1024 * 1024 + 1) }]),
     );
     expect(res.status).toBe(400);
-    expect(await res.json()).toMatchObject({ error: "file_too_large" });
+    expect(res.headers.get("x-aft-request-id")).toBeTruthy();
+    expect(await res.json()).toMatchObject({ error: "file_too_large", path: "big.bin" });
+    const row = await env.DB.prepare(
+      `SELECT error, path FROM deploy_failures WHERE path = 'big.bin' ORDER BY created_at DESC LIMIT 1`,
+    ).first<{ error: string; path: string }>();
+    expect(row).toMatchObject({ error: "file_too_large", path: "big.bin" });
   });
 
   it("rejects an oversized payload spread across files", async () => {
-    const files = Array.from({ length: 4 }, (_, i) => ({
+    const files = Array.from({ length: 6 }, (_, i) => ({
       path: `chunk-${i}.html`,
-      content: "x".repeat(1_500_000),
+      content: "x".repeat(9 * 1024 * 1024),
     }));
     const res = await call(uploadJson(files));
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({ error: "payload_too_large" });
+  });
+});
+
+describe("unlimited dogfood caps", () => {
+  it("allows 51 files on slug parakh", async () => {
+    const res = await call(uploadJson(manyTinyFiles(51), "parakh"));
+    expect(res.status).toBe(200);
+    expect((await res.json()) as { slug: string }).toMatchObject({ slug: "parakh" });
+  });
+
+  it("allows 51 files for founder session on any slug", async () => {
+    const user = await findOrCreateUser(env, "vaibhavmule135@gmail.com");
+    const session = await createSession(env, user.id);
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/deploy?slug=founder-unlim`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          cookie: `aft_session=${session.token}`,
+        },
+        body: JSON.stringify({ files: manyTinyFiles(51) }),
+      }),
+    );
+    expect(res.status).toBe(200);
+  });
+
+  it("allows oversized PATCH when owner is founder (edit token only)", async () => {
+    const first = await deployPaste("<h1>owned</h1>", "owner-unlim");
+    const user = await findOrCreateUser(env, "vaibhavmule135@gmail.com");
+    expect(await assignSiteOwner(env, first.slug, user.id)).toBe(true);
+    const session = await createSession(env, user.id);
+
+    const files = Array.from({ length: 4 }, (_, i) => ({
+      path: `chunk-${i}.html`,
+      content: "x".repeat(1_500_000),
+    }));
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/deploy?slug=${first.slug}`, {
+        method: "PATCH",
+        headers: {
+          "content-type": "application/json",
+          cookie: `aft_session=${session.token}`,
+          origin: "https://aft.page",
+        },
+        body: JSON.stringify({ files }),
+      }),
+    );
+    expect(res.status).toBe(200);
   });
 });

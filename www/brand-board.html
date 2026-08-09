@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>aft.page — brand board (approve in page)</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        --void: #000000;
+        --panel: #0a0a0a;
+        --raised: #111111;
+        --line: #27272a;
+        --line-bright: #3f3f46;
+        --ink: #fafafa;
+        --quiet: #a1a1aa;
+        --faint: #52525b;
+        --good: #22c55e;
+        --bad: #ff6b6b;
+        --font-sans: "Geist Variable", "Geist", "Segoe UI", system-ui, sans-serif;
+        --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, Menlo, Consolas, monospace;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: var(--font-sans);
+        color: var(--ink);
+        background: var(--void);
+        -webkit-font-smoothing: antialiased;
+        padding-bottom: 7rem;
+      }
+
+      a { color: inherit; text-decoration: none; }
+      code { font-family: var(--font-mono); font-size: 0.86em; color: var(--quiet); }
+
+      .wrap {
+        width: min(1080px, calc(100% - 2.5rem));
+        margin: 0 auto;
+        padding: 2.5rem 0 2rem;
+      }
+
+      .eyebrow {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--faint);
+        margin: 0 0 0.65rem;
+      }
+
+      h1 {
+        margin: 0 0 0.55rem;
+        font-size: clamp(1.6rem, 3vw, 2.1rem);
+        font-weight: 600;
+        letter-spacing: -0.035em;
+      }
+
+      .lede {
+        margin: 0 0 1.25rem;
+        max-width: 42rem;
+        color: var(--quiet);
+        line-height: 1.55;
+        font-size: 0.98rem;
+      }
+
+      .how {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        padding: 1rem 1.15rem;
+        margin-bottom: 2rem;
+        font-size: 0.9rem;
+        color: var(--quiet);
+        line-height: 1.55;
+      }
+
+      .how strong { color: var(--ink); font-weight: 600; }
+      .how ol { margin: 0.55rem 0 0; padding-left: 1.2rem; }
+      .how li { margin: 0.25rem 0; }
+
+      .toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-bottom: 2.25rem;
+      }
+
+      .toc a {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--quiet);
+        border: 1px solid var(--line);
+        padding: 0.35rem 0.55rem;
+      }
+
+      .toc a:hover { color: var(--ink); border-color: var(--line-bright); }
+
+      section.block {
+        margin-bottom: 2.75rem;
+      }
+
+      section.block > h2 {
+        margin: 0 0 0.35rem;
+        font-size: 1.15rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+
+      section.block > .sec-note {
+        margin: 0 0 1rem;
+        color: var(--faint);
+        font-size: 0.86rem;
+        line-height: 1.45;
+      }
+
+      .grid {
+        display: grid;
+        gap: 1px;
+        background: var(--line);
+        border: 1px solid var(--line);
+      }
+
+      .card {
+        background: var(--panel);
+        padding: 1.25rem 1.2rem 1.15rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+        position: relative;
+      }
+
+      .card[data-vote="approve"] {
+        outline: 1px solid color-mix(in srgb, var(--good) 55%, var(--line));
+        outline-offset: -1px;
+        background: color-mix(in srgb, var(--good) 4%, var(--panel));
+      }
+
+      .card[data-vote="kill"] {
+        outline: 1px solid color-mix(in srgb, var(--bad) 40%, var(--line));
+        outline-offset: -1px;
+        opacity: 0.55;
+      }
+
+      .card-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+
+      .card-top h3 {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+
+      .meta {
+        font-family: var(--font-mono);
+        font-size: 0.62rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--faint);
+        white-space: nowrap;
+      }
+
+      .meta.shipped { color: var(--good); }
+
+      .stage {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 5.25rem;
+        background: #050505;
+        border: 1px solid var(--line);
+        padding: 1rem;
+      }
+
+      .stage.light { background: #f4f4f5; }
+      .stage.context {
+        min-height: 0;
+        display: block;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .pair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.55rem;
+      }
+
+      @media (max-width: 640px) {
+        .pair { grid-template-columns: 1fr; }
+      }
+
+      .note {
+        margin: 0;
+        font-size: 0.84rem;
+        line-height: 1.5;
+        color: var(--quiet);
+      }
+
+      .vote {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-top: auto;
+        padding-top: 0.15rem;
+      }
+
+      .vote button {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: var(--quiet);
+        padding: 0.4rem 0.65rem;
+        cursor: pointer;
+      }
+
+      .vote button:hover { color: var(--ink); border-color: var(--line-bright); }
+
+      .card[data-vote="approve"] .vote [data-action="approve"],
+      .vote [data-action="approve"][aria-pressed="true"] {
+        color: #000;
+        background: var(--good);
+        border-color: var(--good);
+      }
+
+      .card[data-vote="kill"] .vote [data-action="kill"],
+      .vote [data-action="kill"][aria-pressed="true"] {
+        color: #000;
+        background: var(--bad);
+        border-color: var(--bad);
+      }
+
+      /* —— Specimens —— */
+      .wm {
+        font-size: 1.45rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+        line-height: 1;
+      }
+      .wm span { color: var(--quiet); }
+      .stage.light .wm { color: #09090b; }
+      .stage.light .wm span { color: #71717a; }
+
+      .lock-beta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+      }
+
+      .beta {
+        font-family: var(--font-mono);
+        font-size: 0.62rem;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--quiet);
+        border: 1px solid var(--line);
+        padding: 0.22rem 0.45rem;
+        line-height: 1;
+      }
+      .stage.light .beta { color: #52525b; border-color: #d4d4d8; }
+
+      .lock-mark {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+      }
+
+      .mark-a {
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: 0.38rem;
+        background: #000;
+        position: relative;
+        flex-shrink: 0;
+        border: 1px solid #27272a;
+      }
+      .stage.light .mark-a { border-color: #e4e4e7; }
+      .mark-a .letter {
+        position: absolute;
+        left: 0.28rem;
+        top: 50%;
+        transform: translateY(-48%);
+        font-size: 1rem;
+        font-weight: 600;
+        color: #fafafa;
+        line-height: 1;
+      }
+      /* Solid live square — clearer than a circle next to the a */
+      .mark-a .pulse {
+        position: absolute;
+        right: 0.28rem;
+        bottom: 0.34rem;
+        width: 0.3rem;
+        height: 0.3rem;
+        border-radius: 1px;
+        background: var(--good);
+      }
+
+      .wm-live span.live { color: var(--good); }
+      .stage.light .wm.wm-live span.live { color: var(--good); }
+
+      /* Stern wordmark with square period (matches screenshot direction) */
+      .stern {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.12em;
+        font-size: 1.55rem;
+        font-weight: 600;
+        letter-spacing: -0.03em;
+        color: var(--ink);
+        line-height: 1;
+      }
+      .stern .sq {
+        display: inline-block;
+        width: 0.28em;
+        height: 0.28em;
+        border-radius: 1px;
+        background: var(--quiet);
+        transform: translateY(0.02em);
+        flex-shrink: 0;
+      }
+      .stern.live .sq { background: var(--good); }
+      .stage.light .stern { color: #09090b; }
+      .stage.light .stern .sq { background: #71717a; }
+      .stage.light .stern.live .sq { background: var(--good); }
+
+      /* Favicon tile: aft + square period */
+      .fav-row {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 1.1rem;
+        flex-wrap: wrap;
+      }
+      .fav-size {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .fav-size .cap {
+        font-family: var(--font-mono);
+        font-size: 0.58rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--faint);
+      }
+      .fav-stern {
+        display: inline-flex;
+        align-items: baseline;
+        justify-content: center;
+        gap: 0.08em;
+        background: #000;
+        border: 1px solid #27272a;
+        border-radius: 22%;
+        color: #fafafa;
+        font-weight: 600;
+        letter-spacing: -0.04em;
+        line-height: 1;
+        box-sizing: border-box;
+      }
+      .stage.light .fav-stern { border-color: #e4e4e7; }
+      .fav-stern .sq {
+        display: inline-block;
+        width: 0.26em;
+        height: 0.26em;
+        border-radius: 1px;
+        background: #a1a1aa;
+        flex-shrink: 0;
+        transform: translateY(0.04em);
+      }
+      .fav-stern.live .sq { background: var(--good); }
+      .fav-stern.s64 {
+        width: 64px;
+        height: 64px;
+        font-size: 1.35rem;
+        padding: 0 0.15em 0.05em;
+      }
+      .fav-stern.s32 {
+        width: 32px;
+        height: 32px;
+        font-size: 0.68rem;
+        border-radius: 7px;
+        padding: 0 0.1em 0.02em;
+      }
+      .fav-stern.s16 {
+        width: 16px;
+        height: 16px;
+        font-size: 0.34rem;
+        border-radius: 3px;
+        padding: 0 0.08em 0;
+        gap: 0.05em;
+      }
+      .fav-stern.s16 .sq {
+        width: 0.22em;
+        height: 0.22em;
+        border-radius: 0;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.55rem 0.95rem 0.55rem 0.8rem;
+        border-radius: 999px;
+        background: #000;
+        border: 1px solid #27272a;
+        color: #fafafa;
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        line-height: 1;
+      }
+      .pill .dot {
+        width: 0.35rem;
+        height: 0.35rem;
+        border-radius: 50%;
+        background: var(--good);
+        flex-shrink: 0;
+      }
+      .pill .wm-inline span { color: #a1a1aa; }
+
+      /* Nav mock */
+      .nav-mock {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.85rem 1rem;
+        background: #000;
+        border-bottom: 1px solid var(--line);
+      }
+      .nav-mock .links {
+        display: flex;
+        gap: 1rem;
+        color: var(--quiet);
+        font-size: 0.85rem;
+      }
+      .nav-mock .cta {
+        background: #fff;
+        color: #000;
+        font-size: 0.82rem;
+        font-weight: 600;
+        padding: 0.4rem 0.75rem;
+        border-radius: 4px;
+      }
+
+      /* CTA row */
+      .cta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        align-items: center;
+        justify-content: center;
+      }
+      .btn-primary {
+        background: #fff;
+        color: #000;
+        font-weight: 600;
+        font-size: 0.9rem;
+        padding: 0.65rem 1.05rem;
+        border-radius: 4px;
+        border: 1px solid #fff;
+      }
+      .btn-secondary {
+        background: transparent;
+        color: var(--ink);
+        font-weight: 500;
+        font-size: 0.9rem;
+        padding: 0.65rem 1.05rem;
+        border-radius: 4px;
+        border: 1px solid var(--line);
+      }
+      .stage.light .btn-secondary {
+        color: #09090b;
+        border-color: #d4d4d8;
+      }
+
+      /* Tokens */
+      .swatches {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.45rem;
+        width: 100%;
+      }
+      @media (max-width: 720px) {
+        .swatches { grid-template-columns: repeat(2, 1fr); }
+      }
+      .swatch {
+        border: 1px solid var(--line);
+        overflow: hidden;
+      }
+      .swatch .chip {
+        height: 2.4rem;
+      }
+      .swatch .label {
+        padding: 0.4rem 0.45rem;
+        font-family: var(--font-mono);
+        font-size: 0.62rem;
+        letter-spacing: 0.04em;
+        color: var(--quiet);
+        background: var(--raised);
+      }
+
+      /* Status pill footer-style */
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        color: var(--quiet);
+        border: 1px solid var(--line);
+        padding: 0.35rem 0.6rem;
+        border-radius: 999px;
+      }
+      .status-pill i {
+        width: 0.4rem;
+        height: 0.4rem;
+        border-radius: 50%;
+        background: var(--good);
+      }
+
+      /* Type specimens */
+      .type-stack {
+        width: 100%;
+        padding: 0.25rem 0.5rem;
+      }
+      .type-stack .h {
+        font-size: 1.35rem;
+        font-weight: 600;
+        letter-spacing: -0.03em;
+        margin: 0 0 0.35rem;
+        color: var(--ink);
+      }
+      .type-stack .b {
+        margin: 0;
+        color: var(--quiet);
+        font-size: 0.92rem;
+        line-height: 1.45;
+      }
+      .type-stack .m {
+        margin: 0.55rem 0 0;
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        color: var(--faint);
+      }
+      .stage.light .type-stack .h { color: #09090b; }
+      .stage.light .type-stack .b { color: #52525b; }
+      .stage.light .type-stack .m { color: #71717a; }
+
+      /* Sticky dock */
+      .dock {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 40;
+        background: color-mix(in srgb, var(--panel) 92%, transparent);
+        backdrop-filter: blur(10px);
+        border-top: 1px solid var(--line);
+        padding: 0.75rem 0;
+      }
+
+      .dock-inner {
+        width: min(1080px, calc(100% - 2.5rem));
+        margin: 0 auto;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem 1rem;
+      }
+
+      .dock-stats {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        color: var(--quiet);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.85rem;
+      }
+
+      .dock-stats b { color: var(--ink); font-weight: 600; }
+      .dock-stats .ok { color: var(--good); }
+      .dock-stats .no { color: var(--bad); }
+
+      .dock-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+
+      .dock-actions button {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: var(--quiet);
+        padding: 0.45rem 0.7rem;
+        cursor: pointer;
+      }
+
+      .dock-actions button:hover { color: var(--ink); border-color: var(--line-bright); }
+      .dock-actions button.primary {
+        background: #fff;
+        color: #000;
+        border-color: #fff;
+        font-weight: 600;
+      }
+
+      #export-panel {
+        display: none;
+        margin-top: 1rem;
+      }
+
+      #export-panel.open { display: block; }
+
+      #export-panel textarea {
+        width: 100%;
+        min-height: 12rem;
+        background: #050505;
+        color: var(--ink);
+        border: 1px solid var(--line);
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        line-height: 1.5;
+        padding: 0.85rem;
+        resize: vertical;
+      }
+
+      .page-foot {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--line);
+        font-size: 0.8rem;
+        color: var(--faint);
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <p class="eyebrow">Open-source design review · noindex</p>
+      <h1>Brand board</h1>
+      <p class="lede">
+        Judge the visual here. Approve or kill each option on this page.
+        Agents implement only what you approve — not from chat guesses.
+      </p>
+
+      <div class="how">
+        <strong>Workflow</strong>
+        <ol>
+          <li>Open this HTML board (local or deployed preview).</li>
+          <li>Click <strong>Approve</strong> or <strong>Kill</strong> on each specimen.</li>
+          <li>Export the decision log → paste into the PR / issue / chat.</li>
+          <li>Only then change product chrome / CSS / brand docs.</li>
+        </ol>
+      </div>
+
+      <nav class="toc" aria-label="Sections">
+        <a href="#lockups">Lockups</a>
+        <a href="#favicon">Favicon</a>
+        <a href="#in-context">In context</a>
+        <a href="#tokens">Tokens</a>
+        <a href="#type-cta">Type &amp; CTA</a>
+        <a href="#chrome">Chrome bits</a>
+      </nav>
+
+      <!-- —— LOCKUPS —— -->
+      <section class="block" id="lockups">
+        <h2>Lockups</h2>
+        <p class="sec-note">No upward triangle. Grey <code>.</code> in the wordmark. Green = live/status only.</p>
+        <div class="grid">
+          <article class="card" data-id="lockup-wordmark" data-label="A — Wordmark only">
+            <div class="card-top">
+              <h3>A — Wordmark only</h3>
+              <span class="meta shipped">Shipped</span>
+            </div>
+            <div class="pair">
+              <div class="stage"><span class="wm">aft<span>.</span>page</span></div>
+              <div class="stage light"><span class="wm">aft<span>.</span>page</span></div>
+            </div>
+            <p class="note">Default identity. Type-only; strongest once the name is known.</p>
+            <div class="vote"></div>
+          </article>
+
+          <article class="card" data-id="lockup-beta" data-label="B — Wordmark + Beta">
+            <div class="card-top">
+              <h3>B — Wordmark + Beta</h3>
+              <span class="meta shipped">Docs</span>
+            </div>
+            <div class="pair">
+              <div class="stage">
+                <div class="lock-beta">
+                  <span class="wm">aft<span>.</span>page</span>
+                  <span class="beta">Beta</span>
+                </div>
+              </div>
+              <div class="stage light">
+                <div class="lock-beta">
+                  <span class="wm">aft<span>.</span>page</span>
+                  <span class="beta">Beta</span>
+                </div>
+              </div>
+            </div>
+            <p class="note">Website topnav. Honest product state without inventing a glyph.</p>
+            <div class="vote"></div>
+          </article>
+
+          <article class="card" data-id="lockup-favicon" data-label="C — Favicon mark + wordmark (same green)">
+            <div class="card-top">
+              <h3>C — Favicon mark + wordmark</h3>
+              <span class="meta">App chrome</span>
+            </div>
+            <div class="pair">
+              <div class="stage">
+                <div class="lock-mark">
+                  <span class="mark-a" aria-hidden="true"><span class="letter">a</span><span class="pulse"></span></span>
+                  <span class="wm wm-live">aft<span class="live">.</span>page</span>
+                </div>
+              </div>
+              <div class="stage light">
+                <div class="lock-mark">
+                  <span class="mark-a" aria-hidden="true"><span class="letter">a</span><span class="pulse"></span></span>
+                  <span class="wm wm-live">aft<span class="live">.</span>page</span>
+                </div>
+              </div>
+            </div>
+            <p class="note">Same <code>--good</code> green as D: square live mark on the favicon <em>and</em> live period in the wordmark.</p>
+            <div class="vote"></div>
+          </article>
+
+          <article class="card" data-id="lockup-green-period" data-label="D — Live (green) period">
+            <div class="card-top">
+              <h3>D — Live (green) period</h3>
+              <span class="meta">Metaphor</span>
+            </div>
+            <div class="pair">
+              <div class="stage"><span class="wm wm-live">aft<span class="live">.</span>page</span></div>
+              <div class="stage light"><span class="wm wm-live">aft<span class="live">.</span>page</span></div>
+            </div>
+            <p class="note">Too clever? Grey period is brand default. Vote kill if you agree.</p>
+            <div class="vote"></div>
+          </article>
+
+          <article class="card" data-id="lockup-stern" data-label="E — Stern compact aft. (square period)">
+            <div class="card-top">
+              <h3>E — Stern compact <code>aft.</code></h3>
+              <span class="meta">Footer</span>
+            </div>
+            <div class="pair">
+              <div class="stage"><span class="stern">aft<span class="sq" aria-hidden="true"></span></span></div>
+              <div class="stage light"><span class="stern">aft<span class="sq" aria-hidden="true"></span></span></div>
+            </div>
+            <p class="note">Watermark / stern mark with square period. Full <code>aft.page</code> stays in clickable chrome.</p>
+            <div class="vote"></div>
+          </article>
+
+          <article class="card" data-id="lockup-status-pill" data-label="F — Status pill with live dot">
+            <div class="card-top">
+              <h3>F — Status pill (live dot)</h3>
+              <span class="meta">Status only</span>
+            </div>
+            <div class="pair">
+              <div class="stage">
+                <span class="pill"><i class="dot" aria-hidden="true"></i><span class="wm-inline">aft<span>.</span>page</span></span>
+              </div>
+              <div class="stage light">
+                <span class="pill"><i class="dot" aria-hidden="true"></i><span class="wm-inline">aft<span>.</span>page</span></span>
+              </div>
+            </div>
+            <p class="note">Pill energy without Vercel triangle. Not primary identity — status / share only.</p>
+            <div class="vote"></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- —— FAVICON —— -->
+      <section class="block" id="favicon">
+        <h2>Favicon</h2>
+        <p class="sec-note">
+          Stern wordmark as the icon: <code>aft</code> + square period — same idea as the screenshot.
+          Shown at 64 / 32 / 16 so you can judge tab size.
+        </p>
+        <div class="grid">
+          <article class="card" data-id="fav-stern-quiet" data-label="Favicon — aft. square period (quiet grey)">
+            <div class="card-top">
+              <h3>aft. — quiet grey square</h3>
+              <span class="meta">New try</span>
+            </div>
+            <div class="pair">
+              <div class="stage">
+                <div class="fav-row">
+                  <div class="fav-size">
+                    <span class="fav-stern s64">aft<span class="sq"></span></span>
+                    <span class="cap">64</span>
+                  </div>
+                  <div class="fav-size">
+                    <span class="fav-stern s32">aft<span class="sq"></span></span>
+                    <span class="cap">32</span>
+                  </div>
+                  <div class="fav-size">
+                    <span class="fav-stern s16">aft<span class="sq"></span></span>
+                    <span class="cap">16</span>
+                  </div>
+                </div>
+              </div>
+              <div class="stage light">
+                <div class="fav-row">
+                  <div class="fav-size">
+                    <span class="fav-stern s64">aft<span class="sq"></span></span>
+                    <span class="cap">64</span>
+                  </div>
+                  <div class="fav-size">
+                    <span class="fav-stern s32">aft<span class="sq"></span></span>
+                    <span class="cap">32</span>
+                  </div>
+                  <div class="fav-size">
+                    <span class="fav-stern s16">aft<span class="sq"></span></span>
+                    <span class="cap">16</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="note">Matches your shot: white <code>aft</code>, muted square period. Ownable stern — not an <code>a</code> + status blob.</p>
+            <div class="vote"></div>
+          </article>
+
+          <article class="card" data-id="fav-stern-live" data-label="Favicon — aft. square period (live green)">
+            <div class="card-top">
+              <h3>aft. — live green square</h3>
+              <span class="meta">Live variant</span>
+            </div>
+            <div class="pair">
+              <div class="stage">
+                <div class="fav-row">
+                  <div class="fav-size">
+                    <span class="fav-stern live s64">aft<span class="sq"></span></span>
+                    <span class="cap">64</span>
+                  </div>
+                  <div class="fav-size">
+                    <span class="fav-stern live s32">aft<span class="sq"></span></span>
+                    <span class="cap">32</span>
+                  </div>
+                  <div class="fav-size">
+                    <span class="fav-stern live s16">aft<span class="sq"></span></span>
+                    <span class="cap">16</span>
+                  </div>
+                </div>
+              </div>
+              <div class="stage light">
+                <div class="fav-row">
+                  <div class="fav-size">
+                    <span class="fav-stern live s64">aft<span class="sq"></span></span>
+                    <span class="cap">64</span>
+                  </div>
+                  <div class="fav-size">
+                    <span class="fav-stern live s32">aft<span class="sq"></span></span>
+                    <span class="cap">32</span>
+                  </div>
+                  <div class="fav-size">
+                    <span class="fav-stern live s16">aft<span class="sq"></span></span>
+                    <span class="cap">16</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="note">Same mark, green square = live. Compare to quiet grey above — pick one for the shipped favicon.</p>
+            <div class="vote"></div>
+          </article>
+
+          <article class="card" data-id="fav-a-square" data-label="Favicon — a + square (current direction)">
+            <div class="card-top">
+              <h3>a + square (legacy try)</h3>
+              <span class="meta">Compare</span>
+            </div>
+            <div class="pair">
+              <div class="stage">
+                <div class="fav-row">
+                  <div class="fav-size">
+                    <span class="mark-a" style="width:64px;height:64px;border-radius:14px" aria-hidden="true">
+                      <span class="letter" style="font-size:2.4rem;left:0.55rem">a</span>
+                      <span class="pulse" style="width:0.55rem;height:0.55rem;right:0.55rem;bottom:0.65rem"></span>
+                    </span>
+                    <span class="cap">64</span>
+                  </div>
+                  <div class="fav-size">
+                    <span class="mark-a" style="width:32px;height:32px;border-radius:7px" aria-hidden="true">
+                      <span class="letter" style="font-size:1.15rem;left:0.3rem">a</span>
+                      <span class="pulse" style="width:0.32rem;height:0.32rem;right:0.28rem;bottom:0.34rem"></span>
+                    </span>
+                    <span class="cap">32</span>
+                  </div>
+                  <div class="fav-size">
+                    <span class="mark-a" style="width:16px;height:16px;border-radius:3px" aria-hidden="true">
+                      <span class="letter" style="font-size:0.55rem;left:0.12rem">a</span>
+                      <span class="pulse" style="width:0.18rem;height:0.18rem;right:0.12rem;bottom:0.14rem;border-radius:0"></span>
+                    </span>
+                    <span class="cap">16</span>
+                  </div>
+                </div>
+              </div>
+              <div class="stage light">
+                <div class="fav-row">
+                  <div class="fav-size">
+                    <span class="mark-a" style="width:64px;height:64px;border-radius:14px" aria-hidden="true">
+                      <span class="letter" style="font-size:2.4rem;left:0.55rem">a</span>
+                      <span class="pulse" style="width:0.55rem;height:0.55rem;right:0.55rem;bottom:0.65rem"></span>
+                    </span>
+                    <span class="cap">64</span>
+                  </div>
+                  <div class="fav-size">
+                    <span class="mark-a" style="width:32px;height:32px;border-radius:7px" aria-hidden="true">
+                      <span class="letter" style="font-size:1.15rem;left:0.3rem">a</span>
+                      <span class="pulse" style="width:0.32rem;height:0.32rem;right:0.28rem;bottom:0.34rem"></span>
+                    </span>
+                    <span class="cap">32</span>
+                  </div>
+                  <div class="fav-size">
+                    <span class="mark-a" style="width:16px;height:16px;border-radius:3px" aria-hidden="true">
+                      <span class="letter" style="font-size:0.55rem;left:0.12rem">a</span>
+                      <span class="pulse" style="width:0.18rem;height:0.18rem;right:0.12rem;bottom:0.14rem;border-radius:0"></span>
+                    </span>
+                    <span class="cap">16</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="note">Previous <code>a</code> + square. Kill if the stern <code>aft.</code> favicon wins.</p>
+            <div class="vote"></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- —— IN CONTEXT —— -->
+      <section class="block" id="in-context">
+        <h2>In context</h2>
+        <p class="sec-note">Lockups inside real chrome — approve the composition, not just the glyph.</p>
+        <div class="grid">
+          <article class="card" data-id="ctx-nav-beta" data-label="Nav: wordmark + Beta + white CTA">
+            <div class="card-top">
+              <h3>Nav — wordmark + Beta + white CTA</h3>
+              <span class="meta">Website</span>
+            </div>
+            <div class="stage context">
+              <div class="nav-mock">
+                <div class="lock-beta">
+                  <span class="wm" style="font-size:1.2rem">aft<span>.</span>page</span>
+                  <span class="beta">Beta</span>
+                </div>
+                <div class="links"><span>MCP</span><span>Drop</span></div>
+                <span class="cta">Deploy an app</span>
+              </div>
+            </div>
+            <p class="note">Matches BRAND.md primary CTA language and Beta-beside-wordmark.</p>
+            <div class="vote"></div>
+          </article>
+
+          <article class="card" data-id="ctx-nav-mark" data-label="Nav: favicon mark + wordmark (same green)">
+            <div class="card-top">
+              <h3>Nav — favicon mark + wordmark</h3>
+              <span class="meta">App</span>
+            </div>
+            <div class="stage context">
+              <div class="nav-mock">
+                <div class="lock-mark">
+                  <span class="mark-a" aria-hidden="true"><span class="letter">a</span><span class="pulse"></span></span>
+                  <span class="wm wm-live" style="font-size:1.15rem">aft<span class="live">.</span>page</span>
+                </div>
+                <div class="links"><span>Projects</span><span>New</span></div>
+                <span class="cta">Deploy an app</span>
+              </div>
+            </div>
+            <p class="note">Same green on mark pulse + period. Only if C is approved.</p>
+            <div class="vote"></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- —— TOKENS —— -->
+      <section class="block" id="tokens">
+        <h2>Tokens</h2>
+        <p class="sec-note">Confirm the palette still feels like aft — not Vercel cosplay, not cream AI essay.</p>
+        <div class="grid">
+          <article class="card" data-id="tokens-core" data-label="Core token set (void / ink / good)">
+            <div class="card-top">
+              <h3>Core token set</h3>
+              <span class="meta shipped">BRAND.md</span>
+            </div>
+            <div class="stage" style="min-height:auto;padding:0.75rem;display:block">
+              <div class="swatches">
+                <div class="swatch"><div class="chip" style="background:#000"></div><div class="label">void #000</div></div>
+                <div class="swatch"><div class="chip" style="background:#0a0a0a"></div><div class="label">panel #0a0a0a</div></div>
+                <div class="swatch"><div class="chip" style="background:#fafafa"></div><div class="label">ink #fafafa</div></div>
+                <div class="swatch"><div class="chip" style="background:#22c55e"></div><div class="label">good #22c55e</div></div>
+                <div class="swatch"><div class="chip" style="background:#a1a1aa"></div><div class="label">quiet #a1a1aa</div></div>
+                <div class="swatch"><div class="chip" style="background:#27272a"></div><div class="label">line #27272a</div></div>
+                <div class="swatch"><div class="chip" style="background:#fff"></div><div class="label">cta #fff</div></div>
+                <div class="swatch"><div class="chip" style="background:#52525b"></div><div class="label">faint #52525b</div></div>
+              </div>
+            </div>
+            <p class="note">Green only for live/success. No beacon orange. No purple glow.</p>
+            <div class="vote"></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- —— TYPE & CTA —— -->
+      <section class="block" id="type-cta">
+        <h2>Type &amp; CTA</h2>
+        <p class="sec-note">Geist + white primary. Kill anything that feels website-builder.</p>
+        <div class="grid">
+          <article class="card" data-id="type-geist" data-label="Geist sans + mono stack">
+            <div class="card-top">
+              <h3>Geist sans + mono</h3>
+              <span class="meta shipped">Type</span>
+            </div>
+            <div class="pair">
+              <div class="stage">
+                <div class="type-stack">
+                  <p class="h">A cloud for small software.</p>
+                  <p class="b">Your agent made it. aft makes it live.</p>
+                  <p class="m">agent → deploy → live URL</p>
+                </div>
+              </div>
+              <div class="stage light">
+                <div class="type-stack">
+                  <p class="h">A cloud for small software.</p>
+                  <p class="b">Your agent made it. aft makes it live.</p>
+                  <p class="m">agent → deploy → live URL</p>
+                </div>
+              </div>
+            </div>
+            <p class="note">No Fraunces. No cream essay look on product chrome.</p>
+            <div class="vote"></div>
+          </article>
+
+          <article class="card" data-id="cta-pair" data-label="Primary white CTA + quiet secondary">
+            <div class="card-top">
+              <h3>CTA pair</h3>
+              <span class="meta shipped">Voice</span>
+            </div>
+            <div class="pair">
+              <div class="stage">
+                <div class="cta-row">
+                  <span class="btn-primary">Deploy an app</span>
+                  <span class="btn-secondary">See how it works</span>
+                </div>
+              </div>
+              <div class="stage light">
+                <div class="cta-row">
+                  <span class="btn-primary">Deploy an app</span>
+                  <span class="btn-secondary">See how it works</span>
+                </div>
+              </div>
+            </div>
+            <p class="note">Primary CTA from BRAND.md. Not “Start building” / “Create your website”.</p>
+            <div class="vote"></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- —— CHROME —— -->
+      <section class="block" id="chrome">
+        <h2>Chrome bits</h2>
+        <p class="sec-note">Small pieces that show up everywhere.</p>
+        <div class="grid">
+          <article class="card" data-id="chrome-status" data-label="Footer status pill → status.aft.page">
+            <div class="card-top">
+              <h3>Footer status pill</h3>
+              <span class="meta">Footer</span>
+            </div>
+            <div class="pair">
+              <div class="stage"><span class="status-pill"><i></i> All systems normal</span></div>
+              <div class="stage light"><span class="status-pill" style="color:#52525b;border-color:#d4d4d8"><i></i> All systems normal</span></div>
+            </div>
+            <p class="note">Links to status.aft.page. Green dot = live signal, not a logo.</p>
+            <div class="vote"></div>
+          </article>
+        </div>
+      </section>
+
+      <div id="export-panel">
+        <textarea id="export-text" readonly aria-label="Decision export"></textarea>
+      </div>
+
+      <p class="page-foot">
+        Source: <code>docs/BRAND.md</code> · Process: <code>docs/STRATEGY.md</code> § Visual review ·
+        Board: <code>www/brand-board.html</code> · Votes saved in this browser only
+        (<code>localStorage</code>).
+      </p>
+    </div>
+
+    <div class="dock" role="region" aria-label="Decision dock">
+      <div class="dock-inner">
+        <div class="dock-stats" id="dock-stats">
+          <span><b id="stat-total">0</b> options</span>
+          <span class="ok"><b id="stat-approve">0</b> approve</span>
+          <span class="no"><b id="stat-kill">0</b> kill</span>
+          <span><b id="stat-open">0</b> open</span>
+        </div>
+        <div class="dock-actions">
+          <button type="button" id="btn-clear">Clear votes</button>
+          <button type="button" id="btn-copy">Copy decisions</button>
+          <button type="button" class="primary" id="btn-export">Show export</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (() => {
+        const KEY = "aft.brand-board.votes.v1";
+        const cards = [...document.querySelectorAll(".card[data-id]")];
+
+        function load() {
+          try {
+            return JSON.parse(localStorage.getItem(KEY) || "{}");
+          } catch {
+            return {};
+          }
+        }
+
+        let votes = load();
+
+        function save() {
+          localStorage.setItem(KEY, JSON.stringify(votes));
+        }
+
+        function renderVoteBar(card) {
+          const mount = card.querySelector(".vote");
+          if (!mount || mount.dataset.ready) return;
+          mount.dataset.ready = "1";
+          mount.innerHTML = `
+            <button type="button" data-action="approve">Approve</button>
+            <button type="button" data-action="kill">Kill</button>
+            <button type="button" data-action="clear">Clear</button>
+          `;
+          mount.addEventListener("click", (e) => {
+            const btn = e.target.closest("button[data-action]");
+            if (!btn) return;
+            const id = card.dataset.id;
+            const action = btn.dataset.action;
+            if (action === "clear") delete votes[id];
+            else votes[id] = action;
+            save();
+            paint();
+          });
+        }
+
+        function paint() {
+          let approve = 0;
+          let kill = 0;
+          for (const card of cards) {
+            renderVoteBar(card);
+            const v = votes[card.dataset.id] || "";
+            card.dataset.vote = v;
+            for (const btn of card.querySelectorAll(".vote button[data-action]")) {
+              btn.setAttribute(
+                "aria-pressed",
+                btn.dataset.action === v ? "true" : "false"
+              );
+            }
+            if (v === "approve") approve++;
+            if (v === "kill") kill++;
+          }
+          const total = cards.length;
+          const open = total - approve - kill;
+          document.getElementById("stat-total").textContent = String(total);
+          document.getElementById("stat-approve").textContent = String(approve);
+          document.getElementById("stat-kill").textContent = String(kill);
+          document.getElementById("stat-open").textContent = String(open);
+          document.getElementById("export-text").value = buildExport();
+        }
+
+        function buildExport() {
+          const lines = [
+            "# aft.page brand board decisions",
+            "",
+            `Date: ${new Date().toISOString().slice(0, 10)}`,
+            `Board: www/brand-board.html`,
+            "",
+            "## Approve",
+          ];
+          const approved = cards.filter((c) => votes[c.dataset.id] === "approve");
+          const killed = cards.filter((c) => votes[c.dataset.id] === "kill");
+          const open = cards.filter((c) => !votes[c.dataset.id]);
+
+          if (approved.length === 0) lines.push("(none)");
+          else for (const c of approved) lines.push(`- [x] ${c.dataset.label} (\`${c.dataset.id}\`)`);
+
+          lines.push("", "## Kill");
+          if (killed.length === 0) lines.push("(none)");
+          else for (const c of killed) lines.push(`- [x] ${c.dataset.label} (\`${c.dataset.id}\`)`);
+
+          lines.push("", "## Still open");
+          if (open.length === 0) lines.push("(none)");
+          else for (const c of open) lines.push(`- [ ] ${c.dataset.label} (\`${c.dataset.id}\`)`);
+
+          lines.push(
+            "",
+            "## Next",
+            "Implement only Approve items in product chrome / BRAND.md.",
+            "Do not invent visuals outside this board without a new board revision."
+          );
+          return lines.join("\n");
+        }
+
+        document.getElementById("btn-clear").addEventListener("click", () => {
+          if (!confirm("Clear all votes on this board?")) return;
+          votes = {};
+          save();
+          paint();
+        });
+
+        document.getElementById("btn-export").addEventListener("click", () => {
+          const panel = document.getElementById("export-panel");
+          panel.classList.toggle("open");
+          document.getElementById("export-text").value = buildExport();
+        });
+
+        document.getElementById("btn-copy").addEventListener("click", async () => {
+          const text = buildExport();
+          document.getElementById("export-text").value = text;
+          document.getElementById("export-panel").classList.add("open");
+          try {
+            await navigator.clipboard.writeText(text);
+            const btn = document.getElementById("btn-copy");
+            const prev = btn.textContent;
+            btn.textContent = "Copied";
+            setTimeout(() => (btn.textContent = prev), 1200);
+          } catch {
+            document.getElementById("export-text").select();
+          }
+        });
+
+        paint();
+      })();
+    </script>
+  </body>
+</html>

@@ -1,40 +1,38 @@
 # aft.page MCP
 
-MCP server so **any agent** can deploy small software to a live `*.aft.page`
-URL — no account required.
+Thin MCP so **any agent** can deploy small software to a live `*.aft.page`
+URL — no account required. Not a control plane (see
+[`docs/ADR-MCP-THIN.md`](../../docs/ADR-MCP-THIN.md)).
 
-## Live docs (start here)
+## Prefer remote
 
-| Format | URL |
+| | |
 | --- | --- |
-| HTML | https://aft.page/mcp |
-| Markdown (agents) | https://aft.page/mcp.md |
-| Agent index | https://aft.page/llms.txt |
-| API | https://api.aft.page |
-| Health | https://api.aft.page/health |
+| URL | `https://mcp.aft.page/mcp` |
+| Tools | `deploy` · `aft_deploys` · `aft_rollback` · `aft_health` |
+| Docs | https://aft.page/mcp · https://aft.page/mcp.md |
 
-Those pages document tools, schemas, HTTP fallbacks, limits, slugs, and examples
-in full. Prefer linking agents to **`mcp.md`** or **`llms.txt`**.
+```json
+{
+  "mcpServers": {
+    "aft-page": {
+      "url": "https://mcp.aft.page/mcp"
+    }
+  }
+}
+```
 
-## Tools (summary)
+Worker implementation: [`../mcp-worker`](../mcp-worker/).
 
-| Tool | What it does |
-| --- | --- |
-| `deploy_html` | Publish one HTML document → `https://{slug}.aft.page` |
-| `deploy_files` | Publish multiple static files (SPA / `dist`) |
-| `aft_health` | Ping the API |
+## Local / advanced (this package)
 
-Also registers a prompt: `deploy_to_aft`.
-
-## Run locally
+stdio fallback for offline or patched use:
 
 ```bash
 cd apps/mcp
 npm install
-npm start   # stdio MCP server
+npm start
 ```
-
-## MCP host config
 
 ```json
 {
@@ -50,10 +48,4 @@ npm start   # stdio MCP server
 }
 ```
 
-Then reload the host. Ask:
-
-> Deploy this HTML to aft.page
-
-Optional env:
-
-- `AFT_API_BASE` — override API (default `https://api.aft.page`)
+Optional env: `AFT_API_BASE` (default `https://api.aft.page`).

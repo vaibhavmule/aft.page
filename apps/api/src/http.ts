@@ -1,4 +1,6 @@
 import type { Env } from "./env";
+import { RESERVED_SLUGS } from "./env";
+import { smokeSlugForCase } from "./site-url";
 
 export function json(
   data: unknown,
@@ -25,7 +27,7 @@ export function privateJson(
   });
 }
 
-/** True for apex aft.page, marketing localhost, or https://{slug}.aft.page. */
+/** True for apex aft.page, www localhost, or https://{slug}.aft.page. */
 export function isAllowedWebOrigin(origin: string | null): boolean {
   if (!origin) return false;
   if (
@@ -61,7 +63,10 @@ export function corsHeaders(
   } else {
     h.set("access-control-allow-origin", "*");
   }
-  h.set("access-control-allow-methods", "GET, POST, PATCH, DELETE, OPTIONS");
+  h.set(
+    "access-control-allow-methods",
+    "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+  );
   h.set(
     "access-control-allow-headers",
     "content-type, authorization, x-aft-client, x-aft-edit-token",
@@ -91,6 +96,22 @@ export function subdomainSlug(host: string, root: string): string | null {
   return sub.toLowerCase();
 }
 
+/**
+ * `{case}.test.{root}` → case id; `test.{root}` → "".
+ * One extra label past the zone wildcard — needs its own DNS + Worker route.
+ */
+export function testHostCase(host: string, root: string): string | null {
+  const h = host.toLowerCase();
+  const apex = `test.${root}`;
+  if (h === apex) return "";
+  const suffix = `.${apex}`;
+  if (!h.endsWith(suffix)) return null;
+  const left = h.slice(0, -suffix.length);
+  if (!left || left.includes(".")) return null;
+  if (!/^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/.test(left)) return null;
+  return left;
+}
+
 export function clientIp(request: Request): string {
   return request.headers.get("cf-connecting-ip") || "0.0.0.0";
 }
@@ -98,4 +119,36 @@ export function clientIp(request: Request): string {
 export function cookieDomain(env: Env): string {
   const root = env.ROOT_DOMAIN || "aft.page";
   return `.${root}`;
+}
+
+/**
+ * Tenant hosts share Domain=.aft.page session cookies. A credentialed call
+ * from https://{attacker}.aft.page must not act on another slug.
+ * No Origin/Referer = non-browser (curl, MCP, editToken header) — allow.
+ * Product hosts (apex, ops, preview, …) may act on any slug.
+ */
+export function originMayActOnSlug(
+  request: Request,
+  slug: string,
+  root: string,
+): boolean {
+  const raw = request.headers.get("origin") || request.headers.get("referer") || "";
+  if (!raw) return true;
+  let host: string;
+  try {
+    host = new URL(raw).hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+  if (host === "localhost" || host === "127.0.0.1") return true;
+  if (host === root) return true;
+  const testCase = testHostCase(host, root);
+  if (testCase !== null) {
+    return testCase !== "" && smokeSlugForCase(testCase) === slug;
+  }
+  if (!host.endsWith(`.${root}`)) return true;
+  const left = host.slice(0, -(root.length + 1));
+  if (!left || left.includes(".")) return false;
+  if (RESERVED_SLUGS.has(left)) return true;
+  return left === slug;
 }

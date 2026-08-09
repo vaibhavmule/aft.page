@@ -39,9 +39,24 @@ describe("editToken on deploy", () => {
   it("returns editToken on successful deploy", async () => {
     const res = await call(pasteHtml("<h1>Token</h1>", "token-test"));
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { editToken?: string; slug: string };
+    const body = (await res.json()) as {
+      editToken?: string;
+      slug: string;
+      url: string;
+      preview: string;
+      claimUrl?: string;
+      owned?: boolean;
+    };
     expect(body.editToken).toMatch(/^aft_edit_/);
     expect(body.slug).toBe("token-test");
+    expect(body.preview).toBe(
+      `${body.url}/?token=${encodeURIComponent(body.editToken!)}`,
+    );
+    expect(body.preview).not.toContain("/preview");
+    expect(body.claimUrl).toBe(
+      `https://aft.page/claim?slug=${body.slug}&token=${encodeURIComponent(body.editToken!)}`,
+    );
+    expect(body.owned).toBe(false);
   });
 });
 
@@ -128,7 +143,9 @@ describe("GET /v1/sites/{slug}", () => {
       visibility: string;
       url: string;
       manage: string;
+      views7d: number;
     };
+    expect(body.views7d).toBe(0);
     expect(body.owned).toBe(false);
     expect(body.owner).toBe(false);
     expect(body.visibility).toBe("public");
@@ -196,5 +213,26 @@ describe("claim/verify", () => {
       ),
     );
     expect(res.status).toBe(400);
+  });
+
+  it("lands on the live slug after a valid magic link", async () => {
+    const { createMagicLink } = await import("../src/auth");
+    const site = await deployPaste("<h1>verify live</h1>", "verify-live");
+    const { token } = await createMagicLink(
+      env,
+      site.slug,
+      "verify-live@example.com",
+    );
+    const res = await call(
+      new Request(
+        `${API_ORIGIN}/v1/claim/verify?token=${encodeURIComponent(token)}&slug=${site.slug}`,
+        { redirect: "manual" },
+      ),
+    );
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toBe(
+      `https://${site.slug}.aft.page/?claimed=1`,
+    );
+    expect(res.headers.get("set-cookie") || "").toContain("aft_session=");
   });
 });

@@ -3,10 +3,12 @@
 Phase 1 product telemetry via **Workers Analytics Engine**.
 
 Dataset: `aft_page_metrics`  
-Binding: `METRICS` on Worker `aft-page-api`
+Binding: `METRICS` on `aft-page-api` and `aft-page-mcp` (same dataset).
 
-Created by deploying the Worker with `analytics_engine_datasets` in `wrangler.jsonc`.
+Created by deploying the Workers with `analytics_engine_datasets` in `wrangler.jsonc`.
 If writes no-op, confirm the binding shows on the Worker in the dashboard.
+
+Founder UI: [ops.aft.page](https://ops.aft.page) — see [OPS.md](./OPS.md).
 
 ## Why
 
@@ -18,27 +20,32 @@ Instrument before more features. These numbers beat another feature:
 | Unique deployers | distinct `blob4` (hashed IP) — **approx** until claim |
 | Claims | `claim` — **0 until claim API** |
 | Redeploys | `redeploy` — **0 until update-same-slug** |
-| Public page views | `page_view` |
+| Public page views | `page_view` — HTML 200 only (not CSS/JS); path in `blob5`. KV `views:day:{utc}` for ops/hub counts |
+| Edge serves | `serve` — all statuses; country in `blob4`, bytes in `double2` |
 | MCP vs Web | `blob1` source on `deploy` |
-| Avg deploy time | avg `double1` (ms) on successful deploys |
+| **Time-to-URL** | `deploys.ms` on ops + AE `double1` (ms) on ok deploys. Daily number. [time-to-url.txt](../time-to-url.txt) |
 | Failed deploys | `deploy` where status ≠ `ok` |
 | Waitlist conversions | `waitlist` where status = `new` (duplicates are separate) |
+| Feedback | `feedback` (already shipped) |
+| MCP protocol hits | `mcp` from `aft-page-mcp` (`blob1` = JSON-RPC method) |
 
 ## Schema
 
 | Field | Alias | Values |
 | --- | --- | --- |
-| `index1` | event | `deploy`, `page_view`, `claim`, `redeploy`, `waitlist` |
-| `blob1` | source | `mcp`, `web`, `extension`, `curl`, `cli`, `other` |
+| `index1` | event | `deploy`, `page_view`, `serve`, `claim`, `redeploy`, `waitlist`, `feedback`, `mcp` |
+| `blob1` | source | `mcp`, `web`, `extension`, `curl`, `cli`, `other` — or MCP JSON-RPC method |
 | `blob2` | status | `ok`, or error code (`no_files`, `too_many_files`, …) |
-| `blob3` | slug | site slug when known |
+| `blob3` | slug | site slug when known — or MCP tool name |
 | `blob4` | deployer | first 16 hex of SHA-256(`aft.page:deployer:{cf-connecting-ip}`) |
+| `blob5` | path | failing file path (`bad_path`, `file_too_large`, …) |
+| `blob6` | request_id | `cf-ray` or generated `aft_…` |
 | `double1` | ms | deploy duration |
 | `double2` | bytes | payload bytes |
 | `double3` | files | file count |
 | `double4` | http_status | HTTP status |
 
-Clients send `X-Aft-Client: mcp|web|extension`. Curl without the header is inferred from User-Agent when possible.
+Clients send `X-Aft-Client: mcp|web|extension`. Remote MCP sends `mcp-remote`, stored as `mcp`. Curl without the header is inferred from User-Agent when possible.
 
 ## Query (SQL API)
 
@@ -114,6 +121,36 @@ GROUP BY error
 ORDER BY failures DESC
 ```
 
+### Failed deploys by file path
+
+```sql
+SELECT
+  blob5 AS path,
+  blob2 AS error,
+  count() AS failures
+FROM aft_page_metrics
+WHERE index1 = 'deploy' AND blob2 != 'ok' AND blob5 != ''
+  AND timestamp > NOW() - INTERVAL '7' DAY
+GROUP BY path, error
+ORDER BY failures DESC
+LIMIT 25
+```
+
+### MCP protocol volume
+
+```sql
+SELECT
+  blob1 AS method,
+  blob3 AS tool,
+  blob2 AS status,
+  count() AS n
+FROM aft_page_metrics
+WHERE index1 = 'mcp'
+  AND timestamp > NOW() - INTERVAL '7' DAY
+GROUP BY method, tool, status
+ORDER BY n DESC
+```
+
 ### Public page views / day
 
 ```sql
@@ -153,7 +190,8 @@ GROUP BY event
 
 ## Dashboard
 
-Cloudflare dashboard → Analytics & Logs → Workers Analytics Engine, or paste the SQL above into the SQL API.
+Founder: [ops.aft.page](https://ops.aft.page) (Time-to-URL + scoreboard + failures + retry).  
+Cloudflare → Analytics & Logs → Workers Analytics Engine, or paste the SQL above into the SQL API.
 
 Grafana: use the [Analytics Engine SQL datasource](https://developers.cloudflare.com/analytics/analytics-engine/grafana/) if you want a standing board.
 

@@ -42,6 +42,19 @@ describe("aft.json manifest", () => {
     const m = extractAftManifest(files);
     expect(m?.runtime).toBe("lattice-js");
   });
+
+  it("reads slug for first-hit allocate", () => {
+    const files = [
+      {
+        path: "aft.json",
+        contentType: "application/json",
+        bytes: new TextEncoder().encode(
+          JSON.stringify({ slug: "Discovra", runtime: "static" }),
+        ).buffer,
+      },
+    ];
+    expect(extractAftManifest(files)?.slug).toBe("discovra");
+  });
 });
 
 describe("site runtime row", () => {

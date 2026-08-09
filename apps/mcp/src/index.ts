@@ -2,13 +2,20 @@
 /**
  * aft.page MCP server — stdio transport for Cursor, Claude Desktop, etc.
  *
- * Tools call the public Worker API (https://api.aft.page). No account required
- * today; each deploy gets a unique *.aft.page URL.
+ * Tools call the public Worker API (https://api.aft.page). First deploy mints a
+ * slug + editToken; later deploys PATCH the same URL when edit_token is passed.
  */
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { DEFAULT_API, deployFiles, deployHtml, health } from "./client.js";
+import {
+  DEFAULT_API,
+  deployFiles,
+  filesFromDeployInput,
+  health,
+  listDeploys,
+  rollbackSite,
+} from "./client.js";
 
 /** Strip UI chrome accidentally scraped after </html> (extension "Deploy"). */
 function sanitizeHtmlDocument(text: string): string {
@@ -24,55 +31,95 @@ function sanitizeHtmlDocument(text: string): string {
   return t.trim();
 }
 
+const slugSchema = z
+  .string()
+  .regex(/^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$/);
+
+const editTokenSchema = z.string().min(1);
+
 const apiBase = process.env.AFT_API_BASE?.replace(/\/$/, "") || DEFAULT_API;
+
+function formatDeploy(result: {
+  url: string;
+  editToken: string;
+  slug: string;
+  deployId: string;
+  files: number;
+  claimUrl?: string;
+}): string {
+  const state = JSON.stringify({ slug: result.slug, editToken: result.editToken });
+  return [
+    `Live: ${result.url}`,
+    `Claim (give this to the human — email or Google): ${result.claimUrl || result.url}`,
+    `editToken: ${result.editToken} (keep secret — redeploy + claim + rollback)`,
+    `slug: ${result.slug}`,
+    `deploy: ${result.deployId}`,
+    `files: ${result.files}`,
+    `Persist: write .aft/state.json ${state} and gitignore .aft/`,
+    "Next deploy: pass this slug + edit_token → same URL, this deployId becomes rollback history.",
+    "Claim keeps this slug. Do not POST again without edit_token.",
+  ].join("\n");
+}
 
 const server = new McpServer({
   name: "aft-page",
-  version: "0.1.0",
+  version: "0.4.0",
 });
 
 server.registerTool(
-  "deploy_html",
+  "deploy",
   {
-    title: "Deploy HTML to aft.page",
+    title: "Deploy to aft.page",
     description:
-      "Publish a single HTML document (inline CSS/JS fine) to a live HTTPS URL on *.aft.page. " +
-      "No account required. If preferred_slug is taken, aft.page auto-suffixes (e.g. about-me-mist). " +
-      "Use this when the user asks to deploy, publish, host, or share a page/site they just built.",
+      "Publish to a live *.aft.page URL. Pass html (one page) OR files (built site). " +
+      "Plain HTML → html. Vite/React → npm run build, then files from dist/. " +
+      "Next static export → files from out/. Always include index.html. " +
+      "Never upload src/, node_modules, or .next/. " +
+      "First hit: preferred_slug from aft.json (include aft.json in files). " +
+      "Later: same slug + edit_token from .aft/state.json. " +
+      "Limits: 200 files, 10MB each, 50MB total.",
     inputSchema: {
       html: z
         .string()
         .min(1)
-        .describe("Full HTML document to publish (prefer <!DOCTYPE html>…</html>)"),
-      preferred_slug: z
-        .string()
-        .regex(/^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$/)
         .optional()
-        .describe(
-          "Optional URL slug hint from the page title (e.g. about-me). Never overwrites an existing site.",
-        ),
+        .describe("One HTML document. Ignored if files is set."),
+      files: z
+        .array(
+          z.object({
+            path: z
+              .string()
+              .min(1)
+              .describe("Relative path, e.g. index.html or assets/app.js"),
+            content: z.string().describe("UTF-8 text (or base64 if encoding=base64)"),
+            encoding: z.enum(["utf8", "base64"]).optional(),
+          }),
+        )
+        .min(1)
+        .max(200)
+        .optional(),
+      preferred_slug: slugSchema
+        .optional()
+        .describe("aft.json slug. Required with edit_token."),
+      edit_token: editTokenSchema
+        .optional()
+        .describe("From first deploy / .aft/state.json. Updates the same URL."),
     },
   },
-  async ({ html, preferred_slug }) => {
+  async ({ html, files, preferred_slug, edit_token }) => {
     try {
-      const result = await deployHtml(sanitizeHtmlDocument(html), {
+      const upload = filesFromDeployInput({ html, files }).map((f) =>
+        /\.html?$/i.test(f.path)
+          ? { ...f, content: sanitizeHtmlDocument(f.content), encoding: "utf8" as const }
+          : f,
+      );
+      const result = await deployFiles(upload, {
         slug: preferred_slug,
+        editToken: edit_token,
         apiBase,
       });
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: [
-              `Live: ${result.url}`,
-              `Manage/claim: https://aft.page/preview?url=${encodeURIComponent(result.url)}&token=${encodeURIComponent(result.editToken)}`,
-              `editToken: ${result.editToken} (keep secret — redeploy + claim)`,
-              `slug: ${result.slug}`,
-              `deploy: ${result.deployId}`,
-              `files: ${result.files}`,
-            ].join("\n"),
-          },
-        ],
+        content: [{ type: "text" as const, text: formatDeploy(result) }],
         structuredContent: result,
       };
     } catch (err) {
@@ -86,60 +133,64 @@ server.registerTool(
 );
 
 server.registerTool(
-  "deploy_files",
+  "aft_deploys",
   {
-    title: "Deploy static files to aft.page",
+    title: "List aft.page deploy history",
     description:
-      "Publish multiple static files (HTML/CSS/JS/assets) as one site on *.aft.page. " +
-      "Use for Vite/React SPA build output (dist/) or multi-file pages. Paths are relative " +
-      "(e.g. index.html, assets/app.js). Limits: 50 files, 2MB each, 5MB total.",
+      "List rollback-able deploys for a slug. Needs edit_token from .aft/state.json. " +
+      "Same history the project UI shows after claim.",
     inputSchema: {
-      files: z
-        .array(
-          z.object({
-            path: z
-              .string()
-              .min(1)
-              .describe("Relative path inside the site, e.g. index.html or assets/app.js"),
-            content: z.string().describe("File contents as UTF-8 text (or base64 if encoding=base64)"),
-            encoding: z
-              .enum(["utf8", "base64"])
-              .optional()
-              .describe("Defaults to utf8"),
-          }),
-        )
-        .min(1)
-        .max(50),
-      preferred_slug: z
-        .string()
-        .regex(/^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$/)
-        .optional()
-        .describe("Optional URL slug hint"),
+      slug: slugSchema.describe("Locked site slug"),
+      edit_token: editTokenSchema.describe("From .aft/state.json"),
     },
   },
-  async ({ files, preferred_slug }) => {
+  async ({ slug, edit_token }) => {
     try {
-      const cleaned = files.map((f) =>
-        /\.html?$/i.test(f.path)
-          ? { ...f, content: sanitizeHtmlDocument(f.content), encoding: "utf8" as const }
-          : f,
-      );
-      const result = await deployFiles(cleaned, {
-        slug: preferred_slug,
-        apiBase,
-      });
+      const result = await listDeploys(slug, edit_token, apiBase);
+      const lines = [
+        `slug: ${result.slug}`,
+        `live: ${result.currentDeployId}`,
+        ...result.deploys.map(
+          (d) =>
+            `${d.id}  ${d.createdAt}  ${d.source}  files=${d.fileCount}` +
+            (d.id === result.currentDeployId ? "  ← live" : ""),
+        ),
+      ];
+      return {
+        content: [{ type: "text" as const, text: lines.join("\n") }],
+        structuredContent: result,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        isError: true,
+        content: [{ type: "text" as const, text: `List deploys failed: ${message}` }],
+      };
+    }
+  },
+);
+
+server.registerTool(
+  "aft_rollback",
+  {
+    title: "Rollback aft.page site",
+    description:
+      "Point the live slug at a prior deployId from aft_deploys. Same URL. " +
+      "Needs edit_token. Claim not required.",
+    inputSchema: {
+      slug: slugSchema.describe("Locked site slug"),
+      edit_token: editTokenSchema.describe("From .aft/state.json"),
+      deploy_id: z.string().min(1).describe("Prior deployId from aft_deploys"),
+    },
+  },
+  async ({ slug, edit_token, deploy_id }) => {
+    try {
+      const result = await rollbackSite(slug, edit_token, deploy_id, apiBase);
       return {
         content: [
           {
             type: "text" as const,
-            text: [
-              `Live: ${result.url}`,
-              `Manage/claim: https://aft.page/preview?url=${encodeURIComponent(result.url)}&token=${encodeURIComponent(result.editToken)}`,
-              `editToken: ${result.editToken} (keep secret — redeploy + claim)`,
-              `slug: ${result.slug}`,
-              `deploy: ${result.deployId}`,
-              `files: ${result.files}`,
-            ].join("\n"),
+            text: `Rolled back ${result.slug} → ${result.deployId}\nLive: ${result.url}`,
           },
         ],
         structuredContent: result,
@@ -148,7 +199,7 @@ server.registerTool(
       const message = err instanceof Error ? err.message : String(err);
       return {
         isError: true,
-        content: [{ type: "text" as const, text: `Deploy failed: ${message}` }],
+        content: [{ type: "text" as const, text: `Rollback failed: ${message}` }],
       };
     }
   },
@@ -206,9 +257,15 @@ server.registerPrompt(
             "Deploy this small software to aft.page using the MCP tools.",
             "",
             "Rules:",
-            "- Prefer deploy_html for a single HTML document with inline CSS/JS.",
-            "- Prefer deploy_files for multiple files or a static SPA (include index.html).",
-            "- Pass preferred_slug from <title> or a short project name when sensible.",
+            "- Detect first: plain HTML vs JS app (Vite/React/Next).",
+            "- If aft.json exists, obey slug/build/output.",
+            "- If .aft/state.json exists, pass its slug + editToken — same URL, new history row.",
+            "- Call deploy once: html for one page, or files for a built folder.",
+            "- Vite/React/Vue → npm run build, then deploy files from dist/ only.",
+            "- Next static export → npm run build, then deploy files from out/.",
+            "- Never upload src/, node_modules, or .next/.",
+            "- After first deploy, write .aft/state.json and gitignore .aft/.",
+            "- Rollback: aft_deploys then aft_rollback. Claim does not change the slug.",
             "- Return the live HTTPS URL to the user — that is the deliverable.",
             "- Do not ask them to open Vercel, GitHub, or create an account.",
             html_or_files ? `\nContext: ${html_or_files}` : "",

@@ -1,0 +1,129 @@
+aft.page — finance (cash out so far)
+Updated: 2026-08-08
+
+Internal ledger for what we have actually spent standing up aft.
+Fill amounts marked TBD from Cloudflare billing email / Google invoice / card.
+Currency as charged. Rough INR ≈ ₹87 / USD when converting (update if needed).
+
+===============================================================================
+SPEND TO DATE
+===============================================================================
+
+--- Domains (Cloudflare Registrar, at-cost) ---
+
+  aft.page     registered 2026-07-26 · expires 2027-07-26 · auto-renew ON
+               ~$10.20 / yr  (current .page wholesale; confirm receipt)
+               ≈ ₹890
+
+  tryaft.com   registered 2026-08-08 · expires 2027-08-08 · auto-renew ON
+               ~$10.46 / yr  (current .com wholesale; confirm receipt)
+               ≈ ₹910
+
+  Domains subtotal (first year)     ~$20.66   ≈ ₹1,800
+
+--- Email / Google Workspace ---
+
+  Prior: Zoho Mail on aft.page (switched off 2026-08-08 when MX → Google)
+         Cost while live: TBD (often free trial / cheap seat — check Zoho bill)
+
+  Now:   Google Workspace on aft.page (admin console live 2026-08-08)
+         Status: NO-COST TRIAL — 13 days left as of 2026-08-08
+         Users: 1 seat used · 0/1 licences remaining
+         Billing: "prepayment is pending" — DO NOT complete yet
+         Cash spent on Workspace so far: ₹0 / $0
+         Why we set it up: dogfood share-like-a-Doc + Workspace SSO later
+
+         Action while trial is open:
+         1. Do NOT finish the one-time prepayment / start paid sub yet
+         2. Apply Google for Startups Cloud Program first (see below)
+         3. Only pay if Startups free Workspace benefit is denied or times out
+
+--- Google Cloud (for Startups credits deposit) ---
+
+  Account: hello@aft.page
+  Project: My First Project · fluid-axis-504905-f6
+  Billing ID: 019607-8440EC-494323
+  Console: https://console.cloud.google.com/welcome/new?project=fluid-axis-504905-f6
+
+  2026-08-08  Google Cloud  019607-8440EC-494323
+              UPI QR · ₹1,000.00  India free-trial prepayment
+              This is account credit (usage + $300 trial), not Workspace.
+
+  Status: prepaid. Credit can take up to 24h to show. Not a Workspace charge.
+
+--- Cloudflare platform (Workers / Pages / R2 / etc.) ---
+
+  Usage so far: expected $0 (free tier / unpaid bill). Confirm dashboard.
+  Paid Workers / Workers Paid / R2 / AI: $0 unless a bill shows otherwise.
+
+--- Other aft-adjacent (add when real) ---
+
+  Cursor / LLM / tooling charged to personal: NOT counted here unless you
+  decide to attribute a monthly slice. Keep product infra separate from
+  founder tooling unless you want a true all-in burn.
+
+-------------------------------------------------------------------------------
+KNOWN CASH OUT                         domains ~₹1,800 + GCP prepaid ₹1,000
+                                       ≈ ₹2,800  · Workspace still ₹0 (trial)
+RUNNING MONTHLY                        $0 until Workspace paid or CF usage bills
+-------------------------------------------------------------------------------
+
+===============================================================================
+CREDITS / PROGRAMS — LESSON + NEXT
+===============================================================================
+
+1) Google for Startups Cloud Program  — STILL IN TIME (trial = not paid)
+
+   Felt "too early" starting Workspace before Startups — but Admin shows:
+   no-cost trial, prepayment pending, not a paid subscription yet. That matters.
+
+   Eligible startups can get:
+   - Google Cloud credits (pre-funded Start tier up to ~$2k; funded much more)
+   - Often **12 months Google Workspace Business Plus free** for new signups
+
+   Catch (Google’s terms): domain must NOT have been on a *paid* Workspace plan
+   from within ~31 days of applying → day you request the benefit.
+   Trial / unpaid ≠ paid. Completing prepayment can burn the free year.
+
+   Status (2026-08-08): SUBMITTED. Thank-you page confirmed.
+   Billing ID on form: 019607-8440EC-494323
+   Expect reply in 3–5 business days (new billing accounts can take +7–10).
+   If approved: credits land on that billing ID; then request Workspace
+   Business Plus free year (second form in welcome email).
+
+   Until then: leave Workspace on no-cost trial. Do not complete Workspace
+   prepayment. Only pay India Base/Starter if Startups denies the perk.
+
+   If Startups rejects Workspace perk: keep cheap India seats; Cloud credits
+   still useful later (not required for our CF stack).
+
+2) Cloudflare for Startups + Workers Launchpad  — TAKING SOON
+
+   Cloudflare for Startups: usage credits tiers ($5k → $25k → $100k → $250k)
+   depending on stage / funding / partners.
+   Bootstrapped path often uses promo / lower tier — apply even pre-raise.
+
+   Workers Launchpad: cohort + VC intros + Demo Day; Launchpad orgs can land
+   the top credit tier. We will apply when the next cohort window is open.
+   Links:
+     https://www.cloudflare.com/forstartups/
+     https://www.cloudflare.com/lp/workers-launchpad/
+
+   Status: NOT applied yet. Do before paid Workers usage matters.
+
+===============================================================================
+HOW TO UPDATE THIS FILE
+===============================================================================
+
+When a receipt lands:
+  - Add one line under the right section: date · vendor · amount · what
+  - Bump "Updated:" at the top
+  - Recompute "KNOWN CASH OUT"
+
+Sources of truth:
+  - Cloudflare: Billing emails / dashboard (domains + Workers)
+  - Google Cloud: console billing for 019607-8440EC-494323
+  - Google Workspace: admin.google.com → Billing
+  - Card statement if merchant = CLOUDFLARE / GOOGLE*WORKSPACE
+
+Do not invent precision. Prefer TBD over a wrong number.

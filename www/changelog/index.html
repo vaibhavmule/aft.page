@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Changelog — aft.page</title>
+    <meta
+      name="description"
+      content="What shipped on aft.page — deploys, agents, sharing, and the platform underneath."
+    />
+    <link rel="canonical" href="https://aft.page/changelog" />
+    <link rel="alternate" type="text/markdown" href="https://aft.page/changelog.md" title="Changelog (Markdown)" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#000000" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="aft.page" />
+    <meta property="og:title" content="Changelog — aft.page" />
+    <meta
+      property="og:description"
+      content="What shipped on aft.page — deploys, agents, sharing, and the platform underneath."
+    />
+    <meta property="og:url" content="https://aft.page/changelog" />
+    <meta property="og:image" content="https://aft.page/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Changelog — aft.page" />
+    <meta
+      name="twitter:description"
+      content="What shipped on aft.page, by day."
+    />
+    <meta name="twitter:image" content="https://aft.page/og.png" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/mark.css?v=3" />
+  </head>
+  <body>
+    <div class="site">
+      <nav class="topnav" aria-label="Primary">
+        <div class="topnav-brand-wrap">
+          <a class="topnav-brand" href="/">aft<span>.</span>page</a>
+          <span class="nav-beta">Beta</span>
+        </div>
+        <div class="topnav-links">
+          <a href="/#product">Product</a>
+          <div class="nav-mega" data-nav-mega>
+            <button type="button" class="nav-mega-trigger" aria-expanded="false" aria-controls="nav-agents-panel-changelog" id="nav-agents-trigger-changelog">
+              Agents
+              <svg class="nav-mega-chevron" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="nav-mega-panel" id="nav-agents-panel-changelog" role="region" aria-label="Agents menu" hidden>
+              <div class="nav-mega-col">
+                <p class="nav-mega-label">Get started</p>
+                <a href="/docs">
+                  <span class="nav-mega-title">Documentation</span>
+                  <span class="nav-mega-desc">What we support, deploy, secrets.</span>
+                </a>
+                <a href="/drop">
+                  <span class="nav-mega-title">Drop files</span>
+                  <span class="nav-mega-desc">Folder or zip → live URL.</span>
+                </a>
+              </div>
+              <div class="nav-mega-col nav-mega-list">
+                <p class="nav-mega-label">Integrations</p>
+                <a href="/with/claude/">Claude Code</a>
+                <a href="/with/codex/">Codex</a>
+                <a href="/with/cursor/">Cursor</a>
+                <a href="/with/openclaw/">OpenClaw</a>
+                <a href="/with/replit/">Replit</a>
+                <a href="/with/lovable/">Lovable</a>
+                <a href="/with/vercel/">Vercel</a>
+                <a href="/with/windsurf/">Windsurf</a>
+                <a href="/with/hermes/">Hermes</a>
+                <a href="/with/kilo/">Kilo</a>
+                <a href="/with/aws/">AWS</a>
+                <a href="/with/chatgpt/">ChatGPT</a>
+                <a href="/with/api/">API</a>
+              </div>
+            </div>
+          </div>
+          <a href="/docs">Docs</a>
+          <a href="/login" data-aft-auth="login">Log in</a>
+          <a class="topnav-cta" href="/drop">Drop files</a>
+        </div>
+      </nav>
+
+      <main class="changelog">
+        <header class="changelog-hero">
+          <h1>Changelog</h1>
+          <div class="changelog-toolbar">
+            <div class="changelog-filters" role="group" aria-label="Filter by category">
+              <button type="button" data-filter="all" aria-pressed="true">All</button>
+              <button type="button" data-filter="product" aria-pressed="false">Product</button>
+              <button type="button" data-filter="agents" aria-pressed="false">Agents</button>
+              <button type="button" data-filter="platform" aria-pressed="false">Platform</button>
+            </div>
+            <a class="changelog-md" href="https://api.aft.page/v1/changelog.md">Read as Markdown</a>
+          </div>
+        </header>
+
+        <div class="changelog-feed" data-changelog-feed>
+          <p class="changelog-status">Loading…</p>
+        </div>
+      </main>
+
+      <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-meta">
+          <a class="footer-status" href="https://status.aft.page">
+            <span class="status-dot" aria-hidden="true"></span>
+            All systems operational
+          </a>
+          <p class="footer-copy">© 2026 aft.page</p>
+        </div>
+        <div class="footer-top">
+          <div class="footer-brand-block">
+            <a class="footer-mark" href="/" aria-label="aft.page home">
+              <span class="footer-wordmark">aft<span class="sq" aria-hidden="true"></span>page</span>
+            </a>
+            <p class="footer-tagline">
+              Your agent made the app. aft makes it real.<br />
+              Live links. Invite teammates. Clear ownership.
+            </p>
+          </div>
+          <div class="footer-cols">
+            <div class="footer-col">
+              <h3>Product</h3>
+              <a href="/docs">Docs</a>
+              <a href="/drop">Drop</a>
+              <a href="/projects">Projects</a>
+              <a href="/preview">Preview</a>
+            </div>
+            <div class="footer-col">
+              <h3>Agents</h3>
+              <a href="/mcp">MCP</a>
+              <a href="/with/claude/">Claude Code</a>
+              <a href="/with/cursor/">Cursor</a>
+              <a href="/with/codex/">Codex</a>
+              <a href="/with/chatgpt/">ChatGPT</a>
+              <a href="/with/kilo/">Kilo</a>
+              <a href="/with/windsurf/">Windsurf</a>
+              <a href="/with/api/">API</a>
+            </div>
+            <div class="footer-col">
+              <h3>Company</h3>
+              <a href="https://status.aft.page">Status</a>
+              <a href="#feedback" data-aft-feedback>Feedback</a>
+              <a href="mailto:hello@aft.page">Contact</a>
+              <a href="/privacy/">Privacy</a>
+              <a href="/terms/">Terms</a>
+              <a href="/cookies/">Cookies</a>
+            </div>
+          </div>
+        </div>
+        <div class="footer-giant-wrap" aria-hidden="true">
+          <p class="footer-giant">aft<span class="sq" aria-hidden="true"></span></p>
+        </div>
+      </div>
+    </footer>
+    </div>
+    <script src="/auth-me.js" defer></script>
+    <script src="/agents-nav.js" defer></script>
+    <script src="/auth-nav.js" defer></script>
+    <script src="/summarize.js" defer></script>
+    <script src="/footer.js?v=20260809-cl" defer></script>
+    <script src="/feedback.js?v=20260808-footer" defer></script>
+    <script>
+      (function () {
+        var API = "https://api.aft.page/v1/changelog";
+        var feed = document.querySelector("[data-changelog-feed]");
+        var filters = document.querySelector(".changelog-filters");
+        if (!feed || !filters) return;
+
+        function esc(s) {
+          return String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/"/g, "&quot;");
+        }
+
+        function dayLabels(day) {
+          var p = day.split("-");
+          var dt = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+          var opts = { day: "numeric", timeZone: "UTC" };
+          return {
+            long: new Intl.DateTimeFormat("en-GB", Object.assign({ month: "long" }, opts)).format(dt),
+            short: new Intl.DateTimeFormat("en-GB", Object.assign({ month: "short" }, opts)).format(dt),
+          };
+        }
+
+        function render(entries) {
+          entries = entries.filter(function (e) {
+            return (
+              /^[a-z0-9-]+$/.test(e.id) &&
+              /^\d{4}-\d{2}-\d{2}$/.test(e.day) &&
+              /^(product|agents|platform)$/.test(e.category)
+            );
+          });
+          if (!entries.length) {
+            feed.innerHTML = '<p class="changelog-status">Nothing shipped yet.</p>';
+            return;
+          }
+          var days = [];
+          var byDay = {};
+          entries.forEach(function (e) {
+            if (!byDay[e.day]) {
+              byDay[e.day] = [];
+              days.push(e.day);
+            }
+            byDay[e.day].push(e);
+          });
+          feed.innerHTML = days
+            .map(function (day) {
+              var lab = dayLabels(day);
+              var items = byDay[day]
+                .map(function (e) {
+                  return (
+                    '<article id="' +
+                    e.id +
+                    '" data-cat="' +
+                    e.category +
+                    '"><h2><a href="#' +
+                    e.id +
+                    '">' +
+                    esc(e.title) +
+                    "</a></h2><p>" +
+                    e.html +
+                    "</p></article>"
+                  );
+                })
+                .join("");
+              return (
+                '<section class="changelog-day" aria-labelledby="day-' +
+                day +
+                '"><div class="changelog-date"><time datetime="' +
+                day +
+                '" id="day-' +
+                day +
+                '"><span class="changelog-date-full">' +
+                lab.long +
+                '</span><span class="changelog-date-short">' +
+                lab.short +
+                '</span></time></div><div class="changelog-items">' +
+                items +
+                "</div></section>"
+              );
+            })
+            .join("");
+        }
+
+        function applyFilter(f) {
+          feed.querySelectorAll(".changelog-items article").forEach(function (el) {
+            el.hidden = f !== "all" && el.getAttribute("data-cat") !== f;
+          });
+          feed.querySelectorAll(".changelog-day").forEach(function (day) {
+            day.hidden = !day.querySelector("article:not([hidden])");
+          });
+        }
+
+        filters.addEventListener("click", function (e) {
+          var btn = e.target.closest("[data-filter]");
+          if (!btn) return;
+          var f = btn.getAttribute("data-filter");
+          filters.querySelectorAll("[data-filter]").forEach(function (b) {
+            b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+          });
+          applyFilter(f);
+        });
+
+        fetch(API)
+          .then(function (r) {
+            if (!r.ok) throw new Error(String(r.status));
+            return r.json();
+          })
+          .then(function (data) {
+            render(Array.isArray(data.entries) ? data.entries : []);
+            var on = filters.querySelector('[aria-pressed="true"]');
+            applyFilter(on ? on.getAttribute("data-filter") : "all");
+          })
+          .catch(function () {
+            feed.innerHTML = '<p class="changelog-status">Could not load changelog.</p>';
+          });
+      })();
+    </script>
+  </body>
+</html>

@@ -59,7 +59,7 @@ describe("ensureDefaultOgMeta", () => {
 });
 
 describe("helpers", () => {
-  it("builds the marketing OG image URL", () => {
+  it("builds the website OG image URL", () => {
     expect(defaultOgImageUrl("aft.page")).toBe("https://aft.page/og.png");
   });
 

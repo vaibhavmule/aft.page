@@ -9,6 +9,7 @@
   },
   "scripts": {
     "start": "tsx src/index.ts",
+    "check": "tsx src/client.check.ts",
     "typecheck": "tsc --noEmit"
   },
   "engines": {

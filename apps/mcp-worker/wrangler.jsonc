@@ -1,0 +1,42 @@
+/**
+ * aft.page remote MCP — thin deploy adapter (ADR-MCP-THIN).
+ * Stateless createMcpHandler; calls aft-page-api over a service binding.
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "aft-page-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": true,
+      "persist": true,
+      "head_sampling_rate": 1
+    }
+  },
+  "vars": {
+    "AFT_API_BASE": "https://api.aft.page"
+  },
+  "analytics_engine_datasets": [
+    {
+      "binding": "METRICS",
+      "dataset": "aft_page_metrics"
+    }
+  ],
+  "services": [
+    {
+      "binding": "API",
+      "service": "aft-page-api"
+    }
+  ]
+}

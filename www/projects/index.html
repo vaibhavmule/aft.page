@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Projects — aft.page</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css"
+    />
+    <link rel="stylesheet" href="/app.css" />
+    <style>
+      main { max-width: 48rem; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1.25rem;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .toolbar .meta {
+        margin-left: 0;
+        order: -1;
+        flex: 1 1 auto;
+      }
+      .head-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+      }
+      .head-row h1 { margin: 0; flex: 1 1 auto; }
+      .head-row .btn { margin-left: auto; }
+      th.actions-col, td.actions { width: 2.5rem; text-align: right; }
+      .meta {
+        margin-left: auto;
+        font-size: 0.82rem;
+        color: var(--quiet);
+      }
+      .actions { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+      tbody tr {
+        opacity: 0;
+        animation: app-fade-up 0.32s ease forwards;
+      }
+      tbody tr:nth-child(1) { animation-delay: 0.02s; }
+      tbody tr:nth-child(2) { animation-delay: 0.05s; }
+      tbody tr:nth-child(3) { animation-delay: 0.08s; }
+      tbody tr:nth-child(4) { animation-delay: 0.11s; }
+      tbody tr:nth-child(5) { animation-delay: 0.14s; }
+      tbody tr:nth-child(n + 6) { animation-delay: 0.17s; }
+      .who {
+        font-size: 0.85rem;
+        color: var(--quiet);
+        margin-bottom: 0.75rem;
+        animation: app-fade-up 0.28s ease both;
+      }
+      .pager {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.65rem;
+        margin-top: 1rem;
+        padding-top: 0.85rem;
+        border-top: 1px solid var(--line);
+      }
+      .pager-status {
+        font-size: 0.82rem;
+        color: var(--quiet);
+        margin-right: auto;
+      }
+      .pager-btns { display: flex; gap: 0.4rem; }
+      a.btn, button.btn { font-size: 0.78rem; padding: 0.3rem 0.55rem; }
+      .menu-panel button.menuitem {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 0.5rem 0.7rem;
+        border-radius: 4px;
+        background: transparent;
+        border: 0;
+        font: inherit;
+        font-size: 0.85rem;
+        font-weight: 550;
+        cursor: pointer;
+      }
+      .menu-panel button.menuitem:hover {
+        background: color-mix(in srgb, var(--ink) 8%, transparent);
+      }
+      .menu-panel .menu-sep {
+        height: 1px;
+        margin: 0.3rem 0;
+        background: var(--line);
+      }
+      .menu-panel button.danger { color: var(--danger); }
+      .pill.inactive { border-color: var(--warn); color: var(--warn); }
+      .name-row {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+      }
+      .empty-lead { margin: 0 0 0.85rem; color: var(--ink); font-weight: 600; }
+      .empty .primary { margin-top: 0; }
+      .empty-curl {
+        margin: 1rem 0 0;
+        padding: 0.75rem 0.85rem;
+        border-radius: 0.4rem;
+        background: #050505;
+        border: 1px solid var(--line);
+        overflow-x: auto;
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        line-height: 1.45;
+        color: var(--ink);
+      }
+      .empty-curl code { font-size: inherit; }
+      .empty-more {
+        margin: 0.9rem 0 0;
+        font-size: 0.85rem;
+      }
+      .empty-more a { color: var(--ink); }
+      .section-label {
+        font-size: 0.78rem;
+        font-weight: 650;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--quiet);
+        margin: 0 0 0.5rem;
+      }
+      #shared { scroll-margin-top: 1.25rem; }
+      #shared[hidden] + #list { margin-top: 0; }
+      #list { margin-top: 1.75rem; }
+      #meta a { color: inherit; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a href="/">aft<span>.</span>page</a>
+      <div class="nav-right">
+        <a href="/projects" aria-current="page">Projects</a>
+        <a href="/mcp">MCP</a>
+        <a href="/login" data-aft-auth="login">Log in</a>
+      </div>
+    </header>
+    <main>
+      <div class="head-row">
+        <h1>Projects</h1>
+        <a class="btn" id="new-project" href="/projects/new/" hidden>New project</a>
+      </div>
+      <div class="toolbar" id="toolbar" hidden>
+        <span class="meta" id="meta"></span>
+      </div>
+      <div class="loading" id="loading" aria-busy="true" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        <div>
+          <div>Loading projects…</div>
+          <div class="skeleton-list" aria-hidden="true">
+            <div class="skeleton-row"></div>
+            <div class="skeleton-row"></div>
+            <div class="skeleton-row"></div>
+          </div>
+        </div>
+      </div>
+      <div class="login" id="login" hidden>
+        <p>Sign in to see your projects.</p>
+        <a class="primary" href="/login">Log in</a>
+        <p style="margin: 0.85rem 0 0; font-size: 0.88rem">
+          Or claim on the live <code>*.aft.page</code> URL after deploy.
+        </p>
+      </div>
+      <div class="empty" id="empty" hidden>
+        <p class="empty-lead">No projects yet.</p>
+        <a class="primary" href="/projects/new/">Drop files</a>
+        <pre class="empty-curl"><code>curl -X POST https://api.aft.page/v1/deploy \
+  -H 'Content-Type: text/html' \
+  --data '&lt;h1&gt;hello&lt;/h1&gt;'</code></pre>
+        <p class="empty-more">
+          <a href="/docs">Docs</a>
+          ·
+          <a href="/mcp">MCP</a>
+          · after curl, claim on the live URL
+        </p>
+      </div>
+      <div id="shared" hidden>
+        <h2 class="section-label">Shared with me</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Project</th>
+              <th>Visibility</th>
+              <th>Owner</th>
+              <th>Access</th>
+              <th class="actions-col"></th>
+            </tr>
+          </thead>
+          <tbody id="shared-tbody"></tbody>
+        </table>
+      </div>
+      <div id="list" hidden>
+        <h2 class="section-label" id="owned-heading" hidden>Your projects</h2>
+        <table id="table">
+          <thead>
+            <tr>
+              <th>Project</th>
+              <th>Visibility</th>
+              <th>Last used</th>
+              <th class="actions-col"></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="pager" id="pager" hidden>
+          <span class="pager-status" id="pager-status"></span>
+          <div class="pager-btns">
+            <button type="button" class="btn ghost" id="prev" disabled>Previous</button>
+            <button type="button" class="btn ghost" id="next" disabled>Next</button>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script>
+      const API = "https://api.aft.page";
+      const PAGE_SIZE = 20;
+      /** Soft TTL for client cache — revalidate in background after this. */
+      const CACHE_TTL_MS = 60_000;
+      const CACHE_KEY = "aft.projects.sites.v2";
+      const login = document.getElementById("login");
+      const empty = document.getElementById("empty");
+      const list = document.getElementById("list");
+      const tbody = document.getElementById("tbody");
+      const sharedEl = document.getElementById("shared");
+      const sharedTbody = document.getElementById("shared-tbody");
+      const ownedHeading = document.getElementById("owned-heading");
+      const toolbar = document.getElementById("toolbar");
+      const loading = document.getElementById("loading");
+      const meta = document.getElementById("meta");
+      const newProject = document.getElementById("new-project");
+      const pager = document.getElementById("pager");
+      const pagerStatus = document.getElementById("pager-status");
+      const prevBtn = document.getElementById("prev");
+      const nextBtn = document.getElementById("next");
+
+      /** @type {Map<number, { data: object, at: number }>} */
+      const memoryCache = new Map();
+      let page = Math.max(
+        1,
+        Number(new URLSearchParams(location.search).get("page") || "1") || 1,
+      );
+      let loadGen = 0;
+      /** @type {Set<number>} */
+      const inflightPrefetch = new Set();
+      let openMenu = null;
+      /** @type {HTMLElement | null} */
+      let openPanel = null;
+
+      function closeMenus() {
+        if (openMenu) {
+          const b = openMenu.querySelector(".menu-btn");
+          if (b) b.setAttribute("aria-expanded", "false");
+          openMenu = null;
+        }
+        if (openPanel) {
+          openPanel.classList.remove("open");
+          openPanel.remove();
+          openPanel = null;
+        }
+      }
+
+      function openActionsMenu(btn, links) {
+        closeMenus();
+        const panel = document.createElement("div");
+        panel.className = "menu-panel open";
+        panel.setAttribute("role", "menu");
+        panel.innerHTML = links;
+        document.body.appendChild(panel);
+
+        const r = btn.getBoundingClientRect();
+        const gap = 6;
+        const pad = 8;
+        // Measure after paint so width/height are real
+        const pr = panel.getBoundingClientRect();
+        let top = r.bottom + gap;
+        let left = r.right - pr.width;
+        if (left < pad) left = pad;
+        if (left + pr.width > window.innerWidth - pad) {
+          left = Math.max(pad, window.innerWidth - pad - pr.width);
+        }
+        if (top + pr.height > window.innerHeight - pad) {
+          top = Math.max(pad, r.top - pr.height - gap);
+        }
+        panel.style.top = `${top}px`;
+        panel.style.left = `${left}px`;
+
+        btn.setAttribute("aria-expanded", "true");
+        openMenu = btn.closest(".menu");
+        openPanel = panel;
+        panel.addEventListener("click", (e) => e.stopPropagation());
+      }
+
+      document.addEventListener("click", closeMenus);
+      window.addEventListener("resize", closeMenus);
+      window.addEventListener("scroll", closeMenus, true);
+
+      function reveal(el) {
+        el.hidden = false;
+        el.classList.add("fade-in");
+      }
+
+      function setUrlPage(p) {
+        const url = new URL(location.href);
+        if (p <= 1) url.searchParams.delete("page");
+        else url.searchParams.set("page", String(p));
+        history.replaceState(null, "", url.pathname + url.search);
+      }
+
+      function readSessionCache() {
+        try {
+          const raw = sessionStorage.getItem(CACHE_KEY);
+          if (!raw) return;
+          const parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== "object") return;
+          for (const [k, v] of Object.entries(parsed)) {
+            const p = Number(k);
+            if (!Number.isFinite(p) || !v?.data || !v?.at) continue;
+            memoryCache.set(p, v);
+          }
+        } catch (_) {
+          /* ignore quota / parse */
+        }
+      }
+
+      function writeSessionCache() {
+        try {
+          const out = {};
+          for (const [p, entry] of memoryCache) {
+            out[String(p)] = entry;
+          }
+          sessionStorage.setItem(CACHE_KEY, JSON.stringify(out));
+        } catch (_) {
+          /* ignore quota */
+        }
+      }
+
+      function getCached(p) {
+        return memoryCache.get(p) || null;
+      }
+
+      function setCached(p, data) {
+        memoryCache.set(p, { data, at: Date.now() });
+        writeSessionCache();
+      }
+
+      function clearCache() {
+        memoryCache.clear();
+        try {
+          sessionStorage.removeItem(CACHE_KEY);
+        } catch (_) {
+          /* ignore */
+        }
+      }
+
+      function isFresh(entry) {
+        return entry && Date.now() - entry.at < CACHE_TTL_MS;
+      }
+
+      function renderRows(sites) {
+        tbody.replaceChildren();
+        closeMenus();
+        for (const s of sites) {
+          const tr = document.createElement("tr");
+          const last = s.lastServedAt
+            ? new Date(s.lastServedAt).toLocaleString()
+            : "—";
+          const live = s.url || `https://${s.slug}.aft.page`;
+          const manage = `/project/?slug=${encodeURIComponent(s.slug)}`;
+          const isActive = s.active !== false;
+
+          const nameTd = document.createElement("td");
+          nameTd.innerHTML = `
+            <div class="name-row">
+              <a href="${manage}" style="color:inherit;text-decoration:none">
+                <strong>${s.slug}</strong>
+              </a>
+              ${isActive ? "" : '<span class="pill inactive">Inactive</span>'}
+            </div>
+            <div style="font-size:0.78rem;color:var(--quiet);margin-top:0.2rem">
+              <code>${(s.deployId || "").slice(0, 12)}</code>
+            </div>`;
+
+          const visTd = document.createElement("td");
+          visTd.innerHTML = `<span class="pill ${s.visibility === "private" ? "private" : ""}">${s.visibility}</span>`;
+
+          const lastTd = document.createElement("td");
+          lastTd.textContent = last;
+
+          const actTd = document.createElement("td");
+          actTd.className = "actions";
+          const menu = document.createElement("div");
+          menu.className = "menu";
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "menu-btn";
+          btn.setAttribute("aria-label", `Actions for ${s.slug}`);
+          btn.setAttribute("aria-haspopup", "menu");
+          btn.setAttribute("aria-expanded", "false");
+          btn.textContent = "⋯";
+          const links = `
+            <a role="menuitem" href="${manage}">Manage</a>
+            <a role="menuitem" href="${live}" target="_blank" rel="noopener">Open</a>
+            <div class="menu-sep" role="separator"></div>
+            <button type="button" role="menuitem" class="menuitem" data-action="toggle">${isActive ? "Deactivate" : "Reactivate"}</button>
+            <button type="button" role="menuitem" class="menuitem danger" data-action="delete">Destroy…</button>`;
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const expanded = btn.getAttribute("aria-expanded") === "true";
+            if (expanded) {
+              closeMenus();
+              return;
+            }
+            openActionsMenu(btn, links);
+            if (openPanel) {
+              const tog = openPanel.querySelector('[data-action="toggle"]');
+              if (tog) {
+                tog.addEventListener("click", () => {
+                  closeMenus();
+                  setSiteActive(s.slug, !isActive);
+                });
+              }
+              const del = openPanel.querySelector('[data-action="delete"]');
+              if (del) {
+                del.addEventListener("click", () => {
+                  closeMenus();
+                  destroyProject(s.slug);
+                });
+              }
+            }
+          });
+          menu.append(btn);
+          actTd.appendChild(menu);
+
+          tr.append(nameTd, visTd, lastTd, actTd);
+          tbody.appendChild(tr);
+        }
+      }
+
+      function renderSharedRows(shared) {
+        sharedTbody.replaceChildren();
+        for (const s of shared) {
+          const tr = document.createElement("tr");
+          const live = s.url || `https://${s.slug}.aft.page`;
+          const manage = `/project/?slug=${encodeURIComponent(s.slug)}`;
+          const isActive = s.active !== false;
+          const role = s.role === "edit" ? "edit" : "view";
+
+          const nameTd = document.createElement("td");
+          const nameRow = document.createElement("div");
+          nameRow.className = "name-row";
+          const nameA = document.createElement("a");
+          nameA.href = manage;
+          nameA.style.cssText = "color:inherit;text-decoration:none";
+          const strong = document.createElement("strong");
+          strong.textContent = s.slug;
+          nameA.appendChild(strong);
+          nameRow.appendChild(nameA);
+          if (!isActive) {
+            const pill = document.createElement("span");
+            pill.className = "pill inactive";
+            pill.textContent = "Inactive";
+            nameRow.appendChild(pill);
+          }
+          nameTd.appendChild(nameRow);
+
+          const visTd = document.createElement("td");
+          visTd.innerHTML = `<span class="pill ${s.visibility === "private" ? "private" : ""}">${s.visibility === "private" ? "private" : "public"}</span>`;
+
+          const ownerTd = document.createElement("td");
+          ownerTd.textContent = s.ownerEmail || "—";
+
+          const roleTd = document.createElement("td");
+          roleTd.innerHTML = `<span class="pill">${role}</span>`;
+
+          const actTd = document.createElement("td");
+          actTd.className = "actions";
+          const menu = document.createElement("div");
+          menu.className = "menu";
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "menu-btn";
+          btn.setAttribute("aria-label", `Actions for ${s.slug}`);
+          btn.setAttribute("aria-haspopup", "menu");
+          btn.setAttribute("aria-expanded", "false");
+          btn.textContent = "⋯";
+          const links = `
+            <a role="menuitem" href="${manage}">Manage</a>
+            <a role="menuitem" href="${live}" target="_blank" rel="noopener">Open</a>`;
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const expanded = btn.getAttribute("aria-expanded") === "true";
+            if (expanded) {
+              closeMenus();
+              return;
+            }
+            openActionsMenu(btn, links);
+          });
+          menu.append(btn);
+          actTd.appendChild(menu);
+
+          tr.append(nameTd, visTd, ownerTd, roleTd, actTd);
+          sharedTbody.appendChild(tr);
+        }
+      }
+
+      function renderPager(data, sharedCount) {
+        const total = data.total || 0;
+        const totalPages = data.totalPages || 1;
+        const current = data.page || 1;
+        const limit = data.limit || PAGE_SIZE;
+        const sharedLink = sharedCount
+          ? `<a href="#shared">${sharedCount === 1 ? "1 shared" : `${sharedCount} shared`}</a>`
+          : "";
+        if (total <= limit) {
+          pager.hidden = true;
+          const ownedLabel = total === 1 ? "1 project" : `${total} projects`;
+          if (!total && sharedLink) meta.innerHTML = sharedLink;
+          else if (sharedLink) meta.innerHTML = `${ownedLabel} · ${sharedLink}`;
+          else meta.textContent = ownedLabel;
+          return;
+        }
+        pager.hidden = false;
+        const from = (current - 1) * limit + 1;
+        const to = Math.min(current * limit, total);
+        pagerStatus.textContent = `${from}–${to} of ${total}`;
+        meta.innerHTML = sharedLink
+          ? `${total} projects · page ${current}/${totalPages} · ${sharedLink}`
+          : `${total} projects · page ${current}/${totalPages}`;
+        prevBtn.disabled = current <= 1;
+        nextBtn.disabled = !data.hasMore && current >= totalPages;
+      }
+
+      function applyData(data, p) {
+        const sites = data.sites || [];
+        const shared = data.shared || [];
+        const hasOwned = data.total > 0;
+        const hasShared = shared.length > 0;
+        reveal(toolbar);
+        newProject.hidden = false;
+        if (!hasOwned && !hasShared) {
+          list.hidden = true;
+          sharedEl.hidden = true;
+          reveal(empty);
+          return false;
+        }
+        empty.hidden = true;
+        if (hasOwned && p > (data.totalPages || 1) && data.totalPages >= 1) {
+          return "redirect";
+        }
+        if (hasOwned) {
+          ownedHeading.hidden = !hasShared;
+          reveal(list);
+          renderRows(sites);
+        } else {
+          list.hidden = true;
+        }
+        if (hasShared) {
+          reveal(sharedEl);
+          renderSharedRows(shared);
+        } else {
+          sharedEl.hidden = true;
+        }
+        renderPager(data, shared.length);
+        return true;
+      }
+
+      async function fetchPage(p) {
+        const res = await fetch(
+          `${API}/v1/me/sites?page=${p}&limit=${PAGE_SIZE}`,
+          { credentials: "include" },
+        );
+        if (res.status === 401) return { status: 401 };
+        if (!res.ok) return { status: res.status };
+        const data = await res.json();
+        setCached(p, data);
+        return { status: 200, data };
+      }
+
+      function prefetch(p) {
+        if (p < 1 || inflightPrefetch.has(p)) return;
+        const cached = getCached(p);
+        if (isFresh(cached)) return;
+        inflightPrefetch.add(p);
+        fetchPage(p)
+          .catch(() => {})
+          .finally(() => inflightPrefetch.delete(p));
+      }
+
+      function showAuthError() {
+        clearCache();
+        if (window.aftAuth) window.aftAuth.clearMe();
+        loading.hidden = true;
+        list.hidden = true;
+        sharedEl.hidden = true;
+        toolbar.hidden = true;
+        newProject.hidden = true;
+        empty.hidden = true;
+        reveal(login);
+      }
+
+      async function load(p = page, opts = {}) {
+        const { force = false } = opts;
+        const gen = ++loadGen;
+        page = p;
+        setUrlPage(page);
+        login.hidden = true;
+
+        const cached = !force ? getCached(page) : null;
+        const haveCache = Boolean(cached?.data);
+
+        if (haveCache) {
+          loading.hidden = true;
+          const result = applyData(cached.data, page);
+          if (result === "redirect") return load(cached.data.totalPages, { force });
+          if (isFresh(cached) && !force) {
+            const totalPages = cached.data.totalPages || 1;
+            if (page < totalPages) prefetch(page + 1);
+            if (page > 1) prefetch(page - 1);
+            return;
+          }
+        } else {
+          loading.hidden = false;
+          empty.hidden = true;
+          list.hidden = true;
+          sharedEl.hidden = true;
+          toolbar.hidden = true;
+        }
+
+        try {
+          const result = await fetchPage(page);
+          if (gen !== loadGen) return;
+          loading.hidden = true;
+          if (result.status === 401) {
+            showAuthError();
+            return;
+          }
+          if (result.status !== 200) {
+            if (!haveCache) {
+              showAuthError();
+              login.innerHTML =
+                "<p>Couldn’t load projects.</p><a class=\"primary\" href=\"/login\">Log in</a>";
+            }
+            return;
+          }
+          const data = result.data;
+          const applied = applyData(data, page);
+          if (applied === "redirect") return load(data.totalPages, { force });
+          const totalPages = data.totalPages || 1;
+          if (page < totalPages) prefetch(page + 1);
+          if (page > 1) prefetch(page - 1);
+        } catch (_) {
+          if (gen !== loadGen) return;
+          loading.hidden = true;
+          if (!haveCache) {
+            showAuthError();
+            login.innerHTML =
+              "<p>Couldn’t load projects.</p><a class=\"primary\" href=\"/login\">Log in</a>";
+          }
+        }
+      }
+
+      async function setSiteActive(slug, active) {
+        if (
+          !active &&
+          !window.confirm(
+            `Deactivate "${slug}"?\n\nVisitors will see a paused page and the site stops serving. Your files and history are kept — you can reactivate any time.`,
+          )
+        ) {
+          return;
+        }
+        try {
+          const res = await fetch(
+            `${API}/v1/sites/${encodeURIComponent(slug)}`,
+            {
+              method: "PATCH",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ active }),
+            },
+          );
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            window.alert(body.hint || body.error || "Couldn’t update the site.");
+            return;
+          }
+          clearCache();
+          load(page, { force: true });
+        } catch (_) {
+          window.alert("Network error. Please try again.");
+        }
+      }
+
+      async function destroyProject(slug) {
+        const typed = window.prompt(
+          `Destroy "${slug}"?\n\nThis permanently deletes the site, its files, and all deploy history. This cannot be undone.\n\nType the project name to confirm:`,
+        );
+        if (typed === null) return;
+        if (typed.trim() !== slug) {
+          window.alert("Name didn’t match. Nothing was deleted.");
+          return;
+        }
+        try {
+          const res = await fetch(`${API}/v1/sites/${encodeURIComponent(slug)}`, {
+            method: "DELETE",
+            credentials: "include",
+          });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            window.alert(body.hint || body.error || "Couldn’t destroy project.");
+            return;
+          }
+          clearCache();
+          load(1, { force: true });
+        } catch (_) {
+          window.alert("Network error. Please try again.");
+        }
+      }
+
+      prevBtn.addEventListener("click", () => {
+        if (page > 1) load(page - 1);
+      });
+      nextBtn.addEventListener("click", () => load(page + 1));
+      readSessionCache();
+      load(page);
+    </script>
+    <script src="/auth-me.js" defer></script>
+    <script src="/auth-nav.js" defer></script>
+    <script src="/feedback.js" defer></script>
+  </body>
+</html>

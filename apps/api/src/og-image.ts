@@ -1,4 +1,4 @@
-/** Per-site Open Graph PNG cards — matches marketing/og.png visual language. */
+/** Per-site Open Graph PNG cards — matches www/og.png visual language. */
 
 import { ImageResponse, loadGoogleFont } from "workers-og";
 
@@ -35,7 +35,7 @@ export async function renderSiteOgImage(opts: {
   const host = `${opts.slug}.${root}`;
   const fontText = `${title} ${host} aft.page`;
 
-  // Match marketing/og-source.html: Fraunces brand + Sora body on cream.
+  // Match www/og-source.html: Fraunces brand + Sora body on cream.
   const [fraunces, sora500, sora400] = await Promise.all([
     loadGoogleFont({ family: "Fraunces", weight: 600, text: "aft.page" }),
     loadGoogleFont({ family: "Sora", weight: 500, text: fontText }),

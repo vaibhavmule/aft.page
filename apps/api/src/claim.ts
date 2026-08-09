@@ -1,5 +1,5 @@
 import type { Env } from "./env";
-import { trackClaim } from "./metrics";
+import { loadViewRollup, trackClaim, viewsForSlug } from "./metrics";
 import {
   assignSiteOwner,
   consumeMagicLink,
@@ -24,8 +24,9 @@ import {
   getCapabilityGrant,
   listDeploys,
 } from "./db";
-import { clientIp, corsHeaders, json, optionsResponse, privateJson } from "./http";
+import { clientIp, corsHeaders, json, optionsResponse, originMayActOnSlug, privateJson } from "./http";
 import { rateLimit } from "./rate-limit";
+import { liveSiteUrl } from "./site-url";
 
 export async function handleClaimRoute(
   request: Request,
@@ -72,6 +73,10 @@ async function claimStart(
   const slug = body.slug?.toLowerCase();
   const email = body.email ? normalizeEmail(body.email) : "";
   const editToken = body.editToken?.trim() || "";
+  const root = env.ROOT_DOMAIN || "aft.page";
+  if (slug && !originMayActOnSlug(request, slug, root)) {
+    return json({ error: "forbidden" }, 403, extra);
+  }
 
   if (!slug || !isValidEmail(email) || !editToken) {
     return json(
@@ -136,6 +141,10 @@ async function claimSession(
 
   const slug = body.slug?.toLowerCase();
   const editToken = body.editToken?.trim() || "";
+  const root = env.ROOT_DOMAIN || "aft.page";
+  if (slug && !originMayActOnSlug(request, slug, root)) {
+    return privateJson({ error: "forbidden" }, 403, extra);
+  }
   if (!slug) {
     return privateJson(
       { error: "invalid_request", hint: "slug required" },
@@ -160,7 +169,7 @@ async function claimSession(
     return privateJson(
       {
         error: "edit_token_required",
-        hint: "Open the deploy preview link that includes ?token= to claim",
+        hint: "Open the live site with ?token= from your deploy to claim",
       },
       400,
       extra,
@@ -211,17 +220,13 @@ async function claimVerify(
 
   const session = await createSession(env, user.id);
   const root = env.ROOT_DOMAIN || "aft.page";
-  const liveUrl = `https://${slug}.${root}`;
-  const redirect = new URL(`https://${root}/preview`);
-  redirect.searchParams.set("url", liveUrl);
-  redirect.searchParams.set("claimed", "1");
 
   trackClaim(env, request, slug, user.id);
 
   return new Response(null, {
     status: 302,
     headers: {
-      Location: redirect.toString(),
+      Location: liveSiteUrl(slug, root, { claimed: true }),
       "Set-Cookie": sessionCookieHeader(env, session.token, session.expiresAt),
     },
   });
@@ -245,7 +250,8 @@ export async function getSiteInfo(
   const ownerId = siteRow?.ownerUserId ?? (await getSiteOwnerId(env, slug));
   const visibility =
     siteRow?.visibility ?? (await getSiteVisibility(env, slug));
-  const user = await resolveSessionUserSafe(env, request);
+  const originOk = originMayActOnSlug(request, slug, root);
+  const user = originOk ? await resolveSessionUserSafe(env, request) : null;
   const owned = Boolean(ownerId);
   const owner = Boolean(user && ownerId && user.id === ownerId);
   let role: "owner" | "edit" | "view" | null = null;
@@ -264,13 +270,29 @@ export async function getSiteInfo(
     role,
     email: user?.email ?? null,
     url: liveUrl,
-    preview: `https://${root}/preview?url=${encodeURIComponent(liveUrl)}`,
+    preview: liveUrl,
     manage: `https://${root}/project/?slug=${encodeURIComponent(slug)}`,
     createdAt: siteRow?.createdAt ?? null,
     updatedAt: siteRow?.updatedAt ?? null,
     lastServedAt: siteRow?.lastServedAt ?? null,
+    views7d: env.SITES
+      ? viewsForSlug(await loadViewRollup(env.SITES, 7), slug).d7
+      : 0,
     deployId: siteRow?.deployId ?? null,
   };
+
+  if (owner) {
+    const { results: domainRows } = await env.DB.prepare(
+      `SELECT hostname, status FROM custom_domains WHERE slug = ? ORDER BY created_at`,
+    )
+      .bind(slug)
+      .all<{ hostname: string; status: string }>();
+    payload.domains = (domainRows || []).map((d) => ({
+      hostname: d.hostname,
+      status: d.status,
+      url: `https://${d.hostname}`,
+    }));
+  }
 
   if (owner || role === "edit" || role === "view") {
     payload.members = await listSiteMembers(env, slug);
@@ -311,10 +333,12 @@ export async function authorizeDeployUpdate(
   request: Request,
   slug: string,
 ): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
-  const editToken =
-    request.headers.get("x-aft-edit-token") ||
-    new URL(request.url).searchParams.get("editToken") ||
-    "";
+  const root = env.ROOT_DOMAIN || "aft.page";
+  if (!originMayActOnSlug(request, slug, root)) {
+    return { ok: false, status: 403, error: "forbidden" };
+  }
+
+  const editToken = request.headers.get("x-aft-edit-token") || "";
 
   if (editToken) {
     const storedHash = await getEditTokenHash(env, slug);
@@ -335,6 +359,31 @@ export async function authorizeDeployUpdate(
   }
   const memberRole = await getSiteMemberRole(env, slug, user.id);
   if (memberRole === "edit") {
+    return { ok: true };
+  }
+  return { ok: false, status: 403, error: "forbidden" };
+}
+
+/** Project hub read: owner / edit / view session. No edit token, not public. */
+export async function authorizeSiteHub(
+  env: Env,
+  request: Request,
+  slug: string,
+): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
+  const root = env.ROOT_DOMAIN || "aft.page";
+  if (!originMayActOnSlug(request, slug, root)) {
+    return { ok: false, status: 403, error: "forbidden" };
+  }
+  const user = await resolveSessionUser(env, request);
+  if (!user) {
+    return { ok: false, status: 401, error: "unauthorized" };
+  }
+  const ownerId = await getSiteOwnerId(env, slug);
+  if (ownerId === user.id) {
+    return { ok: true };
+  }
+  const memberRole = await getSiteMemberRole(env, slug, user.id);
+  if (memberRole === "edit" || memberRole === "view") {
     return { ok: true };
   }
   return { ok: false, status: 403, error: "forbidden" };

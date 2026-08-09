@@ -1,0 +1,64 @@
+# aft.page — design inspiration
+# Updated: 2026-08-08
+
+Vision first (vision.txt / rfs.txt). External sites supply craft only.
+They do not redefine the product.
+
+## Vision (non-negotiable)
+
+A cloud for small software.
+Agent (or human) made it → aft makes it live, persistent, and shareable.
+As easy to deploy and share as a Google Doc.
+
+Positioning test: first five seconds = "AI generated this" —
+not "build a site," not Carrd/Webflow, not Big Software cloud,
+not enterprise governance theatre.
+
+## Craft sources
+
+### Ardent (tryardent.com)
+Adopt: pure black surface, white primary CTA,
+split hero + terminal/product panel, hairline proof strip, comparison table.
+Reject: database/clone story; kickers that sound like their brand voice
+("zero blast radius" as aft slogan); empty investor placeholders.
+
+### Vercel (vercel.com)
+Adopt: extreme black/white contrast, sparse chrome, product-as-hero.
+Reject: mega-nav / "agentic infrastructure for everything" sprawl.
+
+### Resend (resend.com)
+Adopt: one sharp category line, code/DX as proof in the hero zone,
+calm section rhythm and spacing; giant recessed wordmark washing into
+the void; status pill; calm multi-column footer grid.
+Reject: light cream marketing canvas; email-developer category.
+
+### AgentMail (agentmail.to)
+Adopt: live demo beside copy,
+solid white CTA + quiet secondary; compact status badge in chrome.
+Reject: fake YC mark; binary fingerprint atmosphere; inbox metaphor;
+empty “Backed by [Coming Soon]” placeholders that weaken trust.
+
+### Graphite (graphite.com)
+Adopt: calm get-started IA — audience/path choice without clutter
+("For humans | For agents"; Cloud / Desktop / CLI style path cards);
+high-contrast black/white CTAs; sparse section headers ("GET STARTED" +
+one sharp H2); product proof before feature sprawl; footer status +
+copyright meta row above a giant brand mark.
+Reject: enterprise code-review / PR-inbox category; mega feature grids;
+literal neon-tube logo (aft uses recessed `aft.` instead).
+
+aft stern mark: `aft.` below chrome only; no hover / neon on the watermark.
+
+## What aft must show
+
+- agent → deploy → live *.aft.page URL (not a template gallery)
+- Doc-simple share (invite / revoke / same URL)
+- Self-serve proof (hero mini drop + MCP) with visible Beta
+- Honest proof only: clickable live example, real metrics/quotes when they exist
+- No invented YC badge or empty “Backed by [Coming Soon]”
+
+## Visual system summary
+
+Black #000 / raised #0a0a0a. White ink. Zinc borders.
+White CTA on black. Green only for live/success.
+Geist Sans + Geist Mono. No Fraunces. No beacon orange.

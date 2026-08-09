@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<!-- deploy-bump -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>New project — aft.page</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css"
+    />
+    <link rel="stylesheet" href="/app.css" />
+    <style>
+      main { max-width: 44rem; margin: 0 auto; padding: 2.25rem 1.25rem 3.5rem; width: 100%; }
+      .stage { display: flex; flex-direction: column; gap: 1.25rem; }
+      .stage-head {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        text-align: center;
+      }
+      .stage-head .crumb { margin: 0; }
+      .flow {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        margin: 0;
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        color: var(--faint);
+        letter-spacing: 0.02em;
+      }
+      .flow-arrow { color: var(--line-bright); }
+      .flow-live { color: var(--good); }
+
+      .drop {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.9rem;
+        text-align: center;
+        min-height: 20rem;
+        padding: clamp(1.75rem, 4.5vw, 3rem) 1.5rem;
+        border: 1px solid var(--line-bright);
+        border-radius: 0.6rem;
+        background: linear-gradient(
+          180deg,
+          color-mix(in srgb, var(--panel) 90%, #121212) 0%,
+          var(--void) 100%
+        );
+        box-shadow:
+          0 30px 90px color-mix(in srgb, #000 60%, transparent),
+          0 0 0 1px color-mix(in srgb, var(--ink) 4%, transparent);
+        cursor: default;
+        transition: border-color 0.15s ease, background 0.15s ease;
+      }
+      .drop.is-dragging {
+        border-color: var(--ink);
+        background: #121212;
+      }
+      .drop input[type="file"] {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        border: 0;
+        opacity: 0;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+      }
+
+      .stage-idle,
+      .stage-review {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.9rem;
+        width: 100%;
+      }
+
+      .drop-title {
+        font-weight: 600;
+        font-size: clamp(1.5rem, 3.2vw, 2.15rem);
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+        margin: 0;
+        color: var(--ink);
+      }
+      .drop-hint {
+        margin: 0;
+        font-size: 0.92rem;
+        color: var(--quiet);
+        max-width: 26rem;
+      }
+      .drop-hint code {
+        font-family: var(--font-mono);
+        color: var(--ink);
+      }
+      .drop-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.55rem;
+        margin-top: 0.35rem;
+      }
+      .drop-actions .btn { min-width: 9.5rem; }
+
+      .review-eyebrow {
+        margin: 0;
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--good);
+      }
+      #file-list {
+        list-style: none;
+        margin: 0;
+        padding: 0.4rem 0.85rem;
+        width: 100%;
+        max-width: 26rem;
+        text-align: left;
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+        border: 1px solid var(--line);
+        border-radius: 0.4rem;
+        background: var(--bg-inset);
+        max-height: 12rem;
+        overflow: auto;
+      }
+      #file-list li {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.4rem 0;
+        border-top: 1px solid var(--line);
+        color: var(--ink);
+      }
+      #file-list li:first-child { border-top: none; }
+      #file-list li span { color: var(--faint); }
+      .review-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 0.35rem;
+      }
+      .review-actions .btn { min-width: 9.5rem; }
+
+      a.btn, button.btn { font-size: 0.88rem; padding: 0.55rem 1rem; }
+      .msg {
+        margin: 0;
+        text-align: center;
+        font-size: 0.88rem;
+        min-height: 1.25em;
+      }
+      .stage-cancel { margin: 0; text-align: center; font-size: 0.85rem; }
+      .stage-cancel a { color: var(--quiet); text-decoration: none; }
+      .stage-cancel a:hover { color: var(--ink); }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a href="/">aft<span>.</span>page</a>
+      <div class="nav-right">
+        <a href="/projects">Projects</a>
+        <a href="/mcp">MCP</a>
+        <a href="/login" data-aft-auth="login">Log in</a>
+      </div>
+    </header>
+    <main>
+      <div class="loading" id="loading" aria-busy="true" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        <div>Checking session…</div>
+      </div>
+      <div class="login" id="login" hidden>
+        <p>Sign in to create a project.</p>
+        <a class="primary" id="login-link" href="/login?next=/projects/new/">Log in</a>
+      </div>
+      <div id="form-wrap" class="stage" hidden>
+        <div class="stage-head">
+          <p class="crumb"><a href="/projects">Projects</a> / New</p>
+          <p class="flow" aria-hidden="true">
+            <span>agent</span><span class="flow-arrow">→</span
+            ><span>deploy</span><span class="flow-arrow">→</span
+            ><span class="flow-live">live URL</span>
+          </p>
+        </div>
+        <form id="create-form" novalidate>
+          <div
+            class="drop"
+            id="drop"
+            role="region"
+            aria-label="Drop a folder or zip"
+          >
+            <input id="folder-input" type="file" webkitdirectory directory multiple />
+            <input
+              id="file-input"
+              type="file"
+              accept=".zip,application/zip,application/x-zip-compressed"
+            />
+
+            <div class="stage-idle" id="stage-idle">
+              <h1 class="drop-title" id="drop-title">Drop a folder. Or a zip.</h1>
+              <p class="drop-hint">
+                HTML, CSS, JS → <code>*.aft.page</code>. Include an index.html.
+                Max 200 files, 50 MB total.
+              </p>
+              <div class="drop-actions">
+                <button type="button" class="btn" data-browse="folder">
+                  Browse folders
+                </button>
+                <button type="button" class="btn ghost" data-browse="zip">
+                  Browse zips
+                </button>
+              </div>
+            </div>
+
+            <div class="stage-review" id="stage-review" hidden>
+              <p class="review-eyebrow">Ready to deploy</p>
+              <ul id="file-list"></ul>
+              <div class="review-actions">
+                <button type="submit" class="btn" id="submit">Create project</button>
+                <button type="button" class="btn ghost" id="reset-files">
+                  Choose different files
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="msg" id="status" role="status" aria-live="polite"></div>
+          <p class="stage-cancel"><a href="/projects">Cancel</a></p>
+        </form>
+      </div>
+    </main>
+    <script src="/auth-me.js"></script>
+    <script>
+      const API = "https://api.aft.page";
+      const MAX_FILES = 200;
+      const MAX_FILE_BYTES = 10 * 1024 * 1024;
+      const MAX_TOTAL_BYTES = 50 * 1024 * 1024;
+      const RESERVED = new Set([
+        "www", "api", "app", "mail", "ftp", "cdn", "static", "admin",
+        "dashboard", "status", "ops", "docs", "login", "mcp", "drop",
+        "cname", "aft", "aft-page", "ai", "cron", "job", "jobs",
+        "schedule", "schedules", "automation", "automations", "brief",
+        "plugin", "plugins", "claim", "auth", "preview", "blog", "help",
+        "support",
+      ]);
+
+      const loading = document.getElementById("loading");
+      const loginEl = document.getElementById("login");
+      const formWrap = document.getElementById("form-wrap");
+      const form = document.getElementById("create-form");
+      const submit = document.getElementById("submit");
+      const statusEl = document.getElementById("status");
+      const drop = document.getElementById("drop");
+      const fileInput = document.getElementById("file-input");
+      const folderInput = document.getElementById("folder-input");
+      const fileList = document.getElementById("file-list");
+      const dropTitle = document.getElementById("drop-title");
+      const stageIdle = document.getElementById("stage-idle");
+      const stageReview = document.getElementById("stage-review");
+      const resetBtn = document.getElementById("reset-files");
+
+      /** @type {{ path: string, file: File }[]} */
+      let staged = [];
+
+      function showStagePanel(which) {
+        stageIdle.hidden = which !== "idle";
+        stageReview.hidden = which !== "review";
+      }
+
+      function isValidSlug(slug) {
+        return /^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$/.test(slug);
+      }
+
+      function setStatus(text, kind) {
+        statusEl.textContent = text;
+        statusEl.className = "msg" + (kind ? " " + kind : "");
+      }
+
+      function formatBytes(n) {
+        if (n < 1024) return `${n} B`;
+        if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+        return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+      }
+
+      function slugFromHtml(html) {
+        const title = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim();
+        const h1 = html.match(/<h1[^>]*>([^<]+)<\/h1>/i)?.[1]?.trim();
+        const raw = (title || h1 || "").toLowerCase();
+        if (!raw) return undefined;
+        const slug = raw
+          .normalize("NFKD")
+          .replace(/[^\w\s-]/g, "")
+          .trim()
+          .replace(/[\s_]+/g, "-")
+          .replace(/-+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .slice(0, 48);
+        if (!slug || slug.length < 2 || RESERVED.has(slug) || !isValidSlug(slug)) {
+          return undefined;
+        }
+        return slug;
+      }
+
+      function relativePath(file) {
+        const rel = file.webkitRelativePath || file.name;
+        const parts = rel.split("/").filter(Boolean);
+        return parts.length > 1 ? parts.slice(1).join("/") : parts[0] || file.name;
+      }
+
+      function renderFiles() {
+        fileList.textContent = "";
+        fileList.hidden = staged.length === 0;
+        for (const entry of staged) {
+          const li = document.createElement("li");
+          li.textContent = entry.path;
+          const size = document.createElement("span");
+          size.textContent = formatBytes(entry.file.size);
+          li.append(size);
+          fileList.append(li);
+        }
+      }
+
+      /** Strip a single top-level folder from zip paths (CF Drop–style). */
+      function normalizeZipPaths(paths) {
+        const parts = paths.map((p) => p.split("/").filter(Boolean));
+        if (parts.length === 0) return paths;
+        const top = parts[0][0];
+        if (
+          top &&
+          parts.every((p) => p[0] === top) &&
+          parts.some((p) => p.length > 1)
+        ) {
+          return parts.map((p) => p.slice(1).join("/"));
+        }
+        return paths;
+      }
+
+      let unzipFn = null;
+      async function loadUnzip() {
+        if (unzipFn) return unzipFn;
+        const mod = await import(
+          "https://cdn.jsdelivr.net/npm/fflate@0.8.2/esm/browser.js"
+        );
+        unzipFn = mod.unzip;
+        return unzipFn;
+      }
+
+      async function entriesFromZip(file) {
+        const unzip = await loadUnzip();
+        const buf = new Uint8Array(await file.arrayBuffer());
+        const files = await new Promise((resolve, reject) => {
+          unzip(buf, (err, data) => (err ? reject(err) : resolve(data)));
+        });
+        const rawPaths = Object.keys(files).filter(
+          (p) => !p.endsWith("/") && !p.split("/").pop().startsWith("."),
+        );
+        const norm = normalizeZipPaths(rawPaths);
+        const entries = [];
+        for (let i = 0; i < rawPaths.length; i++) {
+          const path = norm[i];
+          if (!path) continue;
+          const bytes = files[rawPaths[i]];
+          const blob = new Blob([bytes]);
+          const name = path.split("/").pop() || path;
+          entries.push({
+            path,
+            file: new File([blob], name, { type: "application/octet-stream" }),
+          });
+        }
+        return entries;
+      }
+
+      async function stageFiles(list) {
+        const picked = Array.from(list).filter((f) => f.size > 0);
+        if (picked.length === 0) return;
+
+        const zips = picked.filter((f) => /\.zip$/i.test(f.name));
+        if (zips.length > 1) {
+          setStatus("Drop one zip at a time.", "err");
+          return;
+        }
+        if (zips.length === 1 && picked.length > 1) {
+          setStatus("Drop either a zip or a folder — not both.", "err");
+          return;
+        }
+
+        let entries;
+        if (zips.length === 1) {
+          setStatus("Unpacking zip…", "pending");
+          try {
+            entries = await entriesFromZip(zips[0]);
+          } catch (err) {
+            setStatus(
+              err instanceof Error ? err.message : "Could not read zip.",
+              "err",
+            );
+            return;
+          }
+        } else {
+          entries = picked.map((file) => ({ path: relativePath(file), file }));
+        }
+
+        if (entries.length === 1 && /\.html?$/i.test(entries[0].path)) {
+          entries[0].path = "index.html";
+        }
+
+        if (entries.length > MAX_FILES) {
+          setStatus(`Too many files — ${MAX_FILES} max.`, "err");
+          return;
+        }
+        const oversized = entries.find((e) => e.file.size > MAX_FILE_BYTES);
+        if (oversized) {
+          setStatus(
+            `${oversized.path} is over ${formatBytes(MAX_FILE_BYTES)}.`,
+            "err",
+          );
+          return;
+        }
+        const total = entries.reduce((n, e) => n + e.file.size, 0);
+        if (total > MAX_TOTAL_BYTES) {
+          setStatus(`Total upload is over ${formatBytes(MAX_TOTAL_BYTES)}.`, "err");
+          return;
+        }
+        if (!entries.some((e) => /^index\.html?$/i.test(e.path))) {
+          setStatus("Include an index.html so the site has a homepage.", "err");
+          return;
+        }
+
+        staged = entries;
+        renderFiles();
+        showStagePanel("review");
+        setStatus(
+          `${staged.length} file${staged.length === 1 ? "" : "s"} ready.`,
+          "ok",
+        );
+      }
+
+      async function deployFiles(preferredSlug) {
+        const body = new FormData();
+        let indexHtml = "";
+        staged.forEach((entry, i) => {
+          const field = `file${i}`;
+          body.append(field, entry.file, entry.file.name);
+          body.append(`${field}_path`, entry.path);
+        });
+        const index = staged.find((e) => /^index\.html?$/i.test(e.path));
+        if (index) indexHtml = await index.file.text();
+
+        const slug = preferredSlug || slugFromHtml(indexHtml);
+        const endpoint = slug
+          ? `${API}/v1/deploy?slug=${encodeURIComponent(slug)}`
+          : `${API}/v1/deploy`;
+        return fetch(endpoint, {
+          method: "POST",
+          credentials: "include",
+          headers: { "X-Aft-Client": "web" },
+          body,
+        });
+      }
+
+      fileInput.addEventListener("change", () => {
+        stageFiles(fileInput.files);
+        fileInput.value = "";
+      });
+      folderInput.addEventListener("change", () => {
+        stageFiles(folderInput.files);
+        folderInput.value = "";
+      });
+      drop.addEventListener("click", (e) => {
+        const browse = e.target.closest?.("[data-browse]");
+        if (!browse) return;
+        e.preventDefault();
+        if (browse.dataset.browse === "folder") folderInput.click();
+        else fileInput.click();
+      });
+      for (const type of ["dragenter", "dragover"]) {
+        drop.addEventListener(type, (e) => {
+          e.preventDefault();
+          drop.classList.add("is-dragging");
+          dropTitle.textContent = "Drop to upload";
+        });
+      }
+      for (const type of ["dragleave", "drop"]) {
+        drop.addEventListener(type, (e) => {
+          e.preventDefault();
+          drop.classList.remove("is-dragging");
+          dropTitle.textContent = "Drop a folder. Or a zip.";
+        });
+      }
+      drop.addEventListener("drop", (e) => {
+        if (e.dataTransfer?.files?.length) stageFiles(e.dataTransfer.files);
+      });
+
+      resetBtn.addEventListener("click", () => {
+        staged = [];
+        renderFiles();
+        setStatus("", "");
+        fileInput.value = "";
+        folderInput.value = "";
+        showStagePanel("idle");
+      });
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        if (staged.length === 0) {
+          setStatus("Choose a file to deploy first.", "err");
+          return;
+        }
+
+        submit.disabled = true;
+        setStatus("Publishing…", "pending");
+
+        try {
+          const res = await deployFiles();
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.slug) {
+            const msg =
+              data.error === "reserved_slug"
+                ? "That slug is reserved — try another."
+                : data.message || data.error || `Deploy failed (${res.status})`;
+            setStatus(msg, "err");
+            return;
+          }
+
+          if (data.editToken) {
+            try {
+              const map = JSON.parse(localStorage.getItem("aft.editTokens") || "{}");
+              map[data.slug] = data.editToken;
+              localStorage.setItem("aft.editTokens", JSON.stringify(map));
+            } catch (_) {}
+          }
+
+          // New projects are private by default; change later on the project page.
+          setStatus("Setting visibility…", "pending");
+          const visRes = await fetch(`${API}/v1/sites/${encodeURIComponent(data.slug)}`, {
+            method: "PATCH",
+            credentials: "include",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ visibility: "private" }),
+          });
+          if (!visRes.ok) {
+            setStatus(
+              "Project created, but couldn’t set private — you can change it on the next page.",
+              "err",
+            );
+            await new Promise((r) => setTimeout(r, 1200));
+          }
+
+          setStatus("Created. Opening…", "ok");
+          window.location.href =
+            `/project/?slug=${encodeURIComponent(data.slug)}`;
+        } catch (err) {
+          setStatus(
+            err instanceof Error ? err.message : "Network error — try again.",
+            "err",
+          );
+        } finally {
+          submit.disabled = false;
+        }
+      });
+
+      function showForm() {
+        loading.hidden = true;
+        loginEl.hidden = true;
+        formWrap.hidden = false;
+      }
+
+      function showLogin() {
+        loading.hidden = true;
+        formWrap.hidden = true;
+        loginEl.hidden = false;
+      }
+
+      (async () => {
+        const aftAuth = window.aftAuth;
+        if (!aftAuth) {
+          showLogin();
+          return;
+        }
+
+        const cached = aftAuth.peekMe();
+        if (cached) showForm();
+
+        try {
+          const user = await aftAuth.fetchMe();
+          if (!user) {
+            showLogin();
+            return;
+          }
+          showForm();
+        } catch {
+          if (!cached) showLogin();
+        }
+      })();
+    </script>
+    <script src="/auth-nav.js" defer></script>
+    <script src="/feedback.js" defer></script>
+  </body>
+</html>

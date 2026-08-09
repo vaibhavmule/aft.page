@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>aft.page — snapshot</title>
+  <meta name="description" content="A cloud for small software. Agent-made apps → durable URL → share like a Google Doc." />
+  <style>
+    :root {
+      --bg: #f6f5f2;
+      --ink: #1a1a1a;
+      --muted: #5c5c5c;
+      --line: #d8d5ce;
+      --card: #fff;
+      --accent: #1a4a6e;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font: 16px/1.5 ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    main { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    h1 { font-size: 28px; font-weight: 650; letter-spacing: -0.04em; margin: 0 0 6px; }
+    h2 { font-size: 14px; font-weight: 650; margin: 32px 0 10px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+    p { margin: 0 0 12px; }
+    .lede { font-size: 18px; letter-spacing: -0.02em; }
+    .muted { color: var(--muted); }
+    .small { font-size: 13px; }
+    .pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .pill {
+      font-size: 12px;
+      border: 1px solid var(--line);
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--card);
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin: 22px 0;
+    }
+    .stat {
+      background: var(--card);
+      border: 1px solid var(--line);
+      padding: 14px 12px;
+    }
+    .stat b { display: block; font-size: 20px; letter-spacing: -0.03em; }
+    .stat span { display: block; font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .note {
+      background: var(--card);
+      border: 1px solid var(--line);
+      padding: 14px 16px;
+    }
+    table { width: 100%; border-collapse: collapse; background: var(--card); font-size: 14px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+    tr:last-child td { border-bottom: 0; }
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .card { background: var(--card); border: 1px solid var(--line); padding: 14px 16px; }
+    .card h3 { font-size: 14px; margin: 0 0 8px; }
+    a { color: var(--accent); }
+    footer { margin-top: 40px; font-size: 12px; color: var(--muted); }
+    @media (max-width: 640px) {
+      .stats, .split { grid-template-columns: 1fr 1fr; }
+    }
+    @media print {
+      body { background: #fff; }
+      main { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="pills">
+      <span class="pill">A cloud for small software</span>
+      <span class="pill">Day 14 · 9 Aug 2026</span>
+    </div>
+    <h1>aft.page</h1>
+    <p class="lede">Your agent made the software. aft makes it live, persistent, and shareable — like a Google Doc.</p>
+    <p class="muted small">Showable snapshot for conversations. Not a fundraise deck.</p>
+
+    <div class="stats">
+      <div class="stat"><b>Live</b><span>Product · aft.page</span></div>
+      <div class="stat"><b>~2s</b><span>Agent MCP → HTTPS URL</span></div>
+      <div class="stat"><b>$0</b><span>Revenue · 14 days in</span></div>
+      <div class="stat"><b>Solo</b><span>Founder · intentional</span></div>
+    </div>
+
+    <div class="note">
+      <strong>What we are.</strong>
+      The publishing and permission layer for software created by AI agents.
+      Not another static host — Cloudflare already commoditized that. We own
+      the Small Software lifecycle: durable URL, claim, private share, secrets,
+      update, rollback.
+    </div>
+
+    <h2>Live today</h2>
+    <table>
+      <thead><tr><th>Capability</th><th>Proof</th></tr></thead>
+      <tbody>
+        <tr><td>Any agent → URL</td><td>MCP, drop, or API → <code>*.aft.page</code></td></tr>
+        <tr><td>Own + share like a Doc</td><td>Magic-link claim · private invite / revoke · rollback</td></tr>
+        <tr><td>Slightly more than static</td><td>lattice-js full-stack · secrets vault · Next upstream</td></tr>
+        <tr><td>Cross-cloud portability</td><td>OSS CLI deploys into the customer’s AWS / Cloudflare</td></tr>
+      </tbody>
+    </table>
+    <p class="muted small">
+      <a href="https://aft.page">aft.page</a>
+      · <a href="https://lattice.aft.page">lattice.aft.page</a>
+      · <a href="https://mcp.aft.page/mcp">mcp.aft.page</a>
+    </p>
+
+    <h2>Traction + why</h2>
+    <div class="split">
+      <div class="card">
+        <h3>Honest traction</h3>
+        <p class="small">Day 14. Platform is real. Stranger retention is not yet proven. No paid customers. Founder dogfood does not count as evidence.</p>
+        <p class="muted small">Next proof: repeat deployers, one app shared with a second person, then a design-partner yes.</p>
+      </div>
+      <div class="card">
+        <h3>Why this wins</h3>
+        <p class="small">Agents compressed creation. Deploy still assumes Big Software. Software for three people should not need infrastructure for three million.</p>
+        <p class="muted small">YC Fall 2026 RFS names the category. Cross-agent — not locked inside one chatbot’s artifact UI.</p>
+      </div>
+    </div>
+
+    <h2>Business</h2>
+    <table>
+      <thead><tr><th>Offer</th><th>What</th></tr></thead>
+      <tbody>
+        <tr><td>Free</td><td>Public deploys + MCP activation</td></tr>
+        <tr><td>Team $99 / mo</td><td>Private apps, invite ACL, versions, runtime</td></tr>
+        <tr><td>Connector $499 / mo</td><td>Governed live data · $2k 30-day pilot</td></tr>
+        <tr><td>Later</td><td>Custom domains, org SSO, customer-cloud execution</td></tr>
+      </tbody>
+    </table>
+    <p class="muted small">Charge when apps are kept, shared, or connected — not for the first URL. Capital out so far: ~₹2,800 (domains + GCP trial prepaid).</p>
+
+    <h2>Team + path</h2>
+    <p>Solo founder (intentional): enterprise multi-tenant + security background; OSS <code>aft</code> CLI already deploys to customer cloud. Raise geography is SF / US after stranger proof — not raising on an empty scoreboard.</p>
+
+    <footer>aft.page · 9 Aug 2026 · day 14 from launch</footer>
+  </main>
+</body>
+</html>

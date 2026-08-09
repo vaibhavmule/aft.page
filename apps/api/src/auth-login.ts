@@ -11,9 +11,11 @@ import {
   isValidEmail,
   normalizeEmail,
   resolveSessionUser,
+  safeAuthRedirect,
   sendLoginEmail,
   sessionCookieHeader,
 } from "./auth";
+import { handleGoogleCallback, handleGoogleStart } from "./auth-google";
 import { corsHeaders, json, optionsResponse, clientIp, privateJson } from "./http";
 import { rateLimit } from "./rate-limit";
 
@@ -36,6 +38,12 @@ export async function handleAuthRoute(
   }
   if (url.pathname === "/v1/auth/verify" && request.method === "GET") {
     return authVerify(request, env, url);
+  }
+  if (url.pathname === "/v1/auth/google" && request.method === "GET") {
+    return handleGoogleStart(request, env, url);
+  }
+  if (url.pathname === "/v1/auth/google/callback" && request.method === "GET") {
+    return handleGoogleCallback(request, env, url);
   }
   if (url.pathname === "/v1/auth/logout" && request.method === "OPTIONS") {
     return optionsResponse(origin, true);
@@ -170,22 +178,4 @@ async function authVerify(
       "Set-Cookie": sessionCookieHeader(env, session.token, session.expiresAt),
     },
   });
-}
-
-/** Allow /path or https://{slug}.aft.page/... — never open redirects. */
-function safeAuthRedirect(next: string, root: string): string {
-  if (next.startsWith("/") && !next.startsWith("//")) {
-    return `https://${root}${next}`;
-  }
-  try {
-    const u = new URL(next);
-    if (u.protocol !== "https:") return `https://${root}/projects`;
-    const host = u.hostname.toLowerCase();
-    if (host === root || host.endsWith(`.${root}`)) {
-      return u.toString();
-    }
-  } catch {
-    /* fall through */
-  }
-  return `https://${root}/projects`;
 }

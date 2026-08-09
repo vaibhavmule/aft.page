@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>aft.page — Day 14 report</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <style>
+    :root {
+      --bg: #f6f5f2;
+      --ink: #1a1a1a;
+      --muted: #5c5c5c;
+      --line: #d8d5ce;
+      --card: #fff;
+      --warn: #8a5a00;
+      --warn-bg: #f4ead4;
+      --bad: #8b1e1e;
+      --ok: #1f5c38;
+      --info: #1a4a6e;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    main { max-width: 880px; margin: 0 auto; padding: 40px 24px 80px; }
+    h1 { font-size: 24px; font-weight: 650; letter-spacing: -0.03em; margin: 0 0 8px; }
+    h2 { font-size: 16px; font-weight: 650; margin: 36px 0 10px; letter-spacing: -0.02em; }
+    h3 { font-size: 13px; font-weight: 650; margin: 0 0 6px; }
+    p { margin: 0 0 10px; }
+    .muted { color: var(--muted); }
+    .small { font-size: 13px; }
+    .pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .pill {
+      font-size: 12px;
+      border: 1px solid var(--line);
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--card);
+    }
+    .pill.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin: 20px 0;
+    }
+    .stat {
+      background: var(--card);
+      border: 1px solid var(--line);
+      padding: 14px 12px;
+    }
+    .stat b { display: block; font-size: 22px; letter-spacing: -0.03em; }
+    .stat span { display: block; font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .stat.warn b { color: var(--warn); }
+    .stat.bad b { color: var(--bad); }
+    .callout {
+      background: var(--warn-bg);
+      color: var(--warn);
+      padding: 12px 14px;
+      border: 1px solid #e4d3a8;
+      margin: 8px 0 8px;
+    }
+    .callout strong { display: block; margin-bottom: 4px; color: var(--ink); }
+    table { width: 100%; border-collapse: collapse; background: var(--card); font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+    tr:last-child td { border-bottom: 0; }
+    .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; background: #bbb; }
+    .ok .dot { background: var(--ok); }
+    .warn .dot { background: var(--warn); }
+    .bad .dot { background: var(--bad); }
+    .info .dot { background: var(--info); }
+    .split { display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px; align-items: start; }
+    .card { background: var(--card); border: 1px solid var(--line); padding: 14px; }
+    .card header {
+      display: flex; justify-content: space-between; gap: 8px;
+      font-size: 12px; color: var(--muted); margin-bottom: 10px;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    hr { border: 0; border-top: 1px solid var(--line); margin: 12px 0; }
+    ul.next { margin: 0; padding-left: 18px; }
+    ul.next li { margin: 6px 0; }
+    footer { margin-top: 40px; font-size: 12px; color: var(--muted); }
+    a { color: var(--info); }
+    @media (max-width: 720px) {
+      .stats, .split { grid-template-columns: 1fr 1fr; }
+    }
+    @media print {
+      body { background: #fff; }
+      main { padding: 0; }
+      .stat, .card, table, .callout { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="pills">
+      <span class="pill on">Internal</span>
+      <span class="pill">26 Jul – 9 Aug 2026</span>
+      <span class="pill">Day 14</span>
+    </div>
+    <h1>aft.page — Day 14 report</h1>
+    <p class="muted small">
+      Founder + inventory recap. Launch = domain registered 2026-07-26.
+      Sources: todo.txt, plan.md, REPORT-CARD.txt, EVIDENCE-PACK.md,
+      finance.txt, FUNDRAISE.md, FOUNDER.md. Live AE/ops Actuals are blank
+      in the evidence pack — not invented here.
+    </p>
+
+    <div class="stats">
+      <div class="stat"><b>14</b><span>Days since launch</span></div>
+      <div class="stat"><b>₹2,800</b><span>Known cash out</span></div>
+      <div class="stat bad"><b>0</b><span>Paid customers</span></div>
+      <div class="stat warn"><b>B-</b><span>Report card vs RFS</span></div>
+      <div class="stat warn"><b>Draft</b><span>YC Fall 2026</span></div>
+    </div>
+
+    <div class="callout">
+      <strong>Strong thesis, empty scoreboard</strong>
+      Platform is real. Traction is not. Outreach targets 120 / 20 calls —
+      Actual blank. Grade stays capped until strangers redeploy, share, or
+      pay. Distribution is the constraint, not engineering.
+    </div>
+
+    <h2>What we shipped</h2>
+    <p class="muted small">
+      Agent output → durable *.aft.page URL → share like a Google Doc.
+      Time-to-URL (MCP dogfood, 8 Aug): ~2 seconds.
+    </p>
+    <table>
+      <thead><tr><th>Surface</th><th>Status</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr class="ok"><td><span class="dot"></span>Drop / API / MCP → live URL</td><td>Shipped</td><td>deploy_html, deploy_files, aft_health · mcp.aft.page</td></tr>
+        <tr class="ok"><td><span class="dot"></span>Claim + magic link</td><td>Shipped</td><td>Session cookie on .aft.page · /login · /projects</td></tr>
+        <tr class="ok"><td><span class="dot"></span>Private invite / revoke</td><td>Shipped</td><td>Google-Doc ACL · owner or member session</td></tr>
+        <tr class="ok"><td><span class="dot"></span>Versions + rollback</td><td>Shipped</td><td>Immutable deploys · same slug on update</td></tr>
+        <tr class="ok"><td><span class="dot"></span>lattice-js runtime</td><td>Shipped</td><td>lattice.aft.page · secrets inject · /api/*</td></tr>
+        <tr class="ok"><td><span class="dot"></span>Next upstream</td><td>Shipped</td><td>next-hello.aft.page · OpenNext via CF adapter</td></tr>
+        <tr class="ok"><td><span class="dot"></span>Secrets vault</td><td>Shipped</td><td>GET/PUT/DELETE names · AES-GCM at rest</td></tr>
+        <tr class="ok"><td><span class="dot"></span>Capabilities + connector v0</td><td>Shipped</td><td>approve-on-deploy · expenses:read enforced</td></tr>
+        <tr class="ok"><td><span class="dot"></span>Ops + status</td><td>Shipped</td><td>ops.aft.page (founder) · status.aft.page</td></tr>
+        <tr class="warn"><td><span class="dot"></span>Chrome extension + Cursor plugin</td><td>Code only</td><td>Not in Web Store / Marketplace</td></tr>
+        <tr class="ok"><td><span class="dot"></span>OSS CLI (aft)</td><td>Live</td><td>Customer AWS / Cloudflare Pages</td></tr>
+        <tr class="bad"><td><span class="dot"></span>Remix / fork</td><td>Missing</td><td>Biggest RFS hole</td></tr>
+        <tr class="warn"><td><span class="dot"></span>Default private</td><td>Mismatch</td><td>Anonymous drops default public; private after claim</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Evidence pack (day-30 targets)</h2>
+    <table>
+      <thead><tr><th>Metric</th><th>Target</th><th>Actual</th></tr></thead>
+      <tbody>
+        <tr class="warn"><td><span class="dot"></span>Outreaches (cum)</td><td>120</td><td>—</td></tr>
+        <tr class="warn"><td><span class="dot"></span>Calls held</td><td>20</td><td>—</td></tr>
+        <tr class="warn"><td><span class="dot"></span>Stranger deploys → URL</td><td>≥10</td><td>—</td></tr>
+        <tr class="warn"><td><span class="dot"></span>Repeat deployers</td><td>≥5</td><td>—</td></tr>
+        <tr class="warn"><td><span class="dot"></span>Apps used after 7 days</td><td>≥3</td><td>—</td></tr>
+        <tr class="warn"><td><span class="dot"></span>Apps shared with another person</td><td>≥1</td><td>—</td></tr>
+        <tr class="info"><td><span class="dot"></span>Full-stack app, no manual cloud</td><td>≥1</td><td>lattice (founder)</td></tr>
+        <tr class="bad"><td><span class="dot"></span>Paid / LOI (non-friend)</td><td>≥1</td><td>0</td></tr>
+        <tr class="warn"><td><span class="dot"></span>YC application</td><td>submitted</td><td>draft</td></tr>
+      </tbody>
+    </table>
+    <p class="muted small">Source: EVIDENCE-PACK.md · founder MCP dogfood enterprise-license.aft.page does not count as stranger evidence.</p>
+
+    <h2>Inventory</h2>
+    <div class="split">
+      <table>
+        <thead><tr><th>Layer</th><th>Items</th></tr></thead>
+        <tbody>
+          <tr><td>Domains</td><td>aft.page (canonical) · tryaft.com (301)</td></tr>
+          <tr><td>Surfaces</td><td>apex www · drop · login · projects · preview · docs</td></tr>
+          <tr><td>Workers</td><td>aft-page-api · aft-page-mcp</td></tr>
+          <tr><td>Repo apps</td><td>api · mcp · mcp-worker · extension · plugin · connector</td></tr>
+          <tr><td>Live dogfood</td><td>hello · vite-hello · lattice · next-hello · share-checklist · enterprise-license</td></tr>
+          <tr><td>Pricing written</td><td>Free · Team $99 · Connector $499 · revenue $0</td></tr>
+        </tbody>
+      </table>
+      <div class="card">
+        <header><span>Cash out</span><span>finance.txt · 8 Aug</span></header>
+        <h3 style="font-size:22px;letter-spacing:-0.03em">₹2,800</h3>
+        <p class="muted small">Known spend to date</p>
+        <hr />
+        <p class="small">Domains ~₹1,800 (aft.page + tryaft.com, first year) + GCP prepaid ₹1,000. Workspace no-cost trial. CF usage expected $0 on free tier.</p>
+        <p class="muted small">Do not complete Workspace prepayment until Google Startups Workspace perk is decided — paying can burn the free year.</p>
+      </div>
+    </div>
+
+    <h2>Founder report</h2>
+    <div class="split">
+      <div class="card">
+        <header>Ops</header>
+        <h3>Solo by design</h3>
+        <p class="muted small">One-person company + agents. Do not add a co-founder for optics. Hours/week: Polymerize 45–50 · aft.page 12–18.</p>
+        <hr />
+        <h3>Quit / raise rules</h3>
+        <p class="muted small">Raise first — ~₹4–5Cr pre-seed or $500k+ wire-ready. Then leave Polymerize. Runway bar 18 mo min / 24 mo comfortable. North star: SF / US (SPC, Vercel orbit, Naval-class angels).</p>
+        <hr />
+        <p class="small">Biggest blocker: time and distribution, not engineering.</p>
+      </div>
+      <div class="card">
+        <header><span>Thesis</span><span>Investor snapshot</span></header>
+        <p><strong>A cloud for small software.</strong> Publishing + permission layer for agent-made apps.</p>
+        <p class="muted small">Category is a near-verbatim match to YC Fall 2026 RFS. Drop-class static is commoditized by Cloudflare. Moat is lifecycle: claim, private share, secrets, versions, runtime — not “we host HTML.”</p>
+        <hr />
+        <p class="small">Ask later, after proof: bigger check, less dilution on the US path. Not India 10%-for-₹1Cr as the main line. Launchpad = $0 equity from Cloudflare; checks come from partner VCs.</p>
+      </div>
+    </div>
+
+    <h2>Programs</h2>
+    <table>
+      <thead><tr><th>Program</th><th>Status</th><th>Next</th></tr></thead>
+      <tbody>
+        <tr class="info"><td><span class="dot"></span>Google for Startups</td><td>Step 1 done (8 Aug)</td><td>Apply for credits + checklist — clock starts on approval</td></tr>
+        <tr class="info"><td><span class="dot"></span>Workers Launchpad #7</td><td>Emailed 8 Aug 13:08</td><td>Wait for reply / apply link (web form was broken)</td></tr>
+        <tr class="warn"><td><span class="dot"></span>Cloudflare Startups $10k</td><td>Form started</td><td>Connect CF account + submit · ~48h</td></tr>
+        <tr class="warn"><td><span class="dot"></span>YC Fall 2026</td><td>Draft only</td><td>Submit late app + 1-min video</td></tr>
+        <tr><td><span class="dot"></span>SPC Fellowship</td><td>Fall deadline missed (2 Aug)</td><td>Track next cycle · BLR residency optional</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Next</h2>
+    <div class="card">
+      <ul class="next">
+        <li>Ship Cursor Agent Plugin (skill + MCP) — #1 distribution lever</li>
+        <li>Fill evidence pack: ≥5 repeat deployers, ≥1 app shared with a stranger, ≥1 paid/LOI</li>
+        <li>Google for Startups: click Apply for credits + onboarding checklist</li>
+        <li>Submit Cloudflare for Startups Tier 3 $10k (hello@aft.page + CF account)</li>
+        <li>Submit YC late application + 1-min video (draft only today)</li>
+        <li>One-click remix/fork — only named RFS hard-problem with zero coverage</li>
+      </ul>
+    </div>
+
+    <footer>
+      Personal salary, assets, housing, and health omitted.
+      This page deploys public-first via MCP — claim at
+      <a href="https://aft.page/preview">aft.page/preview</a>
+      and set visibility to private immediately.
+    </footer>
+  </main>
+</body>
+</html>

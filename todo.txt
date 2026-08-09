@@ -1,5 +1,5 @@
 # aft.page — todo
-# Updated: 2026-08-07
+# Updated: 2026-08-09
 
 ## Dual track — now
 ### Platform
@@ -9,15 +9,24 @@
 - [x] Lattice JS hosted runtime (`https://lattice.aft.page`) — set ANTHROPIC_API_KEY to convert
 - [x] Upstream proxy for worker/next runtimes
 - [x] OpenNext orchestration script (no custom adapter) — docs/OPENNEXT-ORCHESTRATION.md
+- [x] OpenNext dogfood live: https://next-hello.aft.page (`examples/next-hello`)
 - [x] Sandbox Python follow-up ADR — docs/ADR-SANDBOX-LATTICE.md
 - [ ] Publish extension to Chrome Web Store
 - [ ] Publish `@aft.page/mcp` to npm (optional)
+- [ ] Get Agent Plugin ready for `npx plugins add …` (vercel.com/plugin install bar)
+      Spec: agent-plugins.org 1.0.0 — we already have apps/plugin/{plugin.json,mcp.json,skills/}
+      Installer: `npx plugins add owner/repo` (vercel-labs/plugins) → Claude Code / Cursor / Codex / Grok / Kimi / Copilot CLI / VS Code
+      Gap: public GitHub so discover finds plugin.json (root or ≤2 levels); fill version/description/repo metadata; `npx plugins discover` + local add smoke; README + landing copy `$ npx plugins add …`
+      Refs: https://vercel.com/plugin · https://vercel.com/docs/agent-resources/vercel-plugin · https://agent-plugins.org
 
 ### Proof (same weeks)
 - [x] Prospect share-checklist app live: https://share-checklist.aft.page
 - [ ] ≥5 repeat deployers + evidence pack
 - [ ] ≥1 app shared with another person (invite accept)
 - [ ] YC late application + 1-min video
+- [x] Launchpad Cohort #7 email (8 Aug 2026 → Workers-Launchpad@cloudflare.com) — see docs/FUNDRAISE.md
+- [ ] Google for Startups Cloud Program — step 1 done; **finish credits apply** + checklist (docs/FUNDRAISE.md)
+- [ ] Cloudflare for Startups Tier 3 $10k — submit with hello@aft.page + CF account
 - [ ] Owner sets ANTHROPIC_API_KEY on lattice + full convert demo
 
 ### Later / on demand
@@ -25,17 +34,27 @@
 - [ ] Claude marketplace
 - [ ] Workspace / Entra SSO
 - [ ] Connector deepen / Lattice Python via CF Sandbox
-- [ ] Custom domains
 - [ ] Workers for Platforms (only if aft-owned Workers proliferate)
+- [ ] Product line after Drop: Anything Drop → Plugins → Cron → AI automations
+      Cron = private-only (claimed site, visibility private). Schedule a script /
+      DB hit / timed job (punch-in/out dogfood). Not on anonymous public Drop.
+      AI automations = same gate; prompt + schedule (e.g. 9am project brief).
+      Slack + mobile notify = sinks on job results, not a third product.
+
+### This round (reserve / claim / generous Drop)
+- [x] Reserve product slugs (`ai`, `cron`, `cname`, automations, …)
+- [x] Claim-after-deploy (`/claim` + `claimUrl` on deploy)
+- [x] Generous Drop caps (200 files · 10 MB · 50 MB total)
 
 ## Done (Phase 1 + Drop-class)
 - [x] Domain + landing, Worker deploy, *.aft.page serve
 - [x] Auth / claim / private invite / capabilities / connector v0
 - [x] Projects experience + mission clarification
 - [x] Waitlist capture
+- [x] Custom domains (project Domain tab; CF for SaaS enable still required for HTTPS)
 
 ## Notes
-- Apex aft.page = marketing (Pages)
+- Apex aft.page = www/ (Pages)
 - api.aft.page + *.aft.page = Worker
 - OSS CLI: github.com/vaibhavmule/aft
 - Hosted repo: github.com/vaibhavmule/aft.page

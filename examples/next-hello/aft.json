@@ -1,0 +1,5 @@
+{
+  "name": "next-hello",
+  "runtime": "next",
+  "upstream": "https://aft-next-hello.vaibhavmule135.workers.dev"
+}

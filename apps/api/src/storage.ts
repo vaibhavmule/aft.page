@@ -57,6 +57,151 @@ export async function getObject(
   return { body: got.value, contentType };
 }
 
+/**
+ * Copy one deploy's files from a source site to a target site, preserving the
+ * deploy id and content types. Used to fold a standalone site into another
+ * site's deploy history (so it becomes a rollback-able version). Returns the
+ * number of files and total bytes copied.
+ */
+export async function copySiteDeploy(
+  env: Env,
+  sourceSlug: string,
+  sourceDeployId: string,
+  targetSlug: string,
+  targetDeployId: string,
+): Promise<{ files: number; bytes: number }> {
+  let files = 0;
+  let bytes = 0;
+
+  if (env.BUCKET) {
+    const prefix = `sites/${sourceSlug}/${sourceDeployId}/`;
+    let cursor: string | undefined;
+    do {
+      const listing = await env.BUCKET.list({ prefix, cursor });
+      for (const o of listing.objects) {
+        const rel = o.key.slice(prefix.length);
+        const obj = await env.BUCKET.get(o.key);
+        if (!obj) continue;
+        await env.BUCKET.put(r2Key(targetSlug, targetDeployId, rel), obj.body, {
+          httpMetadata: obj.httpMetadata,
+          customMetadata: { slug: targetSlug, deployId: targetDeployId },
+        });
+        files += 1;
+        bytes += o.size;
+      }
+      cursor = listing.truncated ? listing.cursor : undefined;
+    } while (cursor);
+    return { files, bytes };
+  }
+
+  const prefix = `file:${sourceSlug}:${sourceDeployId}:`;
+  let kvCursor: string | undefined;
+  do {
+    const listing = await env.SITES.list({ prefix, cursor: kvCursor });
+    for (const k of listing.keys) {
+      const path = k.name.slice(prefix.length);
+      const got = await env.SITES.getWithMetadata<ArrayBuffer>(
+        k.name,
+        "arrayBuffer",
+      );
+      if (!got.value) continue;
+      await env.SITES.put(kvFileKey(targetSlug, targetDeployId, path), got.value, {
+        metadata: got.metadata ?? undefined,
+      });
+      files += 1;
+      bytes += got.value.byteLength;
+    }
+    kvCursor = listing.list_complete ? undefined : listing.cursor;
+  } while (kvCursor);
+  return { files, bytes };
+}
+
+export async function listDeployFiles(
+  env: Env,
+  slug: string,
+  deployId: string,
+): Promise<{ path: string; bytes: number }[]> {
+  const out: { path: string; bytes: number }[] = [];
+  if (env.BUCKET) {
+    const prefix = `sites/${slug}/${deployId}/`;
+    let cursor: string | undefined;
+    do {
+      const listing = await env.BUCKET.list({ prefix, cursor });
+      for (const o of listing.objects) {
+        out.push({ path: o.key.slice(prefix.length), bytes: o.size });
+      }
+      cursor = listing.truncated ? listing.cursor : undefined;
+    } while (cursor);
+    return out;
+  }
+  const filePrefix = `file:${slug}:${deployId}:`;
+  let kvCursor: string | undefined;
+  do {
+    const listing = await env.SITES.list({
+      prefix: filePrefix,
+      cursor: kvCursor,
+    });
+    for (const k of listing.keys) {
+      out.push({ path: k.name.slice(filePrefix.length), bytes: k.size ?? 0 });
+    }
+    kvCursor = listing.list_complete ? undefined : listing.cursor;
+  } while (kvCursor);
+  return out;
+}
+
+/** Delete stored objects for a single deploy (R2 + KV fallback). */
+export async function deleteDeployObjects(
+  env: Env,
+  slug: string,
+  deployId: string,
+): Promise<void> {
+  if (env.BUCKET) {
+    const prefix = `sites/${slug}/${deployId}/`;
+    let cursor: string | undefined;
+    do {
+      const listing = await env.BUCKET.list({ prefix, cursor });
+      const keys = listing.objects.map((o) => o.key);
+      if (keys.length) await env.BUCKET.delete(keys);
+      cursor = listing.truncated ? listing.cursor : undefined;
+    } while (cursor);
+  }
+  const filePrefix = `file:${slug}:${deployId}:`;
+  let kvCursor: string | undefined;
+  do {
+    const listing = await env.SITES.list({ prefix: filePrefix, cursor: kvCursor });
+    await Promise.all(listing.keys.map((k) => env.SITES.delete(k.name)));
+    kvCursor = listing.list_complete ? undefined : listing.cursor;
+  } while (kvCursor);
+}
+
+/**
+ * Delete every stored object for a site: R2 objects under `sites/{slug}/`,
+ * KV file blobs `file:{slug}:*` (used when no R2 bucket), and the `site:{slug}`
+ * metadata pointer. Safe to call repeatedly.
+ */
+export async function deleteSiteObjects(env: Env, slug: string): Promise<void> {
+  if (env.BUCKET) {
+    const prefix = `sites/${slug}/`;
+    let cursor: string | undefined;
+    do {
+      const listing = await env.BUCKET.list({ prefix, cursor });
+      const keys = listing.objects.map((o) => o.key);
+      if (keys.length) await env.BUCKET.delete(keys);
+      cursor = listing.truncated ? listing.cursor : undefined;
+    } while (cursor);
+  }
+
+  const filePrefix = `file:${slug}:`;
+  let kvCursor: string | undefined;
+  do {
+    const listing = await env.SITES.list({ prefix: filePrefix, cursor: kvCursor });
+    await Promise.all(listing.keys.map((k) => env.SITES.delete(k.name)));
+    kvCursor = listing.list_complete ? undefined : listing.cursor;
+  } while (kvCursor);
+
+  await env.SITES.delete(`site:${slug}`);
+}
+
 function guessMime(path: string): string {
   const ext = path.split(".").pop()?.toLowerCase();
   switch (ext) {
@@ -92,6 +237,82 @@ function guessMime(path: string): string {
     default:
       return "application/octet-stream";
   }
+}
+
+/** R2 object name: encode so `../x` cannot escape `ops/failures/{id}/`. */
+export function failurePayloadObjectName(path: string): string {
+  return encodeURIComponent(normalizePath(path)).replace(/\./g, "%2E");
+}
+
+export function failurePayloadKey(failId: string, path: string): string {
+  return `ops/failures/${failId}/${failurePayloadObjectName(path)}`;
+}
+
+export async function putFailurePayload(
+  env: Env,
+  failId: string,
+  files: { path: string; bytes: ArrayBuffer; contentType: string }[],
+): Promise<void> {
+  if (!files.length) return;
+  if (env.BUCKET) {
+    for (const f of files) {
+      await env.BUCKET.put(failurePayloadKey(failId, f.path), f.bytes, {
+        httpMetadata: { contentType: f.contentType },
+        customMetadata: { failId },
+      });
+    }
+    return;
+  }
+  for (const f of files) {
+    await env.SITES.put(`opsfail:${failId}:${failurePayloadObjectName(f.path)}`, f.bytes, {
+      metadata: { contentType: f.contentType },
+    });
+  }
+}
+
+export async function getFailurePayloadFile(
+  env: Env,
+  failId: string,
+  path: string,
+): Promise<{ body: ArrayBuffer; contentType: string } | null> {
+  const rel = normalizePath(path);
+  if (!rel || rel.includes("..")) return null;
+  if (env.BUCKET) {
+    const obj = await env.BUCKET.get(failurePayloadKey(failId, rel));
+    if (!obj) return null;
+    return {
+      body: await obj.arrayBuffer(),
+      contentType: obj.httpMetadata?.contentType || guessMime(rel),
+    };
+  }
+  const got = await env.SITES.getWithMetadata<ArrayBuffer>(
+    `opsfail:${failId}:${failurePayloadObjectName(rel)}`,
+    "arrayBuffer",
+  );
+  if (!got.value) return null;
+  const contentType =
+    (got.metadata as { contentType?: string } | null)?.contentType || guessMime(rel);
+  return { body: got.value, contentType };
+}
+
+export async function deleteFailurePayload(env: Env, failId: string): Promise<void> {
+  if (env.BUCKET) {
+    const prefix = `ops/failures/${failId}/`;
+    let cursor: string | undefined;
+    do {
+      const listing = await env.BUCKET.list({ prefix, cursor });
+      const keys = listing.objects.map((o) => o.key);
+      if (keys.length) await env.BUCKET.delete(keys);
+      cursor = listing.truncated ? listing.cursor : undefined;
+    } while (cursor);
+  }
+  const kvPrefix = `opsfail:${failId}:`;
+  let kvCursor: string | undefined;
+  do {
+    const listing = await env.SITES.list({ prefix: kvPrefix, cursor: kvCursor });
+    await Promise.all(listing.keys.map((k) => env.SITES.delete(k.name)));
+    kvCursor = listing.list_complete ? undefined : listing.cursor;
+  } while (kvCursor);
 }
 
 export { guessMime };

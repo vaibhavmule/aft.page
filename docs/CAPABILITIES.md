@@ -47,6 +47,20 @@ Status is `pending` until the owner approves, or stays `approved` if a prior gra
 
 Values are encrypted at rest (AES-GCM via `AUTH_SECRET`) and injected into hosted runtimes such as `lattice-js` (e.g. `ANTHROPIC_API_KEY`).
 
+## MCP (thin surface)
+
+MCP is **not** where capabilities/secrets are managed. Agents get three tools
+only — see [ADR-MCP-THIN.md](./ADR-MCP-THIN.md):
+
+| Tool | Job |
+| --- | --- |
+| `deploy_html` | HTML → `*.aft.page` |
+| `deploy_files` | Static files → `*.aft.page` |
+| `aft_health` | API ping |
+
+Remote: `https://mcp.aft.page/mcp`. Capability approve + secrets vault stay on
+the web API / owner session after claim.
+
 ## Enforcement
 
 - **Approve-on-deploy** records grants in D1 (`GET|POST /v1/sites/{slug}/capabilities`).
@@ -57,3 +71,4 @@ Values are encrypted at rest (AES-GCM via `AUTH_SECRET`) and injected into hoste
 
 - `examples/expense-approval/` — capabilities + connector
 - `examples/lattice-js/` — `runtime: lattice-js` + secrets; live at [lattice.aft.page](https://lattice.aft.page)
+- `examples/next-hello/` — `runtime: next` + upstream proxy; live at [next-hello.aft.page](https://next-hello.aft.page)

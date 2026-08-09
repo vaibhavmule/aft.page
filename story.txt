@@ -1,0 +1,49 @@
+# aft.page — founder story
+# Updated: 2026-08-09
+# Vaibhav. Internal voice; publish when you mean it.
+
+In 2011 someone asked me: can you deploy WordPress? How long?
+
+I said five minutes. I did it.
+
+AWS login. Bitnami WordPress. Public URI. Admin. Get started.
+
+That was the whole product: a clock, a URL, a human in. Nobody wanted EC2
+explained. They wanted the thing live.
+
+2011 small software was WordPress.
+2026 small software is whatever an agent just made.
+
+The app changed. The job did not. Time-to-URL. See time-to-url.txt.
+Look at it every day on ops.aft.page.
+
+As of today, deployment is still friction. People cannot deploy the simple
+thing. I still remember that five-minute day, and I still measure us against it.
+Five minutes is no longer a flex. The bar is: agent hits deploy, you open a URL
+before you look away.
+
+I can already do this for myself. I deploy a web app and it is easy. AFT exists
+so a one-person team — or two, or three, like me — gets that same feeling
+without becoming an AWS person. Cloudflare already sold us the primitives. We
+wrap them. We do not rebuild the cloud. We delete the ceremony.
+
+We do not have socials. No Twitter, no Instagram, no LinkedIn theatre. External
+surface is email. That is fine. Distribution is not a brand account. Highest
+leverage is a plugin: install in Cursor (then every other agent that speaks the
+same format) → Deploy with AFT → live URL. After the plugin exists, submit the
+MCP where people actually look for MCP servers. Then someone can try without
+asking me.
+
+Honesty, 9 Aug 2026: nobody has deployed. Forget deploy twice. Pay is secondary.
+Pay comes later — when they keep the app, share it, or hook it to their data.
+This week is not a price. This week is one stranger who tries.
+
+The company is a cloud for small software. Agent made it → aft makes it live.
+If I cannot give someone the 2011 feeling for the thing their agent just built,
+I am not a CEO. I am a guy with Workers.
+
+Mission: rfs.txt
+Vision: vision.txt
+Time-to-URL: time-to-url.txt · ops.aft.page
+How we grow: docs/gtm.txt
+How we price when someone stays: docs/PRICING.md

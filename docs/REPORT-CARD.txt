@@ -1,0 +1,123 @@
+# aft.page — Report Card
+# Graded against the "Cloud for Small Software" (YC RFS) playbook.
+# Grounded in: STRATEGY.md, plan.md, CAPABILITIES.md, SHARING.md, PRICING.md, EVIDENCE-PACK.md, BRAND.md.
+# Updated: 2026-08-08
+#
+# Two axes: BUILT (does the code exist) vs PROVEN (do real users do it).
+# Strong on built. Thin on proven.
+
+================================================================
+OVERALL: B-  (strong thesis + real platform, unproven traction)
+================================================================
+
+Category line "A cloud for small software" is a near-verbatim match to the RFS,
+and much of what the playbook calls "hard" is already shipped. The gap is
+EVIDENCE (empty scoreboard) and two product holes: REMIX/FORK and a
+SHIPPED AGENT PLUGIN.
+
+----------------------------------------------------------------
+1. NAIL THE CORE LOOP — A-
+----------------------------------------------------------------
+[x] Agent/human -> one call -> live stable URL (deploy_html / deploy_files -> *.aft.page)
+[x] Same URL on update + instant rollback (immutable versions + project list + rollback)
+[x] Share like a Google Doc (invite / list / revoke / members + ACL)
+[~] Default private/unguessable (link = credential)
+    -> MISMATCH: anonymous drops default PUBLIC; private is opt-in after claim.
+[x] "Slightly more than static" feels easy (built: lattice-js + secrets)
+    -> not yet validated with strangers.
+
+Why not A: playbook wants default PRIVATE, public opt-in. Loop defaults public.
+Make it a conscious decision, not drift.
+
+----------------------------------------------------------------
+2. SOLVE THE RFS-FLAGGED HARD PROBLEMS — B-
+----------------------------------------------------------------
+[x] Auth non-technical users can use (magic link now, SSO later) — exact playbook order
+[~] Secure execution of arbitrary agent code
+    -> leans on Cloudflare primitives (lattice-js / Sandbox); capability
+       approve-on-deploy exists; EGRESS PROXY STILL A STUB; resource
+       limits / billing story not documented.
+[~] Easy per-team env customization without AWS complexity
+    -> secrets vault shipped; broader env customization not a product surface yet.
+[ ] Remix/fork one-click — MISSING (biggest strategic gap; named RFS problem;
+    cheap given existing ownership + immutable versions).
+
+Playbook: "whoever owns secure, multi-user, remixable small software will pull ahead."
+You own multi-user, partway on secure, ZERO on remixable.
+
+----------------------------------------------------------------
+3. BE AGENT-NATIVE FROM DAY ONE — B
+----------------------------------------------------------------
+[x] First-class MCP (deploy_html, deploy_files, aft_health; remote mcp.aft.page)
+[x] One-shot deploy tools agents call reliably
+[~] Agents manage site after deploy (update, invite, logs)
+    -> intentionally OUT of MCP (thin-surface ADR). Post-deploy mgmt is web-only.
+[ ] Agent Plugin (skill + MCP) installed in Cursor
+    -> NOT SHIPPED. It's the #1 "highest-priority next ship", still unchecked in plan.md.
+
+Ship the Cursor Agent Plugin -> this jumps to A-.
+
+----------------------------------------------------------------
+4. DISTRIBUTION — C+
+----------------------------------------------------------------
+[ ] Listed inside major coding agents (Cursor Marketplace / cursor.directory) — planned, not done
+[?] Build in public, ship weekly — no evidence in docs
+[x] Target power users (indie hackers, Cursor/Claude daily) — correct ICP
+[x] Genuinely useful free tier (public deploys + MCP)
+[x] Paid for permanence / private / teams (written: $99 team, $499 connector)
+
+Plan is right; execution pending. Scoreboard (30/60/90/120 outreaches, 20 calls)
+appears unfilled. This is where "execution wins" — riskiest if it stays theoretical.
+
+----------------------------------------------------------------
+5. ROADMAP PRIORITIES — B+
+----------------------------------------------------------------
+1. Static + multi-file + persistent claimed URLs + private sharing — DONE
+2. Simple data layer (SQLite/KV that just works) — PARTIAL (lattice-js /api + secrets;
+   D1 is internal plumbing, not a first-class "data just works" primitive)
+3. Built-in auth that feels magical — DONE (magic link)
+4. Remix/fork + version history — version history DONE, FORK MISSING
+5. Light compute (sandboxed functions/containers) — lattice-js live; OpenNext stretch
+6. Team features / company controls — invite/members yes; SSO/audit deferred
+7. Custom domains, analytics — deferred/stretch
+
+Slightly out of order (reached compute while data-simplicity + fork underbuilt),
+but not wrongly so.
+
+----------------------------------------------------------------
+6. BUSINESS & EXECUTION REALITIES — C+
+----------------------------------------------------------------
+[x] Start solo / tiny
+[~] Charge early — Team $99 written, NO PAID CUSTOMERS YET; no $10-20 personal per-seat tier
+[x] Reliability/speed > features once you have users (CF edge) — "once you have users" is the catch
+[~] Security/abuse as constant work — acknowledged; egress stub + abuse story thin
+[x] Watch incumbents + agent tools — sharp competitive map; treats CF as commoditizing static
+[~] Apply to YC — YC-APPLICATION.md drafted; submission unconfirmed in scoreboard
+
+THE EVIDENCE PACK IS EMPTY. Every "Actual" column is blank. Your own plan:
+"weekly usage cannot wait" and "agents cannot send your 30 messages."
+Well-built platform, no demonstrated retained users or revenue = capped grade.
+
+================================================================
+STRENGTHS (keep)
+================================================================
+- Category fit is elite — named and positioned at the RFS bullseye.
+- Shipped the "hard" middle: ownership, versioning/rollback, magic-link auth,
+  Google-Doc private sharing, secrets vault, real full-stack runtime (lattice.aft.page).
+- Disciplined non-goals (no BYOC theatre, no static-hosting race).
+
+================================================================
+TOP 3 FIXES (priority order)
+================================================================
+1. SHIP THE CURSOR AGENT PLUGIN this week (skill + existing MCP). #1 distribution lever.
+2. BUILD ONE-CLICK REMIX/FORK. Only named RFS hard-problem with zero coverage;
+   virality flywheel; cheap on existing ownership + versioning.
+3. FILL THE EVIDENCE PACK with real strangers: >=5 repeat deployers,
+   >=1 app shared+used by a non-friend, >=1 paid/LOI. Grade is capped until these exist.
+
+================================================================
+WATCH ITEMS
+================================================================
+- Default-public vs playbook's default-private wedge — make it a conscious call.
+- Egress/sandbox/abuse story still a stub; agent code is "a magnet for bad actors."
+- Thin-MCP bet may under-serve "agents manage the app after deploy" — revisit if users ask.

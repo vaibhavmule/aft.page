@@ -1,112 +1,127 @@
 # aft.page — brand identity
 
+Canonical brief: [`../vision.txt`](../vision.txt), [`../rfs.txt`](../rfs.txt).
+Craft notes: [`DESIGN-INSPIRATION.txt`](./DESIGN-INSPIRATION.txt).
+
 ## What we are
 
 **Category:** A cloud for small software.
 
-**Public line (YC / TechCrunch voice):**
+**Public lines:**
 
-> Your agent made the software. aft makes it real.
+> Your agent made the software. aft makes it live, persistent, and shareable.
 
 > Deploy personal and small-team software. Get a durable URL. Share it like a
 > Google Doc.
 
-Identity, permissions, capabilities, isolation, and connectors are supporting
-machinery. Do not let “control plane” replace the Small Software category.
+Identity, permissions, isolation, and connectors are supporting machinery.
+Do not let “control plane” replace the Small Software category.
 
-Not a chat product. Not a website builder. Not a background coding-agent runner ([Ona](https://ona.com/)). Not “another ChatGPT Sites.”
+Not a chat product. Not a website builder. Not a background coding-agent runner.
+Not “another ChatGPT Sites.”
 
 The name is the **aft** of a ship: what was built gets carried out as a **live,
 durable, shareable URL**.
 
-## Design north star: Ona-grade platform craft
+## Positioning test
 
-Reference: [ona.com](https://ona.com/) — visual and information-architecture **bar**, not product clone.
+First five seconds must scream **“AI generated this”** — not “build a site,”
+not Carrd/Webflow, not Big Software cloud, not enterprise governance theatre.
 
-| Steal from Ona | Do not copy |
+## Design craft (inspiration, not product)
+
+Visual bar from agent-infra peers (Ardent, Vercel, Resend, AgentMail, Graphite) —
+black/white, product-as-hero, white CTAs. See `DESIGN-INSPIRATION.txt`.
+
+| Adopt | Reject |
 | --- | --- |
-| Dark, calm enterprise platform surface | “Background agents / PR factories” story |
-| One sharp platform headline + short support line | Fake Fortune 500 logo walls |
-| **Product-in-motion as the hero** (video / live UI), not a paste form as the brand | Purple glow / generic AI SaaS |
-| 3–4 capability pillars with one sentence each | Kitchen-sink mega-nav before we have the product |
-| Governance / security language as trust, not theatre | Claiming SOC2/GDPR before we have them |
-| Primary + secondary CTA (`Get started` / `Talk to us`) | “Request a demo” as the only path — keep self-serve deploy |
-| Sparse chrome, high contrast, serious type | Warm cream + terracotta “AI essay” look |
+| Pure black, white primary CTA | Beacon orange / terracotta accents |
+| Split hero + live product proof (mini drop) | Website-builder galleries |
+| Honest Beta + live example proof | Fake YC mark / fake logo walls / invented metrics |
+| One category line + calm sections | Purple glow / warm cream AI-essay look |
+| Hairline borders, sparse chrome | Feature sprawl mega-nav |
 
-**Positioning test:** first five seconds = *a cloud for small software*—not a
-paste-HTML toy, chat product, website builder, enterprise governance suite, or
-Ona competitor.
-
-Live marketing today still reads “indie paste tool.” Target reads **platform**.
-
-## What we are not
-
-| Avoid | Why |
-| --- | --- |
-| Claude warm cream + terracotta | Chat-assistant category |
-| Carrd / Webflow builder vibes | “Build your website” |
-| Dark purple gradient SaaS | Generic AI |
-| Friendly chat bubbles / sparkles | Wrong product |
-| Looking like Ona’s product screens | Different job: we host/share apps; they run coding agents |
-
-## Visual system (platform)
-
-Dark-first. Cool neutrals. One beacon accent for “live.”
+## Visual system
 
 | Token | Hex | Use |
 | --- | --- | --- |
-| `--void` | `#07080a` | Page background |
-| `--panel` | `#101218` | Surfaces, nav, cards (rare) |
-| `--line` | `#1e232c` | Hairline borders |
-| `--ink` | `#f2f4f7` | Primary text |
-| `--quiet` | `#8b939e` | Secondary text |
-| `--beacon` | `#e85d1a` | Live signal, CTAs, `aft.page` dot |
-| `--beacon-deep` | `#c44a0f` | Hover |
-| `--good` | `#3dd68c` | Live / success states |
+| `--void` | `#000000` | Page background |
+| `--panel` | `#0a0a0a` | Surfaces, nav |
+| `--line` | `#27272a` | Hairline borders |
+| `--ink` | `#fafafa` | Primary text |
+| `--quiet` | `#a1a1aa` | Secondary text |
+| `--faint` | `#52525b` | Tertiary |
+| `--cta` | `#ffffff` | Primary buttons |
+| `--cta-ink` | `#000000` | Label on primary buttons |
+| `--good` | `#22c55e` | Live / success only |
 
-Orange is a **beacon** (live URL), not editorial terracotta.
+No branded orange.
+
+**Wordmark** (board 2026-08-08): text-only `aft.page` — no icon glyph beside the
+name. The `.` uses `--good` (live green). Website nav: wordmark + **Beta** +
+white primary CTA.
+
+**Stern mark:** giant recessed `aft` + **square** period (not a `.` glyph).
+Readable chrome keeps full `aft.page`.
+
+**Favicon:** all board candidates killed. Keep shipped `favicon.svg` until a new
+favicon revision is approved on the board. Do not invent a replacement.
+
+**Killed lockups:** icon+wordmark, brand status-pill wordmark, dual CTA pair as a
+required motif. Primary CTA language stays “Deploy an app.”
 
 ### Typography
 
-| Role | Face | Why |
-| --- | --- | --- |
-| Wordmark only | **Fraunces** | Ownable mark — not page headlines |
-| Headlines + UI | **DM Sans** | Platform sans (Ona-like calm); not Sora |
-| Code / URLs / flow | **JetBrains Mono** | Machinery |
+| Role | Face |
+| --- | --- |
+| Wordmark + UI + headlines | **Geist Variable** |
+| Code / URLs / flow | **Geist Mono Variable** |
 
 ```
-family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700
-family=Fraunces:opsz,wght@9..144,600
-family=JetBrains+Mono:wght@400;500
+cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css
+cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css
 ```
 
-### Layout motifs (Ona-informed)
+### Layout motifs
 
-1. **Full-bleed product stage** — hero shows deploy → live URL → share (video or interactive), edge-to-edge visual plane.
-2. **Capability row** — Deploy · Keep · Share · Grow (as shipped).
-3. **Beacon wordmark** — Fraunces `aft` + beacon `.` + `page` in UI sans.
-4. **Flow line** — `agent → deploy → live URL` in mono.
-5. Cards only when they hold interaction (paste, login) — not decorative feature cards piled in the hero.
+1. **Full-bleed product stage** — hero shows agent → deploy → live URL.
+2. **Live proof** — interactive mini drop in the hero; clickable live example under it.
+3. **Flow line** — `agent → deploy → live URL` in mono.
+4. **Capability row** — What you can ship · Deploy · Share · Keep (as shipped).
+5. **Badges** — Beta beside wordmark. Prefer a real live example over empty “Backed by” placeholders.
 
 ### Voice
 
-- Short. Declarative. Startup-plain — sounds like TechCrunch / YC, not infra docs.
+- Short. Declarative. Startup-plain — TechCrunch / YC, not infra docs.
 - “A cloud for small software.”
-- “Your agent made the software. aft makes it live, persistent, and shareable.”
 - Prefer: deploy, keep, use, share, update, app, live URL.
-- Avoid on marketing: control plane, egress, BYOC, capability grants, inventory (say “app list”), VPC.
+- Primary CTA: “Deploy an app.”
+- Waitlist lives with pricing/beta expectations—not the hero.
+- Avoid on the website: control plane, egress, BYOC, capability grants, inventory
+  (say “app list”), VPC.
 - Not: “Start building”, “Create your website”, “Powered by AI”, “Background agents.”
 
-### Footer (Prized-structure)
+### Footer
 
-Steal structure from [Prized](https://prized.ai)-style footers — not their product or exact blue clone:
+Stern mark, not neon. Board 2026-08-09
+([`footer-board-2026-08-09.md`](./footer-board-2026-08-09.md)): structure **A**,
+chrome period **B** (square), giant **fade** (Resend wash into void). Killed:
+quiet/bold giant, live-green giant square, neon giant, neon chrome, gradient
+chrome, unmatched gradient giant, fading matched gradient giant, outline,
+dither, scanlines, solid zinc, hold gradient, hold+offset, horizontal sheen.
 
-1. Dithered transition from page into a solid **harbor blue** band (`--harbor`)
-2. Mark + short tagline | nav + pill CTA
-3. Privacy / Terms row
-4. Giant dither-faded wordmark (`aft`) dissolving into the blue
+1. **Word** — Giant watermark is `aft` + zinc square period. Readable chrome is
+   `aft.page` with a **live-green square** period (not a `.` glyph). Do not
+   billboard `aft.page`. Nav wordmark stays the glyph until a nav board says
+   otherwise.
+2. **Placement** — Below status + brand/columns (closing stern). Never above
+   the link grid.
+3. **Hover** — None on the giant mark (`aria-hidden`, `pointer-events: none`).
+   Hover stays on status pill, column links, and Drop CTA only.
 
-Keep body dark (Ona-grade). Footer is the color moment.
+Hairline top → status pill (→ status.aft.page) + copyright → brand + tagline |
+Product / Agents / Company → recessed stern watermark (Resend-depth, not
+Graphite tube glow).
 
 ## Product identity (auth)
 
@@ -117,23 +132,48 @@ Agents call MCP. Humans auth when they own or invite.
 
 See [SHARING.md](./SHARING.md) and [STRATEGY.md](./STRATEGY.md).
 
+## Consistency (all product surfaces)
+
+Same tokens, type, and CTA language everywhere aft chrome appears — not only
+the public site:
+
+| Surface | Source of truth |
+| --- | --- |
+| Website / SEO landings | `www/styles.css` |
+| App (projects, project, preview) | `www/app.css` |
+| Worker HTML (status, private gate) | `apps/api/src/brand.ts` |
+| Auth emails | `apps/api/src/auth.ts` (CTA = white on black) |
+
+Do **not** reintroduce Fraunces, DM Sans, JetBrains Mono, or beacon orange (`#e85d1a`)
+on product chrome. User-deployed sites keep their own design.
+
 ## Implementation debt
 
-Marketing landing rebuilt to dark platform craft (Fraunces wordmark, DM Sans,
-beacon orange, full-bleed product stage, harbor footer) — Aug 2026. Keep SEO
-subpages (`paste-html/`, etc.) in sync when touching voice.
+OG / `og-source.html` / `og-image.ts` may still lag (Fraunces + cream) — regenerate
+to Geist black/white when next touching social cards.
 
-Dashboard + preview + private-access gate (`projects*`, `preview.html`,
-`sharing.ts`, `auth-nav.js`) brought onto the same tokens via `marketing/app.css`
-— Aug 2026. OG / `og-source.html` still on the older light system (follow-up).
+## Visual review
+
+Approve brand specimens on HTML — do not decide from chat alone. Board:
+[`../www/brand-board.html`](../www/brand-board.html). Process:
+[STRATEGY.md § Visual review](./STRATEGY.md#visual-review-approve-on-html).
+
+Latest receipts: [`brand-board-2026-08-08.md`](./brand-board-2026-08-08.md),
+[`footer-board-2026-08-09.md`](./footer-board-2026-08-09.md). Footer board:
+[`../www/footer-board.html`](../www/footer-board.html).
 
 ## Files
 
 | Asset | Path |
 | --- | --- |
-| Tokens + marketing / content layout | `marketing/styles.css` |
-| App / dashboard chrome | `marketing/app.css` |
-| Favicon | `marketing/favicon.svg` |
-| OG | `marketing/og-source.html` → `og.png` |
-| Preview shell | `marketing/preview/` |
+| Tokens + website layout | `www/styles.css` |
+| App / dashboard chrome | `www/app.css` |
+| Worker brand constants | `apps/api/src/brand.ts` |
+| Favicon | `www/favicon.svg` (awaiting new board) |
+| Brand board (Approve / Kill) | `www/brand-board.html` |
+| Footer board (Approve / Kill) | `www/footer-board.html` |
+| Board decisions | `docs/brand-board-2026-08-08.md`, `docs/footer-board-2026-08-09.md` |
+| OG | `www/og-source.html` → `og.png` |
+| Preview shell | `www/preview/` |
+| Vision | `vision.txt` |
 | Strategy | `docs/STRATEGY.md` |

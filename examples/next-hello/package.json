@@ -1,11 +1,19 @@
-/**
- * Minimal Next.js app placeholder for OpenNext orchestration docs.
- * Real deploy: point scripts/opennext-orchestrate.sh at a full Next app.
- */
 {
   "name": "aft-next-hello",
   "private": true,
   "scripts": {
-    "dev": "echo 'Use a real Next.js app directory with scripts/opennext-orchestrate.sh'"
+    "dev": "next dev",
+    "build": "next build"
+  },
+  "dependencies": {
+    "next": "15.3.8",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@opennextjs/cloudflare": "^1.20.2",
+    "@types/react": "19.2.17",
+    "typescript": "^5.8.0",
+    "wrangler": "^4.120.0"
   }
 }

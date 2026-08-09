@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Deploy from Replit — aft.page</title>
+    <meta name="description" content="Deploy from Replit Agent via MCP/HTTP, or export static files to aft.page Drop." />
+    <link rel="canonical" href="https://aft.page/with/replit/" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#000000" />
+    <meta property="og:title" content="Deploy from Replit — aft.page" />
+    <meta property="og:description" content="Deploy from Replit Agent via MCP/HTTP, or export static files to aft.page Drop." />
+    <meta property="og:url" content="https://aft.page/with/replit/" />
+    <meta property="og:image" content="https://aft.page/og.png" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css" />
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/mark.css?v=3" />
+  </head>
+  <body>
+    <div class="site">
+      <nav class="topnav" aria-label="Primary">
+        <div class="topnav-brand-wrap">
+          <a class="topnav-brand" href="/">aft<span>.</span>page</a>
+          <span class="nav-beta">Beta</span>
+        </div>
+        <div class="topnav-links">
+          <a href="/#product">Product</a>
+          <div class="nav-mega" data-nav-mega>
+            <button type="button" class="nav-mega-trigger" aria-expanded="false" aria-controls="nav-agents-panel-with-replit-index" id="nav-agents-trigger-with-replit-index">
+              Agents
+              <svg class="nav-mega-chevron" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="nav-mega-panel" id="nav-agents-panel-with-replit-index" role="region" aria-label="Agents menu" hidden>
+              <div class="nav-mega-col">
+                <p class="nav-mega-label">Get started</p>
+                <a href="/docs">
+                  <span class="nav-mega-title">Documentation</span>
+                  <span class="nav-mega-desc">What we support, deploy, secrets.</span>
+                </a>
+                <a href="/drop">
+                  <span class="nav-mega-title">Drop files</span>
+                  <span class="nav-mega-desc">Folder or zip → live URL.</span>
+                </a>
+              </div>
+              <div class="nav-mega-col nav-mega-list">
+                <p class="nav-mega-label">Integrations</p>
+                <a href="/with/claude/">Claude Code</a>
+                <a href="/with/codex/">Codex</a>
+                <a href="/with/cursor/">Cursor</a>
+                <a href="/with/openclaw/">OpenClaw</a>
+                <a href="/with/replit/" aria-current="page">Replit</a>
+                <a href="/with/lovable/">Lovable</a>
+                <a href="/with/vercel/">Vercel</a>
+                <a href="/with/windsurf/">Windsurf</a>
+                <a href="/with/hermes/">Hermes</a>
+                <a href="/with/kilo/">Kilo</a>
+                <a href="/with/aws/">AWS</a>
+                <a href="/with/chatgpt/">ChatGPT</a>
+                <a href="/with/api/">API</a>
+              </div>
+            </div>
+          </div>
+          <a href="/docs">Docs</a>
+          <a href="/login" data-aft-auth="login">Log in</a>
+          <a class="topnav-cta" href="/drop">Drop files</a>
+        </div>
+      </nav>
+
+      <header class="with-hero">
+        <p class="eyebrow">Replit</p>
+        <h1>Deploy from Replit</h1>
+        <p class="lede">Ship a Replit Agent or static export to a durable *.aft.page URL — no cloud account ceremony.</p>
+        <ul class="with-switch" aria-label="Deploy paths">
+            <li><a href="/with/claude/">Claude Code</a></li>
+            <li><a href="/with/codex/">Codex</a></li>
+            <li><a href="/with/cursor/">Cursor</a></li>
+            <li><a href="/with/openclaw/">OpenClaw</a></li>
+            <li><a href="/with/replit/" aria-current="page">Replit</a></li>
+            <li><a href="/with/lovable/">Lovable</a></li>
+            <li><a href="/with/vercel/">Vercel</a></li>
+            <li><a href="/with/windsurf/">Windsurf</a></li>
+            <li><a href="/with/hermes/">Hermes</a></li>
+            <li><a href="/with/kilo/">Kilo</a></li>
+            <li><a href="/with/aws/">AWS</a></li>
+            <li><a href="/with/chatgpt/">ChatGPT</a></li>
+            <li><a href="/with/api/">API</a></li>
+            <li><a href="/drop/">Drop</a></li>
+        </ul>
+      </header>
+
+      <div class="with-body">
+        <ol class="with-steps">
+          <li>
+            <h2>Option A — Agent + MCP / HTTP</h2>
+            <p>If your Replit agent can call MCP or HTTP, point it at aft.page:</p>
+            <div class="copy-block">
+              <button type="button" class="copy-btn" data-copy="#cmd-config">Copy</button>
+              <pre id="cmd-config">{
+  &quot;mcpServers&quot;: {
+    &quot;aft-page&quot;: {
+      &quot;url&quot;: &quot;https://mcp.aft.page/mcp&quot;
+    }
+  }
+}</pre>
+            </div>
+          </li>
+          <li>
+            <h2>Option B — Export → Drop</h2>
+            <p>Download the static build (HTML/CSS/JS with <code>index.html</code>), then open <a href="/drop">Drop</a> and upload the folder or zip.</p>
+          </li>
+          <li>
+            <h2>Prompt</h2>
+            <p>Ask the agent to return the live URL:</p>
+            <div class="copy-block">
+              <button type="button" class="copy-btn" data-copy="#cmd-prompt">Copy</button>
+              <pre id="cmd-prompt">Deploy this app to aft.page and give me the URL</pre>
+            </div>
+          </li>
+        </ol>
+        <p class="with-note">Prefer MCP when available. Otherwise Drop or <a href="/with/api/">API</a>.</p>
+
+        <div class="with-cta">
+          <a class="btn btn-primary" href="/mcp">Full MCP docs</a>
+          <a class="btn btn-ghost" href="/drop">Drop files</a>
+        </div>
+      </div>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-meta">
+          <a class="footer-status" href="https://status.aft.page">
+            <span class="status-dot" aria-hidden="true"></span>
+            All systems operational
+          </a>
+          <p class="footer-copy">© 2026 aft.page</p>
+        </div>
+        <div class="footer-top">
+          <div class="footer-brand-block">
+            <a class="footer-mark" href="/" aria-label="aft.page home">
+              <span class="footer-wordmark">aft<span class="sq" aria-hidden="true"></span>page</span>
+            </a>
+            <p class="footer-tagline">
+              Your agent made the app. aft makes it real.<br />
+              Live links. Invite teammates. Clear ownership.
+            </p>
+          </div>
+          <div class="footer-cols">
+            <div class="footer-col">
+              <h3>Product</h3>
+              <a href="/docs">Docs</a>
+              <a href="/drop">Drop</a>
+              <a href="/projects">Projects</a>
+              <a href="/preview">Preview</a>
+            </div>
+            <div class="footer-col">
+              <h3>Agents</h3>
+              <a href="/mcp">MCP</a>
+              <a href="/with/claude/">Claude Code</a>
+              <a href="/with/cursor/">Cursor</a>
+              <a href="/with/codex/">Codex</a>
+              <a href="/with/chatgpt/">ChatGPT</a>
+              <a href="/with/kilo/">Kilo</a>
+              <a href="/with/windsurf/">Windsurf</a>
+              <a href="/with/api/">API</a>
+            </div>
+            <div class="footer-col">
+              <h3>Company</h3>
+              <a href="https://status.aft.page">Status</a>
+              <a href="#feedback" data-aft-feedback>Feedback</a>
+              <a href="mailto:hello@aft.page">Contact</a>
+              <a href="/privacy/">Privacy</a>
+              <a href="/terms/">Terms</a>
+              <a href="/cookies/">Cookies</a>
+            </div>
+          </div>
+        </div>
+        <div class="footer-giant-wrap" aria-hidden="true">
+          <p class="footer-giant">aft<span class="sq" aria-hidden="true"></span></p>
+        </div>
+      </div>
+    </footer>
+    </div>
+    <script src="/copy.js" defer></script>
+    <script src="/auth-me.js" defer></script>
+    <script src="/agents-nav.js" defer></script>
+    <script src="/auth-nav.js" defer></script>
+    <script src="/summarize.js" defer></script>
+    <script src="/footer.js?v=20260809-cl" defer></script>
+    <script src="/feedback.js?v=20260808-footer" defer></script>
+  </body>
+</html>

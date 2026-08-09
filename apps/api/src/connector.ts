@@ -15,7 +15,7 @@ import {
   completeConnectorInvoke,
   getConnectorInvoke,
 } from "./db";
-import { corsHeaders, json } from "./http";
+import { corsHeaders, json, originMayActOnSlug } from "./http";
 import { canAccessSite } from "./sharing";
 
 const ONLINE_MS = 60_000;
@@ -86,6 +86,10 @@ async function mintToken(
   origin: string | null,
 ): Promise<Response> {
   const extra = Object.fromEntries(corsHeaders(origin, true));
+  const root = env.ROOT_DOMAIN || "aft.page";
+  if (!originMayActOnSlug(request, slug, root)) {
+    return json({ error: "forbidden" }, 403, extra);
+  }
   const user = await resolveSessionUser(env, request);
   if (!user) return json({ error: "unauthorized" }, 401, extra);
   const ownerId = await getSiteOwnerId(env, slug);
@@ -221,6 +225,10 @@ async function invoke(
   origin: string | null,
 ): Promise<Response> {
   const extra = Object.fromEntries(corsHeaders(origin, true));
+  const root = env.ROOT_DOMAIN || "aft.page";
+  if (!originMayActOnSlug(request, slug, root)) {
+    return json({ error: "forbidden" }, 403, extra);
+  }
   const access = await canAccessSite(env, request, slug);
   if (!access.allowed) {
     return json({ error: "forbidden" }, 403, extra);
@@ -315,6 +323,10 @@ async function getInvoke(
   origin: string | null,
 ): Promise<Response> {
   const extra = Object.fromEntries(corsHeaders(origin, true));
+  const root = env.ROOT_DOMAIN || "aft.page";
+  if (!originMayActOnSlug(request, slug, root)) {
+    return json({ error: "forbidden" }, 403, extra);
+  }
   const access = await canAccessSite(env, request, slug);
   if (!access.allowed) {
     return json({ error: "forbidden" }, 403, extra);
@@ -357,6 +369,10 @@ async function connectorStatus(
   origin: string | null,
 ): Promise<Response> {
   const extra = Object.fromEntries(corsHeaders(origin, true));
+  const root = env.ROOT_DOMAIN || "aft.page";
+  if (!originMayActOnSlug(request, slug, root)) {
+    return json({ error: "forbidden" }, 403, extra);
+  }
   const access = await canAccessSite(env, request, slug);
   if (!access.allowed) {
     return json({ error: "forbidden" }, 403, extra);

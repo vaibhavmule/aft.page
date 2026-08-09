@@ -1,6 +1,7 @@
 /** Serving a published site: routing, fallbacks, and content types. */
 import { describe, it, expect } from "vitest";
 import { env } from "cloudflare:test";
+import { utcDayKey, viewDayKey } from "../src/metrics";
 import { call, deployPaste, uploadJson, fetchSite, API_ORIGIN } from "./helpers";
 
 describe("host routing", () => {
@@ -43,9 +44,33 @@ describe("host routing", () => {
 });
 
 describe("serving files", () => {
-  it("404s an unknown slug", async () => {
+  it("404s an unknown slug with a branded page for browsers", async () => {
+    const res = await call(
+      new Request("https://nobody-here.aft.page/", {
+        headers: { accept: "text/html" },
+      }),
+    );
+    expect(res.status).toBe(404);
+    expect(res.headers.get("x-aft-error")).toBe("SITE_NOT_FOUND");
+    expect(res.headers.get("x-aft-slug")).toBe("nobody-here");
+    expect(res.headers.get("content-type") || "").toMatch(/text\/html/);
+    expect(res.headers.get("cache-control")).toBe("no-store");
+    const html = await res.text();
+    expect(html).toContain("Nothing is deployed here");
+    expect(html).toContain("nobody-here.aft.page");
+    expect(html).toContain('name="robots" content="noindex"');
+    expect(html).not.toContain("Claim this site");
+  });
+
+  it("404s an unknown slug as JSON when Accept prefers it", async () => {
     const res = await fetchSite("nobody-here");
     expect(res.status).toBe(404);
+    expect(res.headers.get("x-aft-error")).toBe("SITE_NOT_FOUND");
+    expect(await res.json()).toMatchObject({
+      error: "not_found",
+      code: "SITE_NOT_FOUND",
+      slug: "nobody-here",
+    });
   });
 
   it("serves index.html at the root and tags the deploy", async () => {
@@ -53,6 +78,17 @@ describe("serving files", () => {
     const res = await fetchSite("root-index");
     expect(res.headers.get("x-aft-slug")).toBe("root-index");
     expect(res.headers.get("x-aft-deploy")).toBe(out.deployId);
+  });
+
+  it("injects claim chrome on full HTML documents", async () => {
+    await deployPaste(
+      "<!doctype html><html><body><h1>Chrome</h1></body></html>",
+      "live-chrome",
+    );
+    const html = await (await fetchSite("live-chrome")).text();
+    expect(html).toContain("<h1>Chrome</h1>");
+    expect(html).toContain('id="aft-chrome"');
+    expect(html).toContain("Claim this site");
   });
 
   it("allows the preview page to fetch source across subdomains", async () => {
@@ -80,6 +116,21 @@ describe("serving files", () => {
     const res = await fetchSite("spa-app", "/dashboard/settings");
     expect(res.status).toBe(200);
     expect(await res.text()).toBe("<h1>SPA</h1>");
+  });
+
+  it("404s scanner junk instead of SPA-falling-back to index.html", async () => {
+    await deployPaste("<h1>SPA</h1>", "spa-junk");
+    const git = await fetchSite("spa-junk", "/.git/config");
+    expect(git.status).toBe(404);
+    expect(git.headers.get("content-type") || "").toMatch(/text\/plain/);
+    expect(await git.text()).toBe("Not found");
+
+    const wp = await fetchSite("spa-junk", "/wp-login.php");
+    expect(wp.status).toBe(404);
+
+    const spa = await fetchSite("spa-junk", "/missing-spa-route");
+    expect(spa.status).toBe(200);
+    expect(await spa.text()).toBe("<h1>SPA</h1>");
   });
 
   it("guesses content types from the extension", async () => {
@@ -121,8 +172,11 @@ describe("serving files", () => {
   });
 
   it("does not serve reserved names as tenant sites", async () => {
-    const res = await fetchSite("admin");
-    expect(res.status).toBe(404);
+    for (const slug of ["admin", "ai", "cron"]) {
+      const res = await fetchSite(slug);
+      expect(res.status).toBe(404);
+      expect(await res.json()).toMatchObject({ error: "reserved" });
+    }
   });
 
   it("injects a default og:image when the page has a head but no social meta", async () => {
@@ -186,5 +240,60 @@ describe("serving files", () => {
     expect(html).not.toContain("__aft/og.png");
     expect(html).not.toContain("https://aft.page/og.png");
     expect(html).toContain('name="description" content="Custom — live on aft.page"');
+  });
+
+  it("returns JSON 500 when site metadata is corrupt", async () => {
+    await env.SITES.put("site:broken-meta", "not-json");
+    const res = await fetchSite("broken-meta");
+    expect(res.status).toBe(500);
+    expect(await res.json()).toMatchObject({ error: "internal" });
+  });
+
+  it("passes through an upstream 500 for worker runtime sites", async () => {
+    await env.SITES.put(
+      "site:crash-app",
+      JSON.stringify({
+        deployId: "dep_crash",
+        runtime: "worker",
+        upstreamUrl: "https://upstream.example/",
+      }),
+    );
+    const orig = globalThis.fetch;
+    globalThis.fetch = (async () =>
+      new Response("boom from app", {
+        status: 500,
+        headers: { "content-type": "text/plain" },
+      })) as typeof fetch;
+    try {
+      const res = await fetchSite("crash-app");
+      expect(res.status).toBe(500);
+      expect(res.headers.get("x-aft-upstream")).toBe("https://upstream.example");
+      const body = await res.text();
+      expect(body).toBe("boom from app");
+      expect(body).not.toContain("Nothing is deployed here");
+    } finally {
+      globalThis.fetch = orig;
+    }
+  });
+
+  it("counts HTML 200 views and ignores CSS and 404s", async () => {
+    await call(
+      uploadJson(
+        [
+          { path: "index.html", content: "<h1>views</h1>" },
+          { path: "app.css", content: "body{color:red}" },
+        ],
+        "view-count",
+      ),
+    );
+    expect((await fetchSite("view-count")).status).toBe(200);
+    expect((await fetchSite("view-count", "/app.css")).status).toBe(200);
+    expect((await fetchSite("no-such-view-slug")).status).toBe(404);
+    expect((await fetchSite("view-count")).status).toBe(200);
+
+    const raw = await env.SITES.get(viewDayKey(utcDayKey()));
+    expect(raw).toBeTruthy();
+    const map = JSON.parse(raw!) as Record<string, number>;
+    expect(map["view-count"]).toBe(2);
   });
 });

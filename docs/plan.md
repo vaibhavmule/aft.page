@@ -47,13 +47,20 @@ Paid can wait until week 3–4; **weekly usage cannot.**
 
 ## Positioning (say this every outreach)
 
+> AFT is the publishing and permission layer for software created by AI agents.
+
 > Your agent made the software. aft makes it live, persistent, and shareable.
 
 > A cloud for purpose-built software used by one person or a small handful—no
 > repository or cloud ceremony required.
 
 The URL is the first success. The company is the simplest durable runtime and
-lifecycle for Small Software. Identity, capabilities, and connectors serve it.
+lifecycle for Small Software. Identity, sharing, secrets, and connectors serve it —
+not “we host HTML” (Cloudflare already commoditizes that).
+
+**Highest-priority distribution (Aug 2026):** [Agent Plugins](https://vercel.com/blog/introducing-agent-plugins)
+(skill + MCP) so “Deploy with AFT” works in Cursor (and later other agents). See
+[STRATEGY.md](./STRATEGY.md).
 
 ---
 
@@ -97,7 +104,7 @@ lifecycle for Small Software. Identity, capabilities, and connectors serve it.
 - [x] Dogfood app pulls **live data through connector** (Sites can’t match this demo)
 - [x] Ugly paid offer: team plan / private apps / connector pilot price written down
 - [x] Full-stack path: Lattice JS on `*.aft.page` (secrets vault + `/api/*`) — https://lattice.aft.page
-- [ ] OpenNext dogfood via `@opennextjs/cloudflare` + aft upstream (script ready; live Next app TBD)
+- [x] OpenNext dogfood via `@opennextjs/cloudflare` + aft upstream — https://next-hello.aft.page
 
 **Customers (proof track)**
 - [ ] **10** live demos (capability + connector if ready; full-stack if ready)
@@ -113,9 +120,14 @@ lifecycle for Small Software. Identity, capabilities, and connectors serve it.
 - [x] Inventory UX: login CTA, site actions, paste / preview links
 - [x] Evidence pack + Phase 1 success-test runbook ([EVIDENCE-PACK.md](./EVIDENCE-PACK.md))
 - [x] Full-stack dogfood live: Lattice JS (set `ANTHROPIC_API_KEY` for convert demo)
-- [ ] OpenNext on aft URL (stretch) — [OPENNEXT-ORCHESTRATION.md](./OPENNEXT-ORCHESTRATION.md)
+- [ ] **Agent Plugin (P0):** skill + MCP (`deploy_html`) → install in Cursor → private URL in ~30s
+- [ ] Public plugin repo + install command; 30-second demo clip for outreach
+- [ ] Create AFT GitHub org; publish `apps/plugin/` as public repo for marketplace listing (Cursor Marketplace + cursor.directory; add `.cursor-plugin/plugin.json` metadata + logo)
+- [ ] Analytics coverage: deploy, open, share, redeploy ([METRICS.md](./METRICS.md))
+- [x] OpenNext on aft URL (stretch) — https://next-hello.aft.page — [OPENNEXT-ORCHESTRATION.md](./OPENNEXT-ORCHESTRATION.md)
 - [ ] **No** full BYOC / residency / SBOM theatre
 - [ ] **No** connector deepen unless a design partner’s app requires it
+- [ ] **No** Kitesurf / browser-automation work (defer until an app needs it)
 
 **Customers (proof track)**
 - [ ] Hit **≥5 repeat deployers** (stretch: 10 retained apps)
@@ -180,6 +192,8 @@ Polymerize: **do not resign** in the first seven-week proof.
 - Building features nobody asked for on a call (except agreed runtime track: Lattice done; OpenNext on demand)
 - Treating one-shot anonymous deploys as “customers”
 - Running proof-only or platform-only for a full week
+- Competing on static hosting alone (Drop / Dynamic Workers already win that race)
+- Building around Kitesurf or agent browsers before a real app needs automation
 
 ---
 
@@ -205,6 +219,8 @@ Polymerize: **do not resign** in the first seven-week proof.
 - [BRAND.md](./BRAND.md) — craft bar (Ona-grade), not this month’s blocker  
 - [CONNECTOR.md](./CONNECTOR.md) — Week 3 connector protocol + demo  
 - [PRICING.md](./PRICING.md) — Free / Team $99 or ₹9,999 / connector pilot  
+- [../time-to-url.txt](../time-to-url.txt) — daily machine T2U on ops.aft.page  
+
 - [EVIDENCE-PACK.md](./EVIDENCE-PACK.md) — Week 4 close checklist + Phase 1 success test  
 
 **Rule:** Ship platform with agents. Prove with strangers. Both every week.

@@ -16,7 +16,45 @@ function slugFromHtml(html) {
     .replace(/^-+|-+$/g, "")
     .slice(0, 48);
   if (!slug || slug.length < 2) return undefined;
-  if (["www", "api", "app", "admin", "aft", "aft-page"].includes(slug)) {
+  if (
+    [
+      "www",
+      "api",
+      "app",
+      "mail",
+      "ftp",
+      "cdn",
+      "static",
+      "admin",
+      "dashboard",
+      "status",
+      "ops",
+      "docs",
+      "login",
+      "mcp",
+      "drop",
+      "cname",
+      "aft",
+      "aft-page",
+      "ai",
+      "cron",
+      "job",
+      "jobs",
+      "schedule",
+      "schedules",
+      "automation",
+      "automations",
+      "brief",
+      "plugin",
+      "plugins",
+      "claim",
+      "auth",
+      "preview",
+      "blog",
+      "help",
+      "support",
+    ].includes(slug)
+  ) {
     return undefined;
   }
   return slug;
@@ -111,18 +149,11 @@ async function publishHtml(html) {
   return data;
 }
 
-/** Land on the aft.page preview shell (claim / copy / manage) not the raw site. */
-function previewUrl(liveUrl, editToken) {
-  const u = new URL("https://aft.page/preview");
-  u.searchParams.set("url", liveUrl);
+/** Claim page first for guests; live URL if claimUrl is missing. */
+function liveOpenUrl(liveUrl, editToken, claimUrl) {
+  if (claimUrl) return claimUrl;
+  const u = new URL(liveUrl);
   if (editToken) u.searchParams.set("token", editToken);
-  // So preview can offer “Back to chat” → edit → redeploy.
-  try {
-    const chat = location.href;
-    if (/^https:\/\/(chatgpt\.com|claude\.ai|chat\.openai\.com)\//i.test(chat)) {
-      u.searchParams.set("from", chat);
-    }
-  } catch (_) {}
   return u.toString();
 }
 
@@ -151,8 +182,8 @@ function createIconButton(getHtml) {
     try {
       const data = await publishHtml(html);
       setIconState(btn, "ok");
-      if (opened) opened.location.replace(previewUrl(data.url, data.editToken));
-      else window.open(previewUrl(data.url, data.editToken), "_blank", "noopener,noreferrer");
+      if (opened) opened.location.replace(liveOpenUrl(data.url, data.editToken, data.claimUrl));
+      else window.open(liveOpenUrl(data.url, data.editToken, data.claimUrl), "_blank", "noopener,noreferrer");
       setTimeout(() => setIconState(btn, "idle"), 2200);
     } catch (err) {
       console.error("[aft.page]", err);
@@ -193,8 +224,8 @@ function createMenuItem(getHtml) {
     try {
       const data = await publishHtml(html);
       btn.textContent = "Live — opening…";
-      if (opened) opened.location.replace(previewUrl(data.url, data.editToken));
-      else window.open(previewUrl(data.url, data.editToken), "_blank", "noopener,noreferrer");
+      if (opened) opened.location.replace(liveOpenUrl(data.url, data.editToken, data.claimUrl));
+      else window.open(liveOpenUrl(data.url, data.editToken, data.claimUrl), "_blank", "noopener,noreferrer");
     } catch (err) {
       console.error("[aft.page]", err);
       opened?.close();

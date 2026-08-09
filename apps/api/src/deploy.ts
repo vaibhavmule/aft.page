@@ -7,26 +7,47 @@ import {
   MAX_TOTAL_BYTES,
   MAX_TOTAL_BYTES_RUNTIME,
   RESERVED_SLUGS,
+  parseCsvLower,
 } from "./env";
 import { hashEditToken, randomToken, resolveSessionUser } from "./auth";
 import { extractCapabilities, formatCapabilitySummary } from "./capabilities";
 import { authorizeDeployUpdate } from "./claim";
 import {
+  getSiteOwnerEmail,
   insertDeploy,
+  insertDeployFailure,
+  setFailureHasPayload,
   setSiteEditTokenHash,
   setSiteRuntime,
   upsertCapabilityRequest,
   upsertSiteRow,
 } from "./db";
 import { corsHeaders, isAllowedWebOrigin, json } from "./http";
+import { claimSiteUrl, liveSiteUrl } from "./site-url";
 import { extractAftManifest } from "./manifest";
-import { trackDeploy, trackRedeploy } from "./metrics";
+import { explainDeployFailure } from "./fail-explain";
+import {
+  resolveClient,
+  trackDeploy,
+  trackRedeploy,
+  type DeployTrackFields,
+} from "./metrics";
 import { allocateUniqueSlug, isValidSlug } from "./slug";
-import { putObject } from "./storage";
+import { putFailurePayload, putObject } from "./storage";
 
 export { sanitizeHtmlDocument } from "./upload";
 
 type UploadFile = { path: string; bytes: ArrayBuffer; contentType: string };
+
+export function deployRequestId(request: Request): string {
+  return request.headers.get("cf-ray") || `aft_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
+}
+
+function withRequestId(res: Response, requestId: string): Response {
+  const headers = new Headers(res.headers);
+  headers.set("x-aft-request-id", requestId);
+  return new Response(res.body, { status: res.status, headers });
+}
 
 /** Credentialed CORS for aft.page web; open CORS for agents/CLI. */
 function deployJson(
@@ -39,25 +60,117 @@ function deployJson(
   return json(data, status, Object.fromEntries(corsHeaders(origin, useCreds)));
 }
 
-function limitsForFiles(files: UploadFile[]) {
+// ponytail: skip AFT product caps only. CF request body / R2 / CPU still bound this.
+// If Parakh becomes an image CDN, host pack shots on the ingest Worker R2 instead.
+function skipProductCaps(
+  env: Env,
+  slug?: string,
+  emails: Array<string | null | undefined> = [],
+): boolean {
+  if (slug && parseCsvLower(env.UNLIMITED_SLUGS).includes(slug)) return true;
+  const allow = parseCsvLower(env.OPS_EMAILS);
+  return emails.some((e) => e && allow.includes(e.trim().toLowerCase()));
+}
+
+function limitsForFiles(
+  env: Env,
+  files: UploadFile[],
+  slug?: string,
+  emails?: Array<string | null | undefined>,
+) {
   const manifest = extractAftManifest(files);
   const runtime = manifest?.runtime || "static";
   const elevated = runtime !== "static";
   return {
     manifest,
     runtime,
+    unlimited: skipProductCaps(env, slug, emails),
     maxFiles: elevated ? MAX_FILES_RUNTIME : MAX_FILES,
     maxFile: elevated ? MAX_FILE_BYTES_RUNTIME : MAX_FILE_BYTES,
     maxTotal: elevated ? MAX_TOTAL_BYTES_RUNTIME : MAX_TOTAL_BYTES,
   };
 }
 
+function listingFrom(files: UploadFile[]) {
+  return files.map((f) => ({
+    path: f.path,
+    bytes: f.bytes.byteLength,
+    type: f.contentType,
+  }));
+}
+
 export async function deploy(request: Request, env: Env): Promise<Response> {
   const started = Date.now();
-  const done = (
+  const requestId = deployRequestId(request);
+  let uploadFiles: UploadFile[] = [];
+
+  const done = async (
     response: Response,
-    fields?: { slug?: string; bytes?: number; files?: number; error?: string },
-  ) => trackDeploy(env, request, started, response, fields);
+    fields?: DeployTrackFields,
+  ): Promise<Response> => {
+    const tracked = await trackDeploy(env, request, started, response, {
+      ...fields,
+      requestId,
+    });
+    if (response.status >= 400) {
+      const error = fields?.error || String(response.status);
+      const source = resolveClient(request);
+      const explained = explainDeployFailure({
+        error,
+        path: fields?.path,
+        slug: fields?.slug,
+        source,
+        files: fields?.files,
+        bytes: fields?.bytes,
+        hint: fields?.hint,
+      });
+      const hint = fields?.hint || explained.why;
+      console.warn(
+        JSON.stringify({
+          level: "warn",
+          where: "deploy",
+          error,
+          path: fields?.path || "",
+          slug: fields?.slug || "",
+          files: fields?.files ?? 0,
+          bytes: fields?.bytes ?? 0,
+          source,
+          requestId,
+          hint,
+          why: explained.why,
+          fix: explained.fix,
+        }),
+      );
+      try {
+        const failId = await insertDeployFailure(env, {
+          error,
+          path: fields?.path,
+          slug: fields?.slug,
+          source,
+          files: fields?.files ?? (uploadFiles.length || undefined),
+          bytes: fields?.bytes,
+          httpStatus: response.status,
+          requestId,
+          hint,
+          upload: {
+            contentType: request.headers.get("content-type") || undefined,
+            userAgent: request.headers.get("user-agent") || undefined,
+            files: fields?.uploadListing ?? listingFrom(uploadFiles),
+          },
+        });
+        if (uploadFiles.length) {
+          await putFailurePayload(env, failId, uploadFiles);
+          await setFailureHasPayload(env, failId);
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(
+          JSON.stringify({ level: "error", where: "deploy_failure_write", message, requestId }),
+        );
+      }
+    }
+    return withRequestId(tracked, requestId);
+  };
 
   try {
     const url = new URL(request.url);
@@ -87,6 +200,7 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
     }
 
     const files = await parseUpload(request);
+    uploadFiles = files;
     if (files.length === 0) {
       return done(
         deployJson(
@@ -94,14 +208,21 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
           { error: "no_files", hint: "multipart field 'files' or raw text/html body" },
           400,
         ),
-        { error: "no_files" },
+        {
+          error: "no_files",
+          hint: "multipart field 'files' or raw text/html body",
+        },
       );
     }
 
-    const { manifest, runtime, maxFiles, maxFile, maxTotal } =
-      limitsForFiles(files);
+    const querySlug = url.searchParams.get("slug")?.toLowerCase();
+    const sessionUser = await resolveSessionUser(env, request);
+    const { manifest, runtime, unlimited, maxFiles, maxFile, maxTotal } =
+      limitsForFiles(env, files, querySlug, [sessionUser?.email]);
+    // Query wins; aft.json.slug is the fallback so agents who forget ?slug= still stick.
+    const preferred = querySlug || manifest?.slug;
 
-    if (files.length > maxFiles) {
+    if (!unlimited && files.length > maxFiles) {
       return done(deployJson(request, { error: "too_many_files", max: maxFiles }, 400), {
         error: "too_many_files",
         files: files.length,
@@ -113,22 +234,28 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
       if (f.path.includes("..") || f.path.startsWith("/") || f.path.includes("\\")) {
         return done(deployJson(request, { error: "bad_path", path: f.path }, 400), {
           error: "bad_path",
+          path: f.path,
           files: files.length,
         });
       }
-      if (f.bytes.byteLength > maxFile) {
+      if (!unlimited && f.bytes.byteLength > maxFile) {
         return done(
           deployJson(
             request,
             { error: "file_too_large", path: f.path, max: maxFile },
             400,
           ),
-          { error: "file_too_large", files: files.length },
+          {
+            error: "file_too_large",
+            path: f.path,
+            files: files.length,
+            bytes: f.bytes.byteLength,
+          },
         );
       }
       total += f.bytes.byteLength;
     }
-    if (total > maxTotal) {
+    if (!unlimited && total > maxTotal) {
       return done(
         deployJson(request, { error: "payload_too_large", max: maxTotal }, 400),
         {
@@ -138,8 +265,6 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
         },
       );
     }
-
-    const preferred = url.searchParams.get("slug")?.toLowerCase();
     const base =
       preferred && isValidSlug(preferred) && !RESERVED_SLUGS.has(preferred)
         ? preferred
@@ -177,11 +302,11 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
       runtime,
       upstreamUrl,
       mainModule,
+      badge: manifest?.badge !== false,
     };
     await env.SITES.put(`site:${slug}`, JSON.stringify(meta));
 
     const editToken = randomToken("aft_edit_");
-    const sessionUser = await resolveSessionUser(env, request);
     await upsertSiteRow(env, slug, deployId, sessionUser?.id ?? null);
     await setSiteRuntime(env, slug, {
       runtime,
@@ -196,12 +321,15 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
       bytes: total,
       createdByUserId: sessionUser?.id ?? null,
       source: "post",
+      client: resolveClient(request),
+      ms: Math.max(0, Date.now() - started),
     });
 
     const capsPayload = await maybeCapabilities(env, slug, deployId, files);
 
     const root = env.ROOT_DOMAIN || "aft.page";
-    const liveUrl = `https://${slug}.${root}`;
+    const liveUrl = liveSiteUrl(slug, root);
+    const owned = Boolean(sessionUser);
     return done(
       deployJson(request, {
         ok: true,
@@ -212,16 +340,19 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
         bytes: total,
         runtime,
         editToken,
-        preview: `https://${root}/preview?url=${encodeURIComponent(liveUrl)}&token=${encodeURIComponent(editToken)}`,
+        preview: liveSiteUrl(slug, root, { token: editToken }),
+        claimUrl: claimSiteUrl(slug, root, editToken),
+        owned,
         ...capsPayload,
       }),
       { slug, bytes: total, files: files.length },
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(JSON.stringify({ level: "error", where: "deploy", message }));
-    return done(deployJson(request, { error: "internal", message }, 500), {
+    console.error(JSON.stringify({ level: "error", where: "deploy", message, requestId }));
+    return done(deployJson(request, { error: "internal" }, 500), {
       error: "internal",
+      hint: message.slice(0, 500),
     });
   }
 }
@@ -230,28 +361,46 @@ async function redeployToSlug(
   request: Request,
   env: Env,
   slug: string,
-  done: (
-    response: Response,
-    fields?: { slug?: string; bytes?: number; files?: number; error?: string },
-  ) => Promise<Response>,
+  done: (response: Response, fields?: DeployTrackFields) => Promise<Response>,
   started: number,
 ): Promise<Response> {
+  const requestId = deployRequestId(request);
   const files = await parseUpload(request);
+  const listing = listingFrom(files);
   if (files.length === 0) {
     const res = deployJson(request, { error: "no_files" }, 400);
-    trackRedeploy(env, request, started, res, { slug, error: "no_files" });
-    return done(res, { error: "no_files", slug });
+    trackRedeploy(env, request, started, res, { slug, error: "no_files", requestId });
+    return done(res, { error: "no_files", slug, uploadListing: listing });
   }
 
-  const { manifest, runtime, maxFile, maxTotal } = limitsForFiles(files);
+  const sessionUser = await resolveSessionUser(env, request);
+  const ownerEmail = await getSiteOwnerEmail(env, slug);
+  const { manifest, runtime, unlimited, maxFile, maxTotal } = limitsForFiles(
+    env,
+    files,
+    slug,
+    [sessionUser?.email, ownerEmail],
+  );
 
   let total = 0;
   for (const f of files) {
     total += f.bytes.byteLength;
-    if (f.bytes.byteLength > maxFile || total > maxTotal) {
+    if (!unlimited && (f.bytes.byteLength > maxFile || total > maxTotal)) {
       const res = deployJson(request, { error: "payload_too_large" }, 400);
-      trackRedeploy(env, request, started, res, { slug, error: "payload_too_large" });
-      return done(res, { error: "payload_too_large", slug });
+      trackRedeploy(env, request, started, res, {
+        slug,
+        error: "payload_too_large",
+        path: f.path,
+        requestId,
+      });
+      return done(res, {
+        error: "payload_too_large",
+        slug,
+        path: f.path,
+        files: files.length,
+        bytes: total,
+        uploadListing: listing,
+      });
     }
   }
 
@@ -271,10 +420,10 @@ async function redeployToSlug(
     runtime,
     upstreamUrl,
     mainModule,
+    badge: manifest?.badge !== false,
   };
   await env.SITES.put(`site:${slug}`, JSON.stringify(meta));
-  const user = await resolveSessionUser(env, request);
-  await upsertSiteRow(env, slug, deployId, user?.id ?? null);
+  await upsertSiteRow(env, slug, deployId, sessionUser?.id ?? null);
   await setSiteRuntime(env, slug, {
     runtime,
     upstreamUrl,
@@ -285,8 +434,10 @@ async function redeployToSlug(
     slug,
     fileCount: files.length,
     bytes: total,
-    createdByUserId: user?.id ?? null,
+    createdByUserId: sessionUser?.id ?? null,
     source: "patch",
+    client: resolveClient(request),
+    ms: Math.max(0, Date.now() - started),
   });
 
   const capsPayload = await maybeCapabilities(env, slug, deployId, files);
@@ -296,14 +447,19 @@ async function redeployToSlug(
     ok: true,
     slug,
     deployId,
-    url: `https://${slug}.${root}`,
+    url: liveSiteUrl(slug, root),
     files: files.length,
     bytes: total,
     runtime,
     ...capsPayload,
   });
-  trackRedeploy(env, request, started, res, { slug, bytes: total, files: files.length });
-  return res;
+  trackRedeploy(env, request, started, res, {
+    slug,
+    bytes: total,
+    files: files.length,
+    requestId,
+  });
+  return withRequestId(res, requestId);
 }
 
 async function maybeCapabilities(

@@ -1,5 +1,9 @@
 # YC Fall 2026 — application draft (aft.page)
 
+> ⚠️ **STATUS: NOT SUBMITTED YET.** This is a draft only — the YC application has
+> not been applied to. Submit at [apply.ycombinator.com](https://www.ycombinator.com/apply),
+> then update this banner with the submission date.
+
 Internal. Paste into [apply.ycombinator.com](https://www.ycombinator.com/apply). Late application still accepted; on-time decisions by Aug 28 — late has no promised date. Batch: Oct–Dec 2026, SF. Invest on acceptance.
 
 Fill founder bio / equity / location / video yourself. Below = company narrative.

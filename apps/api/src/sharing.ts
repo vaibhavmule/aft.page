@@ -1,5 +1,11 @@
 import type { Env } from "./env";
 import {
+  BRAND,
+  BRAND_CSS_VARS,
+  BRAND_FONT_LINKS,
+  BRAND_WORDMARK_CSS,
+} from "./brand";
+import {
   createLoginMagicLink,
   createSession,
   findOrCreateUser,
@@ -16,6 +22,7 @@ import {
 import {
   acceptSiteInvite,
   createSiteInvite,
+  deleteSite,
   deleteSiteInvite,
   findMemberByEmail,
   findPendingInviteByEmail,
@@ -27,13 +34,16 @@ import {
   listSiteInvites,
   listSiteMembers,
   removeSiteMember,
+  setSiteActive,
   setSiteVisibility,
   upsertSiteMember,
   type SiteVisibility,
 } from "./db";
-import { corsHeaders, json, privateJson } from "./http";
+import { corsHeaders, json, originMayActOnSlug, privateJson } from "./http";
 import { rateLimit } from "./rate-limit";
 import { clientIp } from "./http";
+import { deleteSiteObjects } from "./storage";
+import { releaseCustomDomains } from "./custom-domains";
 
 const INVITE_DAYS = 7;
 
@@ -53,6 +63,9 @@ export async function handleSharingRoute(
   const siteMatch = url.pathname.match(/^\/v1\/sites\/([a-z0-9-]+)$/);
   if (siteMatch && request.method === "PATCH") {
     return patchSite(request, env, siteMatch[1]!, origin);
+  }
+  if (siteMatch && request.method === "DELETE") {
+    return destroySite(request, env, siteMatch[1]!, origin);
   }
 
   const accessMatch = url.pathname.match(/^\/v1\/sites\/([a-z0-9-]+)\/access$/);
@@ -93,17 +106,18 @@ export async function handleSharingRoute(
     return listMembers(request, env, membersMatch[1]!, origin);
   }
 
-  const memberDeleteMatch = url.pathname.match(
+  const memberOneMatch = url.pathname.match(
     /^\/v1\/sites\/([a-z0-9-]+)\/members\/([a-zA-Z0-9_-]+)$/,
   );
-  if (memberDeleteMatch && request.method === "DELETE") {
-    return revokeMember(
-      request,
-      env,
-      memberDeleteMatch[1]!,
-      memberDeleteMatch[2]!,
-      origin,
-    );
+  if (memberOneMatch) {
+    const slug = memberOneMatch[1]!;
+    const userId = memberOneMatch[2]!;
+    if (request.method === "DELETE") {
+      return revokeMember(request, env, slug, userId, origin);
+    }
+    if (request.method === "PATCH") {
+      return patchMember(request, env, slug, userId, origin);
+    }
   }
 
   return null;
@@ -124,6 +138,10 @@ async function requireOwner(
   request: Request,
   slug: string,
 ): Promise<{ id: string; email: string } | Response> {
+  const root = env.ROOT_DOMAIN || "aft.page";
+  if (!originMayActOnSlug(request, slug, root)) {
+    return json({ error: "forbidden" }, 403, corsExtra(request));
+  }
   const user = await resolveSessionUser(env, request);
   if (!user) {
     return json({ error: "unauthorized" }, 401, corsExtra(request));
@@ -149,28 +167,98 @@ async function patchSite(
   const owner = await requireOwner(env, request, slug);
   if (owner instanceof Response) return owner;
 
-  let body: { visibility?: string };
+  let body: { visibility?: string; active?: boolean };
   try {
     body = (await request.json()) as typeof body;
   } catch {
     return json({ error: "invalid_json" }, 400, extra);
   }
 
-  const visibility = body.visibility;
-  if (visibility !== "public" && visibility !== "private") {
+  const hasVisibility = body.visibility !== undefined;
+  const hasActive = body.active !== undefined;
+  if (!hasVisibility && !hasActive) {
     return json(
-      { error: "invalid_request", hint: "visibility must be public or private" },
+      { error: "invalid_request", hint: "provide visibility and/or active" },
       400,
       extra,
     );
   }
 
-  const ok = await setSiteVisibility(env, slug, visibility as SiteVisibility);
-  if (!ok) {
+  if (hasVisibility) {
+    if (body.visibility !== "public" && body.visibility !== "private") {
+      return json(
+        { error: "invalid_request", hint: "visibility must be public or private" },
+        400,
+        extra,
+      );
+    }
+  }
+  if (hasActive && typeof body.active !== "boolean") {
+    return json(
+      { error: "invalid_request", hint: "active must be true or false" },
+      400,
+      extra,
+    );
+  }
+
+  const result: { slug: string; visibility?: string; active?: boolean } = {
+    slug,
+  };
+
+  if (hasVisibility) {
+    const ok = await setSiteVisibility(
+      env,
+      slug,
+      body.visibility as SiteVisibility,
+    );
+    if (!ok) return json({ error: "not_found" }, 404, extra);
+    result.visibility = body.visibility;
+  }
+
+  if (hasActive) {
+    const ok = await setSiteActive(env, slug, body.active as boolean);
+    if (!ok) return json({ error: "not_found" }, 404, extra);
+    result.active = body.active;
+  }
+
+  return json(result, 200, extra);
+}
+
+/** Owner-only, irreversible: wipe the site row, its children, and stored files. */
+async function destroySite(
+  request: Request,
+  env: Env,
+  slug: string,
+  origin: string | null,
+): Promise<Response> {
+  const extra = Object.fromEntries(corsHeaders(origin, true));
+  const owner = await requireOwner(env, request, slug);
+  if (owner instanceof Response) return owner;
+
+  try {
+    await releaseCustomDomains(env, slug);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(
+      JSON.stringify({ level: "error", where: "destroy_domains", slug, message }),
+    );
+  }
+
+  const existed = await deleteSite(env, slug);
+  if (!existed) {
     return json({ error: "not_found" }, 404, extra);
   }
 
-  return json({ slug, visibility }, 200, extra);
+  try {
+    await deleteSiteObjects(env, slug);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(
+      JSON.stringify({ level: "error", where: "destroy_site", slug, message }),
+    );
+  }
+
+  return json({ ok: true, slug }, 200, extra);
 }
 
 async function listMembers(
@@ -297,6 +385,35 @@ async function revokeMember(
   return json({ ok: true }, 200, extra);
 }
 
+async function patchMember(
+  request: Request,
+  env: Env,
+  slug: string,
+  userId: string,
+  origin: string | null,
+): Promise<Response> {
+  const extra = Object.fromEntries(corsHeaders(origin, true));
+  const owner = await requireOwner(env, request, slug);
+  if (owner instanceof Response) return owner;
+
+  let body: { role?: string };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return json({ error: "invalid_json" }, 400, extra);
+  }
+  const role = body.role === "edit" ? "edit" : body.role === "view" ? "view" : null;
+  if (!role) {
+    return json({ error: "invalid_request", hint: "role must be view or edit" }, 400, extra);
+  }
+
+  const members = await listSiteMembers(env, slug);
+  const mem = members.find((m) => m.userId === userId);
+  if (!mem) return json({ error: "not_found" }, 404, extra);
+  await upsertSiteMember(env, slug, mem.userId, mem.email, role);
+  return json({ ok: true, member: { ...mem, role } }, 200, extra);
+}
+
 async function acceptInvite(
   request: Request,
   env: Env,
@@ -370,22 +487,23 @@ export async function canAccessSite(
 export function privateDeniedHtml(slug: string, root: string): string {
   const live = `https://${slug}.${root}`;
   const api = `https://api.${root}`;
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#07080a"/><title>Private site — aft.page</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet"/>
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="${BRAND.void}"/><title>Private site — aft.page</title>
+${BRAND_FONT_LINKS}
 <style>
-:root{color-scheme:dark;--void:#07080a;--panel:#101218;--line:#1e232c;--line-bright:#2c3340;--ink:#f2f4f7;--quiet:#8b939e;--beacon:#e85d1a;--beacon-bright:#ff7a3d;--beacon-ink:#140c08;--beacon-dim:color-mix(in srgb,var(--beacon) 16%,transparent);--good:#3dd68c;--danger:#ff6b6b;--bg-inset:#0b0d11;--font-sans:"DM Sans","Segoe UI",sans-serif;--font-display:"Fraunces","Times New Roman",serif}
+${BRAND_CSS_VARS}
 *{box-sizing:border-box}body{margin:0;font:15px/1.5 var(--font-sans);color:var(--ink);background:var(--void);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.25rem;-webkit-font-smoothing:antialiased}
-main{width:min(24rem,100%)}.brand{display:inline-block;margin:0 0 1.25rem;color:inherit;text-decoration:none;font-family:var(--font-display);font-weight:600;font-size:1.15rem;letter-spacing:-.02em}.brand span{color:var(--beacon);font-family:var(--font-sans);font-weight:700}
+main{width:min(24rem,100%)}
+${BRAND_WORDMARK_CSS}
+.brand{display:inline-block;margin:0 0 1.25rem;font-size:1.15rem}
 h1{font-size:1.25rem;margin:0 0 .35rem;font-weight:600}p{color:var(--quiet);margin:0 0 1rem}p strong{color:var(--ink)}
 label{display:block;font-size:.82rem;font-weight:600;margin-bottom:.35rem;color:var(--quiet)}
 input{width:100%;padding:.65rem .75rem;border:1px solid var(--line-bright);border-radius:4px;font:inherit;background:var(--bg-inset);color:var(--ink)}
-input:focus{outline:none;border-color:var(--beacon);box-shadow:0 0 0 3px var(--beacon-dim)}
-button{margin-top:.75rem;width:100%;border:0;border-radius:4px;padding:.65rem 1rem;font:inherit;font-weight:650;cursor:pointer;background:var(--beacon);color:var(--beacon-ink);display:inline-flex;align-items:center;justify-content:center;gap:.45rem}
-button:hover{background:var(--beacon-bright)}button:disabled{opacity:.6;cursor:default}
+input:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 3px var(--beacon-dim)}
+button{margin-top:.75rem;width:100%;border:0;border-radius:4px;padding:.65rem 1rem;font:inherit;font-weight:650;cursor:pointer;background:var(--cta);color:var(--cta-ink);display:inline-flex;align-items:center;justify-content:center;gap:.45rem}
+button:hover{background:var(--cta-hover)}button:disabled{opacity:.6;cursor:default}
 .msg{margin-top:1rem;padding:.75rem .9rem;border-radius:4px;font-size:.9rem;display:none}
 .msg.ok{display:block;background:color-mix(in srgb,var(--good) 14%,transparent);color:var(--good)}.msg.err{display:block;background:color-mix(in srgb,var(--danger) 14%,transparent);color:var(--danger)}
-.hint{margin-top:1.25rem;font-size:.85rem;color:var(--quiet)}.hint a{color:var(--beacon-bright)}
+.hint{margin-top:1.25rem;font-size:.85rem;color:var(--quiet)}.hint a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
 .spinner{width:.9rem;height:.9rem;border-radius:999px;border:2px solid currentColor;border-right-color:transparent;animation:spin .65s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style></head><body>
@@ -399,7 +517,7 @@ button:hover{background:var(--beacon-bright)}button:disabled{opacity:.6;cursor:d
     <button type="submit" id="submit"><span class="label">Send access link</span></button>
   </form>
   <div class="msg" id="msg" role="status"></div>
-  <p class="hint">Owner? Manage access from <a href="https://${root}/preview?url=${encodeURIComponent(live)}">preview</a>.</p>
+  <p class="hint">Owner? Manage access from <a href="https://${root}/project/?slug=${encodeURIComponent(slug)}">your project</a>.</p>
 </main>
 <script>
 (function(){
@@ -427,7 +545,7 @@ button:hover{background:var(--beacon-bright)}button:disabled{opacity:.6;cursor:d
         return;
       }
       msg.className="msg ok";
-      msg.textContent="If you were invited or already have access, check your email for a link. Otherwise ask the owner to invite you from preview.";
+      msg.textContent="If you were invited or already have access, check your email for a link. Otherwise ask the owner to invite you from the project page.";
       form.reset();
     }catch(err){
       msg.className="msg err";

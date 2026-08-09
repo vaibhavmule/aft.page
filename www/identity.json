@@ -1,0 +1,41 @@
+{
+  "$schema": "https://www.ai-visibility.org.uk/specifications/identity-json/v1/identity-json.schema.json",
+  "language": "en",
+  "name": "aft.page",
+  "alternateName": [
+    "aft",
+    "AFT"
+  ],
+  "url": "https://aft.page",
+  "type": "Organization",
+  "description": "A cloud for small software. aft.page turns software an AI agent builds into a live, shareable HTTPS URL — deploy by Drop, paste, or MCP, then claim, share, update, and attach a custom domain without repository or cloud-account ceremony.",
+  "contactPoints": [
+    {
+      "type": "General Enquiries",
+      "email": "hello@aft.page",
+      "url": "https://aft.page"
+    },
+    {
+      "type": "AI Enquiries",
+      "email": "hello@aft.page"
+    }
+  ],
+  "sameAs": [
+    "https://github.com/vaibhavmule/aft",
+    "https://mcp.aft.page/mcp",
+    "https://api.aft.page",
+    "https://status.aft.page"
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "lastUpdated": "2026-08-09"
+  },
+  "relatedFiles": {
+    "llms": "https://aft.page/llms.txt",
+    "aiPolicy": "https://aft.page/ai.json",
+    "brandGuidelines": "https://aft.page/brand.txt"
+  },
+  "_specification": {
+    "url": "https://www.ai-visibility.org.uk/"
+  }
+}

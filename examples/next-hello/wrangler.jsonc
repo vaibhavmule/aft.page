@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "aft-next-hello",
+  "compatibility_date": "2026-08-08",
+  // global_fetch_strictly_public: OpenNext route handlers fetch same-zone; omit → CF 1042
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  }
+}

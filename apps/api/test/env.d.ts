@@ -7,5 +7,7 @@ declare module "cloudflare:test" {
 declare namespace Cloudflare {
   interface Env {
     AUTH_SECRET: string;
+    GOOGLE_CLIENT_ID?: string;
+    GOOGLE_CLIENT_SECRET?: string;
   }
 }

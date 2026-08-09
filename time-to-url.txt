@@ -1,0 +1,72 @@
+# Time-to-URL (T2U)
+# Updated: 2026-08-09
+# The number. Look at it every day on ops.aft.page.
+
+Time-to-URL is the product.
+
+Not uptime. Not waitlist. Not “deploys.” The clock from I want this live
+to a working HTTPS URL in a browser. 2011 I said five minutes for WordPress
+and I did it. 2026 that clock has to be embarrassing.
+
+If T2U is slow, we are a guy with Workers. If T2U is fast, we are a cloud
+for small software.
+
+## Two clocks (do not mix them)
+
+1. Human T2U — stopwatch. “Deploy this” → they can open the URL.
+   Includes plugin install, MCP auth, Drop UI, staring at a spinner.
+   Dogfood this. Not automated until a stranger can do it without me.
+
+2. Machine T2U — Worker receive → URL in the JSON. D1 `deploys.ms`.
+   This is what ops.aft.page shows every day: n, p50, p95, last 24h / 7d.
+   AE `double1` is the same duration. Ops reads D1 so the scoreboard
+   does not depend on an Analytics Engine round-trip.
+
+Human is the company. Machine is the floor. A 200 ms Worker and a
+two-minute MCP login is still a two-minute product.
+
+## Bar
+
+| Clock | Green | Shame |
+| --- | --- | --- |
+| Machine p50 (static) | < 3 s | > 10 s |
+| Machine p95 | < 10 s | > 30 s |
+| Human (plugin → URL) | < 30 s | anything with a repo |
+
+2011 = 5 minutes was a flex. Today 5 minutes is Netlify.
+
+Zero deploys today is not “fast.” n=0, p50=—. The number that matters
+first is a stranger reaching a URL at all. Then make that URL cheap.
+
+## Versus Netlify (cough)
+
+Netlify time-to-URL is not a deploy. It is:
+
+  account → GitHub OAuth → repo → new project → build settings →
+  wait for CI → hope the build command is right → URL
+
+Same cough: Vercel, Cloudflare Pages dashboard, “connect your repo.”
+That clock starts after you already did software-company homework.
+Agent-made small software does not have a repo. It has files in a chat.
+
+aft T2U starts at the files. Drop / MCP / plugin → URL. No account
+required to go live. Claim later. That is the whole comparison.
+
+We wrap Cloudflare primitives. We do not ask a one-person team to
+become a Netlify project.
+
+## Daily ritual
+
+ops.aft.page → Time to URL card.
+
+- n today / 24h / 7d
+- p50 / p95 machine ms
+- if n=0: go get one stranger, do not polish Lattice
+- if p50 blows the bar: fix the deploy path, not the marketing site
+
+Sunday scoreboard still counts repeat deployers. T2U is the weekday
+number. Look at it before you write code.
+
+Story: story.txt
+Ops: docs/OPS.md
+Metrics schema: docs/METRICS.md

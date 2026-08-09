@@ -1,0 +1,98 @@
+# Technical Context - aft.page
+
+Lang: en
+Website: [https://aft.page](https://aft.page)
+Last Updated: 2026-08-09
+
+## Overview
+
+aft.page is the publishing layer for small software created by AI agents. It operates these properties:
+
+- Website and app shell (https://aft.page): product site, Drop UI, docs, auth
+- Hosted sites (https://{slug}.aft.page): user-deployed static and runtime content
+- Remote MCP (https://mcp.aft.page/mcp): agent deploy tools
+- API (https://api.aft.page): HTTP deploy, claim, site, and auth endpoints
+- Status (https://status.aft.page): service status
+
+Agents should prefer MCP. Humans can use Drop. The API is the scripted fallback.
+
+## Platform
+
+- Website apex: Cloudflare Pages
+- API and site serving: Cloudflare Workers with D1 and related bindings
+- Character set: UTF-8
+- Language: en
+
+## Public Areas
+
+- Website pages, SEO landings, MCP docs, and AI Discovery Files: public
+- Drop UI (`/drop/`): public deploy without an account
+- Preview / claim shell: public entry; claim uses email magic link
+- Projects dashboard (`/projects`): authenticated owners and editors
+- User sites on `*.aft.page`: public or private per owner settings
+
+## API Information
+
+Status: public API for deploy and site operations
+
+- API root: https://api.aft.page
+- Health: https://api.aft.page/health
+- Deploy: POST https://api.aft.page/v1/deploy
+- Redeploy: PATCH https://api.aft.page/v1/deploy?slug={slug} (header X-Aft-Edit-Token)
+- Claim: POST https://api.aft.page/v1/claim/start · GET /v1/claim/verify
+- Site info: GET https://api.aft.page/v1/sites/{slug}
+- Custom domains (invite-only): GET|POST /v1/sites/{slug}/domains · POST …/domains/access
+
+Anonymous deploy returns an editToken. Keep it to update the same slug.
+Custom domains: owner requests access, then CNAME to cname.aft.page.
+
+## Authentication
+
+- Anonymous deploy: no account; editToken returned on deploy
+- Human login: magic-link email or Google → same session for claim, projects, and sharing
+- MCP: remote server at https://mcp.aft.page/mcp (see https://aft.page/mcp.md)
+- Private sites: access controlled after claim or invite
+
+## Rate Limits
+
+Respect normal client behaviour. Aggressive automated abuse may be blocked.
+Deploy size limits: 200 files · 10 MB per file · 50 MB total.
+
+## Technology Stack
+
+- Apex website: Cloudflare Pages
+- API and hosting orchestration: Cloudflare Workers
+- Persistence: Cloudflare D1 and related Cloudflare storage bindings
+- Agent surface: MCP tools deploy, aft_deploys, aft_rollback, aft_health
+
+## Documentation
+
+- [MCP + API Markdown](https://aft.page/mcp.md): preferred agent reference
+- [MCP + API HTML](https://aft.page/mcp): human-readable docs
+- [Agent index](https://aft.page/llms.txt): product identity for AI systems
+- [Drop agent instructions](https://aft.page/drop/llms.txt): Drop-specific agent notes
+- [Status](https://status.aft.page/): uptime and incidents
+- [Open-source CLI](https://github.com/vaibhavmule/aft): bring-your-own-cloud tooling
+
+## Developer Notes
+
+- MCP is a thin deploy adapter, not a secrets or capabilities control plane
+- Prefer the remote MCP URL over local stdio for agents
+- Hosted user content at `*.aft.page` is owned by the deployer
+- Capability approval and the secrets vault are owner-session or API concerns after claim
+- Do not invent tools beyond deploy, aft_deploys, aft_rollback, and aft_health
+
+## AI Discovery Files
+
+- [llms.txt](https://aft.page/llms.txt)
+- [llms.html](https://aft.page/llms.html)
+- [ai.txt](https://aft.page/ai.txt)
+- [ai.json](https://aft.page/ai.json)
+- [identity.json](https://aft.page/identity.json)
+- [brand.txt](https://aft.page/brand.txt)
+- [faq-ai.txt](https://aft.page/faq-ai.txt)
+- [robots-ai.txt](https://aft.page/robots-ai.txt)
+
+## Technical Contact
+
+- General, AI, and integration: hello@aft.page

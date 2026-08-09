@@ -10,15 +10,34 @@
   "workers_dev": true,
   "observability": {
     "enabled": true,
-    "head_sampling_rate": 1
+    "head_sampling_rate": 1,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": true,
+      "persist": true,
+      "head_sampling_rate": 1
+    }
   },
   "vars": {
-    "ROOT_DOMAIN": "aft.page"
+    "ROOT_DOMAIN": "aft.page",
+    "OPS_EMAILS": "hello@aft.page,vaibhavmule135@gmail.com",
+    "UNLIMITED_SLUGS": "parakh",
+    "CF_ZONE_ID": "c9c40ca61385a6346d90abfc954b44c9",
+    "CUSTOM_DOMAIN_CNAME": "cname.aft.page"
   },
   "kv_namespaces": [
     {
       "binding": "SITES",
       "id": "3bc4889e9e974a2bbb09433c8b932870"
+    },
+    {
+      "binding": "STATUS",
+      "id": "a9e5d5b8ef1f4f52925c351a2d60a292"
     }
   ],
   "r2_buckets": [
@@ -52,8 +71,29 @@
       "custom_domain": true
     },
     {
+      "pattern": "*/*",
+      "zone_name": "aft.page"
+    },
+    {
       "pattern": "*.aft.page/*",
       "zone_name": "aft.page"
+    },
+    {
+      "pattern": "test.aft.page/*",
+      "zone_name": "aft.page"
+    },
+    {
+      "pattern": "*.test.aft.page/*",
+      "zone_name": "aft.page"
     }
-  ]
+  ],
+  "services": [
+    {
+      "binding": "MCP",
+      "service": "aft-page-mcp"
+    }
+  ],
+  "triggers": {
+    "crons": ["*/5 * * * *", "0 4,16 * * *"]
+  }
 }

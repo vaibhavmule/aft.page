@@ -252,6 +252,29 @@ describe("private access gate", () => {
     }
   });
 
+  it("owner can change a member from view to edit", async () => {
+    const { slug } = await deployPaste("<h1>role</h1>", "priv-role");
+    const { cookie } = await ownSite(slug, "owner-role@example.com");
+    const pal = await findOrCreateUser(env, "vaibhavmule135@example.com");
+    await upsertSiteMember(env, slug, pal.id, pal.email, "view");
+
+    const patch = await call(
+      new Request(`${API_ORIGIN}/v1/sites/${slug}/members/${pal.id}`, {
+        method: "PATCH",
+        headers: {
+          origin: "https://aft.page",
+          "content-type": "application/json",
+          cookie,
+        },
+        body: JSON.stringify({ role: "edit" }),
+      }),
+    );
+    expect(patch.status).toBe(200);
+    expect(await patch.json()).toMatchObject({
+      member: { userId: pal.id, role: "edit" },
+    });
+  });
+
   it("OPTIONS allows DELETE", async () => {
     const res = await call(
       new Request(`${API_ORIGIN}/v1/sites/x/invites/y`, {

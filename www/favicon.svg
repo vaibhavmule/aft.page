@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="aft.page">
+  <rect width="64" height="64" rx="14" fill="#000000" />
+  <text
+    x="13"
+    y="46"
+    font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
+    font-size="42"
+    font-weight="600"
+    fill="#fafafa"
+  >a</text>
+  <circle cx="46" cy="42" r="5.5" fill="#22c55e" />
+  <circle cx="46" cy="42" r="9" fill="none" stroke="#22c55e" stroke-opacity="0.35" stroke-width="1.5" />
+</svg>

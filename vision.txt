@@ -1,10 +1,20 @@
 # aft.page — vision
-# Updated: 2026-08-06
+# Updated: 2026-08-08
 
 Mission: **a cloud for small software.** Purpose-built software for one person
 or a small handful should be as easy to deploy and share as a Google Doc.
 
 The product expands with what AI creates — not with website-builder features.
+
+## Company shape (vision ideas)
+
+- **Solo by design.** Not a gap to fill for fundraising optics.
+- **2024–26 Altman:** betting pool on the first **one-person billion-dollar
+  company**; future looks like **one person + a ton of compute/agents** — not
+  “you need 2–3 founders or funds quietly punish you.”
+- aft is on that thesis: agents build the software; aft makes it live + shareable;
+  the founder orchestrates agents + infra, not a classic headcount company.
+- **Ambition: Telegram founder (Durov) — company *and* life.** Tiny team / hire late *and* the personal standard: sober (don’t drink), strong body, high discipline, freedom to live where the work is (e.g. Dubai). Not “founder cosplay” — operating system for becoming one. Details in `FOUNDER.md` §10.
 
 ## Today
 

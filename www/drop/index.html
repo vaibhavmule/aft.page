@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Drop — aft.page</title>
+    <meta
+      name="description"
+      content="Drop a folder or zip. See your site live on *.aft.page in seconds. No account required to start."
+    />
+    <link rel="canonical" href="https://aft.page/drop/" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#000000" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="aft.page" />
+    <meta property="og:title" content="Drop — aft.page" />
+    <meta
+      property="og:description"
+      content="Drop a folder or zip → live *.aft.page URL. No account to start."
+    />
+    <meta property="og:url" content="https://aft.page/drop/" />
+    <meta property="og:image" content="https://aft.page/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Drop — aft.page" />
+    <meta
+      name="twitter:description"
+      content="Drop a folder or zip → live URL. Claim when you want to keep it."
+    />
+    <meta name="twitter:image" content="https://aft.page/og.png" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/mark.css?v=3" />
+  </head>
+  <body class="drop-page" data-aft-drop-auto="1">
+    <div class="drop-shell">
+      <header class="drop-bar">
+        <div class="drop-bar-left">
+          <a class="drop-back" href="/projects" data-aft-auth="signed-in" hidden>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+              <path d="M15 6 9 12l6 6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Back
+          </a>
+          <a class="drop-bar-brand" href="/" data-aft-auth="guest">aft<span>.</span>page</a>
+        </div>
+        <p class="drop-bar-title">Drop to Deploy</p>
+        <div class="drop-bar-actions">
+          <a class="drop-bar-link" href="/login" data-aft-auth="login">Log in</a>
+        </div>
+      </header>
+
+      <main class="drop-stage">
+        <form class="drop-surface" id="paste-form">
+          <div
+            class="drop-zone"
+            id="paste-drop"
+            role="region"
+            aria-label="Drop a folder or zip"
+          >
+            <input type="file" id="folder-input" webkitdirectory directory multiple hidden />
+            <input
+              type="file"
+              id="file-input"
+              accept=".zip,.html,.htm,application/zip,application/x-zip-compressed,text/html"
+              hidden
+            />
+
+            <div class="drop-zone-idle" id="drop-idle">
+              <span class="drop-zone-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22">
+                  <path
+                    d="M12 3v10m0 0 3.5-3.5M12 13 8.5 9.5M5 16.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1.5"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
+              <h1 id="paste-drop-title">Drop a folder. It’s live.</h1>
+              <p class="drop-zone-lede">
+                Drag and drop a file, a folder, or .zip. Or choose a
+                <button type="button" class="drop-pick" data-browse="files">file</button>
+                or a
+                <button type="button" class="drop-pick" data-browse="folder">folder</button>.
+              </p>
+              <p class="drop-zone-note" data-aft-auth="guest">
+                No account to start. Your site goes live instantly.
+              </p>
+              <p class="drop-zone-note" data-aft-auth="signed-in" hidden>
+                No configuration. Your site goes live instantly.
+              </p>
+            </div>
+
+            <div class="drop-zone-status" id="drop-busy" hidden>
+              <p class="paste-status" id="paste-status" role="status" aria-live="polite"></p>
+              <ul class="paste-files" id="file-list" hidden></ul>
+              <button type="submit" class="btn btn-primary" id="paste-submit" hidden>
+                Get live URL
+              </button>
+            </div>
+
+            <div class="drop-zone-result" id="paste-result" hidden>
+              <p class="drop-live-label">Live</p>
+              <a id="paste-url" href="#" target="_blank" rel="noopener noreferrer"></a>
+              <p class="drop-claim-hint" data-aft-auth="guest">
+                Claim when you want to keep it — add your email on the claim page.
+              </p>
+              <p class="drop-claim-hint" data-aft-auth="signed-in" hidden>
+                It’s on your projects. Same URL after you leave.
+              </p>
+              <button type="button" class="btn btn-ghost" id="drop-again">
+                Drop another
+              </button>
+            </div>
+          </div>
+        </form>
+      </main>
+    </div>
+
+    <script src="/deploy.js" defer></script>
+    <script src="/auth-me.js" defer></script>
+    <script src="/auth-nav.js" defer></script>
+    <script src="/summarize.js" defer></script>
+    <script src="/feedback.js" defer></script>
+  </body>
+</html>

@@ -9,11 +9,11 @@ secrets. See [`rfs.txt`](rfs.txt) and [`docs/STRATEGY.md`](docs/STRATEGY.md).
 
 | Path | Role |
 | --- | --- |
-| [`marketing/`](marketing/) | Apex landing + SEO pages (Cloudflare Pages) |
+| [`www/`](www/) | Apex website (landing, login, docs — Cloudflare Pages) |
 | [`apps/api/`](apps/api/) | Worker: deploy, serve, secrets, lattice-js APIs, upstream proxy |
 | [`apps/extension/`](apps/extension/) | Chrome: aft icon / Deploy to aft.page on ChatGPT / Claude |
 | [`apps/mcp/`](apps/mcp/) | MCP: any agent can `deploy_html` / `deploy_files` |
-| [`examples/`](examples/) | `lattice-js`, share-checklist, OpenNext notes |
+| [`examples/`](examples/) | `lattice-js`, `vite-hello`, `next-hello`, share-checklist |
 
 OSS CLI (customer AWS / Cloudflare): [vaibhavmule/aft](https://github.com/vaibhavmule/aft).  
 Hosted repo: [vaibhavmule/aft.page](https://github.com/vaibhavmule/aft.page).
@@ -28,9 +28,9 @@ curl -X POST https://api.aft.page/v1/deploy \
 # → { "url": "https://{slug}.aft.page", ... }
 ```
 
-Live: [hello.aft.page](https://hello.aft.page) · [lattice.aft.page](https://lattice.aft.page) (full-stack dogfood) · [share-checklist.aft.page](https://share-checklist.aft.page)
+Live: [hello.aft.page](https://hello.aft.page) · [vite-hello.aft.page](https://vite-hello.aft.page) (Vite SPA) · [lattice.aft.page](https://lattice.aft.page) (full-stack dogfood) · [next-hello.aft.page](https://next-hello.aft.page) (Next SSR SPOC) · [share-checklist.aft.page](https://share-checklist.aft.page)
 
-Human landings: [paste](https://aft.page/paste-html/) · [host](https://aft.page/host-html/) · [share](https://aft.page/share-html/) · [upload](https://aft.page/upload-html/)
+Human landings: [Docs](https://aft.page/docs) · [Drop](https://aft.page/drop/) · [host](https://aft.page/host-html/) · [share](https://aft.page/share-html/) · [upload](https://aft.page/upload-html/)
 
 ### Secrets (owner / editor)
 

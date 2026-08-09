@@ -2,25 +2,118 @@
  * Product metrics via Workers Analytics Engine.
  *
  * Schema (dataset: aft_page_metrics):
- *   indexes[0]  event        deploy | page_view | claim | redeploy | waitlist
+ *   indexes[0]  event        deploy | page_view | serve | claim | redeploy | waitlist | feedback | mcp
  *   blobs[0]    source       mcp | web | extension | curl | cli | other
- *   blobs[1]    status       ok | error code (no_files, …) | http status text
- *   blobs[2]    slug         site slug when known
+ *                (mcp event: JSON-RPC method)
+ *   blobs[1]    status       ok | error code (no_files, …)
+ *   blobs[2]    slug         site slug when known (mcp event: tool name)
  *   blobs[3]    deployer     sha256(cf-connecting-ip)[:16] — approx unique
+ *   blobs[4]    path         failing file path when known
+ *   blobs[5]    request_id   cf-ray or generated id
  *   doubles[0]  ms           deploy duration
  *   doubles[1]  bytes        payload size
  *   doubles[2]  files        file count
  *   doubles[3]  http_status  response status
- *
- * claim / redeploy are reserved for later APIs (emit 0 until then).
  */
 
 export type MetricEvent =
   | "deploy"
   | "page_view"
+  | "serve"
   | "claim"
   | "redeploy"
-  | "waitlist";
+  | "waitlist"
+  | "feedback"
+  | "mcp";
+
+const VIEW_TTL_SEC = 21 * 24 * 60 * 60;
+
+export function utcDayKey(now = new Date()): string {
+  return now.toISOString().slice(0, 10);
+}
+
+export function recentUtcDays(n: number, now = new Date()): string[] {
+  const start = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+  );
+  const days: string[] = [];
+  for (let i = 0; i < n; i++) {
+    days.push(new Date(start - i * 86_400_000).toISOString().slice(0, 10));
+  }
+  return days;
+}
+
+export function viewDayKey(day = utcDayKey()): string {
+  return `views:day:${day}`;
+}
+
+export type SlugViews = { slug: string; today: number; d7: number };
+
+export type ViewRollup = {
+  today: number;
+  d7: number;
+  bySlug: SlugViews[];
+};
+
+/** Increment HTML document views for utc day. */
+export async function incrementViewCount(
+  kv: KVNamespace,
+  slug: string,
+): Promise<void> {
+  const key = viewDayKey();
+  // ponytail: last-write-wins RMW — concurrent HTML views same UTC day can drop increments. D1 UPSERT or a DO if counts must be exact.
+  let map: Record<string, number> = {};
+  try {
+    const raw = await kv.get(key);
+    if (raw) map = JSON.parse(raw) as Record<string, number>;
+  } catch {
+    map = {};
+  }
+  map[slug] = (Number(map[slug]) || 0) + 1;
+  await kv.put(key, JSON.stringify(map), { expirationTtl: VIEW_TTL_SEC });
+}
+
+export async function loadViewRollup(
+  kv: KVNamespace,
+  days = 7,
+): Promise<ViewRollup> {
+  const dayIds = recentUtcDays(days);
+  const raws = await Promise.all(dayIds.map((d) => kv.get(viewDayKey(d))));
+  const maps = raws.map((raw) => {
+    if (!raw) return {} as Record<string, number>;
+    try {
+      const j = JSON.parse(raw) as Record<string, number>;
+      return j && typeof j === "object" && !Array.isArray(j) ? j : {};
+    } catch {
+      return {};
+    }
+  });
+  const todayMap = maps[0] || {};
+  const slugs = [...new Set(maps.flatMap((m) => Object.keys(m)))];
+  const bySlug = slugs.map((slug) => ({
+    slug,
+    today: Number(todayMap[slug]) || 0,
+    d7: maps.reduce((a, m) => a + (Number(m[slug]) || 0), 0),
+  }));
+  bySlug.sort((a, b) => b.d7 - a.d7 || a.slug.localeCompare(b.slug));
+  return {
+    today: Object.values(todayMap).reduce((a, n) => a + (Number(n) || 0), 0),
+    d7: bySlug.reduce((a, r) => a + r.d7, 0),
+    bySlug,
+  };
+}
+
+export function viewsForSlug(rollup: ViewRollup, slug: string): SlugViews {
+  return (
+    rollup.bySlug.find((r) => r.slug === slug) || {
+      slug,
+      today: 0,
+      d7: 0,
+    }
+  );
+}
 
 export type AftClient =
   | "mcp"
@@ -28,6 +121,7 @@ export type AftClient =
   | "extension"
   | "curl"
   | "cli"
+  | "ops-retry"
   | "other";
 
 const KNOWN_CLIENTS = new Set<string>([
@@ -36,14 +130,17 @@ const KNOWN_CLIENTS = new Set<string>([
   "extension",
   "curl",
   "cli",
+  "ops-retry",
 ]);
 
 export type MetricsEnv = {
   METRICS?: AnalyticsEngineDataset;
+  SITES?: KVNamespace;
 };
 
 export function resolveClient(request: Request): AftClient {
   const raw = (request.headers.get("x-aft-client") || "").toLowerCase().trim();
+  if (raw === "mcp-remote") return "mcp";
   if (KNOWN_CLIENTS.has(raw)) return raw as AftClient;
   const ua = request.headers.get("user-agent") || "";
   if (/^curl\//i.test(ua)) return "curl";
@@ -69,6 +166,8 @@ export type WriteMetricInput = {
   status: string;
   slug?: string;
   deployer?: string;
+  path?: string;
+  requestId?: string;
   ms?: number;
   bytes?: number;
   files?: number;
@@ -86,6 +185,8 @@ export function writeMetric(env: MetricsEnv, point: WriteMetricInput): void {
         point.status || "",
         point.slug || "",
         point.deployer || "",
+        (point.path || "").slice(0, 200),
+        (point.requestId || "").slice(0, 64),
       ],
       doubles: [
         point.ms ?? 0,
@@ -99,12 +200,23 @@ export function writeMetric(env: MetricsEnv, point: WriteMetricInput): void {
   }
 }
 
+export type DeployTrackFields = {
+  slug?: string;
+  bytes?: number;
+  files?: number;
+  error?: string;
+  path?: string;
+  hint?: string;
+  requestId?: string;
+  uploadListing?: { path: string; bytes: number; type?: string }[];
+};
+
 export async function trackDeploy(
   env: MetricsEnv,
   request: Request,
   started: number,
   response: Response,
-  fields?: { slug?: string; bytes?: number; files?: number; error?: string },
+  fields?: DeployTrackFields,
 ): Promise<Response> {
   const ok = response.status >= 200 && response.status < 300;
   let status = fields?.error || "";
@@ -127,6 +239,8 @@ export async function trackDeploy(
     status,
     slug: fields?.slug,
     deployer: await deployerKey(request),
+    path: fields?.path,
+    requestId: fields?.requestId,
     ms: Math.max(0, Date.now() - started),
     bytes: fields?.bytes,
     files: fields?.files,
@@ -135,21 +249,57 @@ export async function trackDeploy(
   return response;
 }
 
+/** Edge serve outcome — all statuses. Country from cf-ipcountry; bytes when known. */
+export function trackServe(
+  env: MetricsEnv,
+  request: Request,
+  slug: string,
+  opts: {
+    httpStatus: number;
+    path?: string;
+    bytes?: number;
+  },
+): void {
+  const country = (request.headers.get("cf-ipcountry") || "").slice(0, 8);
+  writeMetric(env, {
+    event: "serve",
+    source: resolveClient(request),
+    status: String(opts.httpStatus),
+    slug,
+    deployer: country,
+    path: opts.path,
+    requestId: request.headers.get("cf-ray") || undefined,
+    bytes: opts.bytes,
+    httpStatus: opts.httpStatus,
+  });
+}
+
+/** Document view only: HTML 200. Also bumps the KV day counter. */
 export async function trackPageView(
   env: MetricsEnv,
   request: Request,
   slug: string,
-  httpStatus: number,
+  opts: { path: string; contentType?: string; httpStatus: number },
 ): Promise<void> {
-  if (httpStatus !== 200) return;
+  if (opts.httpStatus !== 200) return;
+  if (!/^text\/html\b/i.test(opts.contentType || "")) return;
   writeMetric(env, {
     event: "page_view",
     source: resolveClient(request),
     status: "ok",
     slug,
     deployer: await deployerKey(request),
-    httpStatus,
+    path: opts.path,
+    requestId: request.headers.get("cf-ray") || undefined,
+    httpStatus: 200,
   });
+  if (env.SITES) {
+    try {
+      await incrementViewCount(env.SITES, slug);
+    } catch {
+      /* never fail the request because counters failed */
+    }
+  }
 }
 
 export function trackClaim(
@@ -173,7 +323,7 @@ export function trackRedeploy(
   request: Request,
   started: number,
   response: Response,
-  fields?: { slug?: string; bytes?: number; files?: number; error?: string },
+  fields?: DeployTrackFields,
 ): void {
   const ok = response.status >= 200 && response.status < 300;
   writeMetric(env, {
@@ -181,6 +331,8 @@ export function trackRedeploy(
     source: resolveClient(request),
     status: fields?.error || (ok ? "ok" : String(response.status)),
     slug: fields?.slug,
+    path: fields?.path,
+    requestId: fields?.requestId,
     ms: Math.max(0, Date.now() - started),
     bytes: fields?.bytes,
     files: fields?.files,
@@ -195,6 +347,19 @@ export function trackWaitlist(
 ): void {
   writeMetric(env, {
     event: "waitlist",
+    source: "web",
+    status,
+    httpStatus,
+  });
+}
+
+export function trackFeedback(
+  env: MetricsEnv,
+  status: string,
+  httpStatus: number,
+): void {
+  writeMetric(env, {
+    event: "feedback",
     source: "web",
     status,
     httpStatus,

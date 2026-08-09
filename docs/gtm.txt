@@ -1,0 +1,227 @@
+aft.page — growth experiments
+Updated: 2026-08-09
+
+Internal backlog of growth bets. Distribution is the constraint, not the product
+(see STRATEGY.md + plan.md). Every experiment must feed the core wedge —
+agent output -> durable, permissioned URL -> shared like a Google Doc — not
+spin up a second product.
+
+How to use this file
+- Add ideas freely to BACKLOG. Keep each one to the 5-line shape below.
+- Pull one or two into RUNNING at a time. Do not run five at once.
+- When done, move to DONE with the result (kept / killed + the number).
+- Each experiment:
+    Hypothesis : if we do X, then metric Y moves, because Z.
+    Build      : smallest thing to test it (hours/days, not weeks).
+    Metric     : the ONE number that says it worked (tie to METRICS.md).
+    Effort     : S (hours) / M (a day) / L (multi-day).
+    Status     : idea / running / kept / killed.
+
+North-star growth metrics (from plan.md scoreboard)
+- Stranger deploys reaching a working URL   (activation)
+- Time-to-URL p50/p95 on ops.aft.page every day (machine clock; see time-to-url.txt)
+- Repeat deployers / apps used after 7 days (retention = the real proof)
+- Apps shared with another person           (Google-Doc loop)
+- Plugin installs -> first deploy in Cursor  (distribution)
+
+===============================================================================
+RUNNING
+===============================================================================
+
+(none yet — pick from BACKLOG)
+
+===============================================================================
+BACKLOG
+===============================================================================
+
+--- Theme: AEO / on-site AI (make AI pitch us) ---
+
+G1. Summarize-this-page launcher  [SHIPPED — track it]
+    Hypothesis : letting visitors one-click ask their AI "what is aft.page"
+                 raises understanding + signups, and frames the pitch for us.
+    Build      : www/summarize.js — ChatGPT/Claude/Gemini(AI Mode)/
+                 Perplexity/Grok, product-pitch prompt. (done)
+    Metric     : summarize clicks -> waitlist/deploy conversion on same session.
+    Effort     : S (shipped). Next: add a click metric event.
+    Status     : running (measure before iterating).
+
+G2. Prompt A/B for the summarize launcher
+    Hypothesis : a sharper prompt ("...and give me one reason to try it today")
+                 lifts click->signup vs the plain summary prompt.
+    Build      : 2 prompt variants behind a coin-flip in summarize.js.
+    Metric     : signup rate per variant.
+    Effort     : S.
+    Status     : idea.
+
+G3. AI-readable everything (llms.txt + clean semantics)
+    Hypothesis : when ChatGPT/Perplexity browse our pages, cleaner structure +
+                 llms.txt yields a more favorable, accurate summary -> more trust.
+    Build      : audit /llms.txt, /mcp.md, headings, meta; add FAQ/plain-language
+                 "what aft is" block optimized for extraction.
+    Metric     : quality of AI summaries (manual rubric) + referral traffic from
+                 AI engines.
+    Effort     : M.
+    Status     : idea.
+
+--- Theme: product-led loops (the product spreads itself) ---
+
+G18. Claim-after-deploy page  [THIS ROUND]
+    Hypothesis : opening aft.page/claim (email or Google) right after anonymous
+                 deploy raises claimed-site rate so sites aren't lost when the
+                 editToken tab closes.
+    Build      : /claim + deploy claimUrl; Drop/extension open it for guests.
+    Metric     : claimed sites / anonymous deploys (7d).
+    Effort     : S.
+    Status     : running.
+
+G4. Every aft.page-hosted site gets Summarize + Feedback  [RECOMMENDED]
+    Hypothesis : baking both widgets into deployed sites makes AFT visibly more
+                 valuable than raw hosting, and each shared site markets aft.
+    Build      : inject opt-outable widgets into served sites (apps/api serve
+                 path), default on, "powered by aft.page" on the summarize one.
+    Metric     : deploys that keep widgets on; click-throughs back to aft.page.
+    Effort     : M.
+    Status     : idea (strongest product-led bet).
+
+G5. "Powered by aft.page" viral badge on shared/preview pages
+    Hypothesis : a tasteful badge on every shared URL turns each share into a
+                 brand impression + backlink (Calendly/Notion-style loop).
+    Build      : small badge on preview/shared pages; a/b the copy.
+    Metric     : new visitors attributed to badge referrer; assisted signups.
+    Effort     : S.
+    Status     : idea.
+
+G6. Shareable "powered by aft.page" summarize embed for OTHER sites
+    Hypothesis : a one-line embed others drop on their site spreads aft as a
+                 free growth loop (unproven; separate build + support burden).
+    Build      : hosted summarize.js + tiny config + branding lock on free tier.
+    Metric     : external installs -> referral signups.
+    Effort     : L. Status : idea (only if G4/G5 show the badge converts).
+
+--- Theme: distribution (get in front of agents + their users) ---
+
+G7. Ship the Agent Plugin to Cursor + cursor.directory
+    Hypothesis : a one-click "Deploy with AFT" plugin drives installs -> first
+                 deploy without founder involvement.
+    Build      : apps/plugin/ (scaffolded) + public repo + .cursor-plugin
+                 metadata; submit to marketplace + cursor.directory.
+    Metric     : plugin installs -> first deploy in Cursor (plan.md P0).
+    Effort     : M. Status : idea (blocked on: create AFT GitHub org).
+
+G8. Cross-agent plugin reach (ChatGPT/Codex, Copilot, VS Code, Kiro)
+    Hypothesis : same Agent Plugin format works across clients -> multiply
+                 distribution with near-zero extra build.
+    Build      : verify our plugin loads in each; list where directories exist.
+    Metric     : installs by client.
+    Effort     : S after G7. Status : idea.
+
+G9. Claude Code plugin (.claude-plugin) reusing our skill + MCP
+    Hypothesis : a small second manifest opens the Claude Code audience.
+    Build      : .claude-plugin/plugin.json pointing at same skill + MCP.
+    Metric     : Claude-sourced deploys.
+    Effort     : S. Status : idea.
+
+--- Theme: content / SEO ("deploy X from Y" long tail) ---
+
+G10. /with/<agent> landing pages (Claude, Cursor, Codex, ChatGPT, v0, Lovable)
+    Hypothesis : intent pages ("deploy your ChatGPT app") capture agent users
+                 mid-task.
+    Build      : we have /with/*; expand + add copy-paste deploy snippet + demo.
+    Metric     : organic -> deploy per page.
+    Effort     : M. Status : partly shipped.
+
+G11. Comparison pages (aft vs Cloudflare Drop / Vercel / raw hosting)
+    Hypothesis : buyers search comparisons; honest pages convert + rank.
+    Build      : a few /vs/ pages leaning on the moat (identity, sharing, secrets).
+    Metric     : organic -> signup.
+    Effort     : M. Status : shipped (/vs/vercel, /vs/cloudflare-drop, /vs/github-pages).
+                 Skip Netlify — too close to Vercel; thin-dupe risk.
+
+G12. Gallery of real agent-made apps deployed on aft (with permission)
+    Hypothesis : social proof of "small software" lowers the leap to try.
+    Build      : opt-in showcase pulling from real deploys.
+    Metric     : gallery -> deploy.
+    Effort     : M. Status : idea.
+
+--- Theme: outreach / community (human-speed, the bottleneck) ---
+
+G13. "What did your agent build that never left localhost?" outreach
+    Hypothesis : this exact hook books calls with people who have latent apps.
+    Build      : 30 DMs/week to Cursor/Claude/Codex builders (plan.md motion).
+    Metric     : calls booked -> repeat deployers.
+    Effort     : ongoing. Status : running per plan.
+
+G14. Feedback -> fix -> tell-them loop
+    Hypothesis : closing the loop on the new feedback widget ("you asked, we
+                 shipped") drives retention + word of mouth.
+    Build      : weekly triage of feedback table; reply to any left email.
+    Metric     : returning deployers among feedback senders.
+    Effort     : S ongoing. Status : idea (widget shipped).
+
+--- Theme: sharing / referral (the Google-Doc loop) ---
+
+G15. Invite-to-collaborate as the growth act
+    Hypothesis : sharing a private app with a teammate makes the recipient a
+                 new activated user (built-in referral).
+    Build      : polish invite flow; recipient lands on a first-run that nudges
+                 their own deploy.
+    Metric     : invited users who then deploy.
+    Effort     : M. Status : idea (sharing exists; instrument the loop).
+
+--- Theme: agent-native build process (how we ship — and what we teach) ---
+
+# Anti-pattern we reject
+#   "I want everything in one prompt → plan → do."
+# That produces sprawl, weak taste, and PRs nobody reviewed visually.
+# Default loop instead: generate options → approve/disapprove on a page →
+# learn → implement only Approves. Same spirit as the product (a URL you
+# open and decide on). See STRATEGY.md § Visual review + brand-board.html.
+
+G16. Suggest-5 / Approve-Kill boards (experimental)  [RECOMMENDED PROCESS]
+    Hypothesis : if agents always draft ~5 concrete options on an HTML board
+                 with Approve / Disapprove (Kill), humans decide in-page, and
+                 we only implement Approves + keep a decision receipt, then
+                 (a) brand/UI quality rises, (b) OSS contributors can review
+                 without chat archaeology, (c) the public process becomes a
+                 distribution story ("this is how agent webdev should work").
+    Build      : codify the loop for design + small product UI:
+                   1) Agent generates 5 specimens on a noindex HTML board
+                      (or dated board under www/).
+                   2) Human Approve / Disapprove in page; export markdown.
+                   3) Agent implements Approves only; archive receipt in docs/.
+                   4) Kills + notes become constraints for the next suggest-5.
+                 First proof: brand-board.html + docs/brand-board-2026-08-08.md.
+                 Next: reuse the pattern for favicon board, hero CTA copy, etc.
+    Metric     : boards completed with export; % of UI PRs that cite a board
+                 receipt; qualitative: fewer "redo the whole thing" turns.
+    Effort     : S ongoing (process), M if we productize a reusable board kit.
+    Status     : running (brand board shipped; expand beyond brand).
+
+G17. Public "how we decide" write-up / demo for OSS builders
+    Hypothesis : publishing the suggest-5 + approve-on-HTML loop (with a live
+                 board URL) attracts builders who hate one-shot agent messes,
+                 and positions aft as the place that ships that way.
+    Build      : short post or /docs page + link to brand-board; one clip of
+                 Approve → export → PR. Only after G16 has 2–3 receipts.
+    Metric     : referral / GH stars / plugin interest from the post.
+    Effort     : S. Status : idea (blocked on more board receipts).
+
+===============================================================================
+PARKING LOT (considered, not now)
+===============================================================================
+
+- Sell the summarize widget as a standalone SaaS.
+  Rejected for now: no moat (200 lines opening prefill URLs, trivially cloned;
+  free competitors exist), low willingness to pay, and it's a separate company
+  that doesn't compound the wedge. Value is distribution (G4/G5/G6), not a SKU.
+  Revisit only if a free branded embed (G6) actually spreads.
+
+===============================================================================
+DONE
+===============================================================================
+
+(move experiments here with: kept/killed + the number that decided it)
+
+Related: STRATEGY.md (wedge + dual-track + suggest-5 visual review),
+plan.md (30-day scoreboard), METRICS.md (event schema for wiring experiment
+metrics), brand-board-2026-08-08.md (first suggest-5 receipt).

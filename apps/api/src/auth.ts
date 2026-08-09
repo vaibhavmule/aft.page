@@ -1,5 +1,6 @@
 import type { Env } from "./env";
-import { ensureDb } from "./db";
+import { BRAND } from "./brand";
+import { clearSiteEditTokenHash, ensureDb } from "./db";
 import { cookieDomain } from "./http";
 
 const SESSION_DAYS = 30;
@@ -170,6 +171,7 @@ export async function assignSiteOwner(
   )
     .bind(userId, new Date().toISOString(), slug, userId)
     .run();
+  if (!row.owner_user_id) await clearSiteEditTokenHash(env, slug);
   return true;
 }
 
@@ -215,6 +217,24 @@ export function parseSessionCookie(request: Request): string | null {
   return m ? decodeURIComponent(m[1]!) : null;
 }
 
+/** Allow /path or https://{slug}.aft.page/... — never open redirects. */
+export function safeAuthRedirect(next: string, root: string): string {
+  if (next.startsWith("/") && !next.startsWith("//")) {
+    return `https://${root}${next}`;
+  }
+  try {
+    const u = new URL(next);
+    if (u.protocol !== "https:") return `https://${root}/projects`;
+    const host = u.hostname.toLowerCase();
+    if (host === root || host.endsWith(`.${root}`)) {
+      return u.toString();
+    }
+  } catch {
+    /* fall through */
+  }
+  return `https://${root}/projects`;
+}
+
 export async function resolveSessionUser(
   env: Env,
   request: Request,
@@ -249,7 +269,6 @@ export async function sendClaimEmail(
   verifyUrl.searchParams.set("token", magicToken);
   verifyUrl.searchParams.set("slug", slug);
   const liveUrl = `https://${slug}.${root}`;
-  const previewUrl = `https://${root}/preview?url=${encodeURIComponent(liveUrl)}`;
 
   const subject = "Claim your site on aft.page";
   const text = [
@@ -258,12 +277,12 @@ export async function sendClaimEmail(
     `Open this link within 15 minutes:`,
     verifyUrl.toString(),
     "",
-    `After claiming you can manage the site at ${previewUrl}`,
+    `After claiming, manage the site at ${liveUrl}`,
   ].join("\n");
 
   const html = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;line-height:1.5;color:#0d1117">
 <p>Claim <strong>${liveUrl}</strong> on aft.page.</p>
-<p><a href="${verifyUrl}" style="display:inline-block;padding:12px 20px;background:#e85d1a;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">Claim this site</a></p>
+<p><a href="${verifyUrl}" style="display:inline-block;padding:12px 20px;background:${BRAND.ctaInk};color:${BRAND.cta};text-decoration:none;border-radius:6px;font-weight:600">Claim this site</a></p>
 <p style="color:#4a5568;font-size:14px">This link expires in 15 minutes. If you didn't deploy this site, ignore this email.</p>
 </body></html>`;
 
@@ -317,7 +336,7 @@ export async function sendLoginEmail(
 
   const html = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;line-height:1.5;color:#0d1117">
 <p>${lead}</p>
-<p><a href="${verifyUrl}" style="display:inline-block;padding:12px 20px;background:#e85d1a;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">${cta}</a></p>
+<p><a href="${verifyUrl}" style="display:inline-block;padding:12px 20px;background:${BRAND.ctaInk};color:${BRAND.cta};text-decoration:none;border-radius:6px;font-weight:600">${cta}</a></p>
 <p style="color:#4a5568;font-size:14px">This link expires in 15 minutes. No password or signup — just this email. If you didn't request this, ignore it.</p>
 </body></html>`;
 
@@ -359,7 +378,7 @@ export async function sendInviteEmail(
 
   const html = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;line-height:1.5;color:#0d1117">
 <p>You've been invited to <strong>${access}</strong> <strong>${liveUrl}</strong> on aft.page.</p>
-<p><a href="${acceptUrl}" style="display:inline-block;padding:12px 20px;background:#e85d1a;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">Accept invite</a></p>
+<p><a href="${acceptUrl}" style="display:inline-block;padding:12px 20px;background:${BRAND.ctaInk};color:${BRAND.cta};text-decoration:none;border-radius:6px;font-weight:600">Accept invite</a></p>
 <p style="color:#4a5568;font-size:14px">This link expires in 7 days.</p>
 </body></html>`;
 

@@ -1,0 +1,6 @@
+{
+  "name": "aft-status-500",
+  "main": "worker.js",
+  "compatibility_date": "2026-07-26",
+  "workers_dev": true
+}

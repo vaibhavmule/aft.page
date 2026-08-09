@@ -1,0 +1,2176 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Project — aft.page</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css"
+    />
+    <link rel="stylesheet" href="/app.css" />
+    <style>
+      main { max-width: 64rem; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+      .hub-shell {
+        display: grid;
+        grid-template-columns: 11.5rem minmax(0, 1fr);
+        gap: 1.25rem 1.5rem;
+        align-items: start;
+      }
+      .hub-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+        position: sticky;
+        top: 4.5rem;
+      }
+      .hub-nav button {
+        appearance: none;
+        margin: 0;
+        padding: 0.45rem 0.65rem;
+        border: 0;
+        border-radius: 4px;
+        background: transparent;
+        color: var(--quiet);
+        font: inherit;
+        font-size: 0.88rem;
+        font-weight: 550;
+        text-align: left;
+        cursor: pointer;
+      }
+      .hub-nav button:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 6%, transparent); }
+      .hub-nav button[aria-current="page"] {
+        color: var(--ink);
+        background: color-mix(in srgb, var(--ink) 10%, transparent);
+      }
+      .hub-nav button.nav-danger { color: var(--danger); }
+      .hub-nav button.nav-danger[aria-current="page"],
+      .hub-nav button.nav-danger:hover { background: color-mix(in srgb, var(--danger) 14%, transparent); }
+      .hub-main .panel { display: none; margin-bottom: 0; }
+      .hub-main .panel.is-active { display: block; }
+      @media (max-width: 700px) {
+        .hub-shell { grid-template-columns: 1fr; }
+        .hub-nav { flex-direction: row; flex-wrap: wrap; position: static; }
+      }
+      .title-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.65rem 0.75rem;
+        margin: 0 0 1.25rem;
+      }
+      h1 {
+        font-size: 1.45rem;
+        margin: 0;
+        word-break: break-word;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      .meta-grid {
+        display: grid;
+        grid-template-columns: 7.5rem 1fr;
+        gap: 0.35rem 0.75rem;
+        font-size: 0.9rem;
+        margin-top: 0.9rem;
+      }
+      .meta-grid dt { color: var(--quiet); margin: 0; }
+      .meta-grid dd { margin: 0; word-break: break-word; }
+      .invite-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-top: 0.85rem;
+      }
+      .invite-form input { flex: 1 1 12rem; min-width: 10rem; width: auto; }
+      .invite-form select { width: auto; }
+      ul.people {
+        list-style: none;
+        margin: 0.75rem 0 0;
+        padding: 0;
+      }
+      ul.people li {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-top: 1px solid var(--line);
+        font-size: 0.9rem;
+      }
+      ul.people .meta { color: var(--quiet); font-size: 0.78rem; margin-left: auto; }
+      ul.people button {
+        font: inherit;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.2rem 0.45rem;
+        border-radius: 4px;
+        border: 1px solid var(--line-bright);
+        background: transparent;
+        cursor: pointer;
+        color: var(--quiet);
+      }
+      ul.people button:hover { color: var(--ink); border-color: var(--beacon); }
+      ul.people select {
+        font: inherit;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.2rem 0.35rem;
+        border-radius: 4px;
+        border: 1px solid var(--line-bright);
+        background: transparent;
+        color: var(--quiet);
+      }
+      .domain-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.65rem;
+        margin: 0 0 0.35rem;
+      }
+      .domain-head h2 { margin: 0; }
+      .domain-steps {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem 0.7rem;
+        flex-basis: 100%;
+        margin: 0.15rem 0 0;
+        font-size: 0.75rem;
+        color: var(--faint);
+      }
+      .domain-steps span[data-on] { color: var(--good); font-weight: 600; }
+      .domain-steps span[data-now] { color: var(--ink); font-weight: 600; }
+      #domain-gate { margin: 0.75rem 0 0; color: var(--quiet); font-size: 0.9rem; }
+      #domain-empty { margin: 0.75rem 0 0; }
+      table.deploys { font-size: 0.86rem; }
+      table.deploys th, table.deploys td {
+        padding: 0.5rem 0.25rem;
+        vertical-align: middle;
+      }
+      table.deploys th { font-size: 0.7rem; }
+      .obs-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+        gap: 0.65rem;
+        margin: 0 0 1.15rem;
+      }
+      .obs-card {
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 0.7rem 0.8rem;
+        background: var(--bg-inset);
+      }
+      .obs-card strong {
+        display: block;
+        font-size: 1.25rem;
+        font-weight: 650;
+        letter-spacing: -0.03em;
+      }
+      .obs-card span { color: var(--quiet); font-size: 0.75rem; }
+      .obs-card.four strong { color: #f59e0b; }
+      .obs-card.five strong { color: var(--danger); }
+      .obs-toolbar { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 0.85rem; }
+      .obs-toolbar button[aria-pressed="true"] {
+        background: var(--ink);
+        color: var(--void);
+        border-color: var(--ink);
+      }
+      .obs-chart-wrap {
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 0.75rem 0.85rem 0.55rem;
+        margin: 0 0 0.85rem;
+        background: var(--panel);
+      }
+      .obs-chart-wrap h3 {
+        margin: 0 0 0.55rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+      }
+      .obs-chart {
+        display: flex;
+        align-items: flex-end;
+        gap: 3px;
+        height: 8.5rem;
+      }
+      .obs-col {
+        flex: 1;
+        min-width: 0;
+        height: 100%;
+        display: flex;
+        align-items: flex-end;
+      }
+      .obs-stack {
+        width: 100%;
+        display: flex;
+        flex-direction: column-reverse;
+        border-radius: 2px 2px 0 0;
+        overflow: hidden;
+        min-height: 2px;
+      }
+      .obs-bar { display: block; width: 100%; min-height: 2px; }
+      .obs-bar.ok { background: #22c55e; }
+      .obs-bar.four { background: #f59e0b; }
+      .obs-bar.five { background: var(--danger); }
+      .obs-legend {
+        display: flex;
+        gap: 0.85rem;
+        margin: 0.55rem 0 0;
+        font-size: 0.72rem;
+        color: var(--quiet);
+      }
+      .obs-legend i {
+        display: inline-block;
+        width: 0.55rem;
+        height: 0.55rem;
+        border-radius: 1px;
+        margin-right: 0.3rem;
+        vertical-align: -0.05rem;
+      }
+      .obs-legend .ok { background: #22c55e; }
+      .obs-legend .four { background: #f59e0b; }
+      .obs-legend .five { background: var(--danger); }
+      .modal-section-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--quiet);
+        font-weight: 600;
+        margin: 1rem 0 0.45rem;
+      }
+      .vis-card {
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 0.75rem 0.85rem;
+        background: var(--bg-inset);
+      }
+      .vis-card p {
+        margin: 0.45rem 0 0;
+        font-size: 0.82rem;
+        color: var(--quiet);
+      }
+      .role-note {
+        margin: 0.55rem 0 0;
+        font-size: 0.78rem;
+        color: var(--quiet);
+      }
+      a.btn, button.btn { font-size: 0.82rem; padding: 0.4rem 0.7rem; }
+      #panel-danger { border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
+      #panel-danger h2 { color: var(--danger); }
+      .danger-desc { font-size: 0.86rem; color: var(--quiet); margin: 0.25rem 0 0.9rem; }
+      button.btn-danger {
+        background: var(--danger);
+        color: #fff;
+        border: 1px solid var(--danger);
+      }
+      button.btn-danger:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--danger) 85%, #000);
+      }
+      .destroy-confirm { margin-top: 0.85rem; }
+      .destroy-confirm label {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--quiet);
+        margin-bottom: 0.4rem;
+      }
+      .destroy-confirm .row { margin-top: 0.6rem; }
+      #caps-actions:empty { display: none; }
+      #caps-actions { margin-top: 0.75rem; }
+      .cap-approved {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.82rem;
+        color: var(--beacon);
+      }
+      .secret-list {
+        list-style: none;
+        margin: 0.85rem 0 0;
+        padding: 0;
+        border-top: 1px solid var(--line);
+      }
+      .secret-empty {
+        margin: 0.85rem 0 0;
+        font-size: 0.86rem;
+        color: var(--quiet);
+      }
+      .secret-row {
+        display: grid;
+        grid-template-columns: minmax(9rem, 1.15fr) 4.25rem minmax(8rem, 1.5fr) auto auto;
+        gap: 0.5rem 0.6rem;
+        align-items: center;
+        padding: 0.7rem 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .secret-name {
+        font-family: var(--font-mono);
+        font-size: 0.82rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .secret-status {
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--quiet);
+      }
+      .secret-status.is-set { color: var(--good); }
+      .secret-row input[type="text"],
+      .secret-row input[type="password"] {
+        width: 100%;
+        min-width: 0;
+        margin: 0;
+        padding: 0.45rem 0.6rem;
+        font-size: 0.86rem;
+      }
+      .secret-row .btn {
+        font-size: 0.78rem;
+        padding: 0.4rem 0.7rem;
+        background: transparent;
+        color: var(--ink);
+        border: 1px solid var(--line-bright);
+      }
+      .secret-row .btn:hover:not(:disabled) {
+        background: transparent;
+        border-color: var(--ink);
+        color: var(--ink);
+      }
+      .secret-row .btn-remove { color: var(--quiet); }
+      .secret-row .btn-remove:hover:not(:disabled) { color: var(--danger); border-color: var(--danger); }
+      form.secret-row { margin: 0; }
+      .source-toolbar { margin: 0.35rem 0 0.75rem; }
+      .source-toolbar label { font-size: 0.78rem; color: var(--quiet); }
+      .source-toolbar select { width: auto; min-width: 12rem; }
+      .source-split {
+        display: grid;
+        grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr);
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        overflow: hidden;
+        min-height: 20rem;
+      }
+      .source-list {
+        list-style: none;
+        margin: 0;
+        padding: 0.35rem 0;
+        border-right: 1px solid var(--line);
+        background: var(--bg-inset);
+        max-height: 28rem;
+        overflow: auto;
+      }
+      .source-list li { margin: 0; }
+      .source-list button {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        width: 100%;
+        margin: 0;
+        padding: 0.4rem 0.7rem;
+        border: 0;
+        background: transparent;
+        color: var(--ink);
+        font: inherit;
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        text-align: left;
+        cursor: pointer;
+      }
+      .source-list button:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+      .source-list button[aria-current="true"] {
+        background: color-mix(in srgb, var(--ink) 10%, transparent);
+      }
+      .source-list .size { color: var(--quiet); flex-shrink: 0; }
+      .source-pane { min-width: 0; display: flex; flex-direction: column; }
+      .source-file {
+        padding: 0.45rem 0.85rem;
+        border-bottom: 1px solid var(--line);
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        color: var(--quiet);
+        min-height: 1.9rem;
+      }
+      .source-preview {
+        margin: 0;
+        padding: 0.85rem 1rem;
+        overflow: auto;
+        max-height: 25rem;
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        line-height: 1.45;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      @media (max-width: 700px) {
+        .secret-row {
+          grid-template-columns: 1fr 1fr;
+        }
+        .secret-name, .secret-status { grid-column: span 1; }
+        .secret-row input { grid-column: 1 / -1; }
+        .source-split { grid-template-columns: 1fr; }
+        .source-list { border-right: 0; border-bottom: 1px solid var(--line); max-height: 12rem; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a href="/">aft<span>.</span>page</a>
+      <div class="nav-right">
+        <a href="/projects">Projects</a>
+        <a href="/mcp">MCP</a>
+        <a href="/login" data-aft-auth="login">Log in</a>
+      </div>
+    </header>
+    <main>
+      <div class="loading" id="loading" aria-busy="true">
+        <span class="spinner" aria-hidden="true"></span>
+        <div>Loading project…</div>
+      </div>
+      <div class="missing" id="missing" hidden>
+        <p>No project at this URL.</p>
+        <a class="primary" href="/projects">Back to projects</a>
+      </div>
+      <div class="denied" id="denied" hidden>
+        <p id="denied-msg">You don’t have access to manage this project.</p>
+        <a class="primary" href="/projects">Back to projects</a>
+      </div>
+      <div id="hub" hidden>
+        <p class="crumb"><a href="/projects">Projects</a> / <span id="crumb-slug"></span></p>
+        <div class="title-row">
+          <h1 id="title">—</h1>
+          <span class="pill" id="vis-pill">public</span>
+        </div>
+
+        <div class="hub-shell">
+        <nav class="hub-nav" aria-label="Project sections">
+          <button type="button" data-tab="overview" aria-current="page">Overview</button>
+          <button type="button" data-tab="deploys">Deploys</button>
+          <button type="button" data-tab="source">Source</button>
+          <button type="button" data-tab="observability" hidden>Observability</button>
+          <button type="button" data-tab="logs" hidden>Logs</button>
+          <button type="button" data-tab="domains" hidden>Domains</button>
+          <button type="button" data-tab="secrets" hidden>Secrets</button>
+          <button type="button" data-tab="capabilities" hidden>Capabilities</button>
+          <button type="button" data-tab="access" id="access-btn" hidden>Access</button>
+          <button type="button" data-tab="danger" class="nav-danger" hidden>Danger</button>
+        </nav>
+        <div class="hub-main">
+
+        <section class="panel is-active" id="panel-links" data-tab="overview">
+          <h2>Overview</h2>
+          <div class="row" id="link-actions"></div>
+          <dl class="meta-grid">
+            <dt>Live</dt>
+            <dd><a id="live-url" href="#" target="_blank" rel="noopener"></a></dd>
+            <dt id="custom-dt" hidden>Custom</dt>
+            <dd id="custom-dd" hidden><a id="custom-url" href="#" target="_blank" rel="noopener"></a></dd>
+            <dt>Current deploy</dt>
+            <dd><code id="deploy-id">—</code></dd>
+            <dt>Created</dt>
+            <dd id="created-at">—</dd>
+            <dt>Updated</dt>
+            <dd id="updated-at">—</dd>
+            <dt>Last open</dt>
+            <dd id="last-served">—</dd>
+            <dt>Views (7d)</dt>
+            <dd id="views-7d">—</dd>
+          </dl>
+        </section>
+
+        <section class="panel" id="panel-deploys" data-tab="deploys">
+          <h2>Deploys</h2>
+          <table class="deploys">
+            <thead>
+              <tr>
+                <th>Deploy</th>
+                <th>When</th>
+                <th>Source</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="deploys-body"></tbody>
+          </table>
+          <div class="msg" id="deploys-msg" role="status"></div>
+        </section>
+
+        <section class="panel" id="panel-source" data-tab="source">
+          <h2>Source</h2>
+          <div class="row source-toolbar">
+            <label for="source-deploy">Deploy</label>
+            <select id="source-deploy" aria-label="Deploy"></select>
+          </div>
+          <div class="source-split">
+            <ul class="source-list" id="source-list"></ul>
+            <div class="source-pane">
+              <div class="source-file" id="source-file-name"></div>
+              <pre class="source-preview" id="source-preview">Select a file</pre>
+            </div>
+          </div>
+          <div class="msg" id="source-msg" role="status"></div>
+        </section>
+
+        <section class="panel" id="panel-observability" data-tab="observability" hidden>
+          <h2>Observability</h2>
+          <p class="danger-desc" id="obs-summary">Edge requests for this site. 4xx/5xx are complete; successful CSS/JS are not counted. No IP addresses.</p>
+          <div class="obs-toolbar">
+            <button type="button" class="btn ghost" data-obs-window="12h" aria-pressed="true">Last 12 hours</button>
+            <button type="button" class="btn ghost" data-obs-window="7d" aria-pressed="false">Last 7 days</button>
+            <button type="button" class="btn ghost" id="obs-refresh">Refresh</button>
+          </div>
+          <div class="obs-cards" id="obs-cards"></div>
+          <div class="obs-chart-wrap">
+            <h3>Edge requests</h3>
+            <div class="obs-chart" id="obs-req-chart" aria-hidden="true"></div>
+            <div class="obs-legend">
+              <span><i class="ok"></i>2xx</span>
+              <span><i class="four"></i>4xx</span>
+              <span><i class="five"></i>5xx</span>
+            </div>
+          </div>
+          <div class="obs-chart-wrap">
+            <h3>Transfer</h3>
+            <div class="obs-chart" id="obs-bytes-chart" aria-hidden="true"></div>
+          </div>
+          <div class="msg" id="obs-msg" role="status"></div>
+        </section>
+
+        <section class="panel" id="panel-logs" data-tab="logs" hidden>
+          <h2>Logs</h2>
+          <p class="danger-desc" id="logs-summary">Document hits, errors, and failed deploys. No IP addresses. Last 7 days.</p>
+          <div class="row" style="margin-bottom:0.75rem">
+            <button type="button" class="btn ghost" id="logs-refresh">Refresh</button>
+          </div>
+          <table class="deploys">
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Status</th>
+                <th>Method</th>
+                <th>Path</th>
+              </tr>
+            </thead>
+            <tbody id="logs-body"></tbody>
+          </table>
+          <h3 class="modal-section-label" id="logs-fail-label" hidden>Failed deploys</h3>
+          <table class="deploys" id="logs-fail-table" hidden>
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Error</th>
+                <th>Path</th>
+              </tr>
+            </thead>
+            <tbody id="logs-fail-body"></tbody>
+          </table>
+          <div class="msg" id="logs-msg" role="status"></div>
+        </section>
+
+        <section class="panel" id="panel-caps" data-tab="capabilities" hidden>
+          <h2>Capabilities</h2>
+          <div id="caps-body" class="msg"></div>
+          <div class="row" id="caps-actions"></div>
+          <div class="msg" id="caps-msg" role="status"></div>
+        </section>
+
+        <section class="panel" id="panel-domains" data-tab="domains" hidden>
+          <div class="domain-head">
+            <h2>Domains</h2>
+            <button type="button" class="btn" id="add-domain-btn" hidden>Add domain</button>
+          </div>
+          <p class="danger-desc">
+            Point a hostname you own at this site. CNAME to
+            <code>cname.aft.page</code>. The <code>*.aft.page</code> URL stays.
+            Private sign-in still uses that subdomain.
+          </p>
+          <div id="domain-gate" hidden></div>
+          <ul class="people" id="domain-list"></ul>
+          <p class="secret-empty" id="domain-empty" hidden>No custom domains yet.</p>
+          <form class="invite-form" id="add-domain-form" hidden>
+            <input
+              id="add-domain-host"
+              type="text"
+              placeholder="app.example.com"
+              autocomplete="off"
+              spellcheck="false"
+              aria-label="Custom hostname"
+            />
+            <button type="submit" class="btn" id="add-domain-submit">Attach</button>
+          </form>
+          <div class="msg" id="domain-msg" role="status"></div>
+        </section>
+
+        <section class="panel" id="panel-secrets" data-tab="secrets" hidden>
+          <h2>Secrets</h2>
+          <p class="danger-desc">
+            Values are encrypted at rest and injected into the runtime. Only the
+            names are ever shown here, never the values.
+          </p>
+          <p class="secret-empty" id="secrets-empty" hidden>No secrets yet.</p>
+          <ul class="secret-list" id="secrets-list"></ul>
+          <form class="secret-row" id="add-secret-form">
+            <input
+              id="add-secret-name"
+              type="text"
+              placeholder="NAME"
+              autocomplete="off"
+              spellcheck="false"
+              aria-label="Secret name"
+            />
+            <span class="secret-status">New</span>
+            <input
+              id="add-secret-value"
+              type="password"
+              placeholder="Value"
+              autocomplete="off"
+              aria-label="Secret value"
+            />
+            <button type="submit" class="btn" id="add-secret-submit">Add</button>
+          </form>
+          <div class="msg" id="secrets-msg" role="status"></div>
+        </section>
+
+        <section class="panel" id="panel-access" data-tab="access">
+          <h2>Access</h2>
+          <div class="modal-section-label">Visibility</div>
+          <div class="vis-card">
+            <div class="seg" id="vis-seg">
+              <button type="button" id="vis-public" aria-pressed="true">Public</button>
+              <button type="button" id="vis-private" aria-pressed="false">Private</button>
+            </div>
+            <p id="access-hint">Anyone with the link can open this site.</p>
+          </div>
+
+          <div id="invite-block" hidden>
+            <div class="modal-section-label">Invite</div>
+            <form class="invite-form" id="invite-form">
+              <input id="invite-email" type="email" required placeholder="teammate@company.com" autocomplete="email" />
+              <select id="invite-role" aria-label="Role">
+                <option value="view">Can view</option>
+                <option value="edit">Can edit</option>
+              </select>
+              <button type="submit" class="btn" id="invite-submit">Invite</button>
+            </form>
+            <p class="role-note">View = open the live site. Edit = redeploy / rollback. No comment role.</p>
+          </div>
+
+          <div class="modal-section-label">People</div>
+          <ul class="people" id="people"></ul>
+          <div class="msg" id="access-msg" role="status"></div>
+        </section>
+
+        <section class="panel" id="panel-danger" data-tab="danger" hidden>
+          <h2>Danger zone</h2>
+          <p class="danger-desc">
+            Destroying this project permanently deletes the site, its files, all
+            deploy history, members, and invites. This cannot be undone.
+          </p>
+          <div class="row">
+            <button type="button" class="btn btn-danger" id="destroy-btn">
+              Destroy project
+            </button>
+          </div>
+          <div class="destroy-confirm" id="destroy-confirm" hidden>
+            <label for="destroy-input">
+              Type <strong id="destroy-slug"></strong> to confirm.
+            </label>
+            <input id="destroy-input" type="text" autocomplete="off" spellcheck="false" />
+            <div class="row">
+              <button type="button" class="btn btn-danger" id="destroy-final" disabled>
+                Destroy permanently
+              </button>
+              <button type="button" class="btn ghost" id="destroy-cancel">Cancel</button>
+            </div>
+          </div>
+          <div class="msg" id="destroy-msg" role="status"></div>
+        </section>
+        </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="/auth-me.js"></script>
+    <script>
+      const API = "https://api.aft.page";
+      const loading = document.getElementById("loading");
+      const missing = document.getElementById("missing");
+      const denied = document.getElementById("denied");
+      const hub = document.getElementById("hub");
+      const accessBtn = document.getElementById("access-btn");
+
+      /** @type {any} */
+      let info = null;
+      let slug = "";
+
+      function slugFromPath() {
+        const q = new URLSearchParams(location.search).get("slug");
+        if (q && /^[a-z0-9-]+$/.test(q)) return q;
+        const parts = location.pathname.replace(/\/+$/, "").split("/").filter(Boolean);
+        if (parts[0] === "projects" && parts[1] && /^[a-z0-9-]+$/.test(parts[1])) {
+          return parts[1];
+        }
+        if (parts[0] === "project" && parts[1] && /^[a-z0-9-]+$/.test(parts[1])) {
+          return parts[1];
+        }
+        return "";
+      }
+
+      function fmt(iso) {
+        if (!iso) return "—";
+        try {
+          return new Date(iso).toLocaleString();
+        } catch (_) {
+          return iso;
+        }
+      }
+
+      function setMsg(el, text, kind) {
+        el.textContent = text || "";
+        el.className = "msg" + (kind ? " " + kind : "");
+      }
+
+      function canManageAccess() {
+        return Boolean(info?.owner);
+      }
+
+      function canRollback() {
+        return info?.owner || info?.role === "edit";
+      }
+
+      function canSeeHub() {
+        return info?.owner || info?.role === "edit" || info?.role === "view";
+      }
+
+      function goLogin() {
+        const next = `/project/?slug=${encodeURIComponent(slug)}`;
+        location.replace(`/login?next=${encodeURIComponent(next)}`);
+      }
+
+      async function load() {
+        slug = slugFromPath();
+        if (!slug) {
+          loading.hidden = true;
+          missing.hidden = false;
+          return;
+        }
+        document.title = `${slug} — aft.page`;
+
+        try {
+          const aftAuth = window.aftAuth;
+          const me = aftAuth
+            ? await aftAuth.fetchMe()
+            : null;
+          if (!me) {
+            goLogin();
+            return;
+          }
+          const res = await fetch(`${API}/v1/sites/${encodeURIComponent(slug)}`, {
+            credentials: "include",
+          });
+          if (!res.ok) {
+            loading.hidden = true;
+            missing.hidden = false;
+            return;
+          }
+          info = await res.json();
+          loading.hidden = true;
+          if (!canSeeHub()) {
+            if (!info.email) {
+              goLogin();
+              return;
+            }
+            denied.hidden = false;
+            document.getElementById("denied-msg").textContent = info.owned
+              ? "This project is owned by someone else."
+              : "Claim this site on its live URL to manage it.";
+            const a = denied.querySelector("a.primary");
+            if (!info.owned && info.url) {
+              a.href = info.url;
+              a.textContent = "Open live site to claim";
+            }
+            return;
+          }
+          render();
+        } catch (_) {
+          goLogin();
+        }
+      }
+
+      const TAB_IDS = ["overview", "deploys", "source", "observability", "logs", "domains", "secrets", "capabilities", "access", "danger"];
+      let logsLoaded = false;
+      let obsWindow = "12h";
+      let sourceLoadedFor = "";
+
+      function showTab(name) {
+        if (!TAB_IDS.includes(name)) name = "overview";
+        const navBtn = document.querySelector(`.hub-nav [data-tab="${name}"]`);
+        if (navBtn && navBtn.hidden) name = "overview";
+        for (const panel of document.querySelectorAll(".hub-main .panel")) {
+          panel.classList.toggle("is-active", panel.dataset.tab === name);
+        }
+        for (const btn of document.querySelectorAll(".hub-nav [data-tab]")) {
+          btn.setAttribute(
+            "aria-current",
+            btn.dataset.tab === name ? "page" : "false",
+          );
+        }
+        const next = "#" + name;
+        if (location.hash !== next) history.replaceState(null, "", next);
+        if (name === "logs" || name === "observability") void loadLogs(false);
+        if (name === "source") void loadSource(false);
+      }
+
+      async function render() {
+        hub.hidden = false;
+        document.getElementById("crumb-slug").textContent = slug;
+        document.getElementById("title").textContent = slug;
+        accessBtn.hidden = false;
+
+        const live = info.url || `https://${slug}.aft.page`;
+        const liveA = document.getElementById("live-url");
+        liveA.href = live;
+        liveA.textContent = live.replace(/^https:\/\//, "");
+        document.getElementById("deploy-id").textContent = info.deployId || "—";
+        document.getElementById("created-at").textContent = fmt(info.createdAt);
+        document.getElementById("updated-at").textContent = fmt(info.updatedAt);
+        document.getElementById("last-served").textContent = fmt(info.lastServedAt);
+        const views7d = Number(info.views7d);
+        document.getElementById("views-7d").textContent = Number.isFinite(views7d)
+          ? String(views7d)
+          : "0";
+
+        const actions = document.getElementById("link-actions");
+        actions.replaceChildren();
+        const open = document.createElement("a");
+        open.className = "btn";
+        open.href = live;
+        open.target = "_blank";
+        open.rel = "noopener";
+        open.textContent = "Open live";
+        const copy = document.createElement("button");
+        copy.type = "button";
+        copy.className = "btn ghost";
+        copy.textContent = "Copy URL";
+        copy.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(live);
+            copy.textContent = "Copied";
+            setTimeout(() => (copy.textContent = "Copy URL"), 1400);
+          } catch (_) {}
+        });
+        actions.append(open, copy);
+
+        updateVisPill();
+        renderDeploys();
+        fillSourceDeploys();
+        sourceLoadedFor = "";
+        renderCaps();
+        logsLoaded = false;
+        renderLogsNav();
+        await renderSecrets();
+        await renderDomains();
+        renderDanger();
+        renderAccess();
+        const hash = (location.hash || "#overview").replace(/^#/, "");
+        showTab(TAB_IDS.includes(hash) ? hash : "overview");
+      }
+
+      function renderDanger() {
+        const allow = canManageAccess();
+        document.getElementById("panel-danger").hidden = !allow;
+        document.querySelector('.hub-nav [data-tab="danger"]').hidden = !allow;
+        document.getElementById("destroy-slug").textContent = slug;
+      }
+
+      function updateVisPill() {
+        const vis = info.visibility === "private" ? "private" : "public";
+        const pill = document.getElementById("vis-pill");
+        pill.textContent = vis;
+        pill.className = "pill" + (vis === "private" ? " private" : "");
+      }
+
+      function roleLabel(role) {
+        if (role === "edit") return "Can edit";
+        if (role === "view") return "Can view";
+        return role;
+      }
+
+      function renderAccess() {
+        const vis = info.visibility === "private" ? "private" : "public";
+        updateVisPill();
+
+        const pub = document.getElementById("vis-public");
+        const priv = document.getElementById("vis-private");
+        const hint = document.getElementById("access-hint");
+        const inviteBlock = document.getElementById("invite-block");
+        const manage = canManageAccess();
+
+        pub.disabled = !manage;
+        priv.disabled = !manage;
+        pub.setAttribute("aria-pressed", String(vis === "public"));
+        priv.setAttribute("aria-pressed", String(vis === "private"));
+
+        if (vis === "private") {
+          hint.textContent = manage
+            ? "Only invited people (and you) can open the live site."
+            : "This site is private.";
+          inviteBlock.hidden = !manage;
+        } else {
+          hint.textContent = "Anyone with the link can open this site.";
+          inviteBlock.hidden = true;
+        }
+
+        const people = document.getElementById("people");
+        people.replaceChildren();
+
+        const ownerLi = document.createElement("li");
+        const ownerEmail = document.createElement("span");
+        ownerEmail.textContent = info.email || "You";
+        const ownerMeta = document.createElement("span");
+        ownerMeta.className = "meta";
+        ownerMeta.textContent = info.owner ? "Owner (you)" : "Owner";
+        ownerLi.append(ownerEmail, ownerMeta);
+        people.appendChild(ownerLi);
+
+        const members = info.members || [];
+        const invites = info.invites || [];
+        for (const mem of members) {
+          const li = document.createElement("li");
+          const email = document.createElement("span");
+          email.textContent = mem.email;
+          li.appendChild(email);
+          if (manage) {
+            const sel = document.createElement("select");
+            sel.setAttribute("aria-label", "Role for " + mem.email);
+            sel.innerHTML =
+              '<option value="view">Can view</option><option value="edit">Can edit</option>';
+            sel.value = mem.role === "edit" ? "edit" : "view";
+            sel.addEventListener("change", () =>
+              setMemberRole(mem.userId, sel.value, sel),
+            );
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.textContent = "Remove";
+            btn.addEventListener("click", () => removeMember(mem.userId));
+            li.append(sel, btn);
+          } else {
+            const meta = document.createElement("span");
+            meta.className = "meta";
+            meta.textContent = roleLabel(mem.role);
+            li.appendChild(meta);
+          }
+          people.appendChild(li);
+        }
+        for (const inv of invites) {
+          const li = document.createElement("li");
+          const email = document.createElement("span");
+          email.textContent = inv.email;
+          const meta = document.createElement("span");
+          meta.className = "meta";
+          meta.textContent = `Pending · ${roleLabel(inv.role)}`;
+          li.append(email, meta);
+          if (manage) {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.textContent = "Revoke";
+            btn.addEventListener("click", () => revokeInvite(inv.id));
+            li.appendChild(btn);
+          }
+          people.appendChild(li);
+        }
+        if (!members.length && !invites.length && vis === "private") {
+          const li = document.createElement("li");
+          li.innerHTML = `<span class="meta" style="margin-left:0">No invites yet</span>`;
+          people.appendChild(li);
+        }
+      }
+
+      function fmtBytes(n) {
+        const num = Number(n) || 0;
+        if (num < 1024) return num + " B";
+        if (num < 1024 * 1024) {
+          return (num / 1024).toFixed(1).replace(/\.0$/, "") + " KB";
+        }
+        return (num / (1024 * 1024)).toFixed(1).replace(/\.0$/, "") + " MB";
+      }
+
+      function fillSourceDeploys() {
+        const sel = document.getElementById("source-deploy");
+        const prev = sel.value;
+        sel.replaceChildren();
+        const deploys = info.deploys || [];
+        const current = info.deployId || "";
+        if (!deploys.length && current) {
+          const opt = document.createElement("option");
+          opt.value = current;
+          opt.textContent = current.slice(0, 14) + " (current)";
+          sel.appendChild(opt);
+          return;
+        }
+        for (const d of deploys) {
+          const opt = document.createElement("option");
+          opt.value = d.id;
+          opt.textContent =
+            (d.id || "").slice(0, 14) + (d.id === current ? " (current)" : "");
+          sel.appendChild(opt);
+        }
+        if (prev && [...sel.options].some((o) => o.value === prev)) {
+          sel.value = prev;
+        } else if (current) {
+          sel.value = current;
+        }
+      }
+
+      function clearSourcePreview(msg) {
+        document.getElementById("source-file-name").textContent = "";
+        document.getElementById("source-preview").textContent =
+          msg || "Select a file";
+        for (const btn of document.querySelectorAll("#source-list button")) {
+          btn.removeAttribute("aria-current");
+        }
+      }
+
+      async function loadSource(force) {
+        const sel = document.getElementById("source-deploy");
+        const deployId = sel.value || info.deployId || "";
+        const listEl = document.getElementById("source-list");
+        const msg = document.getElementById("source-msg");
+        if (!deployId) {
+          listEl.replaceChildren();
+          clearSourcePreview("No deploy yet");
+          setMsg(msg, "");
+          return;
+        }
+        if (!force && sourceLoadedFor === deployId) return;
+        setMsg(msg, "Loading…");
+        try {
+          const res = await fetch(
+            `${API}/v1/sites/${encodeURIComponent(slug)}/files?deployId=${encodeURIComponent(deployId)}`,
+            { credentials: "include" },
+          );
+          if (!res.ok) {
+            setMsg(
+              msg,
+              res.status === 401 ? "Log in to see source" : "Couldn’t load files",
+              "err",
+            );
+            return;
+          }
+          const data = await res.json();
+          sourceLoadedFor = deployId;
+          listEl.replaceChildren();
+          clearSourcePreview();
+          const files = data.files || [];
+          if (!files.length) {
+            const li = document.createElement("li");
+            li.style.padding = "0.55rem 0.7rem";
+            li.style.color = "var(--quiet)";
+            li.style.fontSize = "0.82rem";
+            li.textContent = "No files in this deploy";
+            listEl.appendChild(li);
+            setMsg(msg, "");
+            return;
+          }
+          for (const f of files) {
+            const li = document.createElement("li");
+            const btn = document.createElement("button");
+            btn.type = "button";
+            const name = document.createElement("span");
+            name.textContent = f.path || "—";
+            const size = document.createElement("span");
+            size.className = "size";
+            size.textContent = fmtBytes(f.bytes);
+            btn.append(name, size);
+            btn.addEventListener("click", () => loadSourceFile(f.path, btn));
+            li.appendChild(btn);
+            listEl.appendChild(li);
+          }
+          setMsg(msg, "");
+        } catch (_) {
+          setMsg(msg, "Network error", "err");
+        }
+      }
+
+      async function loadSourceFile(path, btn) {
+        const deployId = document.getElementById("source-deploy").value;
+        const msg = document.getElementById("source-msg");
+        const nameEl = document.getElementById("source-file-name");
+        const preview = document.getElementById("source-preview");
+        for (const b of document.querySelectorAll("#source-list button")) {
+          b.setAttribute("aria-current", b === btn ? "true" : "false");
+        }
+        nameEl.textContent = path;
+        preview.textContent = "Loading…";
+        setMsg(msg, "");
+        try {
+          const res = await fetch(
+            `${API}/v1/sites/${encodeURIComponent(slug)}/files?deployId=${encodeURIComponent(deployId)}&path=${encodeURIComponent(path)}`,
+            { credentials: "include" },
+          );
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            preview.textContent = data.hint || data.error || "Couldn’t open file";
+            setMsg(msg, preview.textContent, "err");
+            return;
+          }
+          nameEl.textContent = data.truncated
+            ? `${path} · first 256 KB`
+            : path;
+          if (data.binary) {
+            preview.textContent = `Binary file · ${fmtBytes(data.bytes)}`;
+            return;
+          }
+          preview.textContent = data.text ?? "";
+        } catch (_) {
+          preview.textContent = "Network error";
+          setMsg(msg, "Network error", "err");
+        }
+      }
+
+      function renderLogsNav() {
+        const allow = canRollback();
+        document.getElementById("panel-logs").hidden = !allow;
+        document.getElementById("panel-observability").hidden = !allow;
+        document.querySelector('.hub-nav [data-tab="logs"]').hidden = !allow;
+        document.querySelector('.hub-nav [data-tab="observability"]').hidden = !allow;
+      }
+
+      function fmtBytes(n) {
+        const v = Number(n) || 0;
+        if (v < 1024) return v + " B";
+        if (v < 1024 * 1024) return (v / 1024).toFixed(1).replace(/\.0$/, "") + " kB";
+        return (v / (1024 * 1024)).toFixed(1).replace(/\.0$/, "") + " MB";
+      }
+
+      function renderObsChart(el, buckets, mode) {
+        el.replaceChildren();
+        const max = Math.max(
+          1,
+          ...buckets.map((b) =>
+            mode === "bytes" ? Number(b.bytes) || 0 : (b.ok || 0) + (b.fourxx || 0) + (b.fivexx || 0),
+          ),
+        );
+        for (const b of buckets) {
+          const col = document.createElement("div");
+          col.className = "obs-col";
+          const stack = document.createElement("div");
+          stack.className = "obs-stack";
+          if (mode === "bytes") {
+            const n = Number(b.bytes) || 0;
+            stack.style.height = Math.max(n ? 4 : 2, Math.round((n / max) * 100)) + "%";
+            const bar = document.createElement("span");
+            bar.className = "obs-bar ok";
+            bar.style.flex = "1";
+            bar.title = fmtBytes(n);
+            stack.appendChild(bar);
+          } else {
+            const total = (b.ok || 0) + (b.fourxx || 0) + (b.fivexx || 0);
+            stack.style.height = Math.max(total ? 4 : 2, Math.round((total / max) * 100)) + "%";
+            for (const [key, cls, label] of [
+              ["ok", "ok", "2xx"],
+              ["fourxx", "four", "4xx"],
+              ["fivexx", "five", "5xx"],
+            ]) {
+              const n = Number(b[key]) || 0;
+              if (!n) continue;
+              const bar = document.createElement("span");
+              bar.className = "obs-bar " + cls;
+              bar.style.flex = String(n);
+              bar.title = label + " " + n;
+              stack.appendChild(bar);
+            }
+          }
+          col.appendChild(stack);
+          el.appendChild(col);
+        }
+      }
+
+      function renderObservability(data) {
+        const obs = (data && data.observability) || {};
+        const totals = obs.totals || {};
+        const views = (data && data.views) || {};
+        const cards = document.getElementById("obs-cards");
+        cards.replaceChildren();
+        const items = [
+          [String(totals.requests || 0), "Requests", ""],
+          [String(totals.fourxx || 0), "4xx", "four"],
+          [String(totals.fivexx || 0), "5xx", "five"],
+          [String(views.d7 || 0), "Views 7d", ""],
+          [fmtBytes(totals.bytes || 0), "Transfer", ""],
+        ];
+        for (const [val, label, cls] of items) {
+          const card = document.createElement("div");
+          card.className = "obs-card" + (cls ? " " + cls : "");
+          card.innerHTML = `<strong></strong><span></span>`;
+          card.querySelector("strong").textContent = val;
+          card.querySelector("span").textContent = label;
+          cards.appendChild(card);
+        }
+        const buckets = obs.buckets || [];
+        renderObsChart(document.getElementById("obs-req-chart"), buckets, "status");
+        renderObsChart(document.getElementById("obs-bytes-chart"), buckets, "bytes");
+        document.getElementById("obs-summary").textContent =
+          (obs.window === "7d" ? "Last 7 days. " : "Last 12 hours. ") +
+          "4xx/5xx are complete; successful CSS/JS are not counted. No IP addresses.";
+        for (const btn of document.querySelectorAll("[data-obs-window]")) {
+          btn.setAttribute("aria-pressed", btn.dataset.obsWindow === obsWindow ? "true" : "false");
+        }
+      }
+
+      async function loadLogs(force) {
+        if (!canRollback()) return;
+        if (logsLoaded && !force) return;
+        const msg = document.getElementById("logs-msg");
+        const obsMsg = document.getElementById("obs-msg");
+        setMsg(msg, "Loading…");
+        setMsg(obsMsg, "Loading…");
+        try {
+          const res = await fetch(
+            `${API}/v1/sites/${encodeURIComponent(slug)}/logs?window=${encodeURIComponent(obsWindow)}`,
+            { credentials: "include" },
+          );
+          if (!res.ok) {
+            const err = res.status === 401 ? "Log in to see logs" : "Couldn’t load logs";
+            setMsg(msg, err, "err");
+            setMsg(obsMsg, err, "err");
+            return;
+          }
+          const data = await res.json();
+          logsLoaded = true;
+          renderObservability(data);
+          setMsg(obsMsg, "");
+          const views = data.views || {};
+          document.getElementById("logs-summary").textContent =
+            `Views today ${views.today || 0} · 7d ${views.d7 || 0}. Document hits, errors, failed deploys. No IPs. Last 7 days.`;
+          const body = document.getElementById("logs-body");
+          body.replaceChildren();
+          const events = data.events || [];
+          if (!events.length) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td colspan="4" style="color:var(--quiet)">No requests yet</td>`;
+            body.appendChild(tr);
+          } else {
+            for (const e of events) {
+              const tr = document.createElement("tr");
+              const when = document.createElement("td");
+              when.textContent = fmt(e.createdAt);
+              const st = document.createElement("td");
+              st.textContent = String(e.status);
+              const method = document.createElement("td");
+              method.textContent = e.method || "GET";
+              const path = document.createElement("td");
+              const code = document.createElement("code");
+              code.textContent = e.path || "/";
+              path.appendChild(code);
+              tr.append(when, st, method, path);
+              body.appendChild(tr);
+            }
+          }
+          const fails = data.deployFailures || [];
+          const failLabel = document.getElementById("logs-fail-label");
+          const failTable = document.getElementById("logs-fail-table");
+          const failBody = document.getElementById("logs-fail-body");
+          failLabel.hidden = fails.length === 0;
+          failTable.hidden = fails.length === 0;
+          failBody.replaceChildren();
+          for (const f of fails) {
+            const tr = document.createElement("tr");
+            const when = document.createElement("td");
+            when.textContent = fmt(f.createdAt);
+            const err = document.createElement("td");
+            const code = document.createElement("code");
+            code.textContent = f.error || "";
+            err.appendChild(code);
+            const path = document.createElement("td");
+            path.textContent = f.path || "—";
+            tr.append(when, err, path);
+            failBody.appendChild(tr);
+          }
+          setMsg(msg, "");
+        } catch (_) {
+          setMsg(msg, "Network error", "err");
+          setMsg(obsMsg, "Network error", "err");
+        }
+      }
+
+      function renderDeploys() {
+        const body = document.getElementById("deploys-body");
+        body.replaceChildren();
+        const deploys = info.deploys || [];
+        if (!deploys.length) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td colspan="4" style="color:var(--quiet)">No deploy history yet</td>`;
+          body.appendChild(tr);
+          return;
+        }
+        for (const d of deploys) {
+          const tr = document.createElement("tr");
+          const current = d.id === info.deployId;
+          const idTd = document.createElement("td");
+          idTd.innerHTML = `<code>${(d.id || "").slice(0, 14)}</code>${
+            current ? ' <span class="pill current">current</span>' : ""
+          }`;
+          const when = document.createElement("td");
+          when.textContent = fmt(d.createdAt);
+          const src = document.createElement("td");
+          src.textContent = d.source || "—";
+          const act = document.createElement("td");
+          if (canRollback() && !current) {
+            const wrap = document.createElement("span");
+            wrap.className = "row";
+            wrap.style.gap = "0.35rem";
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "btn ghost";
+            btn.textContent = "Rollback";
+            btn.addEventListener("click", () => {
+              if (btn.dataset.confirm !== "1") {
+                btn.dataset.confirm = "1";
+                btn.textContent = "Confirm";
+                btn.classList.remove("ghost");
+                const cancel = document.createElement("button");
+                cancel.type = "button";
+                cancel.className = "btn ghost";
+                cancel.textContent = "Cancel";
+                cancel.addEventListener("click", () => {
+                  btn.dataset.confirm = "";
+                  btn.textContent = "Rollback";
+                  btn.classList.add("ghost");
+                  cancel.remove();
+                });
+                wrap.appendChild(cancel);
+                return;
+              }
+              rollback(d.id, btn);
+            });
+            wrap.appendChild(btn);
+            act.appendChild(wrap);
+          }
+          tr.append(idTd, when, src, act);
+          body.appendChild(tr);
+        }
+      }
+
+      function renderCaps() {
+        const panel = document.getElementById("panel-caps");
+        const nav = document.querySelector('.hub-nav [data-tab="capabilities"]');
+        const caps = info.capabilities;
+        if (!caps) {
+          panel.hidden = true;
+          nav.hidden = true;
+          return;
+        }
+        panel.hidden = false;
+        nav.hidden = false;
+        const el = document.getElementById("caps-body");
+        const req = caps.requested || {};
+        const lines = [];
+        for (const s of req.secrets || []) lines.push(`secret:${s}`);
+        for (const e of req.egress || []) lines.push(`egress:${e}`);
+        for (const d of req.data || []) lines.push(`data:${d}`);
+        el.textContent = `Status: ${caps.status}${
+          lines.length ? " · " + lines.join(", ") : ""
+        }`;
+
+        const actions = document.getElementById("caps-actions");
+        actions.replaceChildren();
+        setMsg(document.getElementById("caps-msg"), "");
+        if (caps.status === "approved") {
+          const ok = document.createElement("span");
+          ok.className = "cap-approved";
+          ok.innerHTML =
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Approved';
+          actions.appendChild(ok);
+        } else if (caps.status === "pending" && canManageAccess()) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "btn";
+          btn.textContent = "Approve";
+          btn.addEventListener("click", () => approveCaps(btn));
+          actions.appendChild(btn);
+        }
+      }
+
+      async function approveCaps(btn) {
+        if (!canManageAccess()) return;
+        btn.disabled = true;
+        setMsg(document.getElementById("caps-msg"), "Approving…");
+        try {
+          const res = await fetch(
+            `${API}/v1/sites/${encodeURIComponent(slug)}/capabilities`,
+            {
+              method: "POST",
+              credentials: "include",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({}),
+            },
+          );
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            setMsg(
+              document.getElementById("caps-msg"),
+              body.hint || body.error || "Approve failed",
+              "err",
+            );
+            btn.disabled = false;
+            return;
+          }
+          setMsg(document.getElementById("caps-msg"), "Approved", "ok");
+          await refresh();
+        } catch (_) {
+          setMsg(document.getElementById("caps-msg"), "Network error", "err");
+          btn.disabled = false;
+        }
+      }
+
+      function paintCustomOverview(domains) {
+        const active =
+          (domains || []).find((d) => d.status === "active") ||
+          (domains || [])[0];
+        const dt = document.getElementById("custom-dt");
+        const dd = document.getElementById("custom-dd");
+        const a = document.getElementById("custom-url");
+        if (!active) {
+          dt.hidden = true;
+          dd.hidden = true;
+          return;
+        }
+        dt.hidden = false;
+        dd.hidden = false;
+        a.href = "https://" + active.hostname;
+        a.textContent =
+          active.hostname + (active.status === "active" ? "" : " · " + active.status);
+      }
+
+      let domainPoll = 0;
+
+      function domainProgress(d) {
+        const ssl = String(d.sslStatus || "").toLowerCase();
+        const live = d.status === "active";
+        const dns = live || Boolean(d.cfId);
+        const https =
+          live ||
+          ssl === "active" ||
+          ssl === "pending_deployment" ||
+          ssl === "pending_issuance";
+        const now = live ? "" : !dns ? "dns" : !https ? "https" : "live";
+        return [
+          { id: "added", label: "Added", on: true },
+          { id: "dns", label: "DNS", on: dns },
+          { id: "https", label: "HTTPS", on: https },
+          { id: "live", label: "Live", on: live },
+        ].map((s) => ({ ...s, now: s.id === now }));
+      }
+
+      function domainMeta(d) {
+        if (d.status === "active") return "Live";
+        if (d.status === "error") return "Error";
+        const ssl = String(d.sslStatus || "").toLowerCase();
+        if (ssl === "pending_validation" || ssl === "initializing") {
+          return "Issuing certificate";
+        }
+        if (ssl === "pending_issuance" || ssl === "pending_deployment") {
+          return "Installing HTTPS";
+        }
+        if (d.cfId) return "Waiting on certificate";
+        return "Waiting on DNS";
+      }
+
+      async function renderDomains() {
+        const panel = document.getElementById("panel-domains");
+        const nav = document.querySelector('.hub-nav [data-tab="domains"]');
+        const allow = canManageAccess();
+        panel.hidden = !allow;
+        nav.hidden = !allow;
+        if (!allow) {
+          paintCustomOverview([]);
+          return;
+        }
+
+        let domains = info.domains || [];
+        let access = info.domainAccess || "none";
+        try {
+          const res = await fetch(
+            `${API}/v1/sites/${encodeURIComponent(slug)}/domains`,
+            { credentials: "include" },
+          );
+          if (res.ok) {
+            const body = await res.json();
+            domains = body.domains || [];
+            access = body.access || "none";
+            info.domains = domains;
+            info.domainAccess = access;
+            info.cname = body.cname;
+          }
+        } catch (_) {
+          /* keep site-info snapshot */
+        }
+
+        paintCustomOverview(domains);
+        const list = document.getElementById("domain-list");
+        const empty = document.getElementById("domain-empty");
+        const gate = document.getElementById("domain-gate");
+        const addBtn = document.getElementById("add-domain-btn");
+        const form = document.getElementById("add-domain-form");
+        list.replaceChildren();
+        gate.hidden = access === "approved";
+        gate.replaceChildren();
+        if (access === "none") {
+          const p = document.createElement("p");
+          p.textContent =
+            "Custom domains are invite-only while we roll this out.";
+          const req = document.createElement("button");
+          req.type = "button";
+          req.className = "btn";
+          req.textContent = "Request access";
+          req.addEventListener("click", () => requestDomainAccess(req));
+          gate.append(p, req);
+        } else if (access === "requested") {
+          gate.textContent = "Access requested. We’ll turn this on from ops.";
+        }
+        addBtn.hidden = access !== "approved" || domains.length >= 2;
+        if (access !== "approved") form.hidden = true;
+        empty.hidden = domains.length > 0;
+        const cname = info.cname || "cname.aft.page";
+        for (const d of domains) {
+          const li = document.createElement("li");
+          const host = document.createElement("span");
+          host.textContent = d.hostname;
+          const meta = document.createElement("span");
+          meta.className = "meta";
+          meta.textContent = domainMeta(d);
+          li.append(host, meta);
+          if (d.status === "active") {
+            const open = document.createElement("a");
+            open.href = "https://" + d.hostname;
+            open.target = "_blank";
+            open.rel = "noopener";
+            open.textContent = "Open";
+            li.appendChild(open);
+          }
+          const check = document.createElement("button");
+          check.type = "button";
+          check.textContent = "Refresh";
+          check.addEventListener("click", () => refreshOneDomain(d.hostname));
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.textContent = "Remove";
+          remove.addEventListener("click", () => removeOneDomain(d.hostname));
+          li.append(check, remove);
+          const steps = document.createElement("div");
+          steps.className = "domain-steps";
+          steps.setAttribute("aria-label", "HTTPS progress");
+          for (const s of domainProgress(d)) {
+            const el = document.createElement("span");
+            el.textContent = (s.on ? "● " : "○ ") + s.label;
+            if (s.on) el.dataset.on = "";
+            if (s.now) el.dataset.now = "";
+            steps.appendChild(el);
+          }
+          li.appendChild(steps);
+          if (d.status !== "active") {
+            const dns = document.createElement("div");
+            dns.className = "role-note";
+            dns.style.flexBasis = "100%";
+            let lines = `CNAME  ${d.hostname}  →  ${d.cname || cname}`;
+            if (d.txtName && d.txtValue) {
+              lines += `\nTXT  ${d.txtName}  →  ${d.txtValue}`;
+            }
+            if (d.error) lines += `\n${d.error}`;
+            dns.textContent = lines;
+            li.appendChild(dns);
+          }
+          list.appendChild(li);
+        }
+
+        clearTimeout(domainPoll);
+        const pending = domains.some(
+          (d) => d.status !== "active" && d.status !== "error",
+        );
+        if (pending) {
+          domainPoll = setTimeout(() => {
+            const p = document.getElementById("panel-domains");
+            if (p && p.classList.contains("is-active")) renderDomains();
+          }, 5000);
+        }
+      }
+
+      async function requestDomainAccess(btn) {
+        btn.disabled = true;
+        setMsg(document.getElementById("domain-msg"), "Requesting…");
+        try {
+          const res = await fetch(
+            `${API}/v1/sites/${encodeURIComponent(slug)}/domains/access`,
+            { method: "POST", credentials: "include" },
+          );
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            setMsg(
+              document.getElementById("domain-msg"),
+              body.hint || body.error || "Couldn’t request",
+              "err",
+            );
+            btn.disabled = false;
+            return;
+          }
+          info.domainAccess = body.access || "requested";
+          setMsg(document.getElementById("domain-msg"), "Requested", "ok");
+          await renderDomains();
+        } catch (_) {
+          setMsg(document.getElementById("domain-msg"), "Network error", "err");
+          btn.disabled = false;
+        }
+      }
+
+      async function refreshOneDomain(hostname) {
+        setMsg(document.getElementById("domain-msg"), "Refreshing…");
+        try {
+          const res = await fetch(
+            `${API}/v1/sites/${encodeURIComponent(slug)}/domains/${encodeURIComponent(hostname)}`,
+            {
+              method: "POST",
+              credentials: "include",
+            },
+          );
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            setMsg(
+              document.getElementById("domain-msg"),
+              body.hint || body.error || "Couldn’t refresh",
+              "err",
+            );
+            return;
+          }
+          const d = body.domain || {};
+          const st = d.status;
+          setMsg(
+            document.getElementById("domain-msg"),
+            st === "active" ? "Live" : domainMeta(d),
+            st === "active" ? "ok" : "",
+          );
+          await renderDomains();
+        } catch (_) {
+          setMsg(document.getElementById("domain-msg"), "Network error", "err");
+        }
+      }
+
+      async function removeOneDomain(hostname) {
+        setMsg(document.getElementById("domain-msg"), "Removing…");
+        try {
+          const res = await fetch(
+            `${API}/v1/sites/${encodeURIComponent(slug)}/domains/${encodeURIComponent(hostname)}`,
+            { method: "DELETE", credentials: "include" },
+          );
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            setMsg(
+              document.getElementById("domain-msg"),
+              body.hint || body.error || "Couldn’t remove",
+              "err",
+            );
+            return;
+          }
+          setMsg(document.getElementById("domain-msg"), "Removed", "ok");
+          await renderDomains();
+        } catch (_) {
+          setMsg(document.getElementById("domain-msg"), "Network error", "err");
+        }
+      }
+
+      async function renderSecrets() {
+        const panel = document.getElementById("panel-secrets");
+        const nav = document.querySelector('.hub-nav [data-tab="secrets"]');
+        const caps = info.capabilities;
+        const declared = (caps && caps.requested && caps.requested.secrets) || [];
+        if (!canRollback()) {
+          panel.hidden = true;
+          nav.hidden = true;
+          return;
+        }
+        panel.hidden = false;
+        nav.hidden = false;
+
+        let existing = [];
+        try {
+          const res = await fetch(
+            `${API}/v1/sites/${encodeURIComponent(slug)}/secrets`,
+            { credentials: "include" },
+          );
+          if (res.ok) {
+            const body = await res.json().catch(() => ({}));
+            existing = Array.isArray(body.secrets) ? body.secrets : [];
+          }
+        } catch (_) {
+          /* leave existing empty */
+        }
+
+        const names = [];
+        for (const n of declared) if (!names.includes(n)) names.push(n);
+        for (const n of existing) if (!names.includes(n)) names.push(n);
+
+        const list = document.getElementById("secrets-list");
+        list.replaceChildren();
+        document.getElementById("secrets-empty").hidden = names.length > 0;
+        for (const name of names) {
+          list.appendChild(secretRow(name, existing.includes(name)));
+        }
+      }
+
+      function secretRow(name, isSet) {
+        const li = document.createElement("li");
+        li.className = "secret-row";
+
+        const nameEl = document.createElement("span");
+        nameEl.className = "secret-name";
+        nameEl.textContent = name;
+        nameEl.title = name;
+
+        const status = document.createElement("span");
+        status.className = "secret-status" + (isSet ? " is-set" : "");
+        status.textContent = isSet ? "Set" : "Unset";
+
+        const input = document.createElement("input");
+        input.type = "password";
+        input.placeholder = isSet ? "Replace value" : "Paste value";
+        input.autocomplete = "off";
+        input.setAttribute("aria-label", `Value for ${name}`);
+
+        const save = document.createElement("button");
+        save.type = "button";
+        save.className = "btn";
+        save.textContent = "Save";
+        save.addEventListener("click", () => setSecret(name, input.value, save));
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            setSecret(name, input.value, save);
+          }
+        });
+
+        li.append(nameEl, status, input, save);
+
+        if (isSet) {
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.className = "btn btn-remove";
+          remove.textContent = "Remove";
+          remove.addEventListener("click", () => removeSecret(name));
+          li.appendChild(remove);
+        }
+        return li;
+      }
+
+      async function setSecret(name, value, btn) {
+        if (!canRollback()) return;
+        if (typeof value !== "string" || value.length === 0) {
+          setMsg(document.getElementById("secrets-msg"), "Value required", "err");
+          return;
+        }
+        if (value.length > 8192) {
+          setMsg(
+            document.getElementById("secrets-msg"),
+            "Value too long (max 8192 chars)",
+            "err",
+          );
+          return;
+        }
+        btn.disabled = true;
+        setMsg(document.getElementById("secrets-msg"), `Saving ${name}…`);
+        try {
+          const res = await fetch(
+            `${API}/v1/sites/${encodeURIComponent(slug)}/secrets/${encodeURIComponent(name)}`,
+            {
+              method: "PUT",
+              credentials: "include",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ value }),
+            },
+          );
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            setMsg(
+              document.getElementById("secrets-msg"),
+              body.hint || body.error || "Couldn’t save secret",
+              "err",
+            );
+            btn.disabled = false;
+            return;
+          }
+          setMsg(document.getElementById("secrets-msg"), `Saved ${name}`, "ok");
+          await renderSecrets();
+        } catch (_) {
+          setMsg(document.getElementById("secrets-msg"), "Network error", "err");
+          btn.disabled = false;
+        }
+      }
+
+      async function removeSecret(name) {
+        if (!canRollback()) return;
+        setMsg(document.getElementById("secrets-msg"), `Removing ${name}…`);
+        try {
+          const res = await fetch(
+            `${API}/v1/sites/${encodeURIComponent(slug)}/secrets/${encodeURIComponent(name)}`,
+            { method: "DELETE", credentials: "include" },
+          );
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            setMsg(
+              document.getElementById("secrets-msg"),
+              body.hint || body.error || "Couldn’t remove secret",
+              "err",
+            );
+            return;
+          }
+          setMsg(document.getElementById("secrets-msg"), `Removed ${name}`, "ok");
+          await renderSecrets();
+        } catch (_) {
+          setMsg(document.getElementById("secrets-msg"), "Network error", "err");
+        }
+      }
+
+      async function refresh() {
+        const res = await fetch(`${API}/v1/sites/${encodeURIComponent(slug)}`, {
+          credentials: "include",
+        });
+        if (!res.ok) return;
+        info = await res.json();
+        render();
+      }
+
+      async function patchVisibility(next) {
+        if (!canManageAccess()) return;
+        const prev = info.visibility;
+        info.visibility = next;
+        renderAccess();
+        try {
+          const res = await fetch(`${API}/v1/sites/${encodeURIComponent(slug)}`, {
+            method: "PATCH",
+            credentials: "include",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ visibility: next }),
+          });
+          if (!res.ok) {
+            info.visibility = prev;
+            renderAccess();
+            setMsg(document.getElementById("access-msg"), "Couldn’t update visibility", "err");
+            return;
+          }
+          setMsg(
+            document.getElementById("access-msg"),
+            next === "private" ? "Site is private" : "Site is public",
+            "ok",
+          );
+          await refresh();
+        } catch (_) {
+          info.visibility = prev;
+          renderAccess();
+          setMsg(document.getElementById("access-msg"), "Network error", "err");
+        }
+      }
+
+      document.getElementById("source-deploy").addEventListener("change", () => {
+        sourceLoadedFor = "";
+        void loadSource(true);
+      });
+      document.getElementById("logs-refresh").addEventListener("click", () => {
+        void loadLogs(true);
+      });
+      document.getElementById("obs-refresh").addEventListener("click", () => {
+        void loadLogs(true);
+      });
+      document.querySelector("#panel-observability .obs-toolbar").addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-obs-window]");
+        if (!btn) return;
+        obsWindow = btn.dataset.obsWindow === "7d" ? "7d" : "12h";
+        logsLoaded = false;
+        void loadLogs(true);
+      });
+      document.querySelector(".hub-nav").addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-tab]");
+        if (!btn) return;
+        showTab(btn.dataset.tab);
+      });
+      window.addEventListener("hashchange", () => {
+        const hash = (location.hash || "#overview").replace(/^#/, "");
+        showTab(TAB_IDS.includes(hash) ? hash : "overview");
+      });
+
+      document.getElementById("vis-public").addEventListener("click", () => {
+        patchVisibility("public");
+      });
+      document.getElementById("vis-private").addEventListener("click", () => {
+        patchVisibility("private");
+      });
+
+      document.getElementById("invite-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!canManageAccess()) return;
+        const email = document.getElementById("invite-email").value.trim();
+        const role = document.getElementById("invite-role").value;
+        const btn = document.getElementById("invite-submit");
+        btn.disabled = true;
+        setMsg(document.getElementById("access-msg"), "Sending invite…");
+        try {
+          const res = await fetch(
+            `${API}/v1/sites/${encodeURIComponent(slug)}/invites`,
+            {
+              method: "POST",
+              credentials: "include",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ email, role }),
+            },
+          );
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            setMsg(
+              document.getElementById("access-msg"),
+              body.hint || body.message || body.error || "Invite failed",
+              "err",
+            );
+            return;
+          }
+          document.getElementById("invite-email").value = "";
+          setMsg(document.getElementById("access-msg"), `Invited ${email}`, "ok");
+          await refresh();
+        } catch (_) {
+          setMsg(document.getElementById("access-msg"), "Network error", "err");
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      document.getElementById("add-domain-btn").addEventListener("click", () => {
+        const form = document.getElementById("add-domain-form");
+        form.hidden = !form.hidden;
+        if (!form.hidden) document.getElementById("add-domain-host").focus();
+      });
+
+      document.getElementById("add-domain-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!canManageAccess()) return;
+        const input = document.getElementById("add-domain-host");
+        const hostname = input.value.trim();
+        if (!hostname) return;
+        const btn = document.getElementById("add-domain-submit");
+        btn.disabled = true;
+        setMsg(document.getElementById("domain-msg"), "Adding…");
+        try {
+          const res = await fetch(
+            `${API}/v1/sites/${encodeURIComponent(slug)}/domains`,
+            {
+              method: "POST",
+              credentials: "include",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ hostname }),
+            },
+          );
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            setMsg(
+              document.getElementById("domain-msg"),
+              body.hint || body.error || "Couldn’t add domain",
+              "err",
+            );
+            btn.disabled = false;
+            return;
+          }
+          input.value = "";
+          document.getElementById("add-domain-form").hidden = true;
+          setMsg(
+            document.getElementById("domain-msg"),
+            "Added — set the CNAME. HTTPS issues next.",
+            "ok",
+          );
+          await renderDomains();
+        } catch (_) {
+          setMsg(document.getElementById("domain-msg"), "Network error", "err");
+        }
+        btn.disabled = false;
+      });
+
+      document.getElementById("add-secret-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!canRollback()) return;
+        const nameEl = document.getElementById("add-secret-name");
+        const valueEl = document.getElementById("add-secret-value");
+        const name = nameEl.value.trim();
+        const value = valueEl.value;
+        if (!/^[A-Za-z0-9_.-]+$/.test(name)) {
+          setMsg(
+            document.getElementById("secrets-msg"),
+            "Name may only use letters, numbers, _ . -",
+            "err",
+          );
+          return;
+        }
+        const submit = document.getElementById("add-secret-submit");
+        await setSecret(name, value, submit);
+        submit.disabled = false;
+        if (document.getElementById("secrets-msg").classList.contains("ok")) {
+          nameEl.value = "";
+          valueEl.value = "";
+        }
+      });
+
+      async function setMemberRole(userId, role, sel) {
+        sel.disabled = true;
+        const res = await fetch(
+          `${API}/v1/sites/${encodeURIComponent(slug)}/members/${encodeURIComponent(userId)}`,
+          {
+            method: "PATCH",
+            credentials: "include",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ role }),
+          },
+        );
+        if (!res.ok) {
+          sel.disabled = false;
+          setMsg(document.getElementById("access-msg"), "Couldn’t update role", "err");
+          await refresh();
+          return;
+        }
+        setMsg(
+          document.getElementById("access-msg"),
+          role === "edit" ? "Can edit" : "Can view",
+          "ok",
+        );
+        await refresh();
+      }
+
+      async function removeMember(userId) {
+        const res = await fetch(
+          `${API}/v1/sites/${encodeURIComponent(slug)}/members/${encodeURIComponent(userId)}`,
+          { method: "DELETE", credentials: "include" },
+        );
+        if (!res.ok) {
+          setMsg(document.getElementById("access-msg"), "Couldn’t remove", "err");
+          return;
+        }
+        setMsg(document.getElementById("access-msg"), "Removed", "ok");
+        await refresh();
+      }
+
+      async function revokeInvite(id) {
+        const res = await fetch(
+          `${API}/v1/sites/${encodeURIComponent(slug)}/invites/${encodeURIComponent(id)}`,
+          { method: "DELETE", credentials: "include" },
+        );
+        if (!res.ok) {
+          setMsg(document.getElementById("access-msg"), "Couldn’t revoke", "err");
+          return;
+        }
+        setMsg(document.getElementById("access-msg"), "Invite revoked", "ok");
+        await refresh();
+      }
+
+      async function rollback(deployId, btn) {
+        if (!canRollback()) return;
+        btn.disabled = true;
+        setMsg(document.getElementById("deploys-msg"), "Rolling back…");
+        try {
+          const res = await fetch(
+            `${API}/v1/sites/${encodeURIComponent(slug)}/rollback`,
+            {
+              method: "POST",
+              credentials: "include",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ deployId }),
+            },
+          );
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            setMsg(
+              document.getElementById("deploys-msg"),
+              body.hint || body.error || "Rollback failed",
+              "err",
+            );
+            btn.disabled = false;
+            btn.dataset.confirm = "";
+            btn.textContent = "Rollback";
+            btn.classList.add("ghost");
+            return;
+          }
+          setMsg(document.getElementById("deploys-msg"), "Rolled back", "ok");
+          await refresh();
+        } catch (_) {
+          setMsg(document.getElementById("deploys-msg"), "Network error", "err");
+          btn.disabled = false;
+          btn.dataset.confirm = "";
+          btn.textContent = "Rollback";
+          btn.classList.add("ghost");
+        }
+      }
+
+      (function initDestroy() {
+        const openBtn = document.getElementById("destroy-btn");
+        const confirm = document.getElementById("destroy-confirm");
+        const input = document.getElementById("destroy-input");
+        const finalBtn = document.getElementById("destroy-final");
+        const cancelBtn = document.getElementById("destroy-cancel");
+        const msg = document.getElementById("destroy-msg");
+
+        function reset() {
+          confirm.hidden = true;
+          openBtn.hidden = false;
+          input.value = "";
+          finalBtn.disabled = true;
+          setMsg(msg, "");
+        }
+
+        openBtn.addEventListener("click", () => {
+          openBtn.hidden = true;
+          confirm.hidden = false;
+          input.focus();
+        });
+        cancelBtn.addEventListener("click", reset);
+        input.addEventListener("input", () => {
+          finalBtn.disabled = input.value.trim() !== slug;
+        });
+
+        finalBtn.addEventListener("click", async () => {
+          if (!canManageAccess() || input.value.trim() !== slug) return;
+          finalBtn.disabled = true;
+          cancelBtn.disabled = true;
+          setMsg(msg, "Destroying…");
+          try {
+            const res = await fetch(
+              `${API}/v1/sites/${encodeURIComponent(slug)}`,
+              { method: "DELETE", credentials: "include" },
+            );
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              setMsg(msg, body.hint || body.error || "Couldn’t destroy project", "err");
+              finalBtn.disabled = false;
+              cancelBtn.disabled = false;
+              return;
+            }
+            try {
+              sessionStorage.removeItem("aft.projects.sites.v1");
+            } catch (_) {}
+            setMsg(msg, "Project destroyed. Redirecting…", "ok");
+            location.replace("/projects");
+          } catch (_) {
+            setMsg(msg, "Network error", "err");
+            finalBtn.disabled = false;
+            cancelBtn.disabled = false;
+          }
+        });
+      })();
+
+      load();
+    </script>
+    <script src="/auth-nav.js" defer></script>
+    <script src="/feedback.js" defer></script>
+  </body>
+</html>
