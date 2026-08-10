@@ -37,8 +37,8 @@
       }
       .aft-auth-btn {
         display: inline-flex; align-items: center; justify-content: center;
-        padding: 0; border: 1px solid var(--line, #1e232c);
-        border-radius: 999px; background: transparent; color: inherit; font: inherit;
+        padding: 0.35rem 0.75rem; border: 1px solid var(--line, #27272a);
+        border-radius: 0.5rem; background: transparent; color: inherit; font: inherit;
         font-weight: 550; cursor: pointer; text-decoration: none;
         transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
       }
@@ -46,7 +46,7 @@
       .aft-auth-btn:active { transform: scale(0.98); }
       .aft-auth-btn.is-busy { opacity: 0.65; pointer-events: none; }
       .aft-auth-avatar {
-        width: 1.85rem; height: 1.85rem; border-radius: 999px;
+        width: 1.35rem; height: 1.35rem; border-radius: 0.5rem;
         background: var(--cta, #ffffff); color: var(--cta-ink, #000000); display: inline-flex;
         align-items: center; justify-content: center; font-size: 0.78rem;
         font-weight: 700; flex-shrink: 0;
@@ -68,9 +68,9 @@
       }
       .aft-auth-menu-email {
         display: block; padding: 0.45rem 0.65rem 0.55rem;
-        font-size: 0.75rem; font-weight: 500; color: var(--quiet, #8b939e);
+        font-size: 0.75rem; font-weight: 500; color: var(--quiet, #a1a1aa);
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-        border-bottom: 1px solid var(--line, #1e232c);
+        border-bottom: 1px solid var(--line, #27272a);
         margin-bottom: 0.25rem;
       }
       .aft-auth-menu a, .aft-auth-menu button {
@@ -90,13 +90,12 @@
       .topnav .aft-auth-avatar { background: var(--cta, #ffffff); color: var(--cta-ink, #000000); }
       .topnav .aft-auth-menu { background: #0a0a0a; border-color: var(--line, rgba(255,255,255,0.14)); color: #fafafa; }
       .topnav .aft-auth-menu-email {
-        color: var(--quiet, #8b939e);
+        color: var(--quiet, #a1a1aa);
         border-bottom-color: var(--line, rgba(255,255,255,0.14));
       }
       .topnav .aft-auth-menu a:hover, .topnav .aft-auth-menu button:hover {
         background: rgba(255,255,255,0.06);
       }
-      .topnav.aft-signed-in .topnav-cta { display: none; }
       [data-aft-auth="guest"][hidden],
       [data-aft-auth="signed-in"][hidden] { display: none !important; }
       .bar .aft-auth-wrap { margin-left: 0.35rem; }

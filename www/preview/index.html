@@ -42,7 +42,7 @@
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        padding: 0.6rem 1rem;
+        padding: 1.35rem clamp(1.25rem, 3vw, 2.25rem);
         background: var(--void);
         border-bottom: 1px solid var(--line);
         flex-wrap: wrap;
@@ -51,7 +51,7 @@
       .brand {
         font-family: var(--font-display);
         font-weight: 600;
-        font-size: 1.15rem;
+        font-size: 1.35rem;
         letter-spacing: -0.02em;
         text-decoration: none;
         color: var(--ink);
@@ -61,7 +61,7 @@
       .brand span {
         color: var(--good);
         font-family: var(--font-sans);
-        font-weight: 700;
+        font-weight: 600;
       }
       .slug {
         font-family: var(--font-mono);
@@ -444,7 +444,10 @@
   </head>
   <body>
     <div class="bar">
-      <a class="brand" href="/">aft<span>.</span>page</a>
+      <div class="app-brand-wrap">
+        <a class="brand" href="/">aft<span>.</span>page</a>
+        <span class="nav-beta">Beta</span>
+      </div>
       <span class="slug" id="slug"></span>
       <div class="view-toggle" id="view-toggle" role="group" aria-label="Preview view" hidden>
         <button id="preview-tab" type="button" aria-pressed="true">Preview</button>

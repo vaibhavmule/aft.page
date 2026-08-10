@@ -36,7 +36,7 @@
         margin: 0;
         padding: 0.45rem 0.65rem;
         border: 0;
-        border-radius: 4px;
+        border-radius: 0.5rem;
         background: transparent;
         color: var(--quiet);
         font: inherit;
@@ -472,11 +472,17 @@
   </head>
   <body>
     <header>
-      <a href="/">aft<span>.</span>page</a>
-      <div class="nav-right">
-        <a href="/projects">Projects</a>
-        <a href="/mcp">MCP</a>
-        <a href="/login" data-aft-auth="login">Log in</a>
+      <div class="app-header-inner">
+        <div class="app-brand-wrap">
+          <a href="/">aft<span>.</span>page</a>
+          <span class="nav-beta">Beta</span>
+        </div>
+        <div class="nav-right">
+          <a href="/projects">Projects</a>
+          <a href="/mcp">MCP</a>
+          <a class="app-cta" href="/drop">Deploy an app</a>
+          <a href="/login" data-aft-auth="login">Log in</a>
+        </div>
       </div>
     </header>
     <main>

@@ -24,6 +24,7 @@
   --beacon-ink: var(--cta-ink);
 
   --good: #22c55e;
+  --warn: #eab308;
   --danger: #ff6b6b;
   --ok: var(--good);
   --err: var(--danger);
@@ -36,6 +37,9 @@
   --font-sans: "Geist Variable", "Geist", "Segoe UI", system-ui, sans-serif;
   --font-display: var(--font-sans);
   --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --page: 1180px;
+  --page-gutter: 2.5rem;
 }
 
 *,
@@ -73,40 +77,70 @@ code {
   font-size: 0.82em;
 }
 
-/* —— App header —— */
+/* —— App header (quiet product rail) —— */
 header.app-header,
 body > header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
+  display: block;
+  padding: 0;
   border-bottom: 1px solid var(--line);
   background: var(--void);
 }
 
-header a,
+.app-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(var(--page), calc(100% - var(--page-gutter)));
+  margin: 0 auto;
+  padding: 1.35rem clamp(1.25rem, 3vw, 2.25rem);
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+
+.app-brand-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-shrink: 0;
+}
+
+.app-brand-wrap > a,
 .app-brand {
   color: inherit;
   text-decoration: none;
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 1.15rem;
+  font-size: 1.35rem;
   letter-spacing: -0.02em;
   line-height: 1;
 }
 
-header a span,
+.app-brand-wrap > a span,
 .app-brand span {
   color: var(--good);
   font-family: var(--font-sans);
   font-weight: 600;
 }
 
+.nav-beta {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--quiet);
+  border: 1px solid var(--line);
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+}
+
 header .nav-right {
   margin-left: auto;
   display: flex;
-  gap: 1rem;
-  font-size: 0.9rem;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.4rem;
+  font-size: 0.92rem;
   align-items: center;
 }
 
@@ -124,6 +158,24 @@ header .nav-right a:hover {
 header .nav-right a[aria-current="page"] {
   color: var(--ink);
   font-weight: 600;
+}
+
+header .nav-right a.app-cta {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.95rem;
+  border-radius: 0.5rem;
+  background: var(--cta);
+  border: 1px solid var(--cta);
+  color: var(--cta-ink);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+header .nav-right a.app-cta:hover {
+  background: var(--cta-hover);
+  border-color: var(--cta-hover);
+  color: var(--cta-ink);
 }
 
 main.app-main {
@@ -170,7 +222,7 @@ button.btn,
   justify-content: center;
   gap: 0.35rem;
   padding: 0.4rem 0.75rem;
-  border-radius: 4px;
+  border-radius: 0.5rem;
   font-family: var(--font-sans);
   font-size: 0.85rem;
   font-weight: 600;
@@ -253,7 +305,7 @@ a.primary,
   display: inline-block;
   margin-top: 0.75rem;
   padding: 0.45rem 0.85rem;
-  border-radius: 4px;
+  border-radius: 0.5rem;
   background: var(--beacon);
   color: var(--beacon-ink);
   text-decoration: none;
@@ -469,7 +521,7 @@ th {
   width: 2rem;
   height: 2rem;
   padding: 0;
-  border-radius: 4px;
+  border-radius: 0.5rem;
   border: 1px solid var(--line-bright);
   background: transparent;
   color: var(--ink);
@@ -578,6 +630,17 @@ th {
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-header-inner {
+    flex-wrap: wrap;
+    padding: 1rem 1.25rem;
+  }
+
+  header .nav-right {
+    margin-left: 0;
   }
 }
 

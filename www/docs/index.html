@@ -6,7 +6,7 @@
     <title>Docs — aft.page</title>
     <meta
       name="description"
-      content="What aft.page supports (HTML, Vite, React, Next, lattice-js), how to deploy, and how to save environment secrets."
+      content="What aft.page supports (HTML, Vite, React, Next), how to deploy, and how to save environment secrets."
     />
     <link rel="canonical" href="https://aft.page/docs" />
     <link rel="alternate" type="text/markdown" href="https://aft.page/docs.md" title="Docs (Markdown)" />
@@ -88,7 +88,7 @@
           </div>
           <a href="/docs" aria-current="page">Docs</a>
           <a href="/login" data-aft-auth="login">Log in</a>
-          <a class="topnav-cta" href="/drop">Drop files</a>
+          <a class="topnav-cta" href="/drop">Deploy an app</a>
         </div>
       </nav>
 
@@ -171,11 +171,6 @@
                     <td>Next.js static export</td>
                     <td><code>output: 'export'</code> → <strong><code>out/</code></strong></td>
                     <td>—</td>
-                  </tr>
-                  <tr>
-                    <td>lattice-js</td>
-                    <td><code>aft.json</code> <code>runtime: lattice-js</code> + UI</td>
-                    <td><a href="https://lattice.aft.page">lattice.aft.page</a></td>
                   </tr>
                   <tr>
                     <td>Next SSR / Worker</td>
@@ -289,18 +284,16 @@ curl -X PUT https://api.aft.page/v1/sites/{slug}/secrets/ANTHROPIC_API_KEY \
             </p>
             <pre><code>{
   "name": "my-app",
-  "runtime": "lattice-js",
+  "runtime": "next",
   "capabilities": {
     "secrets": ["ANTHROPIC_API_KEY"],
     "egress": ["api.anthropic.com"]
   }
 }</code></pre>
             <p>
-              Secrets are injected into hosted runtimes (e.g. lattice-js
-              <code>/api/*</code>). They are not baked into static HTML. A Vite
-              SPA that needs a public API URL should bake it at
-              <strong>build</strong> time; keep private keys in the vault for
-              server runtimes.
+              Secrets are not baked into static HTML. A Vite SPA that needs a
+              public API URL should bake it at <strong>build</strong> time; keep
+              private keys in the vault for worker / next runtimes.
             </p>
           </section>
 
@@ -339,7 +332,7 @@ curl -X PUT https://api.aft.page/v1/sites/{slug}/secrets/ANTHROPIC_API_KEY \
                   <tr>
                     <th></th>
                     <th>Static</th>
-                    <th>lattice-js / worker / next</th>
+                    <th>worker / next</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -369,7 +362,6 @@ curl -X PUT https://api.aft.page/v1/sites/{slug}/secrets/ANTHROPIC_API_KEY \
             <ul>
               <li><a href="https://hello.aft.page">hello.aft.page</a> — plain HTML</li>
               <li><a href="https://vite-hello.aft.page">vite-hello.aft.page</a> — React + Vite <code>dist/</code></li>
-              <li><a href="https://lattice.aft.page">lattice.aft.page</a> — lattice-js + secrets</li>
               <li><a href="https://next-hello.aft.page">next-hello.aft.page</a> — Next via upstream</li>
               <li><a href="https://share-checklist.aft.page">share-checklist.aft.page</a> — static multi-file</li>
             </ul>

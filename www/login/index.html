@@ -38,14 +38,45 @@
       * { box-sizing: border-box; }
       html, body { margin: 0; min-height: 100%; }
       body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
         font-family: var(--font-sans);
         color: var(--ink);
         background: var(--void);
         -webkit-font-smoothing: antialiased;
       }
       a { color: inherit; text-decoration: none; }
+      .auth-rail {
+        flex-shrink: 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .auth-rail-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        width: min(1180px, calc(100% - 2.5rem));
+        margin: 0 auto;
+        padding: 1.35rem clamp(1.25rem, 3vw, 2.25rem);
+        border-left: 1px solid var(--line);
+        border-right: 1px solid var(--line);
+      }
+      .auth-cta {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.45rem 0.95rem;
+        border-radius: 0.5rem;
+        background: var(--cta);
+        border: 1px solid var(--cta);
+        color: var(--cta-ink);
+        font-size: 0.88rem;
+        font-weight: 600;
+      }
+      .auth-cta:hover { background: var(--cta-hover); border-color: var(--cta-hover); }
       .shell {
-        min-height: 100vh;
+        flex: 1;
+        min-height: 0;
         display: grid;
         grid-template-columns: minmax(0, 1.05fr) minmax(20rem, 28rem);
       }
@@ -71,15 +102,32 @@
         mask-image: radial-gradient(ellipse 70% 70% at 40% 40%, #000 20%, transparent 75%);
         pointer-events: none;
       }
-      .logo {
+      .logo-wrap {
         position: relative;
         z-index: 1;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+      }
+      .logo {
         font-family: var(--font-display);
         font-weight: 600;
         font-size: 1.35rem;
         letter-spacing: -0.02em;
+        text-decoration: none;
       }
       .logo span { color: var(--good); }
+      .nav-beta {
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--quiet);
+        border: 1px solid var(--line);
+        padding: 0.2rem 0.45rem;
+        border-radius: 999px;
+      }
       .brand-body {
         position: relative;
         z-index: 1;
@@ -187,7 +235,7 @@
         margin-top: 0.9rem;
         width: 100%;
         border: none;
-        border-radius: 0.45rem;
+        border-radius: 0.5rem;
         padding: 0.75rem 1rem;
         font: inherit;
         font-weight: 650;
@@ -307,9 +355,17 @@
     </style>
   </head>
   <body>
+    <header class="auth-rail">
+      <div class="auth-rail-inner">
+        <div class="logo-wrap">
+          <a class="logo" href="/">aft<span>.</span>page</a>
+          <span class="nav-beta">Beta</span>
+        </div>
+        <a class="auth-cta" href="/drop">Deploy an app</a>
+      </div>
+    </header>
     <div class="shell">
       <aside class="brand" aria-hidden="false">
-        <a class="logo" href="/">aft<span>.</span>page</a>
         <div class="brand-body">
           <h1>Ship it. Share it. Gate it.</h1>
           <p>

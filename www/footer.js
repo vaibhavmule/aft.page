@@ -31,6 +31,7 @@
     '<div class="footer-col">' +
     "<h3>Product</h3>" +
     '<a href="/docs">Docs</a>' +
+    '<a href="/#pricing">Pricing</a>' +
     '<a href="/changelog">Changelog</a>' +
     '<a href="/drop">Drop</a>' +
     '<a href="/projects">Projects</a>' +

@@ -62,10 +62,10 @@
     '.aft-fb-actions .aft-fb-status{margin-right:auto;font-size:12.5px;min-height:1em}' +
     '.aft-fb-status.ok{color:var(--good,#22c55e)}.aft-fb-status.error{color:var(--danger,#ff6b6b)}' +
     '.aft-fb-cancel{background:transparent;color:var(--quiet,#a1a1aa);border:1px solid var(--line,#27272a);' +
-    'border-radius:9px;padding:9px 14px;font:inherit;font-weight:600;cursor:pointer}' +
+    'border-radius:0.5rem;padding:9px 14px;font:inherit;font-weight:600;cursor:pointer}' +
     '.aft-fb-cancel:hover{color:var(--ink,#fafafa);border-color:var(--line-bright,#3f3f46)}' +
     '.aft-fb-send{background:var(--cta,#fff);color:var(--cta-ink,#000);border:1px solid var(--cta,#fff);' +
-    'border-radius:9px;padding:9px 16px;font:inherit;font-weight:650;cursor:pointer}' +
+    'border-radius:0.5rem;padding:9px 16px;font:inherit;font-weight:650;cursor:pointer}' +
     '.aft-fb-send:hover{background:var(--cta-hover,#e4e4e7)}' +
     '.aft-fb-send[disabled]{opacity:.6;cursor:default}' +
     '@media (max-width:520px){.aft-fb-dock,.aft-fb-btn.aft-fb-solo{right:14px;' +
