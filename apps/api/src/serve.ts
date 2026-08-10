@@ -163,10 +163,7 @@ export async function serveSite(
       httpStatus: 503,
       path: servePath(pathname),
     });
-    return new Response(
-      sitePausedHtml(slug, root, siteRow.ownerUserId ? "owner" : "idle"),
-      { status: 503, headers },
-    );
+    return new Response(sitePausedHtml(slug, root), { status: 503, headers });
   }
 
   if (isJunkPath(pathname)) {
@@ -399,21 +396,8 @@ function siteNotFoundResponse(
 }
 
 /** Shown when a site is deactivated: files are safe, serving is paused. */
-export function sitePausedHtml(
-  slug: string,
-  root: string,
-  kind: "owner" | "idle" = "owner",
-): string {
-  const idle = kind === "idle";
-  const title = idle ? "Site not in use" : "Site paused";
-  const badge = idle ? "Not in use" : "Paused";
-  const heading = idle ? "This site is not in use" : "This site is paused";
-  const body = idle
-    ? `<p><strong>${slug}.${root}</strong> has not been visited or updated in 7 days. Unclaimed sites are paused, then permanently deleted after 30 days of inactivity.</p>
-  <p class="hint">Have the edit token? <a href="https://${root}/claim?slug=${encodeURIComponent(slug)}">Claim it</a> or redeploy to keep the site.</p>`
-    : `<p><strong>${slug}.${root}</strong> has been deactivated by its owner. Its files are still safe — it just isn’t serving right now.</p>
-  <p class="hint">Are you the owner? Reactivate it from your <a href="https://${root}/projects">projects</a>.</p>`;
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="robots" content="noindex"/><meta name="theme-color" content="${BRAND.void}"/><title>${title} — aft.page</title>
+export function sitePausedHtml(slug: string, root: string): string {
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="robots" content="noindex"/><meta name="theme-color" content="${BRAND.void}"/><title>Site paused — aft.page</title>
 ${BRAND_FONT_LINKS}
 <style>
 ${BRAND_CSS_VARS}
@@ -428,9 +412,10 @@ p{color:var(--quiet);margin:0 0 1rem}p strong{color:var(--ink)}
 </style></head><body>
 <main>
   <a class="brand" href="https://${root}/">aft<span>.</span>page</a>
-  <div class="badge">${badge}</div>
-  <h1>${heading}</h1>
-  ${body}
+  <div class="badge">Paused</div>
+  <h1>This site is paused</h1>
+  <p><strong>${slug}.${root}</strong> has been deactivated by its owner. Its files are still safe — it just isn’t serving right now.</p>
+  <p class="hint">Are you the owner? Reactivate it from your <a href="https://${root}/projects">projects</a>.</p>
 </main>
 </body></html>`;
 }

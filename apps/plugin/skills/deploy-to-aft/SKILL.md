@@ -29,9 +29,9 @@ directory exists.
 ## Public-deploy safety
 
 An anonymous MCP deployment is public immediately. Claiming it does not make
-it private automatically. Unclaimed deploys pause after 7 days unused and are
-deleted after 30 — tell the user to claim (or keep redeploying) if they want
-the URL to last. If the user asks for a private deployment, the
+it private automatically. Unclaimed deploys are deleted after 30 days unused —
+tell the user to claim if they want the URL to last. A visit or redeploy
+resets that clock. If the user asks for a private deployment, the
 project appears to contain sensitive content, or publication intent is not
 clear, stop and explain that this MCP cannot make the first upload atomically
 private. Get explicit confirmation before publishing anything sensitive.

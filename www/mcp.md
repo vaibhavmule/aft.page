@@ -296,7 +296,7 @@ also show **Claim this site** on `https://{slug}.aft.page`. After claim,
 | Per-file size | 10 MB |
 | Total payload | 50 MB |
 | Auth | None (anonymous deploys) |
-| Unclaimed retention | Pause after 7d idle · delete after 30d. Claim or PATCH to keep. |
+| Unclaimed retention | Deleted after 30d idle. Visit, PATCH, or claim to keep. |
 | Overwrite | First POST never (unique slug). PATCH + editToken = same URL + history. |
 | Custom domains | After claim · request access · project Domains tab |
 | Private / invite-by-email | After claim |
