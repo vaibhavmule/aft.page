@@ -281,7 +281,8 @@
           <h1>Link it to your account.</h1>
           <p>
             Add your email or continue with Google. The live URL stays the same —
-            you’ll see it under Projects.
+            you’ll see it under Projects. Unclaimed sites are removed after 30
+            days unused; claimed sites stay.
           </p>
         </div>
       </aside>
@@ -374,10 +375,10 @@
           `<span class="host" aria-label="${liveUrl}">` +
           `<span class="slug">${slug}</span><span class="dot">.</span>` +
           `<span class="root">aft.page</span></span>` +
-          `Add your email so this site shows up when you log in.`;
+          `Add your email so this site shows up when you log in. Unclaimed sites are removed after 30 days unused.`;
         hintEl.hidden = false;
         hintEl.innerHTML =
-          `Skip for now — <a href="${liveUrl}">open the live site</a>. You can claim later.`;
+          `Skip for now — <a href="${liveUrl}">open the live site</a>. Claim to keep the URL.`;
         const next = `/claim?slug=${encodeURIComponent(slug)}` +
           (token ? `&token=${encodeURIComponent(token)}` : "");
         googleEl.href = `${API}/v1/auth/google?next=${encodeURIComponent(next)}`;

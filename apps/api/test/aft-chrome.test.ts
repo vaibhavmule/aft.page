@@ -51,6 +51,7 @@ describe("injectAftChrome", () => {
     );
     expect(out).toContain('id="aft-chrome"');
     expect(out).toContain("Claim this site");
+    expect(out).toContain("Unclaimed sites are removed after 30 days unused");
     expect(out).toContain("/v1/claim/start");
     expect(out).toContain("demo");
     expect(out).not.toContain("/preview?url=");

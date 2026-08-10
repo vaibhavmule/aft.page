@@ -138,9 +138,9 @@ curl -X POST https://api.aft.page/v1/sites/{slug}/domains \
 
 ## Claim, private, invite
 
-Anonymous deploy is live immediately. Unclaimed sites pause after 7 days
-without a visit or update, and are permanently deleted after 30 days. Claim to
-own the slug, make it private, invite by email, redeploy in place, roll back,
+Anonymous deploy is live immediately. Unclaimed sites stay live; they are
+permanently deleted after 30 days without a visit or update. Claim to keep the
+URL forever, make it private, invite by email, redeploy in place, roll back,
 or destroy. Same URL stays.
 
 ## Limits

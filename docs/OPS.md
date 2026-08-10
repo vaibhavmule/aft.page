@@ -62,7 +62,7 @@ Every non-ok `/v1/deploy` **after** parse has files:
 
 Cron prune deletes the D1 rows **and** the R2 prefix.
 
-Same `*/5` status cron also sweeps unclaimed idle sites: pause at 7d, hard-delete at 30d (`sweepUnusedAnonSites`). Skips `_login` and `test--*`. Claimed sites are never swept.
+Same `*/5` status cron also hard-deletes unclaimed sites idle 30d (`sweepUnusedAnonSites`) and unpauses leftover unclaimed `active=0` rows from the old 7d park. Skips `_login` and `test--*`. Claimed sites are never swept.
 
 Click a failure on ops → why / fix / file list. Each file: download + text preview (64 KB cap) at `GET /f/{id}/file?path=`.
 
