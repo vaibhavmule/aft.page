@@ -1,4 +1,11 @@
 # Cloudflare Pages — serve agent docs as plain text/markdown
+/*
+  Strict-Transport-Security: max-age=15552000; includeSubDomains
+
+/.well-known/security.txt
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=86400
+
 /docs.md
   Content-Type: text/markdown; charset=utf-8
   Cache-Control: public, max-age=60

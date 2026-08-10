@@ -96,10 +96,10 @@ export const STATUS_PROBES: ProbeDef[] = [
     id: "sites",
     name: "Site serve",
     description: "Hosted *.aft.page applications",
-    url: "https://lattice.aft.page/",
+    url: "https://hello.aft.page/",
     expect: "http_ok",
     mode: "internal_site",
-    siteSlug: "lattice",
+    siteSlug: "hello",
   },
   {
     id: "mcp",
@@ -215,7 +215,7 @@ async function probeOne(
     }
 
     if (def.mode === "internal_site") {
-      const slug = def.siteSlug || "lattice";
+      const slug = def.siteSlug || "hello";
       const root = env.ROOT_DOMAIN || "aft.page";
       const req = new Request(`https://${slug}.${root}/`, {
         method: "GET",
@@ -541,6 +541,38 @@ export function formatUptimePercent(pct: number | null): string {
   return `${pct.toFixed(3)}% uptime`;
 }
 
+/** Public status copy — keep D1/SQLite dumps in the store, not on status.aft.page. */
+export function publicProbeError(error: string | null): string {
+  if (!error) return "failed";
+  if (/d1_|sqlite|no such (column|table)/i.test(error)) {
+    return "Database unavailable (migration)";
+  }
+  if (error.startsWith("unexpected_status_")) {
+    return `HTTP ${error.slice("unexpected_status_".length)}`;
+  }
+  if (error === "mcp_binding_missing") return "MCP unavailable";
+  if (/timeout|timed out/i.test(error)) return "Timed out";
+  if (/failed to fetch|network|dns|econnrefused/i.test(error)) return "Unreachable";
+  if (error.length > 48 || /Error:|Exception| at /.test(error)) {
+    return "Service unavailable";
+  }
+  return error;
+}
+
+function toPublicPayload(payload: StatusPayload): StatusPayload {
+  return {
+    ...payload,
+    components: payload.components.map((c) => ({
+      ...c,
+      error: c.ok ? null : publicProbeError(c.error),
+    })),
+    recentFailures: payload.recentFailures.map((f) => ({
+      ...f,
+      error: publicProbeError(f.error),
+    })),
+  };
+}
+
 export async function loadRecentFailures(
   env: Env,
   limit = DEFAULT_FAILURE_LIMIT,
@@ -709,7 +741,7 @@ export async function handleStatus(
   const days = Number.isFinite(daysParam) && daysParam > 0 ? daysParam : undefined;
 
   if (url.pathname === "/api.json" || url.pathname === "/api") {
-    const payload = await buildPayload(env, { days });
+    const payload = toPublicPayload(await buildPayload(env, { days }));
     const body = JSON.stringify(payload, null, 2);
     return new Response(request.method === "HEAD" ? null : body, {
       status: 200,
@@ -722,7 +754,7 @@ export async function handleStatus(
   }
 
   if (url.pathname === "/" || url.pathname === "") {
-    const payload = await buildPayload(env, { days });
+    const payload = toPublicPayload(await buildPayload(env, { days }));
     const html = renderStatusHtml(payload);
     return new Response(request.method === "HEAD" ? null : html, {
       status: 200,
@@ -771,7 +803,6 @@ export function renderStatusHtml(payload: StatusPayload): string {
 
   const components = payload.components
     .map((c) => {
-      const latency = c.ok ? `${c.latencyMs} ms` : c.error || "failed";
       const uptime = formatUptimePercent(c.uptimePercent ?? null);
       const strip = renderComponentStrip(c.history || [], days);
       return `<li class="component ${stateClass(c.status)}">
@@ -783,7 +814,6 @@ export function renderStatusHtml(payload: StatusPayload): string {
           <span class="badge"><span class="dot" aria-hidden="true"></span>${escapeHtml(c.status.replace(/_/g, " "))}</span>
         </div>
         ${strip}
-        <p class="meta"><code>${escapeHtml(c.url)}</code> · ${escapeHtml(latency)}</p>
       </li>`;
     })
     .join("\n");
@@ -946,7 +976,6 @@ export function renderStatusHtml(payload: StatusPayload): string {
       font-size: 0.72rem;
       color: var(--faint);
     }
-    .meta { margin: 0; color: var(--faint); font-size: 0.75rem; }
     .failures { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.55rem; }
     .failures li {
       padding: 0.75rem 0.9rem;

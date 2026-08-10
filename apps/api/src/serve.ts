@@ -6,7 +6,7 @@ import {
   BRAND_FONT_LINKS,
   BRAND_WORDMARK_CSS,
 } from "./brand";
-import { getSiteRow, touchLastServed } from "./db";
+import { deployExists, getSiteRow, touchLastServed } from "./db";
 import { corsHeaders, json } from "./http";
 import { trackPageView, trackServe } from "./metrics";
 import { injectAftChrome } from "./aft-chrome";
@@ -18,7 +18,7 @@ import { handleLatticeJsApi } from "./runtimes/lattice-js";
 import { proxyUpstream } from "./runtimes/proxy";
 import { canAccessSite, privateDeniedHtml } from "./sharing";
 import { getObject } from "./storage";
-import { isSmokeSlug, liveSiteHost } from "./site-url";
+import { deployPreviewHost, isSmokeSlug, liveSiteHost } from "./site-url";
 
 function pageTitleFromHtml(html: string, fallback: string): string {
   const match = html.match(/<title[^>]*>([^<]*)<\/title>/i);
@@ -62,6 +62,7 @@ export async function serveSite(
   env: Env,
   slug: string,
   pathname: string,
+  pinDeployId?: string,
 ): Promise<Response> {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders(null, false) });
@@ -126,6 +127,26 @@ export async function serveSite(
 
   const siteRow = await getSiteRow(env, slug);
 
+  if (pinDeployId && !(await deployExists(env, slug, pinDeployId))) {
+    noteServe(env, request, slug, {
+      httpStatus: 404,
+      path: servePath(pathname),
+      persist: false,
+    });
+    return new Response("Not found", {
+      status: 404,
+      headers: {
+        "content-type": "text/plain; charset=utf-8",
+        "cache-control": "no-store",
+        "x-aft-slug": slug,
+        "x-aft-deploy": pinDeployId,
+        ...Object.fromEntries(corsHeaders(null, false)),
+      },
+    });
+  }
+
+  const deployId = pinDeployId || meta.deployId;
+
   // Deactivated: files are kept, but serving is paused until the owner flips it
   // back on from the dashboard. Return a friendly page instead of the content.
   if (siteRow && siteRow.active === false) {
@@ -142,7 +163,10 @@ export async function serveSite(
       httpStatus: 503,
       path: servePath(pathname),
     });
-    return new Response(sitePausedHtml(slug, root), { status: 503, headers });
+    return new Response(
+      sitePausedHtml(slug, root, siteRow.ownerUserId ? "owner" : "idle"),
+      { status: 503, headers },
+    );
   }
 
   if (isJunkPath(pathname)) {
@@ -164,7 +188,7 @@ export async function serveSite(
   const runtime = siteRow?.runtime || meta.runtime || "static";
   const upstreamUrl = siteRow?.upstreamUrl || meta.upstreamUrl || null;
 
-  if (upstreamUrl && (runtime === "worker" || runtime === "next")) {
+  if (!pinDeployId && upstreamUrl && (runtime === "worker" || runtime === "next")) {
     void touchLastServed(env, slug);
     noteServe(env, request, slug, {
       httpStatus: 200,
@@ -213,13 +237,13 @@ export async function serveSite(
 
   if (path === siteOgImagePath()) {
     let title = slug;
-    const index = await getObject(env, slug, meta.deployId, "index.html");
+    const index = await getObject(env, slug, deployId, "index.html");
     if (index) {
       title = pageTitleFromHtml(await new Response(index.body).text(), slug);
     }
     const img = await renderSiteOgImage({ title, slug, rootDomain: root });
     img.headers.set("x-aft-slug", slug);
-    img.headers.set("x-aft-deploy", meta.deployId);
+    img.headers.set("x-aft-deploy", deployId);
     for (const [name, value] of corsHeaders(null, false)) {
       img.headers.set(name, value);
     }
@@ -230,12 +254,12 @@ export async function serveSite(
     return img;
   }
 
-  let obj = await getObject(env, slug, meta.deployId, path);
+  let obj = await getObject(env, slug, deployId, path);
   if (!obj && !path.includes(".")) {
-    obj = await getObject(env, slug, meta.deployId, `${path}/index.html`);
+    obj = await getObject(env, slug, deployId, `${path}/index.html`);
   }
   if (!obj && path !== "index.html") {
-    obj = await getObject(env, slug, meta.deployId, "index.html");
+    obj = await getObject(env, slug, deployId, "index.html");
   }
   if (!obj) {
     noteServe(env, request, slug, {
@@ -254,8 +278,9 @@ export async function serveSite(
     access.role ? "private, max-age=60" : "public, max-age=60",
   );
   headers.set("x-aft-slug", slug);
-  headers.set("x-aft-deploy", meta.deployId);
+  headers.set("x-aft-deploy", deployId);
   headers.set("x-aft-runtime", runtime);
+  if (pinDeployId) headers.set("x-aft-preview", "1");
   for (const [name, value] of corsHeaders(null, false)) {
     headers.set(name, value);
   }
@@ -264,18 +289,24 @@ export async function serveSite(
     httpStatus: 200,
     path: servePath(pathname),
     bytes,
+    persist: !pinDeployId,
   });
-  await trackPageView(env, request, slug, {
-    path: servePath(pathname),
-    contentType: obj.contentType,
-    httpStatus: 200,
-  });
+  if (!pinDeployId) {
+    await trackPageView(env, request, slug, {
+      path: servePath(pathname),
+      contentType: obj.contentType,
+      httpStatus: 200,
+    });
+  }
 
   let body: ArrayBuffer | ReadableStream | string = obj.body;
   if (isHtmlContentType(obj.contentType)) {
     const html = await new Response(obj.body).text();
     const sitePath = pathname.startsWith("/") ? pathname : `/${pathname}`;
-    const publicUrl = `https://${liveSiteHost(slug, root)}${sitePath || "/"}`;
+    const host =
+      (pinDeployId && deployPreviewHost(slug, deployId, root)) ||
+      liveSiteHost(slug, root);
+    const publicUrl = `https://${host}${sitePath || "/"}`;
     let out = ensureDefaultOgMeta(html, {
       slug,
       pageUrl: publicUrl,
@@ -286,7 +317,7 @@ export async function serveSite(
       rootDomain: root,
       showBadge: meta.badge !== false,
     });
-    if (isSmokeSlug(slug)) out = ensureSmokeNoindex(out);
+    if (isSmokeSlug(slug) || pinDeployId) out = ensureSmokeNoindex(out);
     body = out;
   }
 
@@ -368,8 +399,21 @@ function siteNotFoundResponse(
 }
 
 /** Shown when a site is deactivated: files are safe, serving is paused. */
-export function sitePausedHtml(slug: string, root: string): string {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="robots" content="noindex"/><meta name="theme-color" content="${BRAND.void}"/><title>Site paused — aft.page</title>
+export function sitePausedHtml(
+  slug: string,
+  root: string,
+  kind: "owner" | "idle" = "owner",
+): string {
+  const idle = kind === "idle";
+  const title = idle ? "Site not in use" : "Site paused";
+  const badge = idle ? "Not in use" : "Paused";
+  const heading = idle ? "This site is not in use" : "This site is paused";
+  const body = idle
+    ? `<p><strong>${slug}.${root}</strong> has not been visited or updated in 7 days. Unclaimed sites are paused, then permanently deleted after 30 days of inactivity.</p>
+  <p class="hint">Have the edit token? <a href="https://${root}/claim?slug=${encodeURIComponent(slug)}">Claim it</a> or redeploy to keep the site.</p>`
+    : `<p><strong>${slug}.${root}</strong> has been deactivated by its owner. Its files are still safe — it just isn’t serving right now.</p>
+  <p class="hint">Are you the owner? Reactivate it from your <a href="https://${root}/projects">projects</a>.</p>`;
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="robots" content="noindex"/><meta name="theme-color" content="${BRAND.void}"/><title>${title} — aft.page</title>
 ${BRAND_FONT_LINKS}
 <style>
 ${BRAND_CSS_VARS}
@@ -384,10 +428,9 @@ p{color:var(--quiet);margin:0 0 1rem}p strong{color:var(--ink)}
 </style></head><body>
 <main>
   <a class="brand" href="https://${root}/">aft<span>.</span>page</a>
-  <div class="badge">Paused</div>
-  <h1>This site is paused</h1>
-  <p><strong>${slug}.${root}</strong> has been deactivated by its owner. Its files are still safe — it just isn’t serving right now.</p>
-  <p class="hint">Are you the owner? Reactivate it from your <a href="https://${root}/projects">projects</a>.</p>
+  <div class="badge">${badge}</div>
+  <h1>${heading}</h1>
+  ${body}
 </main>
 </body></html>`;
 }

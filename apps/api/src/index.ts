@@ -6,12 +6,13 @@ import { handleClaimRoute, getSiteInfo } from "./claim";
 import { deploy } from "./deploy";
 import { ensureDb } from "./db";
 import {
-  corsHeaders,
   isApiHost,
   json,
   optionsResponse,
+  redirectHttpToHttps,
   subdomainSlug,
   testHostCase,
+  withHsts,
 } from "./http";
 import { serveSite } from "./serve";
 import { handleSharingRoute, sharingNeedsCredentials } from "./sharing";
@@ -31,9 +32,11 @@ import {
 } from "./status";
 import { pruneDeployFailures } from "./db";
 import { pruneSiteLogs } from "./site-logs";
+import { sweepUnusedAnonSites } from "./anon-gc";
+import { refreshCfPracticesIfStale } from "./cf-practices";
 import { pruneAuditRuns, runAuditSuite } from "./audit";
 import { attachPublicFlight, pruneSmokeRuns, runSmokeSuite, SMOKE_CRON } from "./smoke";
-import { smokeSlugForCase } from "./site-url";
+import { parseDeployPreviewLabel, smokeSlugForCase } from "./site-url";
 import { handleChangelog } from "./changelog";
 import {
   handleCustomDomainRoute,
@@ -44,88 +47,14 @@ export { sanitizeHtmlDocument } from "./upload";
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const url = new URL(request.url);
-    const host = url.hostname.toLowerCase();
-    const root = (env.ROOT_DOMAIN || "aft.page").toLowerCase();
-
+    const bounced = redirectHttpToHttps(request);
+    if (bounced) return bounced;
     try {
-      // Thin remote MCP — mcp.aft.page is reserved (not a site slug).
-      if (host === `mcp.${root}`) {
-        if (!env.MCP) {
-          return json({ error: "mcp_unavailable" }, 503);
-        }
-        return env.MCP.fetch(request);
-      }
-
-      // Keep the public signup's preflight and redacted storage-error response
-      // independent of the global schema bootstrap below.
-      if (
-        isApiHost(host, root) &&
-        url.pathname === "/v1/waitlist" &&
-        (request.method === "POST" || request.method === "OPTIONS")
-      ) {
-        if (request.method === "OPTIONS") {
-          return optionsResponse(request.headers.get("origin"), false);
-        }
-        return await handleWaitlistSignup(request, env);
-      }
-
-      // Public product feedback — kept before the schema bootstrap like waitlist.
-      if (
-        isApiHost(host, root) &&
-        url.pathname === "/v1/feedback" &&
-        (request.method === "POST" || request.method === "OPTIONS")
-      ) {
-        if (request.method === "OPTIONS") {
-          return optionsResponse(request.headers.get("origin"), false);
-        }
-        return await handleFeedback(request, env);
-      }
-
-      if (isStatusHost(host, root)) {
-        return await handleStatus(request, env, url);
-      }
-
-      if (isOpsHost(host, root)) {
-        return await handleOps(request, env, url, ctx);
-      }
-
-      await ensureDb(env);
-
-      if (isApiHost(host, root)) {
-        return await handleApi(request, env, url);
-      }
-
-      const testCase = testHostCase(host, root);
-      if (testCase !== null) {
-        if (testCase === "") {
-          return Response.redirect(`https://ops.${root}/#smoke`, 302);
-        }
-        return await serveSite(
-          request,
-          env,
-          smokeSlugForCase(testCase),
-          url.pathname,
-        );
-      }
-
-      const slug = subdomainSlug(host, root);
-      if (slug) {
-        return await serveSite(request, env, slug, url.pathname);
-      }
-
-      const customSlug = await slugForCustomHost(env, host);
-      if (customSlug) {
-        return await serveSite(request, env, customSlug, url.pathname);
-      }
-
-      return json({ error: "unknown_host", host }, 404);
+      return withHsts(await routeRequest(request, env, ctx));
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error(JSON.stringify({ level: "error", message }));
-      return json({ error: "internal" }, 500);
-    } finally {
-      void ctx;
+      return withHsts(json({ error: "internal" }, 500));
     }
   },
 
@@ -158,17 +87,111 @@ export default {
     ctx.waitUntil(
       (async () => {
         await runStatusChecks(env);
+        await refreshCfPracticesIfStale(env);
         await pruneDeployFailures(env);
         await pruneSiteLogs(env);
         await pruneSmokeRuns(env);
         await pruneAuditRuns(env);
+        await sweepUnusedAnonSites(env);
       })().catch((err) => {
         const message = err instanceof Error ? err.message : String(err);
         console.error(JSON.stringify({ level: "error", event: "status_cron", message }));
       }),
     );
   },
-};
+} satisfies ExportedHandler<Env>;
+
+async function routeRequest(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<Response> {
+  const url = new URL(request.url);
+  const host = url.hostname.toLowerCase();
+  const root = (env.ROOT_DOMAIN || "aft.page").toLowerCase();
+
+  // Thin remote MCP — mcp.aft.page is reserved (not a site slug).
+  if (host === `mcp.${root}`) {
+    if (!env.MCP) {
+      return json({ error: "mcp_unavailable" }, 503);
+    }
+    return env.MCP.fetch(request);
+  }
+
+  // Keep the public signup's preflight and redacted storage-error response
+  // independent of the global schema bootstrap below.
+  if (
+    isApiHost(host, root) &&
+    url.pathname === "/v1/waitlist" &&
+    (request.method === "POST" || request.method === "OPTIONS")
+  ) {
+    if (request.method === "OPTIONS") {
+      return optionsResponse(request.headers.get("origin"), false);
+    }
+    return await handleWaitlistSignup(request, env);
+  }
+
+  // Public product feedback — kept before the schema bootstrap like waitlist.
+  if (
+    isApiHost(host, root) &&
+    url.pathname === "/v1/feedback" &&
+    (request.method === "POST" || request.method === "OPTIONS")
+  ) {
+    if (request.method === "OPTIONS") {
+      return optionsResponse(request.headers.get("origin"), false);
+    }
+    return await handleFeedback(request, env);
+  }
+
+  if (isStatusHost(host, root)) {
+    return await handleStatus(request, env, url);
+  }
+
+  if (isOpsHost(host, root)) {
+    return await handleOps(request, env, url, ctx);
+  }
+
+  await ensureDb(env);
+
+  if (isApiHost(host, root)) {
+    return await handleApi(request, env, url);
+  }
+
+  const testCase = testHostCase(host, root);
+  if (testCase !== null) {
+    if (testCase === "") {
+      return Response.redirect(`https://ops.${root}/#smoke`, 302);
+    }
+    return await serveSite(
+      request,
+      env,
+      smokeSlugForCase(testCase),
+      url.pathname,
+    );
+  }
+
+  const slug = subdomainSlug(host, root);
+  if (slug) {
+    const preview = parseDeployPreviewLabel(slug);
+    if (preview && !(await env.SITES.get(`site:${slug}`))) {
+      return await serveSite(
+        request,
+        env,
+        preview.slug,
+        url.pathname,
+        `dep_${preview.short}`,
+      );
+    }
+    return await serveSite(request, env, slug, url.pathname);
+  }
+
+  const customSlug = await slugForCustomHost(env, host);
+  if (customSlug) {
+    return await serveSite(request, env, customSlug, url.pathname);
+  }
+
+  return json({ error: "unknown_host", host }, 404);
+}
 
 async function handleApi(
   request: Request,

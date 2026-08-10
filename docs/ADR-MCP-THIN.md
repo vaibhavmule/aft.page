@@ -27,7 +27,9 @@ reads `aft.json` / `.aft/state.json` and passes slug + editToken.
 First anonymous POST mints a unique slug (suffix on collision) + editToken.
 Every later PATCH with that token is a new D1 `deploys` row on the **same**
 URL. Rollback moves the live pointer. Claim attaches an owner; it does not
-rename the slug. editToken still works after claim.
+rename the slug. editToken dies on claim; later updates need a session
+owner/editor. MCP has no session yet, so claimed sites are updated in the
+project UI.
 
 Rule: if a tool does not end in a **durable URL** (or health / the history
 needed to restore one), it does not belong in MCP.

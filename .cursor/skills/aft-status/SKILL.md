@@ -42,7 +42,7 @@ No Sentry. No Grafana. Scanner junk (`.env`, `.php`, `wp-`) is expected — not 
 
 | URL | Job |
 | --- | --- |
-| `https://status.aft.page` | Public probes: API, MCP `/health`, website, site serve (lattice) |
+| `https://status.aft.page` | Public probes: API, MCP `/health`, website, site serve (hello) |
 | `https://ops.aft.page` | Founder: T2U, deploys/failures, CF cost, smoke, feedback, domains |
 | `https://api.aft.page/health` | API isolate |
 | `https://mcp.aft.page/health` | MCP isolate |
@@ -63,7 +63,7 @@ Source of truth: `STRATEGY.md` progression + `todo.txt`. As of skill authoring:
 | Sharing (public / private / invite) | Shipped |
 | Secrets vault | Shipped |
 | Lattice JS + OpenNext dogfood | Live (`lattice.aft.page`, `next-hello.aft.page`) |
-| **Agent Plugin** | **P0 this month** — `apps/plugin/` exists; not marketplace-ready (`npx plugins add`, public repo, metadata) |
+| **Agent Plugin** | **P0** — `npx plugins add vaibhavmule/aft.page` (push + demo + 5 users still open) |
 | Cron | **Later.** Private claimed sites only. Slug `cron` reserved. No product yet. |
 | AI automations | **After Cron.** Same private gate; Slack/mobile = notify sinks. Slugs reserved. Not started. |
 | Browser automation / Kitesurf | Explicitly deferred |
@@ -83,7 +83,7 @@ Proof gaps (todo, not ops): ≥5 repeat deployers, ≥1 invite-accepted share, Y
 
 ## Live
 - status.aft.page: overall … (components + any recentFailures still relevant)
-- probes: api / mcp / www / lattice / smoke canary
+- probes: api / mcp / www / hello / smoke canary
 - ops: opened / 302 login / key T2U + failure rate if user pasted
 
 ## Product

@@ -21,6 +21,12 @@ describe("originMayActOnSlug", () => {
     expect(originMayActOnSlug(req("https://ops.aft.page"), "vic", root)).toBe(true);
     expect(originMayActOnSlug(req("https://evil.aft.page"), "vic", root)).toBe(false);
     expect(originMayActOnSlug(req("https://vic.aft.page"), "vic", root)).toBe(true);
+    expect(
+      originMayActOnSlug(req("https://152fffaf71c6--vic.aft.page"), "vic", root),
+    ).toBe(true);
+    expect(
+      originMayActOnSlug(req("https://152fffaf71c6--vic.aft.page"), "other", root),
+    ).toBe(false);
   });
 });
 

@@ -80,6 +80,38 @@ describe("serving files", () => {
     expect(res.headers.get("x-aft-deploy")).toBe(out.deployId);
   });
 
+  it("serves a prior deploy on its immutable preview host", async () => {
+    const first = await deployPaste("<h1>v1</h1>", "pin-prev");
+    const patch = await call(
+      new Request(`${API_ORIGIN}/v1/deploy?slug=pin-prev`, {
+        method: "PATCH",
+        headers: {
+          "content-type": "text/html; charset=utf-8",
+          "x-aft-edit-token": first.editToken,
+        },
+        body: "<h1>v2</h1>",
+      }),
+    );
+    expect(patch.status).toBe(200);
+    const short = first.deployId.replace(/^dep_/, "");
+    const prev = await call(
+      new Request(`https://${short}--pin-prev.aft.page/`),
+    );
+    expect(prev.status).toBe(200);
+    expect(await prev.text()).toContain("<h1>v1</h1>");
+    expect(prev.headers.get("x-aft-deploy")).toBe(first.deployId);
+    expect(prev.headers.get("x-aft-preview")).toBe("1");
+    expect(await (await fetchSite("pin-prev")).text()).toContain("<h1>v2</h1>");
+  });
+
+  it("404s an unknown preview deploy host", async () => {
+    await deployPaste("<h1>live</h1>", "pin-miss");
+    const res = await call(
+      new Request("https://aaaaaaaaaaaa--pin-miss.aft.page/"),
+    );
+    expect(res.status).toBe(404);
+  });
+
   it("injects claim chrome on full HTML documents", async () => {
     await deployPaste(
       "<!doctype html><html><body><h1>Chrome</h1></body></html>",

@@ -28,7 +28,7 @@ build, then upload the output folder only.
 
 ## Deploy
 
-Three ways. Same result: `https://{slug}.aft.page`.
+Four ways. Same result: `https://{slug}.aft.page`.
 
 ### 1. Drop (humans)
 
@@ -39,7 +39,15 @@ shape as a Vercel Drop of just a readme —
 [readme-black-chi.vercel.app](https://readme-black-chi.vercel.app/) is that,
 not a web app.
 
-### 2. Agent MCP
+### 2. Agent Plugin
+
+```bash
+npx plugins add vaibhavmule/aft.page
+```
+
+Restart the agent. Ask: **Deploy this to aft.page**. Details: [plugins](https://aft.page/plugins).
+
+### 3. Agent MCP
 
 Remote: `https://mcp.aft.page/mcp`
 
@@ -49,7 +57,7 @@ Remote: `https://mcp.aft.page/mcp`
 
 Ask: **Deploy this to aft.page**. Full tool schemas: [mcp.md](https://aft.page/mcp.md).
 
-### 3. API
+### 4. API
 
 ```bash
 curl -X POST https://api.aft.page/v1/deploy \
@@ -130,8 +138,10 @@ curl -X POST https://api.aft.page/v1/sites/{slug}/domains \
 
 ## Claim, private, invite
 
-Anonymous deploy is live immediately. Claim to own the slug, make it private,
-invite by email, redeploy in place, roll back, or destroy. Same URL stays.
+Anonymous deploy is live immediately. Unclaimed sites pause after 7 days
+without a visit or update, and are permanently deleted after 30 days. Claim to
+own the slug, make it private, invite by email, redeploy in place, roll back,
+or destroy. Same URL stays.
 
 ## Limits
 
@@ -156,6 +166,7 @@ Source lives in the [aft.page repo `examples/`](https://github.com/vaibhavmule/a
 ## More
 
 - MCP / API reference: https://aft.page/mcp · https://aft.page/mcp.md
+- Plugin: https://aft.page/plugins · `npx plugins add vaibhavmule/aft.page`
 - Drop: https://aft.page/drop/
 - Cursor: https://aft.page/with/cursor/
 - OSS CLI (your AWS / Cloudflare): https://github.com/vaibhavmule/aft

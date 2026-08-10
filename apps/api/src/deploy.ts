@@ -17,6 +17,7 @@ import {
   insertDeploy,
   insertDeployFailure,
   setFailureHasPayload,
+  clearSiteEditTokenHash,
   setSiteEditTokenHash,
   setSiteRuntime,
   upsertCapabilityRequest,
@@ -306,14 +307,18 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
     };
     await env.SITES.put(`site:${slug}`, JSON.stringify(meta));
 
-    const editToken = randomToken("aft_edit_");
+    const editToken = sessionUser ? "" : randomToken("aft_edit_");
     await upsertSiteRow(env, slug, deployId, sessionUser?.id ?? null);
     await setSiteRuntime(env, slug, {
       runtime,
       upstreamUrl,
       mainModule,
     });
-    await setSiteEditTokenHash(env, slug, await hashEditToken(env, slug, editToken));
+    if (editToken) {
+      await setSiteEditTokenHash(env, slug, await hashEditToken(env, slug, editToken));
+    } else {
+      await clearSiteEditTokenHash(env, slug);
+    }
     await insertDeploy(env, {
       id: deployId,
       slug,
@@ -339,9 +344,13 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
         files: files.length,
         bytes: total,
         runtime,
-        editToken,
-        preview: liveSiteUrl(slug, root, { token: editToken }),
-        claimUrl: claimSiteUrl(slug, root, editToken),
+        ...(editToken
+          ? {
+              editToken,
+              preview: liveSiteUrl(slug, root, { token: editToken }),
+              claimUrl: claimSiteUrl(slug, root, editToken),
+            }
+          : { preview: liveUrl }),
         owned,
         ...capsPayload,
       }),

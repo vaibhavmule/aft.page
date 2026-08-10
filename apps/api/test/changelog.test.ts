@@ -10,7 +10,8 @@ describe("changelog", () => {
       entries: { id: string; day: string; category: string; html: string }[];
     };
     const ids = body.entries.map((e) => e.id);
-    expect(ids[0]).toBe("ai-discovery-files");
+    expect(ids[0]).toBe("custom-domains");
+    expect(ids).toContain("ai-discovery-files");
     expect(ids).toContain("remote-mcp");
     expect(ids).toContain("seo-landings");
     expect(ids).toContain("brand-identity");

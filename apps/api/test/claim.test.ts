@@ -1,6 +1,7 @@
 /** Claim + editToken flows. */
 import { describe, it, expect } from "vitest";
 import { env } from "cloudflare:test";
+import { hashEditToken, timingSafeEqual, verifyEditToken } from "../src/auth";
 import {
   API_ORIGIN,
   call,
@@ -35,7 +36,42 @@ function patchDeploy(
   });
 }
 
+describe("timing-safe compares", () => {
+  it("timingSafeEqual matches equal strings only", () => {
+    expect(timingSafeEqual("abc", "abc")).toBe(true);
+    expect(timingSafeEqual("abc", "abd")).toBe(false);
+    expect(timingSafeEqual("abc", "ab")).toBe(false);
+  });
+
+  it("verifyEditToken accepts the real token and rejects a wrong one", async () => {
+    const stored = await hashEditToken(env, "safe-slug", "aft_edit_real");
+    expect(await verifyEditToken(env, "safe-slug", "aft_edit_real", stored)).toBe(true);
+    expect(await verifyEditToken(env, "safe-slug", "aft_edit_wrong", stored)).toBe(false);
+  });
+});
+
 describe("editToken on deploy", () => {
+  it("does not issue editToken when already signed in", async () => {
+    const { createSession, findOrCreateUser } = await import("../src/auth");
+    const user = await findOrCreateUser(env, "owned-deploy@example.com");
+    const session = await createSession(env, user.id);
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/deploy?slug=owned-deploy`, {
+        method: "POST",
+        headers: {
+          "content-type": "text/html; charset=utf-8",
+          cookie: `aft_session=${session.token}`,
+          origin: "https://aft.page",
+        },
+        body: "<h1>mine</h1>",
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { owned?: boolean; editToken?: string };
+    expect(body.owned).toBe(true);
+    expect(body.editToken).toBeUndefined();
+  });
+
   it("returns editToken on successful deploy", async () => {
     const res = await call(pasteHtml("<h1>Token</h1>", "token-test"));
     expect(res.status).toBe(200);

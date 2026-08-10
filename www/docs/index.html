@@ -196,7 +196,7 @@
 
           <section id="deploy">
             <h2>Deploy</h2>
-            <p>Three ways. Same result: <code>https://{slug}.aft.page</code>.</p>
+            <p>Four ways. Same result: <code>https://{slug}.aft.page</code>.</p>
             <h3>Drop (humans)</h3>
             <p>
               <a href="/drop">aft.page/drop</a> — folder or zip. Include
@@ -208,6 +208,12 @@
               Drop of just a readme —
               <a href="https://readme-black-chi.vercel.app/">readme-black-chi.vercel.app</a>
               is that, not a web app.
+            </p>
+            <h3>Agent Plugin</h3>
+            <p>
+              <code>npx plugins add vaibhavmule/aft.page</code> — then ask
+              <strong>Deploy this to aft.page</strong>.
+              <a href="/plugins">/plugins</a>.
             </p>
             <h3>Agent MCP</h3>
             <p>Remote: <code>https://mcp.aft.page/mcp</code></p>
@@ -317,9 +323,11 @@ curl -X PUT https://api.aft.page/v1/sites/{slug}/secrets/ANTHROPIC_API_KEY \
           <section id="share">
             <h2>Claim, private, invite</h2>
             <p>
-              Anonymous deploy is live immediately. Claim to own the slug, make
-              it private, invite by email, redeploy in place, roll back, or
-              destroy. The URL stays the same.
+              Anonymous deploy is live immediately. Unclaimed sites pause after
+              7 days without a visit or update, and are permanently deleted
+              after 30 days. Claim to own the slug, make it private, invite by
+              email, redeploy in place, roll back, or destroy. The URL stays
+              the same.
             </p>
           </section>
 

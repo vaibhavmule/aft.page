@@ -182,7 +182,7 @@ describe("auth login", () => {
         body: "<h1>hijack</h1>",
       }),
     );
-    expect(patch.status).toBe(200);
+    expect(patch.status).toBe(403);
     expect(await getSiteOwnerId(env, created.slug)).toBe(owner.id);
   });
 });

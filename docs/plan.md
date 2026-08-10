@@ -120,9 +120,9 @@ not “we host HTML” (Cloudflare already commoditizes that).
 - [x] Inventory UX: login CTA, site actions, paste / preview links
 - [x] Evidence pack + Phase 1 success-test runbook ([EVIDENCE-PACK.md](./EVIDENCE-PACK.md))
 - [x] Full-stack dogfood live: Lattice JS (set `ANTHROPIC_API_KEY` for convert demo)
-- [ ] **Agent Plugin (P0):** skill + MCP (`deploy_html`) → install in Cursor → private URL in ~30s
-- [ ] Public plugin repo + install command; 30-second demo clip for outreach
-- [ ] Create AFT GitHub org; publish `apps/plugin/` as public repo for marketplace listing (Cursor Marketplace + cursor.directory; add `.cursor-plugin/plugin.json` metadata + logo)
+- [x] **Agent Plugin (P0):** `npx plugins add vaibhavmule/aft.page` (skill + remote MCP)
+- [ ] Push plugin tree + 30-second demo clip for outreach
+- [ ] Optional later: AFT GitHub org / cursor.directory listing — not required for install
 - [ ] Analytics coverage: deploy, open, share, redeploy ([METRICS.md](./METRICS.md))
 - [x] OpenNext on aft URL (stretch) — https://next-hello.aft.page — [OPENNEXT-ORCHESTRATION.md](./OPENNEXT-ORCHESTRATION.md)
 - [ ] **No** full BYOC / residency / SBOM theatre

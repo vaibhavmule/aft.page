@@ -15,13 +15,6 @@ import {
 } from "./client";
 import { runPublicFlight } from "./flight";
 
-export type Env = {
-  AFT_API_BASE: string;
-  /** Worker-to-Worker — do not fetch the public api.aft.page hostname. */
-  API: Fetcher;
-  METRICS?: AnalyticsEngineDataset;
-};
-
 const slugSchema = z
   .string()
   .regex(/^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$/)
@@ -186,6 +179,7 @@ function createServer(api: ApiTransport) {
           ...result.deploys.map(
             (d) =>
               `${d.id}  ${d.createdAt}  ${d.source}  files=${d.fileCount}` +
+              (d.previewUrl ? `  ${d.previewUrl}` : "") +
               (d.id === result.currentDeployId ? "  ← live" : ""),
           ),
         ];

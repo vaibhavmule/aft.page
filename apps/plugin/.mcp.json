@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "aft-page": {
+      "type": "streamable-http",
+      "url": "https://mcp.aft.page/mcp"
+    }
+  }
+}

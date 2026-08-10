@@ -29,6 +29,7 @@ export const AUDIT_CASE_CATALOG: Record<string, { box: string; shakes: string }>
   csrfok: { box: "Hijack", shakes: "Matching tenant origin still works" },
   tokquery: { box: "Hijack", shakes: "editToken in query rejected; header works" },
   claimed: { box: "Hijack", shakes: "editToken dead after claim" },
+  ownedtok: { box: "Hijack", shakes: "Logged-in deploy has no live editToken" },
   idor: { box: "Hijack", shakes: "Token A cannot PATCH site B" },
   patch0: { box: "Hijack", shakes: "PATCH with no token/session → 401" },
   magic: { box: "Hijack", shakes: "Magic link is single-use" },
@@ -179,6 +180,35 @@ export async function runAuditSuite(
     const patch = await patchHtml(env, slug, "<p>after</p>", { editToken: token });
     assert(patch.status >= 400, `token still live ${patch.status}`);
     return { detail: "token dead after claim", url: publicUrl(slug, root) };
+  });
+
+  await run("ownedtok", async () => {
+    const slug = auditSlug("ownedtok");
+    const user = await findOrCreateUser(env, "audit-ownedtok@aft.page");
+    const session = await createSession(env, user.id);
+    const url = new URL("https://api.aft.page/v1/deploy");
+    url.searchParams.set("slug", slug);
+    const res = await deploy(
+      new Request(url, {
+        method: "POST",
+        headers: {
+          "content-type": "text/html; charset=utf-8",
+          cookie: `aft_session=${session.token}`,
+          origin: `https://${root}`,
+        },
+        body: "<p>ownedtok</p>",
+      }),
+      env,
+    );
+    const body = (await res.json()) as Record<string, unknown>;
+    assert(res.status === 200, errOf(body));
+    assert(body.owned === true, "not owned");
+    assert(!body.editToken, "editToken issued to owner deploy");
+    const fake = await patchHtml(env, slug, "<p>steal</p>", {
+      editToken: "aft_edit_stolen",
+    });
+    assert(fake.status >= 400, `owned still token-writable ${fake.status}`);
+    return { detail: "session deploy → no editToken", url: publicUrl(slug, root) };
   });
 
   await run("idor", async () => {

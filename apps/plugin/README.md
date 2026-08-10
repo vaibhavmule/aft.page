@@ -6,29 +6,37 @@ live `*.aft.page` URL — no account required. It bundles a deploy Skill plus th
 thin remote MCP (`deploy` · `aft_deploys` · `aft_rollback` · `aft_health`). See the design
 rationale in [`../../docs/ADR-MCP-THIN.md`](../../docs/ADR-MCP-THIN.md).
 
+## Install
+
+```bash
+npx plugins add vaibhavmule/aft.page
+```
+
+Restart the agent. Then:
+
+> Deploy this to aft.page
+
+Works with Claude Code, Cursor, Codex, Copilot CLI, VS Code, Grok, and Kimi
+via the [plugins](https://www.npmjs.com/package/plugins) installer. No GitHub
+org required — this public repo is the source.
+
 ## Contents
 
 ```text
 apps/plugin/
-├── plugin.json              # manifest ($schema + name)
-├── mcp.json                 # remote MCP server (Streamable HTTP)
+├── plugin.json              # Agent Plugins 1.0.0 manifest
+├── mcp.json                 # remote MCP (spec)
+├── .plugin/plugin.json      # same metadata for `npx plugins`
+├── .mcp.json                # same MCP for `npx plugins`
 └── skills/
     └── deploy-to-aft/
-        └── SKILL.md          # when + how to deploy; return the URL
+        └── SKILL.md
 ```
 
 The MCP server is the frozen remote adapter at `https://mcp.aft.page/mcp`; the
 plugin adds the Skill (instructions), not new tools.
 
-## Install in Cursor
-
-1. Open **Customize** in the sidebar and go to **Rules**.
-2. Click **Add Rule -> Remote Rule (GitHub)** and enter this repository's URL,
-   or point Cursor at this `apps/plugin/` directory locally.
-3. Reload. The `deploy-to-aft` skill appears under **Skills**, and the
-   `aft-page` MCP server registers its tools.
-
-The MCP block Cursor loads from `mcp.json`:
+## Manual MCP (no plugin)
 
 ```json
 {
@@ -41,12 +49,12 @@ The MCP block Cursor loads from `mcp.json`:
 }
 ```
 
-## Try it
+## Check
 
-Ask your agent:
+```bash
+node apps/plugin/check.mjs
+npx plugins discover .
+```
 
-> Deploy this to aft.page
-
-It should detect plain HTML vs a JS app (Vite/React/Next), run `npm run build`
-when needed, call `deploy` on the **output**, and return
-the live `*.aft.page` URL plus a claim/manage link.
+First deploys are public; return `claimUrl` only when the API provides a distinct
+one. After claim, token updates 401 — do not mint a second URL.

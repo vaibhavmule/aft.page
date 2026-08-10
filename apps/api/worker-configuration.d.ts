@@ -3,11 +3,18 @@
 // Runtime types generated with workerd@1.20260722.1 2026-07-26 nodejs_compat
 interface __BaseEnv_Env {
 	SITES: KVNamespace;
+	STATUS: KVNamespace;
 	BUCKET: R2Bucket;
 	DB: D1Database;
 	EMAIL: SendEmail;
 	METRICS: AnalyticsEngineDataset;
 	ROOT_DOMAIN: "aft.page";
+	OPS_EMAILS: "hello@aft.page,vaibhavmule135@gmail.com";
+	UNLIMITED_SLUGS: "parakh";
+	CF_ZONE_ID: "c9c40ca61385a6346d90abfc954b44c9";
+	CUSTOM_DOMAIN_CNAME: "cname.aft.page";
+	SMOKE_SECRET: string;
+	MCP: Fetcher /* aft-page-mcp */;
 }
 declare namespace Cloudflare {
 	interface GlobalProps {
@@ -20,7 +27,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ROOT_DOMAIN">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ROOT_DOMAIN" | "OPS_EMAILS" | "UNLIMITED_SLUGS" | "CF_ZONE_ID" | "CUSTOM_DOMAIN_CNAME" | "SMOKE_SECRET">> {}
 }
 
 // Begin runtime types

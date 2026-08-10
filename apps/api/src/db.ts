@@ -357,7 +357,8 @@ export async function upsertSiteRow(
      ON CONFLICT(slug) DO UPDATE SET
        deploy_id = excluded.deploy_id,
        updated_at = excluded.updated_at,
-       owner_user_id = COALESCE(sites.owner_user_id, excluded.owner_user_id)`,
+       owner_user_id = COALESCE(sites.owner_user_id, excluded.owner_user_id),
+       active = CASE WHEN sites.owner_user_id IS NULL THEN 1 ELSE sites.active END`,
   )
     .bind(slug, deployId, ownerUserId ?? null, now, now)
     .run();
@@ -509,6 +510,8 @@ export type OpsSnapshot = {
   active24h: number;
   domains: number;
   domainRequests: number;
+  /** runtime worker/next with upstream — each is an aft-owned Worker (WfP trigger). */
+  siteWorkers: number;
 };
 
 export async function countOpsSnapshot(
@@ -538,6 +541,7 @@ export async function countOpsSnapshot(
     active24h,
     domains,
     domainRequests,
+    siteWorkers,
   ] = await Promise.all([
     n(`SELECT COUNT(*) AS n FROM sites WHERE slug NOT LIKE 'test--%'`),
     n(
@@ -556,6 +560,11 @@ export async function countOpsSnapshot(
     ),
     n(`SELECT COUNT(*) AS n FROM custom_domains`),
     n(`SELECT COUNT(*) AS n FROM users WHERE custom_domains = 'requested'`),
+    n(
+      `SELECT COUNT(*) AS n FROM sites WHERE slug NOT LIKE 'test--%'
+        AND COALESCE(runtime, 'static') IN ('worker', 'next')
+        AND upstream_url IS NOT NULL AND TRIM(upstream_url) != ''`,
+    ),
   ]);
   return {
     sites,
@@ -570,6 +579,7 @@ export async function countOpsSnapshot(
     active24h,
     domains,
     domainRequests,
+    siteWorkers,
   };
 }
 

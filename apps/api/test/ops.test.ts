@@ -5,6 +5,7 @@ import { createSession, findOrCreateUser } from "../src/auth";
 import {
   CF_USAGE_KV_KEY,
   buildTimeToUrlScore,
+  decideWfpTrigger,
   estimateWorkersPaid,
   fillDayWindow,
   formatT2u,
@@ -14,6 +15,7 @@ import {
   summarizeMs,
 } from "../src/ops";
 import { saveSnapshot, type StatusSnapshot } from "../src/status";
+import { compatDateFresh, runCfPracticeChecks } from "../src/cf-practices";
 import { call, deployPaste, uploadJson } from "./helpers";
 
 const snapshot: StatusSnapshot = {
@@ -53,6 +55,17 @@ describe("workers cost estimate", () => {
     expect(over.requestsUsd).toBe(0.6);
     expect(over.cpuUsd).toBe(0.2);
     expect(over.totalUsd).toBe(5.8);
+  });
+});
+
+describe("wfp trigger", () => {
+  it("stays until script count or overage crosses the ADR lines", () => {
+    expect(decideWfpTrigger(3, 0).status).toBe("stay");
+    expect(decideWfpTrigger(400, 0).status).toBe("watch");
+    expect(decideWfpTrigger(450, 0).status).toBe("switch");
+    expect(decideWfpTrigger(10, 10.01).status).toBe("watch");
+    expect(decideWfpTrigger(10, 20.01).status).toBe("switch");
+    expect(decideWfpTrigger(3, 0).why).toMatch(/stay on \$5/);
   });
 });
 
@@ -128,6 +141,21 @@ describe("day chart window", () => {
       successes: 19,
       failures: 2,
     });
+  });
+});
+
+describe("cf practices", () => {
+  it("flags a compatibility_date older than 6 months", () => {
+    const now = new Date("2026-08-09T00:00:00.000Z");
+    expect(compatDateFresh("2026-07-26", now)).toBe(true);
+    expect(compatDateFresh("2025-01-01", now)).toBe(false);
+  });
+
+  it("passes on the test worker bindings", async () => {
+    const result = await runCfPracticeChecks(env);
+    const failed = result.cases.filter((c) => !c.ok);
+    expect(failed, JSON.stringify(failed)).toEqual([]);
+    expect(result.ok).toBe(true);
   });
 });
 
@@ -209,16 +237,35 @@ describe("ops.aft.page host", () => {
     expect(html).toContain("#overview");
     expect(html).toContain(">Overview<");
     expect(html).toContain("id=\"overview\"");
-    expect(html).toContain("Inbox");
+    expect(html).toContain("Scanner");
     expect(html).toContain("waitlist");
+    expect(html).toContain("Operate");
     expect(html).toContain("Cloudflare cost");
+    expect(html).toContain("WfP trigger");
+    expect(html).toContain('data-live="wfpStatus"');
+    expect(html).toContain("stay on $5");
     expect(html).toContain("3,200");
     expect(html).toContain("KV snapshot");
     expect(html).not.toContain("Set CF_API_TOKEN");
     expect(html).not.toContain("chat session");
+    expect(html).toContain('id="cf"');
+    expect(html).toContain("CF practices");
+    expect(html).toContain("nodejs_compat");
+    expect(html).toContain("D1 binding");
     expect(html).toContain("id=\"network\"");
+    expect(html).toContain('id="stories"');
+    expect(html).toContain('id="todos"');
+    expect(html).toContain("Agent or human ships files");
+    expect(html).toContain("G18 Claim-after-deploy");
+    expect(html).toContain("G4 Inject Summarize");
+    expect(html).toContain("Remix / fork one-click");
     expect(html).toContain("net-svg");
     expect(html).toContain("mcp.aft.page");
+    expect(html).toContain("POST /v1/deploy");
+    expect(html).toContain("API host → bind MCP");
+    expect(html).toContain(
+      "https://dash.cloudflare.com/44255ec64e0080b678670b53bf810d27/workers/services/view/aft-page-api/production/observability/logs",
+    );
     expect(html).toContain("data-live=\"sites\"");
     expect(html).toContain('id="users"');
     expect(html).toContain('id="domains"');
@@ -228,6 +275,10 @@ describe("ops.aft.page host", () => {
     expect(html).toContain('id="smoke"');
     expect(html).toContain('id="audit"');
     expect(html).toContain("Hijack / audit");
+    expect(html).toContain(">Critical<");
+    expect(html).toContain(">Information<");
+    expect(html.indexOf(">Critical<")).toBeLessThan(html.indexOf(">Information<"));
+    expect(html.indexOf("Hijack / audit")).toBeLessThan(html.indexOf("Time to URL"));
     expect(html).toContain(">Probes<");
     expect(html).toContain("No scanner probes in 7 days.");
     expect(html).toContain("llis.nasa.gov/lesson/803");
@@ -260,8 +311,12 @@ describe("ops.aft.page host", () => {
         last24h: { n: number; p50Ms: number | null; p95Ms: number | null };
         last7d: { n: number; p50Ms: number | null };
       };
+      wfp: { status: string; siteWorkers: number };
+      snapshot: { siteWorkers: number };
     };
     expect(body.service).toBe("aft.page-ops");
+    expect(body.wfp.status).toBe("stay");
+    expect(body.snapshot.siteWorkers).toBe(0);
     expect(body.failures24h).toBeGreaterThanOrEqual(1);
     expect(body.successes24h).toBeGreaterThanOrEqual(0);
     expect(body.rate === null || (body.rate >= 0 && body.rate <= 1)).toBe(true);
@@ -420,7 +475,7 @@ describe("ops.aft.page host", () => {
     expect(listHtml).toContain('href="#sites"');
     expect(listHtml).toContain("ops-listed");
     expect(listHtml).toContain("/s/ops-listed");
-    expect(listHtml).toContain("views today");
+    expect(listHtml).toContain("Views today");
     expect(listHtml).toContain("Top sites (7d views)");
 
     const detailRes = await call(

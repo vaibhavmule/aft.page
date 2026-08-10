@@ -103,12 +103,16 @@ Package:
 
 Ship bar:
 
-- Valid Agent Plugin (skill + MCP) installable in Cursor
-- 30-second demo: prompt → application → private URL
-- Public plugin repo + install command
+- Valid Agent Plugin (skill + MCP): `npx plugins add vaibhavmule/aft.page`
+- 30-second demo: prompt → application → private URL (still open)
+- Public plugin repo + install command (this repo)
 - Analytics for deploy, open, share, and repeat deployment ([METRICS.md](./METRICS.md))
 
-### Not competitors (yet)
+### Track vs ignore
+
+Full map: [COMPETITION.md](./COMPETITION.md). Codex deploy-shelf (9 Aug 2026) is
+crowded on agent → URL; empty slot is permissioned sharing. Watch AppDeploy,
+Hatchable, MiniUp. Do not match their BaaS dump.
 
 | Signal | Read |
 | --- | --- |

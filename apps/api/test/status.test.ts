@@ -9,6 +9,7 @@ import {
   recentFailures,
   saveSnapshot,
   formatUptimePercent,
+  publicProbeError,
   runProbes,
   STATUS_PROBES,
   type ProbeResult,
@@ -91,6 +92,16 @@ describe("status aggregation", () => {
     expect(formatUptimePercent(99.976)).toBe("99.976% uptime");
     expect(formatUptimePercent(0)).toBe("0% uptime");
   });
+
+  it("hides D1 dumps behind public copy", () => {
+    expect(
+      publicProbeError(
+        "D1_ERROR: no such column: active at offset 191: SQLITE_ERROR",
+      ),
+    ).toBe("Database unavailable (migration)");
+    expect(publicProbeError("down")).toBe("down");
+    expect(publicProbeError("unexpected_status_502")).toBe("HTTP 502");
+  });
 });
 
 describe("status.aft.page host", () => {
@@ -134,6 +145,39 @@ describe("status.aft.page host", () => {
     expect(html).toContain("uptime");
     expect(html).toContain("90 days ago");
     expect(html).toContain("Today");
+    expect(html).not.toMatch(/https:\/\/example\.test\//);
+    expect(html).not.toMatch(/\d+ ms/);
+  });
+
+  it("does not leak D1 dumps on the public page", async () => {
+    const at = "2026-08-08T07:10:53.141Z";
+    await saveSnapshot(env, {
+      checkedAt: at,
+      overall: "major_outage",
+      components: [
+        probe({
+          id: "sites",
+          name: "Site serve",
+          ok: false,
+          status: "major_outage",
+          error: "D1_ERROR: no such column: active at offset 191: SQLITE_ERROR",
+          checkedAt: at,
+        }),
+      ],
+    });
+
+    const html = await (await call(new Request("https://status.aft.page/"))).text();
+    expect(html).toContain("Database unavailable (migration)");
+    expect(html).not.toContain("D1_ERROR");
+    expect(html).not.toContain("no such column");
+
+    const body = (await (
+      await call(new Request("https://status.aft.page/api.json"))
+    ).json()) as { recentFailures: { error: string }[] };
+    expect(body.recentFailures.some((f) => f.error === "Database unavailable (migration)")).toBe(
+      true,
+    );
+    expect(body.recentFailures.some((f) => /D1_ERROR|no such column/.test(f.error))).toBe(false);
   });
 
   it("serves machine-readable /api.json", async () => {
@@ -203,6 +247,11 @@ describe("status.aft.page host", () => {
   });
 
   it("probes MCP over the service binding", async () => {
+    expect(
+      STATUS_PROBES.some(
+        (p) => p.id === "sites" && p.siteSlug === "hello" && p.url === "https://hello.aft.page/",
+      ),
+    ).toBe(true);
     expect(STATUS_PROBES.some((p) => p.id === "mcp" && p.mode === "internal_mcp")).toBe(
       true,
     );

@@ -14,6 +14,14 @@ export async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
+export function timingSafeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const left = enc.encode(a);
+  const right = enc.encode(b);
+  if (left.byteLength !== right.byteLength) return false;
+  return crypto.subtle.timingSafeEqual(left, right);
+}
+
 export function randomId(): string {
   return crypto.randomUUID().replace(/-/g, "");
 }
@@ -42,7 +50,7 @@ export async function verifyEditToken(
 ): Promise<boolean> {
   if (!editToken || !storedHash) return false;
   const hash = await sha256Hex(`${env.AUTH_SECRET}:${slug}:${editToken}`);
-  return hash === storedHash;
+  return timingSafeEqual(hash, storedHash);
 }
 
 export async function hashEditToken(
@@ -167,7 +175,9 @@ export async function assignSiteOwner(
   if (!row) return false;
   if (row.owner_user_id && row.owner_user_id !== userId) return false;
   await env.DB.prepare(
-    `UPDATE sites SET owner_user_id = ?, updated_at = ? WHERE slug = ? AND (owner_user_id IS NULL OR owner_user_id = ?)`,
+    `UPDATE sites SET owner_user_id = ?, updated_at = ?,
+        active = CASE WHEN owner_user_id IS NULL THEN 1 ELSE active END
+     WHERE slug = ? AND (owner_user_id IS NULL OR owner_user_id = ?)`,
   )
     .bind(userId, new Date().toISOString(), slug, userId)
     .run();

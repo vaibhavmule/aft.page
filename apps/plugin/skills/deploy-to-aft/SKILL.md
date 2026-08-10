@@ -1,84 +1,147 @@
 ---
 name: deploy-to-aft
-description: Detect whether the project is plain HTML or a JS app (Vite/React/Next), build if needed, and publish the static output to a live *.aft.page URL. Use when the user asks to deploy, publish, host, ship, share, or rollback a page, app, dashboard, or artifact.
+description: Build and publish a static site or small app to hosted aft.page through its remote MCP, then return the live URL. Use when the user explicitly asks to deploy, publish, host, or ship to aft.page, update an existing aft.page deployment, inspect its deploy history, or roll it back. Do not use for the separate AFT BYO-cloud CLI unless the user explicitly asks for that product.
 ---
 
 # Deploy to aft.page
 
-Publish small software to a live HTTPS `*.aft.page` URL. No account required.
-The deliverable is the live URL.
+Publish ready static files to a live HTTPS `*.aft.page` URL. The live URL is
+the deliverable. The remote MCP is a thin upload adapter: inspect and build the
+project locally, then pass the final artifact to its tools.
 
-aft.page is a file host — it does not run `npm run build`. You detect the
-project, build locally if needed, then upload ready files via MCP `deploy`.
+This skill is for the hosted aft.page service. It does not run the separate
+`aft` CLI, which deploys into a user's AWS or Cloudflare account and uses
+different configuration and state formats.
 
-MCP cannot see the disk. You read `aft.json` / `.aft/state.json`, then call
-`deploy`.
+## Tools and boundaries
 
-## When to use
+Use the `aft-page` MCP server:
 
-Trigger when the user says deploy / publish / host / ship / share / rollback
-a page or app.
+- `deploy` publishes a first deploy or updates an unclaimed deploy.
+- `aft_deploys` lists rollback history for an unclaimed deploy.
+- `aft_rollback` restores a prior deploy for an unclaimed deploy.
+- `aft_health` diagnoses MCP/API connectivity.
 
-## Same URL after the first hit
+The MCP cannot read the workspace or build the app. Read files and run the
+project's build locally. Never send source directories when a built output
+directory exists.
 
-1. Read **`aft.json`** (intent) and **`.aft/state.json`** (locked slug + token).
-2. **First deploy** — no `.aft/state.json`: pass `preferred_slug` = `aft.json.slug`
-   **exactly** (never invent `discovra-site` or omit it). Also include `aft.json`
-   in `files` (from project root, even when uploading `out/` / `dist/`). POST may
-   suffix if taken. That returned slug is now the site. Write:
+## Public-deploy safety
 
-   ```json
-   { "slug": "<returned slug>", "editToken": "<returned editToken>" }
-   ```
+An anonymous MCP deployment is public immediately. Claiming it does not make
+it private automatically. Unclaimed deploys pause after 7 days unused and are
+deleted after 30 — tell the user to claim (or keep redeploying) if they want
+the URL to last. If the user asks for a private deployment, the
+project appears to contain sensitive content, or publication intent is not
+clear, stop and explain that this MCP cannot make the first upload atomically
+private. Get explicit confirmation before publishing anything sensitive.
 
-   to `.aft/state.json`. Add `.aft/` to `.gitignore`. Never commit the token.
-3. **Later deploys** — pass `preferred_slug` + `edit_token` from `.aft/state.json`.
-   MCP PATCHes. Same URL. Each ship is a rollback-able row.
-4. **Do not** call deploy without `edit_token` once state exists. That mints a
-   new URL.
-5. **Claim** attaches an owner. It does **not** change the slug. editToken
-   still works after claim.
+Treat an upload as irreversible disclosure. Failed upload bytes may be kept in
+short-lived operational diagnostics. Never upload secrets or credentials,
+including `.env*`, `.git/`, `.aws/`, `.ssh/`, private keys, certificates,
+`.aft/`, or cloud configuration. Inspect generated bundles and source maps for
+embedded secrets; omit source maps unless the user needs them and they are safe.
 
-## Detect → build → `deploy`
+## Read configuration and state
 
-If **`aft.json`** exists at the project root (Vercel’s `vercel.json` equivalent),
-obey it:
+1. Identify the exact app root. In a monorepo, use the app the user named or
+   the one clearly established by the current task; do not deploy the whole
+   repository.
+2. Read `aft.json` if present. The hosted manifest may contain `name`, `slug`,
+   `runtime`, `main`, `upstream`, `capabilities`, and `badge`. A `build` or
+   `output` field is only a local agent convention, not a hosted API field;
+   inspect any command before running it.
+3. If `aft.json` contains BYO-cloud fields such as `provider`, `bucket`,
+   `distribution`, `region`, or a CLI-style `dir`, do not reinterpret or
+   overwrite it. Explain that this is the separate AFT CLI configuration and
+   ask the user which product they intend to use.
+4. Read `.aft/state.json` if present. Hosted MCP state must contain non-empty
+   string `slug` and `editToken` values and must not contain cloud-provider
+   state. Never overwrite an unknown or incompatible state shape.
+5. Keep `editToken` secret. Never print it, paste it into the final response,
+   commit it, or include `.aft/` in the upload.
 
-| Field | Meaning |
-| --- | --- |
-| `slug` | First-hit `preferred_slug`. After `.aft/state.json` exists, use **that** slug. |
-| `build` | Run this locally (AFT does not build). |
-| `output` | Upload **that folder’s contents** as `files` (plus root `aft.json`). |
-| `runtime` | `static` for this MCP path. Ignore `worker` / `next` + `upstream` here. |
+## Detect and build
 
-If there is no `aft.json`, look at `package.json`, `vite.config.*`,
-`next.config.*`, `index.html`. Pick one path:
+Inspect `package.json` and build configuration before executing commands. Use
+the package manager selected by the repository's lockfile. If dependencies are
+missing, use its locked/frozen install mode. Run the declared build and require
+it to succeed; never upload stale output after a failed build.
 
-1. **Plain HTML** — `index.html` and no bundler
-   - One file → `deploy` with `html`
-   - Several files → `deploy` with `files`
-   - Do not invent a build
+Choose one path:
 
-2. **Vite / React / Vue** — `npm run build` → `deploy` `files` from **`dist/`**
+1. Plain HTML with no bundler: upload `index.html`, plus only its required
+   static assets. A single self-contained page may call `deploy` with `html`.
+2. Vite, React, or Vue: run the project build and upload `dist/`.
+3. Create React App or Rsbuild: run the project build and upload its actual
+   `build/` or `dist/` output.
+4. Next.js configured for static export: run the build and upload `out/`.
+5. SSR, server-only, Worker, `next`, or `lattice-js` runtimes: stop. Do not
+   upload `.next/` or source. This plugin's deploy path is static-only.
 
-3. **CRA / Rsbuild** — `npm run build` → `files` from `build/` or `dist/`
+If `aft.json` contains a local `output` convention, confirm that it matches the
+fresh build artifact before using it. Do not invent a build for plain HTML.
 
-4. **Next.js static export** — `npm run build` → `files` from **`out/`**
+## Validate the artifact
 
-5. **Next.js SSR** — do not upload `.next/` or source. This path is static-only.
+Before calling `deploy`:
 
-Never upload `node_modules`, `src/`, `.next/`, or `package.json` as the site.
-Always include `index.html`. Limits: 200 files, 10MB each, 50MB total. Binaries →
-`encoding: "base64"`.
+- Enumerate only the selected output root and do not follow symlinks outside it.
+- Require `index.html` at the deployed root.
+- Enforce at most 200 files, 10 MB per file, and 50 MB total.
+- Use safe relative paths only: no absolute paths, `..`, or backslashes.
+- Exclude `.git`, `.env*`, `.aws`, `.ssh`, `.aft`, `node_modules`, `src`,
+  `.next`, private keys, credentials, and unrelated project files.
+- Send text as UTF-8 and binary files as base64 with `encoding: "base64"`.
+- Include a safe hosted `aft.json` at the deployed root when one exists and is
+  relevant. Never include CLI configuration or secret state.
+
+## First deploy
+
+Use this flow only when no valid hosted `.aft/state.json` exists:
+
+1. If `aft.json.slug` is a valid lowercase slug, pass it as `preferred_slug`.
+   Otherwise omit `preferred_slug` and accept the allocated slug; do not invent
+   one silently. A first deploy never overwrites an existing slug.
+2. Add `.aft/` to `.gitignore` without removing existing entries.
+3. Call `deploy` exactly once with either `html` for one self-contained page or
+   `files` for the validated artifact.
+4. Require a successful structured result containing `url`, `slug`,
+   `deployId`, and `editToken`. Do not expose the token.
+5. Write `.aft/state.json` as `{ "slug": "...", "editToken": "..." }` using
+   the returned values. Preserve it as secret local state.
+6. Verify the live URL with an HTTP GET when available.
+7. Return the live URL and, when the first-deploy result contains a distinct
+   `claimUrl`, the claim URL. State that the site is public.
+
+## Update the same URL
+
+With valid hosted state, pass both `preferred_slug` and `edit_token` from that
+state. Call `deploy` once with the new validated artifact. Never retry without
+the token: doing so creates a second public site.
+
+Verify that the returned slug and URL match the existing site. Return the live
+URL, but do not label the live URL as a claim link when the structured result
+does not contain a distinct `claimUrl`.
+
+The current remote MCP cannot authenticate as an aft.page web session. After a
+site is claimed, token-only update, history, and rollback calls may return 401.
+If that happens, do not create a replacement site. Direct the user to the
+claimed site's project management flow until session/OAuth support is added.
 
 ## Rollback
 
-1. `aft_deploys` with slug + edit_token from `.aft/state.json`
-2. `aft_rollback` with a prior `deploy_id`
+Rollback only on an explicit user request:
 
-## After deploying
+1. Read valid hosted state.
+2. Call `aft_deploys` with its slug and edit token.
+3. Select only a deploy ID returned by that call; confirm the requested target
+   if the user did not identify one unambiguously.
+4. Call `aft_rollback` once and verify the same live URL.
 
-- Return **two URLs**: Live (`*.aft.page`) and **Claim** (`claimUrl`).
-- Confirm `.aft/state.json` is written. Keep `editToken` secret.
-- MCP cannot open a browser. The human clicks Claim to attach email/Google.
-- Do NOT tell the user to open Vercel, GitHub, or create an account first.
+## Failures
+
+On a deploy or update failure, preserve existing state and do not fall back to
+a fresh anonymous POST. Use `aft_health` for connectivity diagnosis, fix the
+artifact or request, and retry only with the same intended first-deploy/update
+semantics. Report the concrete error without revealing the edit token.

@@ -106,12 +106,16 @@ G7. Ship the Agent Plugin to Cursor + cursor.directory
     Build      : apps/plugin/ (scaffolded) + public repo + .cursor-plugin
                  metadata; submit to marketplace + cursor.directory.
     Metric     : plugin installs -> first deploy in Cursor (plan.md P0).
-    Effort     : M. Status : idea (blocked on: create AFT GitHub org).
+    Effort     : M. Status : running — `npx plugins add vaibhavmule/aft.page`
+                 (org optional later). Next: push + 30s demo + 5 strangers.
 
 G8. Cross-agent plugin reach (ChatGPT/Codex, Copilot, VS Code, Kiro)
-    Hypothesis : same Agent Plugin format works across clients -> multiply
-                 distribution with near-zero extra build.
-    Build      : verify our plugin loads in each; list where directories exist.
+    Hypothesis : listing where agents already look multiplies installs; copy must
+                 be Doc-share, not "build and deploy" (shelf is full).
+    Build      : Cursor (G7) first. ChatGPT/Codex is a separate OpenAI catalog
+                 (not agent-plugins.org). Submit a listing; do not assume
+                 `npx plugins add` loads there for free. Shelf snapshot +
+                 competitors: docs/COMPETITION.md (9 Aug 2026).
     Metric     : installs by client.
     Effort     : S after G7. Status : idea.
 
@@ -206,6 +210,21 @@ G17. Public "how we decide" write-up / demo for OSS builders
     Metric     : referral / GH stars / plugin interest from the post.
     Effort     : S. Status : idea (blocked on more board receipts).
 
+--- Theme: campus / work URL (apply by deploying) ---
+
+G19. Student work URL — curl + MCP is the application  [NO FORM]
+    Hypothesis : if apply = deploy (curl once, MCP update once) with an email
+                 on the live page, campus builders show up as stranger deploys
+                 and the ones who finish both tasks are ambassador candidates.
+                 No resume. No phone. No apply form — not a one-field form either.
+                 MCP or curl is where you apply.
+    Build      : public instruction URL (work.aft.page): task 1 curl, task 2 MCP,
+                 llms.txt prompt + mailto on the page. Founder finds applicants
+                 from new public sites (ops / scrape email). Do not add /apply.
+    Metric     : public sites that complete curl+MCP with a reachable email.
+    Effort     : S. Status : idea.
+    Kill if    : we add a form, phone field, or resume upload.
+
 ===============================================================================
 PARKING LOT (considered, not now)
 ===============================================================================
@@ -224,4 +243,5 @@ DONE
 
 Related: STRATEGY.md (wedge + dual-track + suggest-5 visual review),
 plan.md (30-day scoreboard), METRICS.md (event schema for wiring experiment
-metrics), brand-board-2026-08-08.md (first suggest-5 receipt).
+metrics), COMPETITION.md (Codex deploy-shelf), brand-board-2026-08-08.md
+(first suggest-5 receipt).

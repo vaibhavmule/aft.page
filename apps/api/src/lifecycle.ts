@@ -31,7 +31,7 @@ import {
   normalizePath,
 } from "./storage";
 import { corsHeaders, json, privateJson } from "./http";
-import { liveSiteUrl } from "./site-url";
+import { attachDeployPreviewUrls, liveSiteUrl } from "./site-url";
 
 const DEFAULT_PAGE_SIZE = 20;
 const SOURCE_PREVIEW_MAX = 256 * 1024;
@@ -317,7 +317,16 @@ async function siteDeploys(
   const current = raw
     ? (JSON.parse(raw) as SiteMeta).deployId
     : null;
-  return json({ slug, currentDeployId: current, deploys }, 200, extra);
+  const root = env.ROOT_DOMAIN || "aft.page";
+  return json(
+    {
+      slug,
+      currentDeployId: current,
+      deploys: attachDeployPreviewUrls(deploys, slug, root),
+    },
+    200,
+    extra,
+  );
 }
 
 async function rollback(

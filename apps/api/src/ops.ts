@@ -2,7 +2,11 @@
  * Founder ops.aft.page — health + failed deploys + product feedback. Not a customer product.
  */
 import { parseCsvLower, type Env } from "./env";
-import { resolveSessionUser } from "./auth";
+import { resolveSessionUser, timingSafeEqual } from "./auth";
+import {
+  loadOrRunCfPractices,
+  type CfPracticesResult,
+} from "./cf-practices";
 import {
   countDeploysByClient,
   countDeploysByDay,
@@ -99,7 +103,7 @@ export function isOpsEmail(env: Env, email: string): boolean {
 async function authorizeSmokeTrigger(request: Request, env: Env): Promise<boolean> {
   const secret = env.SMOKE_SECRET?.trim();
   const auth = request.headers.get("authorization") || "";
-  if (secret && auth === `Bearer ${secret}`) return true;
+  if (secret && timingSafeEqual(auth, `Bearer ${secret}`)) return true;
   const user = await resolveSessionUser(env, request);
   return Boolean(user && isOpsEmail(env, user.email));
 }
@@ -187,16 +191,36 @@ export type OpsPayload = {
   views: ViewRollup;
   timeToUrl: TimeToUrlScore;
   cost: WorkersCost;
+  wfp: WfpTrigger;
   logs: { api: string; mcp: string };
   probes: ProbeHitRow[];
   smoke: SmokeRunResult | null;
   smokeHistory: SmokeRunSummary[];
   audit: AuditRunResult | null;
   auditHistory: AuditRunSummary[];
+  cfPractices: CfPracticesResult;
 };
 
 const REQ_INCLUDED = 10_000_000;
 const CPU_INCLUDED = 30_000_000;
+
+/** Paid script cap is 500; leave headroom. ADR-TEMP-ACCOUNTS.md § Costing. */
+export const WFP_WATCH_SCRIPTS = 400;
+export const WFP_SWITCH_SCRIPTS = 450;
+export const WFP_SCRIPT_CAP = 500;
+export const WFP_EXTRA_FLOOR_USD = 20;
+
+export type WfpStatus = "stay" | "watch" | "switch";
+
+export type WfpTrigger = {
+  status: WfpStatus;
+  siteWorkers: number;
+  watchAt: number;
+  switchAt: number;
+  cap: number;
+  overageUsd: number;
+  why: string;
+};
 
 export function estimateWorkersPaid(
   requests: number,
@@ -209,6 +233,39 @@ export function estimateWorkersPaid(
     requestsUsd: roundUsd(requestsUsd),
     cpuUsd: roundUsd(cpuUsd),
     totalUsd: roundUsd(5 + requestsUsd + cpuUsd),
+  };
+}
+
+export function decideWfpTrigger(
+  siteWorkers: number,
+  overageUsd: number,
+): WfpTrigger {
+  const scriptsSwitch = siteWorkers >= WFP_SWITCH_SCRIPTS;
+  const scriptsWatch = siteWorkers >= WFP_WATCH_SCRIPTS;
+  const billSwitch = overageUsd > WFP_EXTRA_FLOOR_USD;
+  const billWatch = overageUsd > WFP_EXTRA_FLOOR_USD / 2;
+  const status: WfpStatus = scriptsSwitch || billSwitch
+    ? "switch"
+    : scriptsWatch || billWatch
+      ? "watch"
+      : "stay";
+  const why = scriptsSwitch
+    ? `site Workers ${siteWorkers} ≥ ${WFP_SWITCH_SCRIPTS} — approaching ${WFP_SCRIPT_CAP} Paid cap`
+    : billSwitch
+      ? `overage $${overageUsd.toFixed(2)} > $${WFP_EXTRA_FLOOR_USD} WfP extra floor — if most of that is worker/next proxy (2 billed reqs), WfP $25 may win`
+      : scriptsWatch
+        ? `site Workers ${siteWorkers} ≥ ${WFP_WATCH_SCRIPTS} — start planning WfP`
+        : billWatch
+          ? `overage $${overageUsd.toFixed(2)} — WfP extra floor is $${WFP_EXTRA_FLOOR_USD}; watch proxy share`
+          : `stay on $5 Paid. Switch at ~${WFP_WATCH_SCRIPTS} site Workers or when proxy double-bill > $${WFP_EXTRA_FLOOR_USD}/mo.`;
+  return {
+    status,
+    siteWorkers,
+    watchAt: WFP_WATCH_SCRIPTS,
+    switchAt: WFP_SWITCH_SCRIPTS,
+    cap: WFP_SCRIPT_CAP,
+    overageUsd: roundUsd(overageUsd),
+    why,
   };
 }
 
@@ -509,6 +566,7 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
     probes,
     audit,
     auditHistory,
+    cfPractices,
   ] = await Promise.all([
     buildPayload(env),
     listDeployFailures(env, 50),
@@ -538,6 +596,7 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
     listProbeHits(env, since7d),
     loadLatestAuditRun(env).catch(() => null),
     loadAuditHistory(env, 7).catch(() => [] as AuditRunSummary[]),
+    loadOrRunCfPractices(env),
   ]);
   const last24h = scoreWindow(successes24h, failures24h);
   const last7d = scoreWindow(successes7d, failures7d);
@@ -586,12 +645,14 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
       checkedAt: usage?.checkedAt ?? null,
       scripts: usage?.scripts ?? [],
     },
+    wfp: decideWfpTrigger(snapshot.siteWorkers, priced.requestsUsd + priced.cpuUsd),
     logs: { api: CF_LOGS_API, mcp: CF_LOGS_MCP },
     probes,
     smoke,
     smokeHistory,
     audit,
     auditHistory,
+    cfPractices,
   };
 }
 
@@ -918,11 +979,48 @@ function pct(rate: number | null): string {
   return `${Math.round(rate * 1000) / 10}%`;
 }
 
+function renderCfPractices(result: CfPracticesResult): string {
+  const pill = result.ok
+    ? `<span class="pill ok" data-live="cfOk">pass</span>`
+    : `<span class="pill fail" data-live="cfOk">fail</span>`;
+  const rows = result.cases
+    .map(
+      (c) => `<tr>
+        <td>${escapeHtml(c.name)}</td>
+        <td>${c.ok ? `<span class="pill ok">ok</span>` : `<span class="pill fail">fail</span>`}</td>
+        <td>${escapeHtml(c.detail)}</td>
+      </tr>`,
+    )
+    .join("");
+  return `<p class="empty">Workers + platform bindings vs
+    <a href="${escapeHtml(result.docs)}">Cloudflare best practices</a>.
+    Status cron refreshes when the snapshot is older than 20h (at least daily).</p>
+    <p class="smoke-run">${pill} · <span data-live="cfAt">${escapeHtml(result.checkedAt)}</span>
+    · ${result.cases.filter((c) => c.ok).length}/${result.cases.length} ok</p>
+    <table><thead><tr><th>Check</th><th></th><th>Detail</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+
 function renderNetworkDiagram(): string {
-  const box = (x: number, y: number, w: number, h: number, title: string, sub: string) =>
-    `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="#0a0a0a" stroke="#27272a"/>
+  const dash = `https://dash.cloudflare.com/${CF_ACCOUNT}`;
+  const box = (
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    title: string,
+    sub: string,
+    href?: string,
+  ) => {
+    const inner = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="#0a0a0a" stroke="#27272a"/>
      <text x="${x + w / 2}" y="${y + (sub ? 22 : 30)}" text-anchor="middle" fill="#fafafa" font-size="13" font-family="ui-sans-serif,system-ui,sans-serif">${escapeHtml(title)}</text>
      ${sub ? `<text x="${x + w / 2}" y="${y + 40}" text-anchor="middle" fill="#a1a1aa" font-size="11" font-family="ui-monospace,monospace">${escapeHtml(sub)}</text>` : ""}`;
+    if (!href) return inner;
+    const ext = href.startsWith("http") ? ` target="_blank" rel="noopener"` : "";
+    return `<a href="${escapeHtml(href)}"${ext}>${inner}</a>`;
+  };
+  const edge = (x: number, y: number, label: string) =>
+    `<text x="${x}" y="${y}" fill="#52525b" font-size="10" font-family="ui-monospace,monospace">${escapeHtml(label)}</text>`;
   return `<figure class="net">
   <svg class="net-svg" viewBox="0 0 760 390" role="img" aria-label="aft.page network">
     <defs>
@@ -933,14 +1031,14 @@ function renderNetworkDiagram(): string {
     ${box(30, 16, 210, 52, "Agents", "Claude · Cursor · Codex")}
     ${box(275, 16, 210, 52, "Drop / cURL", "files → URL")}
     ${box(520, 16, 210, 52, "Humans", "browser")}
-    ${box(30, 118, 210, 58, "mcp.aft.page", "aft-page-mcp")}
-    ${box(275, 118, 210, 58, "api + *.aft.page", "aft-page-api")}
-    ${box(520, 118, 210, 58, "aft.page", "Cloudflare Pages")}
-    ${box(55, 228, 130, 50, "D1", "sites · deploys")}
-    ${box(215, 228, 130, 50, "R2", "file bytes")}
-    ${box(375, 228, 130, 50, "KV", "sessions")}
-    ${box(535, 228, 130, 50, "AE", "metrics")}
-    ${box(275, 322, 210, 52, "*.aft.page", "serve from R2")}
+    ${box(30, 118, 210, 58, "mcp.aft.page", "API host → bind MCP", CF_LOGS_MCP)}
+    ${box(275, 118, 210, 58, "api + *.aft.page", "aft-page-api", CF_LOGS_API)}
+    ${box(520, 118, 210, 58, "aft.page", "Cloudflare Pages", `${dash}/pages/view/aft-page`)}
+    ${box(55, 228, 130, 50, "D1", "sites · deploys", `${dash}/workers/d1/databases/49430d21-12f7-44dd-bd74-fb649148b34c`)}
+    ${box(215, 228, 130, 50, "R2", "file bytes", `${dash}/r2/default/buckets/aft-page-sites`)}
+    ${box(375, 228, 130, 50, "KV", "sessions · views", `${dash}/workers/kv/namespaces/3bc4889e9e974a2bbb09433c8b932870`)}
+    ${box(535, 228, 130, 50, "AE", "aft_page_metrics", `${dash}/workers/observability`)}
+    ${box(275, 322, 210, 52, "*.aft.page", "serve from R2", "#sites")}
     <g fill="none" stroke="#52525b" stroke-width="1.25" marker-end="url(#net-arr)">
       <path d="M135 68V118"/>
       <path d="M380 68V118"/>
@@ -954,11 +1052,148 @@ function renderNetworkDiagram(): string {
       <path d="M430 176L600 228"/>
       <path d="M280 278V322"/>
     </g>
-    <text x="248" y="142" fill="#52525b" font-size="10" font-family="ui-monospace,monospace">bind</text>
-    <text x="268" y="308" fill="#52525b" font-size="10" font-family="ui-monospace,monospace">serve</text>
+    ${edge(145, 98, "/mcp")}
+    ${edge(288, 98, "POST /v1/deploy")}
+    ${edge(635, 98, "apex")}
+    ${edge(248, 142, "bind")}
+    ${edge(500, 85, "drop · login")}
+    ${edge(200, 202, "meta")}
+    ${edge(300, 202, "bytes")}
+    ${edge(410, 202, "sess")}
+    ${edge(530, 202, "write")}
+    ${edge(268, 308, "serve")}
   </svg>
   <figcaption>Product counts (D1) refresh every 8s. Cloudflare request/CPU is GraphQL adaptive analytics — minutes late, not a stream. No Worker API exposes a live usage socket.</figcaption>
 </figure>`;
+}
+
+function renderList(title: string, lines: string[]): string {
+  return `<h3>${escapeHtml(title)}</h3><ul class="stories">${lines
+    .map((l) => `<li>${escapeHtml(l)}</li>`)
+    .join("")}</ul>`;
+}
+
+function renderStories(): string {
+  return `${renderList("Workflow", [
+    "Agent or human ships files → live https://{slug}.aft.page (no account).",
+    "Anyone opens that URL now.",
+    "Owner claims it (email or Google) → slug stays, they own it.",
+    "After claim, further ships need owner/editor login (edit token dies).",
+    "Owner makes it private and invites view or edit.",
+    "Teammate clicks invite → signed in → opens the same URL.",
+    "Owner rolls back, secrets, logs, pause, destroy from /project.",
+    "Optional: custom domain (ops approves) or connector (expenses:read).",
+  ])}
+  ${renderList("Agent", [
+    "Deploy HTML or a built folder to a live URL.",
+    "Redeploy the same slug (before claim: edit token; after: owner session).",
+    "List deploys and roll back.",
+    "Ping health.",
+  ])}
+  ${renderList("Human", [
+    "Drop a folder or zip on aft.page → same live URL.",
+    "curl the same POST /v1/deploy.",
+    "Sign in (magic link or Google).",
+    "Join waitlist / send feedback.",
+    "Read docs, MCP setup, changelog.",
+  ])}
+  ${renderList("Owner (after claim)", [
+    "See all my sites under Projects.",
+    "Set public / private.",
+    "Invite / revoke view or edit.",
+    "Change member role or remove them.",
+    "Redeploy, rollback, browse source.",
+    "Read logs (7d, no IPs).",
+    "Save / delete secrets (vault for hosted runtimes).",
+    "Approve aft.json capabilities.",
+    "Pause serving (503) or destroy the project.",
+    "Request a custom domain; after ops approves, CNAME to cname.aft.page.",
+    "Mint a connector token for in-network expenses:read.",
+  ])}
+  ${renderList("Teammate", [
+    "View: open a private site + hub overview / deploys / source.",
+    "Edit: plus redeploy, rollback, secrets, logs.",
+    "Unsigned private hit → login, then back to the app.",
+  ])}
+  ${renderList("Visitor on *.aft.page", [
+    "Public site just loads.",
+    "Private + logged out → login.",
+    "Private + logged in, not invited → 401 + request access.",
+    "Custom hostname serves the same slug.",
+  ])}
+  ${renderList("Founder (this page)", [
+    "Scoreboard: health, T2U, fails, cost, counts.",
+    "Retry a failed upload.",
+    "Smoke + hijack audit.",
+    "Approve domain access.",
+    "See every site / user / domain / network.",
+  ])}
+  ${renderList("Not the product yet", [
+    "Billing checkout, company SSO, hosted CLI, plugin store.",
+    "MCP does not do secrets / invites / billing.",
+    "Connector is expenses:read only.",
+    "Host does not run npm run build.",
+  ])}`;
+}
+
+function todoItem(text: string, src: string): string {
+  return `<li>${escapeHtml(text)} <span class="src">${escapeHtml(src)}</span></li>`;
+}
+
+function renderTodos(): string {
+  return `<p class="empty">Open items from todo.txt, plan.md, gtm.txt, EVIDENCE-PACK.md, REPORT-CARD.txt, FUNDRAISE.md.</p>
+  <h3>Proof</h3>
+  <ul class="todos">
+    ${todoItem("≥5 repeat deployers + evidence pack filled", "todo.txt · plan.md")}
+    ${todoItem("≥1 app shared with another person (invite accept + both use it)", "todo.txt · plan.md")}
+    ${todoItem("Stranger evidence: recorded, not you, returns in 7d, redeploy without founder", "EVIDENCE-PACK.md")}
+    ${todoItem("10 live demos; ask “will you use this next week?”", "plan.md")}
+    ${todoItem("≥1 paid or signed pilot / LOI (non-friend)", "plan.md")}
+    ${todoItem("Outreach: 50 targets · 30 DMs · 5 calls — human-speed bottleneck", "plan.md")}
+    ${todoItem("Lattice convert demo: owner sets ANTHROPIC_API_KEY", "todo.txt")}
+  </ul>
+  <h3>Distribution / raise</h3>
+  <ul class="todos">
+    ${todoItem("Agent Plugin P0: public GH + npx plugins add + Cursor marketplace", "todo.txt · plan.md")}
+    ${todoItem("Publish Chrome extension to Web Store", "todo.txt")}
+    ${todoItem("Publish @aft.page/mcp to npm (optional)", "todo.txt")}
+    ${todoItem("YC late application + 1-min video", "todo.txt · plan.md")}
+    ${todoItem("Read Polymerize IP / moonlighting agreement", "plan.md")}
+    ${todoItem("Google for Startups — finish credits apply", "todo.txt · FUNDRAISE.md")}
+    ${todoItem("Cloudflare for Startups Tier 3 $10k — submit hello@aft.page", "todo.txt · FUNDRAISE.md")}
+    ${todoItem("Analytics: deploy, open, share, redeploy events", "plan.md · METRICS.md")}
+  </ul>
+  <h3>Product holes</h3>
+  <ul class="todos">
+    ${todoItem("Remix / fork one-click (RFS gap)", "REPORT-CARD.txt")}
+    ${todoItem("Default private vs anonymous public Drop (conscious decision)", "REPORT-CARD.txt")}
+    ${todoItem("Egress proxy is a stub", "REPORT-CARD.txt · CAPABILITIES.md")}
+    ${todoItem("Editable preview", "todo.txt")}
+    ${todoItem("Workspace / Entra SSO — later", "todo.txt · plan.md")}
+    ${todoItem("Claude marketplace — later", "todo.txt")}
+    ${todoItem("No connector deepen / BYOC / Kitesurf unless a partner requires it", "plan.md")}
+  </ul>
+  <h3>GTM</h3>
+  <ul class="todos">
+    ${todoItem("G1 Summarize launcher — add click → waitlist/deploy metric", "gtm.txt")}
+    ${todoItem("G18 Claim-after-deploy — track claimed / anonymous deploys (7d)", "gtm.txt")}
+    ${todoItem("G16 Suggest-5 boards — expand beyond brand (favicon, hero CTA)", "gtm.txt")}
+    ${todoItem("G13 30 DMs/week: “what did your agent build that never left localhost?”", "gtm.txt · plan.md")}
+    ${todoItem("G2 Summarize prompt A/B", "gtm.txt")}
+    ${todoItem("G3 AI-readable everything — llms.txt + FAQ extraction block", "gtm.txt")}
+    ${todoItem("G4 Inject Summarize + Feedback into hosted *.aft.page sites", "gtm.txt")}
+    ${todoItem("G5 Powered-by-aft.page badge on shared URLs", "gtm.txt")}
+    ${todoItem("G7 Ship Agent Plugin to Cursor marketplace + cursor.directory (needs AFT GH org)", "gtm.txt")}
+    ${todoItem("G8 Cross-agent plugin reach after G7", "gtm.txt")}
+    ${todoItem("G9 Claude Code .claude-plugin manifest", "gtm.txt")}
+    ${todoItem("G10 Expand /with/<agent> pages + deploy snippet", "gtm.txt")}
+    ${todoItem("G12 Gallery of real agent-made apps (opt-in)", "gtm.txt")}
+    ${todoItem("G14 Feedback → fix → tell-them weekly loop", "gtm.txt")}
+    ${todoItem("G15 Invitee first-run that nudges their own deploy", "gtm.txt")}
+    ${todoItem("G17 Public “how we decide” write-up after 2–3 board receipts", "gtm.txt")}
+    ${todoItem("G19 Student work URL: apply = curl + MCP, no form (work.aft.page)", "gtm.txt")}
+    ${todoItem("G6 External summarize embed — only if G4/G5 convert", "gtm.txt")}
+  </ul>`;
 }
 
 async function loadOpsSiteDetail(env: Env, slug: string, root: string) {
@@ -1454,13 +1689,6 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
         `<tr><td>${escapeHtml(shortDay(d.day))}</td><td>${d.n || "—"}</td><td>${escapeHtml(formatT2u(d.p50Ms))}</td><td>${escapeHtml(formatT2u(d.p95Ms))}</td></tr>`,
     )
     .join("")}</tbody></table>`;
-  const components = health.components
-    .map(
-      (c) =>
-        `<li><strong>${escapeHtml(c.name)}</strong> — ${escapeHtml(c.status.replace(/_/g, " "))} <code>${escapeHtml(c.url)}</code></li>`,
-    )
-    .join("");
-
   const toFix =
     payload.toFix.length === 0
       ? `<p class="empty">Nothing to fix — no failures in 7 days.</p>`
@@ -1482,6 +1710,13 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
           .join("")}</tbody></table>`;
 
   const days = renderDayChart(payload.days);
+  const healthOk = health.overall === "operational";
+  const junk200 = payload.probes.filter(
+    (p) =>
+      p.status === 200 &&
+      !p.slug.startsWith("test--") &&
+      !p.slug.startsWith("probe404"),
+  ).length;
 
   const rows =
     payload.failures.length === 0
@@ -1524,12 +1759,13 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
     .top { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; align-items: center; }
     .top-links { display: flex; gap: 1rem; color: var(--quiet); font-size: 0.9rem; }
     .top-links a { text-decoration: none; }
-    .note { padding: 0.9rem 1rem; border: 1px solid var(--line); border-radius: 0.4rem; background: var(--panel); color: var(--quiet); margin: 0 0 1.25rem; }
     h1 { font-size: 1.6rem; letter-spacing: -0.03em; margin: 0 0 0.4rem; }
     .lede { color: var(--quiet); margin: 0 0 0.35rem; }
     .who { font-family: var(--font-mono); font-size: 0.75rem; color: var(--faint); margin: 0 0 1.25rem; }
     .hub-shell { display: grid; grid-template-columns: 11.5rem minmax(0, 1fr); gap: 1.25rem 1.5rem; align-items: start; }
     .hub-nav { display: flex; flex-direction: column; gap: 0.15rem; position: sticky; top: 1.25rem; }
+    .hub-nav .nav-g { font-size: 0.65rem; letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); padding: 0.75rem 0.65rem 0.15rem; }
+    .hub-nav .nav-g:first-child { padding-top: 0; }
     .hub-nav a { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.45rem 0.65rem; border-radius: 4px; color: var(--quiet); text-decoration: none; font-size: 0.88rem; font-weight: 550; }
     .hub-nav a:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 6%, transparent); }
     .hub-nav a[aria-current="page"] { color: var(--ink); background: color-mix(in srgb, var(--ink) 10%, transparent); }
@@ -1563,7 +1799,8 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
     .day-zero { height: 2px; width: 100%; background: var(--line); }
     .day-d { font-size: 0.7rem; color: var(--faint); margin-top: 0.35rem; font-variant-numeric: tabular-nums; }
     .score { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
-    .stat-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.5rem; }
+    .score.crit { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem; }
     .stat-grid .card { padding: 0.7rem 0.8rem; }
     .stat-grid strong { display: block; font-size: 1.25rem; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
     .stat-grid span { color: var(--quiet); font-size: 0.75rem; }
@@ -1573,7 +1810,12 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
     .live i[data-on] { background: var(--good); }
     .net { margin: 0; padding: 0.75rem 0.85rem 0.65rem; border: 1px solid var(--line); border-radius: 0.4rem; background: var(--panel); }
     .net-svg { width: 100%; height: auto; display: block; }
+    .net-svg a { text-decoration: none; }
+    .net-svg a:hover rect { stroke: var(--ink); }
     .net figcaption { color: var(--quiet); font-size: 0.78rem; margin: 0.65rem 0.1rem 0.1rem; }
+    .stories, .todos { margin: 0 0 1rem; padding-left: 1.2rem; color: var(--quiet); }
+    .stories li, .todos li { margin: 0.28rem 0; }
+    .todos .src { color: var(--faint); font-size: 0.75rem; }
     .card { border: 1px solid var(--line); border-radius: 0.4rem; background: var(--panel); padding: 0.9rem 1rem; }
     a.card-link { text-decoration: none; color: inherit; display: block; }
     a.card-link:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
@@ -1584,6 +1826,7 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
     .filters button[aria-current="true"] { color: var(--ink); background: color-mix(in srgb, var(--ink) 10%, transparent); }
     .pill { display: inline-block; font-size: 0.78rem; font-weight: 600; padding: 0.1rem 0.45rem; border-radius: 0.25rem; }
     .pill.ok { background: color-mix(in srgb, var(--good) 22%, transparent); }
+    .pill.warn { background: color-mix(in srgb, var(--warn) 22%, transparent); }
     .pill.fail { background: color-mix(in srgb, var(--bad, #c44) 22%, transparent); }
     .smoke-run { margin: 0 0 0.85rem; color: var(--quiet); font-size: 0.88rem; }
     .hub-main .panel h3 { font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); margin: 1.25rem 0 0.55rem; }
@@ -1605,7 +1848,8 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
     @media (max-width: 800px) {
       .hub-shell { grid-template-columns: 1fr; }
       .hub-nav { flex-direction: row; flex-wrap: wrap; position: static; }
-      .score, .stat-grid { grid-template-columns: 1fr 1fr; }
+      .hub-nav .nav-g { display: none; }
+      .score, .score.crit, .stat-grid { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
@@ -1619,48 +1863,80 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
       </nav>
     </header>
     <h1>Ops</h1>
-    <p class="lede">Time-to-URL every day. Success vs failure. Fix the top codes. Retry a failed upload after you change the product. Critical items: name them, test them, or leave them on the list.</p>
+    <p class="lede">Is it up. Can they ship. What’s broken.</p>
     <p class="who">${escapeHtml(email)} · <span class="live"><i data-live-dot></i>D1 · 8s</span></p>
 
     <div class="hub-shell">
       <nav class="hub-nav" aria-label="Ops sections">
+        <span class="nav-g">Operate</span>
         <a href="#overview" aria-current="page">Overview</a>
-        <a href="#smoke">Smoke <span class="n" data-live="smokeN">${payload.smoke?.cases.length ?? 0}</span></a>
         <a href="#audit">Audit <span class="n" data-live="auditN">${payload.audit?.cases.length ?? 0}</span></a>
+        <a href="#smoke">Smoke <span class="n" data-live="smokeN">${payload.smoke?.cases.length ?? 0}</span></a>
+        <a href="#failures">Failures <span class="n">${payload.failures.length}</span></a>
+        <a href="#logs">Logs <span class="n">${payload.probes.length}</span></a>
+        <span class="nav-g">Inventory</span>
         <a href="#sites">Sites <span class="n" data-live="sites">${s.sites}</span></a>
         <a href="#users">Users <span class="n" data-live="users">${s.users}</span></a>
         <a href="#domains">Domains <span class="n" data-live="domains">${s.domains}</span></a>
-        <a href="#network">Network</a>
-        <a href="#failures">Failures <span class="n">${payload.failures.length}</span></a>
         <a href="#feedback">Feedback <span class="n">${payload.feedback.length}</span></a>
-        <a href="#logs">Logs <span class="n">${payload.probes.length}</span></a>
+        <span class="nav-g">Map</span>
+        <a href="#cf">CF <span class="n" data-live="cfN">${payload.cfPractices.cases.length}</span></a>
+        <a href="#network">Network</a>
+        <a href="#stories">Stories</a>
+        <a href="#todos">Todos</a>
       </nav>
       <div class="hub-main">
         <section class="panel is-active" id="overview">
-          <h2>Overview</h2>
-          <div class="score">
-            <div class="card">
-              <h3>Time to URL · 24h</h3>
+          <h2>Critical</h2>
+          <div class="score crit">
+            <a class="card card-link" href="https://status.aft.page/">
+              <h3>Health</h3>
               <div class="nums">
-                <div><strong data-live="t2uN24">${t2u.last24h.n}</strong><span>ok with ms</span></div>
-                <div><strong data-live="t2uP5024">${escapeHtml(formatT2u(t2u.last24h.p50Ms))}</strong><span>p50</span></div>
-                <div><strong data-live="t2uP9524">${escapeHtml(formatT2u(t2u.last24h.p95Ms))}</strong><span>p95</span></div>
+                <div><strong><span class="pill ${healthOk ? "ok" : "fail"}">${escapeHtml(health.overall.replace(/_/g, " "))}</span></strong><span>status probes</span></div>
               </div>
-            </div>
-            <div class="card">
-              <h3>Time to URL · 7d</h3>
+            </a>
+            <a class="card card-link" href="#audit">
+              <h3>Hijack / audit</h3>
               <div class="nums">
-                <div><strong data-live="t2uN7">${t2u.last7d.n}</strong><span>ok with ms</span></div>
-                <div><strong data-live="t2uP507">${escapeHtml(formatT2u(t2u.last7d.p50Ms))}</strong><span>p50</span></div>
-                <div><strong data-live="t2uP957">${escapeHtml(formatT2u(t2u.last7d.p95Ms))}</strong><span>p95</span></div>
+                <div><strong><span class="pill ${payload.audit?.ok ? "ok" : "fail"}" data-live="auditOk">${payload.audit ? (payload.audit.ok ? "pass" : "fail") : "—"}</span></strong><span data-live="auditN">${payload.audit?.cases.length ?? 0}</span><span>cases</span></div>
               </div>
-            </div>
+            </a>
+            <a class="card card-link" href="#smoke">
+              <h3>CIL / smoke</h3>
+              <div class="nums">
+                <div><strong><span class="pill ${payload.smoke?.ok ? "ok" : "fail"}" data-live="smokeOk">${payload.smoke ? (payload.smoke.ok ? "pass" : "fail") : "—"}</span></strong><span data-live="smokeN">${payload.smoke?.cases.length ?? 0}</span><span>cases</span></div>
+              </div>
+            </a>
+            <a class="card card-link" href="#failures">
+              <h3>Deploy fails</h3>
+              <div class="nums">
+                <div><strong data-live="failn">${payload.failures.length}</strong><span>inbox</span></div>
+                <div><strong data-live="toFix">${payload.toFix.length}</strong><span>codes 7d</span></div>
+              </div>
+            </a>
+            <a class="card card-link" href="#logs">
+              <h3>Scanner</h3>
+              <div class="nums">
+                <div><strong><span class="pill ${junk200 ? "fail" : "ok"}">${junk200 || "ok"}</span></strong><span>${junk200 ? "junk 200s" : "no junk 200"}</span></div>
+              </div>
+            </a>
           </div>
-          ${t2uDays}
-          <p class="empty">Machine clock: Worker → URL. Human T2U is a stopwatch — see time-to-url.txt. Bar: p50 &lt; 3s · p95 &lt; 10s.</p>
+          <h3>What to fix (7d)</h3>
+          ${toFix}
+          <p class="empty">API probe = isolate alive, not D1/R2. Status has the four probes.</p>
+          <h2>Information</h2>
           <div class="score">
             <div class="card">
-              <h3>Last 24h</h3>
+              <h3>Time to URL</h3>
+              <div class="nums">
+                <div><strong data-live="t2uP5024">${escapeHtml(formatT2u(t2u.last24h.p50Ms))}</strong><span>p50 24h · n <span data-live="t2uN24">${t2u.last24h.n}</span></span></div>
+                <div><strong data-live="t2uP9524">${escapeHtml(formatT2u(t2u.last24h.p95Ms))}</strong><span>p95 24h</span></div>
+                <div><strong data-live="t2uP507">${escapeHtml(formatT2u(t2u.last7d.p50Ms))}</strong><span>p50 7d · n <span data-live="t2uN7">${t2u.last7d.n}</span></span></div>
+                <div><strong data-live="t2uP957">${escapeHtml(formatT2u(t2u.last7d.p95Ms))}</strong><span>p95 7d</span></div>
+              </div>
+            </div>
+            <div class="card">
+              <h3>Deploys 24h</h3>
               <div class="nums">
                 <div><strong data-live="ok24">${payload.successes24h}</strong><span>ok</span></div>
                 <div><strong data-live="fail24">${payload.failures24h}</strong><span>fail</span></div>
@@ -1668,52 +1944,38 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
               </div>
             </div>
             <div class="card">
-              <h3>Last 7d</h3>
+              <h3>Deploys 7d</h3>
               <div class="nums">
                 <div><strong data-live="ok7">${payload.successes7d}</strong><span>ok</span></div>
                 <div><strong data-live="fail7">${payload.failures7d}</strong><span>fail</span></div>
                 <div><strong data-live="rate7">${escapeHtml(pct(payload.rate7d))}</strong><span>rate</span></div>
               </div>
             </div>
-            <div class="card">
-              <h3>Inbox</h3>
-              <div class="nums">
-                <div><strong data-live="failn">${payload.failures.length}</strong><span>failures</span></div>
-                <div><strong data-live="feedback">${s.feedback}</strong><span>feedback</span></div>
-                <div><strong data-live="waitlist">${s.waitlist}</strong><span>waitlist</span></div>
-              </div>
-            </div>
           </div>
-          <h2>CIL / smoke</h2>
-          <p class="empty">${
-            payload.smoke
-              ? `<a href="#smoke">${payload.smoke.ok ? "pass" : "fail"}</a> · ${payload.smoke.cases.length} isolate cases · ${escapeHtml(payload.smoke.trigger)} · ${escapeHtml(payload.smoke.finishedAt)}${payload.smoke.flight ? " · public TLS attached" : " · isolate only — /flight missed"}`
-              : `No smoke yet. Cron 04:00 + 16:00 UTC · <a href="#smoke">open scoreboard</a>`
-          }</p>
-          <h2>Hijack / audit</h2>
-          <p class="empty">${
-            payload.audit
-              ? `<a href="#audit">${payload.audit.ok ? "pass" : "fail"}</a> · ${payload.audit.cases.length} cases · ${escapeHtml(payload.audit.trigger)} · ${escapeHtml(payload.audit.finishedAt)}`
-              : `No audit yet. Same cron as smoke · <a href="#audit">open scoreboard</a>`
-          }</p>
-          <h2>Product</h2>
+          ${t2uDays}
+          <p class="empty">Machine clock: Worker → URL. Bar: p50 &lt; 3s · p95 &lt; 10s.</p>
+          <h3>Day strip</h3>
+          ${days}
+          <h3>Product</h3>
           <div class="stat-grid">
             <a class="card card-link" href="#sites"><strong data-live="sites">${s.sites}</strong><span>sites</span></a>
+            <div class="card"><strong data-live="claimed">${s.claimed}</strong><span>claimed</span></div>
             <a class="card card-link" href="#users"><strong data-live="users">${s.users}</strong><span>users</span></a>
             <a class="card card-link" href="#domains"><strong data-live="domains">${s.domains}</strong><span>domains</span></a>
-            <div class="card"><strong data-live="domainRequests">${s.domainRequests}</strong><span>domain requests</span></div>
-            <div class="card"><strong data-live="claimed">${s.claimed}</strong><span>claimed</span></div>
             <div class="card"><strong data-live="active24h">${s.active24h}</strong><span>served 24h</span></div>
-            <div class="card"><strong data-live="viewsToday">${payload.views.today}</strong><span>views today</span></div>
             <div class="card"><strong data-live="views7d">${payload.views.d7}</strong><span>views 7d</span></div>
-            <div class="card"><strong data-live="waitlist7d">${s.waitlist7d}</strong><span>waitlist 7d</span></div>
-            <div class="card"><strong data-live="deploys">${s.deploys}</strong><span>deploys all</span></div>
             <div class="card"><strong data-live="deploysMtd">${s.deploysMtd}</strong><span>deploys MTD</span></div>
-            <div class="card"><strong data-live="deployBytes">${escapeHtml(formatBytes(s.deployBytes))}</strong><span>deploy bytes</span></div>
-            <div class="card"><strong data-live="feedback">${s.feedback}</strong><span>feedback all</span></div>
-            <div class="card"><strong data-live="toFix">${payload.toFix.length}</strong><span>codes to fix</span></div>
+            <div class="card"><strong data-live="waitlist">${s.waitlist}</strong><span>waitlist</span></div>
           </div>
-          <h2>Cloudflare cost (MTD)</h2>
+          <div class="score">
+            <a class="card card-link" href="#cf">
+              <h3>CF practices</h3>
+              <div class="nums">
+                <div><strong><span class="pill ${payload.cfPractices.ok ? "ok" : "fail"}" data-live="cfOk">${payload.cfPractices.ok ? "pass" : "fail"}</span></strong><span data-live="cfN">${payload.cfPractices.cases.length}</span><span>checks · daily</span></div>
+              </div>
+            </a>
+          </div>
+          <h3>Cloudflare cost (MTD)</h3>
           <div class="score">
             <div class="card">
               <h3>Estimated</h3>
@@ -1741,25 +2003,40 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
                   : "$5 Workers Paid floor · 10M req / 30M CPU-ms included. Usage snapshot not loaded yet."
               }</p>
             </div>
+            <div class="card">
+              <h3>WfP trigger</h3>
+              <div class="nums">
+                <div><strong><span class="pill ${payload.wfp.status === "switch" ? "fail" : payload.wfp.status === "watch" ? "warn" : "ok"}" data-live="wfpStatus">${escapeHtml(payload.wfp.status)}</span></strong><span>vs $5 Paid</span></div>
+                <div><strong data-live="siteWorkers">${payload.wfp.siteWorkers}</strong><span>site Workers / ${payload.wfp.watchAt} watch · ${payload.wfp.cap} cap</span></div>
+              </div>
+              <p class="cost-note" data-live="wfpWhy">${escapeHtml(payload.wfp.why)} Static Drop is not this count. ADR-TEMP-ACCOUNTS.</p>
+            </div>
           </div>
-          <h2>Day strip</h2>
-          ${days}
-          <h2>What to fix (7d)</h2>
-          ${toFix}
-          <h2>By source (7d)</h2>
+          <h3>By source (7d)</h3>
           ${sources}
-          <h2>Health</h2>
-          <p>Overall: <strong>${escapeHtml(health.overall.replace(/_/g, " "))}</strong>
-            · API probe means this Worker is alive, not that D1/R2 are healthy.</p>
-          <ul>${components}</ul>
+        </section>
+        <section class="panel" id="audit">
+          <h2>Audit</h2>
+          ${renderAuditSection(payload.audit, payload.auditHistory)}
         </section>
         <section class="panel" id="smoke">
           <h2>Smoke</h2>
           ${renderSmokeSection(payload.smoke, payload.smokeHistory)}
         </section>
-        <section class="panel" id="audit">
-          <h2>Audit</h2>
-          ${renderAuditSection(payload.audit, payload.auditHistory)}
+        <section class="panel" id="failures">
+          <h2>Failures</h2>
+          <p class="empty">Click the error code → why / files / retry.</p>
+          ${rows}
+        </section>
+        <section class="panel" id="logs">
+          <h2>Probes</h2>
+          <p class="empty">Scanner hits from owner site_logs (path + country, no IP). Last 7 days.</p>
+          ${renderProbeHits(payload.probes)}
+          <h2>Workers Logs</h2>
+          <p class="logs">One Cursor MCP call is two streams:
+            <a href="${CF_LOGS_API}">aft-page-api</a> (host + deploy) ·
+            <a href="${CF_LOGS_MCP}">aft-page-mcp</a> (protocol / Zod).
+          </p>
         </section>
         <section class="panel" id="sites">
           <h2>Sites</h2>
@@ -1775,28 +2052,26 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
           <h2>Domains</h2>
           ${renderDomainsTable(payload.domains, root)}
         </section>
-        <section class="panel" id="network">
-          <h2>Network</h2>
-          ${renderNetworkDiagram()}
-        </section>
-        <section class="panel" id="failures">
-          <h2>Failures</h2>
-          <p class="empty">Click the error code → why / files / retry.</p>
-          ${rows}
-        </section>
         <section class="panel" id="feedback">
           <h2>Feedback</h2>
           ${notes}
         </section>
-        <section class="panel" id="logs">
-          <h2>Probes</h2>
-          <p class="empty">Scanner hits from owner site_logs (path + country, no IP). Last 7 days.</p>
-          ${renderProbeHits(payload.probes)}
-          <h2>Workers Logs</h2>
-          <p class="logs">One Cursor MCP call is two streams:
-            <a href="${CF_LOGS_API}">aft-page-api</a> (host + deploy) ·
-            <a href="${CF_LOGS_MCP}">aft-page-mcp</a> (protocol / Zod).
-          </p>
+        <section class="panel" id="cf">
+          <h2>Cloudflare</h2>
+          ${renderCfPractices(payload.cfPractices)}
+        </section>
+        <section class="panel" id="network">
+          <h2>Network</h2>
+          ${renderNetworkDiagram()}
+        </section>
+        <section class="panel" id="stories">
+          <h2>Stories</h2>
+          <p class="empty">Shipped one-liners. What a person can do — not a second product host.</p>
+          ${renderStories()}
+        </section>
+        <section class="panel" id="todos">
+          <h2>Todos</h2>
+          ${renderTodos()}
         </section>
       </div>
     </div>
@@ -1804,7 +2079,7 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
   </div>
   <script>
     (function () {
-      var tabs = ["overview", "smoke", "audit", "sites", "users", "domains", "network", "failures", "feedback", "logs"];
+      var tabs = ["overview", "audit", "smoke", "failures", "logs", "sites", "users", "domains", "feedback", "cf", "network", "stories", "todos"];
       function show(name) {
         if (tabs.indexOf(name) < 0) name = "overview";
         document.querySelectorAll(".hub-nav a").forEach(function (a) {
@@ -1818,9 +2093,9 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
           history.replaceState(null, "", "#" + name);
         }
       }
-      document.querySelector(".hub-nav").addEventListener("click", function (e) {
+      document.querySelector(".wrap").addEventListener("click", function (e) {
         var a = e.target.closest("a[href^='#']");
-        if (!a) return;
+        if (!a || a.getAttribute("target") === "_blank") return;
         e.preventDefault();
         show(a.getAttribute("href").slice(1));
       });
@@ -1852,11 +2127,6 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
         });
       }
 
-      function bytes(n) {
-        if (n < 1024) return n + " B";
-        if (n < 1048576) return (n / 1024).toFixed(1) + " KB";
-        return (n / 1048576).toFixed(2) + " MB";
-      }
       function pct(rate) {
         if (rate == null) return "—";
         return Math.round(rate * 1000) / 10 + "%";
@@ -1895,20 +2165,14 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
           set("fail7", p.failures7d);
           set("rate7", pct(p.rate7d));
           set("failn", (p.failures || []).length);
-          set("feedback", s.feedback);
           set("waitlist", s.waitlist);
           set("sites", s.sites);
           set("claimed", s.claimed);
           set("users", s.users);
           set("domains", s.domains);
-          set("domainRequests", s.domainRequests);
           set("active24h", s.active24h);
-          set("viewsToday", (p.views && p.views.today) || 0);
           set("views7d", (p.views && p.views.d7) || 0);
-          set("waitlist7d", s.waitlist7d);
-          set("deploys", s.deploys);
           set("deploysMtd", s.deploysMtd);
-          set("deployBytes", bytes(s.deployBytes || 0));
           set("toFix", (p.toFix || []).length);
           set("smokeN", (p.smoke && p.smoke.cases && p.smoke.cases.length) || 0);
           if (p.smoke) {
@@ -1919,6 +2183,19 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
           if (p.audit) {
             set("auditOk", p.audit.ok ? "pass" : "fail");
             set("auditAt", p.audit.finishedAt || "");
+          }
+          set("cfN", (p.cfPractices && p.cfPractices.cases && p.cfPractices.cases.length) || 0);
+          if (p.cfPractices) {
+            set("cfOk", p.cfPractices.ok ? "pass" : "fail");
+          }
+          var w = p.wfp;
+          if (w) {
+            set("siteWorkers", w.siteWorkers);
+            set("wfpStatus", w.status);
+            set("wfpWhy", w.why + " Static Drop is not this count. ADR-TEMP-ACCOUNTS.");
+            document.querySelectorAll('[data-live="wfpStatus"]').forEach(function (el) {
+              el.className = "pill " + (w.status === "switch" ? "fail" : w.status === "watch" ? "warn" : "ok");
+            });
           }
           var dot = document.querySelector("[data-live-dot]");
           if (dot) dot.setAttribute("data-on", "");

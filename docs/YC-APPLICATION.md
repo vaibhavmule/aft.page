@@ -67,11 +67,14 @@ YC’s Fall 2026 RFS (“A Cloud for Small Software”) names the category. We w
 | Prized (YC S26) | Governed builder for company internal tools | We serve broader personal + team Small Software without requiring our builder |
 | Ona / OpenAI | Secure execution for long-running coding agents | Different layer — we govern *deployed small software*, not background PR factories |
 | Vercel / Netlify / AWS / Azure | Excellent general hosting | Designed for projects and scale; we optimize for tiny audiences and remove configuration |
+| AppDeploy | Chat → live URL, no git; free tier is a full agent PaaS | Same activation; we are the permissioned share layer, not another bundled auth/DB/cron cloud |
+| MiniUp | HTML/ZIP → URL, passwords, data/PDF packs, ChatGPT app | Closest publish language; password ≠ invite ACL. We own Doc-simple sharing, not datasets |
+| Hatchable / Floot / Buildy | Codex/ChatGPT deploy + hosted BaaS or owner-only personal apps | Folder → URL is table stakes. We share like a Google Doc; they host a stack or lock the URL to you |
 | Superblocks / internal-tool platforms | Hybrid connectors exist | We’re agent-first + lightweight small-software cloud, not a heavy IDE for ops teams |
 
 Insight: software for three users should not require infrastructure designed for
-three million. The cloud can infer and manage the machinery from the artifact an
-agent already produced.
+three million. The Codex shelf already commoditizes agent → URL; what they miss
+is who can open it after claim. Tracking: [COMPETITION.md](./COMPETITION.md).
 
 ## How do or will you make money?
 

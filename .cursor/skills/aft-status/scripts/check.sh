@@ -46,7 +46,7 @@ for u in \
   https://mcp.aft.page/health \
   https://aft.page/ \
   https://status.aft.page/ \
-  https://lattice.aft.page/ \
+  https://hello.aft.page/ \
   https://ops.aft.page/ \
   https://test--html.aft.page/
 do

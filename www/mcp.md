@@ -6,6 +6,7 @@
 **Live docs (HTML):** https://aft.page/mcp  
 **This file (Markdown):** https://aft.page/mcp.md  
 **Agent index:** https://aft.page/llms.txt  
+**Plugin:** `npx plugins add vaibhavmule/aft.page` — https://aft.page/plugins  
 **Remote MCP:** https://mcp.aft.page/mcp  
 **API:** https://api.aft.page  
 **Health:** https://api.aft.page/health  
@@ -153,7 +154,8 @@ Returns `currentDeployId` + deploys (newest first). Same D1 rows as the project 
 | `edit_token` | string | yes | From `.aft/state.json` |
 | `deploy_id` | string | yes | Prior deploy id |
 
-Claim is not required. editToken still works after claim.
+Claim is not required for unclaimed sites. After claim, editToken is dead;
+use a session as owner/editor. MCP has no session yet.
 
 ### 4. `aft_health`
 
@@ -294,6 +296,7 @@ also show **Claim this site** on `https://{slug}.aft.page`. After claim,
 | Per-file size | 10 MB |
 | Total payload | 50 MB |
 | Auth | None (anonymous deploys) |
+| Unclaimed retention | Pause after 7d idle · delete after 30d. Claim or PATCH to keep. |
 | Overwrite | First POST never (unique slug). PATCH + editToken = same URL + history. |
 | Custom domains | After claim · request access · project Domains tab |
 | Private / invite-by-email | After claim |

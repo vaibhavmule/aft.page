@@ -26,7 +26,7 @@ import {
 } from "./db";
 import { clientIp, corsHeaders, json, optionsResponse, originMayActOnSlug, privateJson } from "./http";
 import { rateLimit } from "./rate-limit";
-import { liveSiteUrl } from "./site-url";
+import { attachDeployPreviewUrls, liveSiteUrl } from "./site-url";
 
 export async function handleClaimRoute(
   request: Request,
@@ -297,7 +297,11 @@ export async function getSiteInfo(
   if (owner || role === "edit" || role === "view") {
     payload.members = await listSiteMembers(env, slug);
     payload.invites = await listSiteInvites(env, slug);
-    payload.deploys = await listDeploys(env, slug, 20);
+    payload.deploys = attachDeployPreviewUrls(
+      await listDeploys(env, slug, 20),
+      slug,
+      root,
+    );
     const caps = await getCapabilityGrant(env, slug);
     if (caps) {
       payload.capabilities = {
@@ -339,8 +343,10 @@ export async function authorizeDeployUpdate(
   }
 
   const editToken = request.headers.get("x-aft-edit-token") || "";
+  const ownerId = await getSiteOwnerId(env, slug);
 
-  if (editToken) {
+  // Owned site: editToken is never enough. Session owner/editor only.
+  if (editToken && !ownerId) {
     const storedHash = await getEditTokenHash(env, slug);
     if (await verifyEditToken(env, slug, editToken, storedHash)) {
       return { ok: true };
@@ -353,7 +359,6 @@ export async function authorizeDeployUpdate(
   if (!user) {
     return { ok: false, status: 401, error: "unauthorized" };
   }
-  const ownerId = await getSiteOwnerId(env, slug);
   if (ownerId === user.id) {
     return { ok: true };
   }

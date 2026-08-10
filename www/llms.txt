@@ -12,7 +12,7 @@ Specification: [AI Visibility](https://www.ai-visibility.org.uk/)
 
 - [Drop deploy](https://aft.page/drop/): Upload a folder or zip of static files and get a live `*.aft.page` URL instantly, no account required
 - [Agent MCP deploy](https://aft.page/mcp): Remote MCP at `https://mcp.aft.page/mcp` with `deploy`, `aft_deploys`, `aft_rollback`, and `aft_health`
-- [Agent Plugin](https://aft.page/plugins): Coming soon — one install (`npx plugins add …`) for Claude Code, Cursor, Codex, Copilot, VS Code, Grok, and Kimi
+- [Agent Plugin](https://aft.page/plugins): `npx plugins add vaibhavmule/aft.page` — Claude Code, Cursor, Codex, Copilot, VS Code, Grok, and Kimi
 - [API deploy](https://api.aft.page): `POST /v1/deploy` and redeploy with an edit token for agents and scripts
 - [Claim and share](https://aft.page/preview): Attach an anonymous deploy to an account, make it private, or invite people by email
 - [Custom domains](https://aft.page/docs#domain): After claim, request access, CNAME to `cname.aft.page` (invite-only during beta)

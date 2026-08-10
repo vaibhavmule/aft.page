@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { injectAftChrome } from "../src/aft-chrome";
-import { liveSiteUrl } from "../src/site-url";
+import {
+  deployPreviewUrl,
+  liveSiteUrl,
+  parseDeployPreviewLabel,
+} from "../src/site-url";
 
 describe("liveSiteUrl", () => {
   it("is the bare slug host", () => {
@@ -17,6 +21,19 @@ describe("liveSiteUrl", () => {
 
   it("smoke slugs stay on the slug host (Universal SSL)", () => {
     expect(liveSiteUrl("test--html", "aft.page")).toBe("https://test--html.aft.page");
+  });
+});
+
+describe("deploy preview host", () => {
+  it("is one label: 12hex--slug", () => {
+    expect(deployPreviewUrl("demo", "dep_152fffaf71c6", "aft.page")).toBe(
+      "https://152fffaf71c6--demo.aft.page",
+    );
+    expect(parseDeployPreviewLabel("152fffaf71c6--demo")).toEqual({
+      short: "152fffaf71c6",
+      slug: "demo",
+    });
+    expect(parseDeployPreviewLabel("test--html")).toBeNull();
   });
 });
 

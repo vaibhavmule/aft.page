@@ -75,8 +75,8 @@ D1 only showed discovra + our `probe404-*` test. Owner logs missed the 200
 **Why discovra, not every slug:** old public TLD (CT logs / DNS / search).
 Random `foo.aft.page` is invisible to scanners. Apex `aft.page` is also hit.
 
-Serve now hard-404s `isJunkPath` before SPA fallback. Pages apex still 200s
-unknown paths — known ceiling, not Worker.
+Serve now hard-404s `isJunkPath` before SPA fallback. Pages apex uses the
+same tokens in `www/functions/_middleware.js` (404 text/plain).
 
 ## Pass / fail
 
@@ -86,4 +86,7 @@ unknown paths — known ceiling, not Worker.
 | Private site same path | 302 login (keep logging) |
 | New custom domain in CF junk paths | expected; statuses 404/302 |
 | Public 200 on junk path | **fail** — SPA/Pages fallback leak |
+| Apex `/.well-known/security.txt` | 200 text/plain (Contact + Expires; refresh before 2027-08-01) |
+| `api.aft.page` / `cname.aft.page` over HTTP | 301 → https |
+| HSTS on apex + api + mcp + cname | `max-age=15552000; includeSubDomains` (no preload) |
 | CF `securityAction: block` spike | note only (plan barely reports this) |

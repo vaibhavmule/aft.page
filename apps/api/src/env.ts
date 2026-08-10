@@ -1,32 +1,22 @@
-/** Worker bindings and config. */
-export interface Env {
-  SITES: KVNamespace;
-  /** Public status.aft.page probe history. */
-  STATUS?: KVNamespace;
-  BUCKET?: R2Bucket;
-  METRICS?: AnalyticsEngineDataset;
-  DB: D1Database;
-  EMAIL?: SendEmail;
-  ROOT_DOMAIN: string;
+/**
+ * Bindings from `wrangler types` (worker-configuration.d.ts).
+ * Secrets are wrangler secrets — not in jsonc — so they are merged here.
+ */
+type SecretBindings = {
   AUTH_SECRET: string;
-  /** Google OAuth web client — optional; login page still has magic link. */
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
-  /** Comma-separated founder emails allowed on ops.aft.page. */
-  OPS_EMAILS?: string;
-  /** Comma-separated slugs that skip Drop product caps (dogfood). */
-  UNLIMITED_SLUGS?: string;
-  /** Thin remote MCP Worker (mcp.aft.page). */
-  MCP?: Fetcher;
-  /** Account Analytics Read — live Workers request/CPU on ops. SSL + Custom Hostnames Write for domains. */
   CF_API_TOKEN?: string;
-  /** aft.page zone — custom hostname API. */
-  CF_ZONE_ID?: string;
-  /** CNAME target customers point at (fallback origin). */
-  CUSTOM_DOMAIN_CNAME?: string;
-  /** Bearer token for POST ops.aft.page/api/smoke/run (npm run smoke). */
-  SMOKE_SECRET?: string;
+};
+
+declare global {
+  namespace Cloudflare {
+    interface Env extends SecretBindings {}
+  }
+  interface Env extends SecretBindings {}
 }
+
+export type Env = Cloudflare.Env;
 
 export function parseCsvLower(raw?: string): string[] {
   return (raw || "")

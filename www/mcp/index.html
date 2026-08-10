@@ -274,7 +274,8 @@ files: 1</code></pre>
             <h3><code>aft_rollback</code></h3>
             <p>
               Point the live slug at a prior <code>deploy_id</code>. Same URL.
-              Claim not required; <code>edit_token</code> still works after claim.
+              Unclaimed: <code>edit_token</code>. After claim, token is dead —
+              session owner/editor only. MCP has no session yet.
             </p>
             <h3><code>aft_health</code></h3>
             <p>
@@ -450,6 +451,10 @@ https://{slug}.aft.page</code></pre>
                   <tr>
                     <td>Auth</td>
                     <td>None (anonymous)</td>
+                  </tr>
+                  <tr>
+                    <td>Unclaimed retention</td>
+                    <td>Pause after 7d idle · delete after 30d. Claim or PATCH to keep.</td>
                   </tr>
                   <tr>
                     <td>Overwrite</td>

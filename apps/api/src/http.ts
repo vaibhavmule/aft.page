@@ -1,6 +1,6 @@
 import type { Env } from "./env";
 import { RESERVED_SLUGS } from "./env";
-import { smokeSlugForCase } from "./site-url";
+import { parseDeployPreviewLabel, smokeSlugForCase } from "./site-url";
 
 export function json(
   data: unknown,
@@ -81,6 +81,50 @@ export function optionsResponse(origin: string | null, credentials: boolean): Re
   });
 }
 
+/** 180d — CF Security Insights minimum. No preload (hard to undo). */
+export const HSTS = "max-age=15552000; includeSubDomains";
+
+function clientScheme(request: Request): string {
+  const visitor = request.headers.get("cf-visitor");
+  if (visitor) {
+    try {
+      const scheme = (JSON.parse(visitor) as { scheme?: unknown }).scheme;
+      if (scheme === "http" || scheme === "https") return scheme;
+    } catch {
+      /* ignore */
+    }
+  }
+  const xfp = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  if (xfp === "http" || xfp === "https") return xfp;
+  return new URL(request.url).protocol.replace(":", "");
+}
+
+/** 301 http→https. Skip loopback so `wrangler dev` stays on http. */
+export function redirectHttpToHttps(request: Request): Response | null {
+  const url = new URL(request.url);
+  const host = url.hostname.toLowerCase();
+  if (host === "localhost" || host === "127.0.0.1") return null;
+  if (clientScheme(request) !== "http") return null;
+  url.protocol = "https:";
+  return Response.redirect(url.toString(), 301);
+}
+
+export function withHsts(res: Response): Response {
+  try {
+    res.headers.set("strict-transport-security", HSTS);
+    if (res.headers.get("strict-transport-security") === HSTS) return res;
+  } catch {
+    /* immutable Headers from a subrequest */
+  }
+  const headers = new Headers(res.headers);
+  headers.set("strict-transport-security", HSTS);
+  return new Response(res.body, {
+    status: res.status,
+    statusText: res.statusText,
+    headers,
+  });
+}
+
 export function isApiHost(host: string, root: string): boolean {
   if (host === `api.${root}`) return true;
   if (host.endsWith(".workers.dev")) return true;
@@ -150,5 +194,7 @@ export function originMayActOnSlug(
   const left = host.slice(0, -(root.length + 1));
   if (!left || left.includes(".")) return false;
   if (RESERVED_SLUGS.has(left)) return true;
+  const preview = parseDeployPreviewLabel(left);
+  if (preview && preview.slug === slug) return true;
   return left === slug;
 }

@@ -613,14 +613,6 @@ strong {
   background: #28c840;
 }
 
-.hero-demo-shell {
-  flex-shrink: 0;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: var(--faint);
-  letter-spacing: 0.04em;
-}
-
 .hero-demo-tabs {
   display: flex;
   align-items: stretch;
@@ -3431,10 +3423,6 @@ a.band-stage-url:hover {
   .hero-demo-chrome {
     gap: 0.25rem;
     padding: 0 0.4rem 0 0.55rem;
-  }
-
-  .hero-demo-shell {
-    display: none;
   }
 
   .hero-demo-tabs {

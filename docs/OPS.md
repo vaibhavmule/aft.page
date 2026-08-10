@@ -14,7 +14,7 @@ Cursor `mcp_auth` timeout is **C**. aft.page was up. See [USE-CASE-PARAKH.md](..
 
 | URL | Audience | Job |
 | --- | --- | --- |
-| `https://status.aft.page` | public | Uptime probes (API process, MCP `/health`, website, lattice) |
+| `https://status.aft.page` | public | Uptime probes (API process, MCP `/health`, website, hello) |
 | `https://ops.aft.page` | founder (`OPS_EMAILS`) | Scoreboard + users/sites/domains + CF cost + failed deploys + feedback + retry + smoke + hijack audit + domain access |
 | `https://test--{case}.aft.page` | public canary (`noindex`) | Last smoke artifacts — not tenant inventory |
 | CF Workers Logs | you | Stacks / MCP JSON-RPC |
@@ -24,6 +24,8 @@ The status **API** probe means this Worker isolate is alive. It does **not** che
 No Sentry. No Grafana. Ops is the scoreboard + product counts + CF cost estimate + replay + feedback.
 
 Workers MTD request/CPU on the cost card comes from GraphQL (`CF_API_TOKEN`, Account Analytics Read) when set, otherwise STATUS KV `ops:cf-usage` written via Cloudflare MCP on API deploy. Overage is $0.30/M req and $0.02/M CPU-ms after 10M req / 30M CPU-ms included ($5 Workers Paid floor). Refresh the KV snapshot when deploying `aft-page-api` if the token is not set.
+
+**WfP trigger** (same cost row): D1 count of non-test `runtime=worker|next` sites with `upstream_url`. Pill `stay` / `watch` / `switch`. Watch at **400** site Workers, switch at **450** (500 Paid cap) or when MTD overage **> $20** (WfP’s extra floor — only wins if most of that is proxy double-bill). Static Drop is not this count. Numbers: [ADR-TEMP-ACCOUNTS.md](./ADR-TEMP-ACCOUNTS.md) § Costing.
 
 ## Two Workers Logs streams
 
@@ -36,7 +38,9 @@ Ops page links both. Correlate with `x-aft-request-id` (also AE `blob6` / D1 `de
 
 ## Scoreboard
 
-`/` and `/api.json` show last **24h** and **7d**:
+`/` and `/api.json` show last **24h** and **7d**. Overview is **critical first** (health, hijack `#audit`, smoke CIL, deploy fails, scanner 200s), then **information** (T2U, rates, product, CF practices `#cf`, CF cost).
+
+- **CF practices** (`#cf`) — D1/R2/KV/AE/Email bindings, MCP service bind, secrets, `nodejs_compat`, `compatibility_date` &lt; 6mo, SaaS zone. First ops hit writes STATUS KV `ops:cf-practices`; status cron refreshes when older than 20h.
 
 - **Time-to-URL** (`deploys.ms`) — n / p50 / p95 machine clock (Worker → URL). Look at this every day. Human T2U is a stopwatch — [time-to-url.txt](../time-to-url.txt)
 - successes (`deploys`) + failures (`deploy_failures`) + success rate
@@ -57,6 +61,8 @@ Every non-ok `/v1/deploy` **after** parse has files:
 `no_files` / auth-before-body: no payload (nothing to retry).
 
 Cron prune deletes the D1 rows **and** the R2 prefix.
+
+Same `*/5` status cron also sweeps unclaimed idle sites: pause at 7d, hard-delete at 30d (`sweepUnusedAnonSites`). Skips `_login` and `test--*`. Claimed sites are never swept.
 
 Click a failure on ops → why / fix / file list. Each file: download + text preview (64 KB cap) at `GET /f/{id}/file?path=`.
 

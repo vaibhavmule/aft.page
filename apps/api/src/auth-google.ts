@@ -11,6 +11,7 @@ import {
   safeAuthRedirect,
   sessionCookieHeader,
   sha256Hex,
+  timingSafeEqual,
 } from "./auth";
 import { clientIp } from "./http";
 import { rateLimit } from "./rate-limit";
@@ -225,11 +226,4 @@ function b64urlEncode(s: string): string {
 function b64urlDecode(s: string): string {
   const pad = s.length % 4 === 0 ? "" : "=".repeat(4 - (s.length % 4));
   return atob(s.replace(/-/g, "+").replace(/_/g, "/") + pad);
-}
-
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let out = 0;
-  for (let i = 0; i < a.length; i++) out |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return out === 0;
 }

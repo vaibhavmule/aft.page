@@ -338,15 +338,17 @@ describe("500 paths", () => {
 
 describe("paused private reserved hosts", () => {
   it("paused site is 503 branded HTML", async () => {
-    await deployPaste("<h1>soon</h1>", "pd-paused");
-    expect(await setSiteActive(env, "pd-paused", false)).toBe(true);
-    const res = await hit("pd-paused", "/", { accept: "text/html" });
+    const { slug } = await deployPaste("<h1>soon</h1>", "pd-paused");
+    const user = await findOrCreateUser(env, "pd-paused-owner@example.com");
+    expect(await assignSiteOwner(env, slug, user.id)).toBe(true);
+    expect(await setSiteActive(env, slug, false)).toBe(true);
+    const res = await hit(slug, "/", { accept: "text/html" });
     expect(res.status).toBe(503);
     expect(res.headers.get("x-aft-active")).toBe("0");
-    expect(res.headers.get("x-aft-slug")).toBe("pd-paused");
+    expect(res.headers.get("x-aft-slug")).toBe(slug);
     const html = await res.text();
     expect(html).toContain("This site is paused");
-    expect(html).toContain("pd-paused.aft.page");
+    expect(html).toContain(`${slug}.aft.page`);
   });
 
   it("private unsigned visit redirects to login", async () => {

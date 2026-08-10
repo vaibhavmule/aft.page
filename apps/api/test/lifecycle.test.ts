@@ -43,10 +43,15 @@ describe("deploy history", () => {
     expect(list.status).toBe(200);
     const body = (await list.json()) as {
       currentDeployId: string;
-      deploys: { id: string }[];
+      deploys: { id: string; previewUrl?: string | null }[];
     };
     expect(body.currentDeployId).toBe(patched.deployId);
     expect(body.deploys.length).toBeGreaterThanOrEqual(2);
+    const firstRow = body.deploys.find((d) => d.id === first.deployId);
+    const short = first.deployId.replace(/^dep_/, "");
+    expect(firstRow?.previewUrl).toBe(
+      `https://${short}--${first.slug}.aft.page`,
+    );
   });
 
   it("lists and rolls back with editToken only (no claim)", async () => {

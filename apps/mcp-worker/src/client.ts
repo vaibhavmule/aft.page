@@ -39,6 +39,7 @@ export type DeploysResult = {
     bytes: number;
     source: string;
     client: string;
+    previewUrl?: string | null;
   }[];
 };
 

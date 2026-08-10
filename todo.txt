@@ -13,11 +13,11 @@
 - [x] Sandbox Python follow-up ADR — docs/ADR-SANDBOX-LATTICE.md
 - [ ] Publish extension to Chrome Web Store
 - [ ] Publish `@aft.page/mcp` to npm (optional)
-- [ ] Get Agent Plugin ready for `npx plugins add …` (vercel.com/plugin install bar)
-      Spec: agent-plugins.org 1.0.0 — we already have apps/plugin/{plugin.json,mcp.json,skills/}
-      Installer: `npx plugins add owner/repo` (vercel-labs/plugins) → Claude Code / Cursor / Codex / Grok / Kimi / Copilot CLI / VS Code
-      Gap: public GitHub so discover finds plugin.json (root or ≤2 levels); fill version/description/repo metadata; `npx plugins discover` + local add smoke; README + landing copy `$ npx plugins add …`
-      Refs: https://vercel.com/plugin · https://vercel.com/docs/agent-resources/vercel-plugin · https://agent-plugins.org
+- [x] Get Agent Plugin ready for `npx plugins add vaibhavmule/aft.page`
+      marketplace.json + apps/plugin/{plugin.json,.plugin/plugin.json,.mcp.json,skills/}
+      Check: `node apps/plugin/check.mjs` · `npx plugins discover .`
+      Still human: push this tree · 30s demo · onboard 5 strangers
+      Refs: https://vercel.com/plugin · https://agent-plugins.org
 
 ### Proof (same weeks)
 - [x] Prospect share-checklist app live: https://share-checklist.aft.page
@@ -35,6 +35,8 @@
 - [ ] Workspace / Entra SSO
 - [ ] Connector deepen / Lattice Python via CF Sandbox
 - [ ] Workers for Platforms (only if aft-owned Workers proliferate)
+      Costing vs now: ADR-TEMP-ACCOUNTS.md § Costing. $5 Paid / 500 scripts / 2 billed reqs
+      on proxy → WfP $25 / unlimited scripts / 1 billed req. Static Drop stays on one Worker.
 - [ ] Product line after Drop: Anything Drop → Plugins → Cron → AI automations
       Cron = private-only (claimed site, visibility private). Schedule a script /
       DB hit / timed job (punch-in/out dogfood). Not on anonymous public Drop.

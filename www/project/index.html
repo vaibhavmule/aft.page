@@ -17,7 +17,7 @@
     />
     <link rel="stylesheet" href="/app.css" />
     <style>
-      main { max-width: 64rem; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+      main { max-width: 72rem; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
       .hub-shell {
         display: grid;
         grid-template-columns: 11.5rem minmax(0, 1fr);
@@ -155,10 +155,56 @@
       #domain-empty { margin: 0.75rem 0 0; }
       table.deploys { font-size: 0.86rem; }
       table.deploys th, table.deploys td {
-        padding: 0.5rem 0.25rem;
+        padding: 0.5rem 0.35rem;
         vertical-align: middle;
       }
       table.deploys th { font-size: 0.7rem; }
+      table.deploys td.actions { text-align: right; width: 1%; white-space: nowrap; }
+      .deploy-domains {
+        margin: 0 0 0.75rem;
+        font-size: 0.86rem;
+        color: var(--quiet);
+      }
+      .deploy-domains a { color: inherit; }
+      .deploys-all-h { margin-top: 1.35rem; }
+      .status-ok {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        color: var(--quiet);
+        white-space: nowrap;
+      }
+      .status-ok i {
+        width: 0.55rem;
+        height: 0.55rem;
+        border-radius: 50%;
+        background: var(--good);
+        flex-shrink: 0;
+      }
+      .src-line { display: flex; flex-direction: column; gap: 0.1rem; }
+      .src-line small { color: var(--quiet); font-size: 0.75rem; }
+      .menu-panel button.menuitem {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 0.5rem 0.7rem;
+        border-radius: 4px;
+        background: transparent;
+        border: 0;
+        color: inherit;
+        font: inherit;
+        font-size: 0.85rem;
+        font-weight: 550;
+        cursor: pointer;
+      }
+      .menu-panel button.menuitem:hover {
+        background: color-mix(in srgb, var(--ink) 8%, transparent);
+      }
+      .menu-panel .menu-sep {
+        height: 1px;
+        margin: 0.3rem 0;
+        background: var(--line);
+      }
       .obs-cards {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
@@ -490,13 +536,30 @@
         </section>
 
         <section class="panel" id="panel-deploys" data-tab="deploys">
-          <h2>Deploys</h2>
+          <h2>Production</h2>
+          <p class="deploy-domains" id="prod-domains"></p>
           <table class="deploys">
             <thead>
               <tr>
-                <th>Deploy</th>
-                <th>When</th>
+                <th>Environment</th>
                 <th>Source</th>
+                <th>Deployment</th>
+                <th>Status</th>
+                <th></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="prod-body"></tbody>
+          </table>
+          <h2 class="deploys-all-h">All deployments</h2>
+          <table class="deploys">
+            <thead>
+              <tr>
+                <th>Environment</th>
+                <th>Source</th>
+                <th>Deployment</th>
+                <th>Status</th>
+                <th></th>
                 <th></th>
               </tr>
             </thead>
@@ -735,6 +798,28 @@
         }
       }
 
+      function ago(iso) {
+        if (!iso) return "—";
+        const t = new Date(iso).getTime();
+        if (!Number.isFinite(t)) return "—";
+        const s = Math.round((Date.now() - t) / 1000);
+        if (s < 45) return "just now";
+        const min = Math.floor(s / 60);
+        if (min < 60) return min === 1 ? "1 minute ago" : `${min} minutes ago`;
+        const hr = Math.floor(min / 60);
+        if (hr < 24) return hr === 1 ? "1 hour ago" : `${hr} hours ago`;
+        const day = Math.floor(hr / 24);
+        if (day < 30) return day === 1 ? "1 day ago" : `${day} days ago`;
+        return fmt(iso);
+      }
+
+      const SRC_LABEL = {
+        post: "Deploy",
+        patch: "Update",
+        rollback: "Rollback",
+        absorb: "Absorb",
+      };
+
       function setMsg(el, text, kind) {
         el.textContent = text || "";
         el.className = "msg" + (kind ? " " + kind : "");
@@ -811,6 +896,8 @@
       let logsLoaded = false;
       let obsWindow = "12h";
       let sourceLoadedFor = "";
+      let openMenu = null;
+      let openPanel = null;
 
       function showTab(name) {
         if (!TAB_IDS.includes(name)) name = "overview";
@@ -1304,62 +1391,231 @@
         }
       }
 
+      function closeDeployMenus() {
+        if (openMenu) {
+          const b = openMenu.querySelector(".menu-btn");
+          if (b) b.setAttribute("aria-expanded", "false");
+          openMenu = null;
+        }
+        if (openPanel) {
+          openPanel.classList.remove("open");
+          openPanel.remove();
+          openPanel = null;
+        }
+      }
+
+      function openDeployMenu(btn, fill) {
+        closeDeployMenus();
+        const panel = document.createElement("div");
+        panel.className = "menu-panel open";
+        panel.setAttribute("role", "menu");
+        fill(panel);
+        document.body.appendChild(panel);
+        const r = btn.getBoundingClientRect();
+        const pr = panel.getBoundingClientRect();
+        const pad = 8;
+        let top = r.bottom + 6;
+        let left = r.right - pr.width;
+        if (left < pad) left = pad;
+        if (left + pr.width > window.innerWidth - pad) {
+          left = Math.max(pad, window.innerWidth - pad - pr.width);
+        }
+        if (top + pr.height > window.innerHeight - pad) {
+          top = Math.max(pad, r.top - pr.height - 6);
+        }
+        panel.style.top = `${top}px`;
+        panel.style.left = `${left}px`;
+        btn.setAttribute("aria-expanded", "true");
+        openMenu = btn.parentElement;
+        openPanel = panel;
+      }
+
+      function paintProdDomains() {
+        const el = document.getElementById("prod-domains");
+        if (!el) return;
+        const live = (info.url || `https://${slug}.aft.page`).replace(/^https:\/\//, "");
+        const hosts = [live];
+        for (const d of info.domains || []) {
+          if (d.hostname && !hosts.includes(d.hostname)) hosts.push(d.hostname);
+        }
+        el.replaceChildren();
+        el.append("Domains: ");
+        hosts.forEach((h, i) => {
+          if (i) el.append(" · ");
+          const a = document.createElement("a");
+          a.href = h.startsWith("http") ? h : `https://${h}`;
+          a.target = "_blank";
+          a.rel = "noopener";
+          a.textContent = h;
+          el.appendChild(a);
+        });
+      }
+
+      function previewHref(d) {
+        return d.previewUrl || info.url || `https://${slug}.aft.page`;
+      }
+
+      function previewHost(d) {
+        try {
+          return new URL(previewHref(d)).host;
+        } catch (_) {
+          return (d.id || "").slice(0, 14);
+        }
+      }
+
+      function openSourceDeploy(deployId) {
+        const sel = document.getElementById("source-deploy");
+        if (sel && deployId) sel.value = deployId;
+        showTab("source");
+        void loadSource(true);
+      }
+
+      function deployRow(d, opts) {
+        const current = d.id === info.deployId;
+        const tr = document.createElement("tr");
+        const envTd = document.createElement("td");
+        const envPill = document.createElement("span");
+        envPill.className = "pill" + (current ? " current" : "");
+        envPill.textContent = "Live";
+        envTd.appendChild(envPill);
+
+        const srcTd = document.createElement("td");
+        const srcWrap = document.createElement("div");
+        srcWrap.className = "src-line";
+        const kind = document.createElement("span");
+        kind.textContent = SRC_LABEL[d.source] || d.source || "Deploy";
+        srcWrap.appendChild(kind);
+        if (d.client && d.client !== "other") {
+          const small = document.createElement("small");
+          small.textContent = d.client;
+          srcWrap.appendChild(small);
+        }
+        srcTd.appendChild(srcWrap);
+
+        const urlTd = document.createElement("td");
+        const urlA = document.createElement("a");
+        urlA.href = previewHref(d);
+        urlA.target = "_blank";
+        urlA.rel = "noopener";
+        urlA.textContent = previewHost(d);
+        urlTd.appendChild(urlA);
+
+        const stTd = document.createElement("td");
+        const st = document.createElement("span");
+        st.className = "status-ok";
+        st.title = fmt(d.createdAt);
+        st.innerHTML = "<i></i>";
+        st.append(ago(d.createdAt));
+        stTd.appendChild(st);
+
+        const detTd = document.createElement("td");
+        const det = document.createElement("button");
+        det.type = "button";
+        det.className = "btn ghost";
+        det.textContent = "Details";
+        det.addEventListener("click", () => openSourceDeploy(d.id));
+        detTd.appendChild(det);
+
+        const actTd = document.createElement("td");
+        actTd.className = "actions";
+        if (opts.menu && canRollback() && !current) {
+          const menu = document.createElement("div");
+          menu.className = "menu";
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "menu-btn";
+          btn.setAttribute("aria-label", "Deploy actions");
+          btn.setAttribute("aria-haspopup", "menu");
+          btn.setAttribute("aria-expanded", "false");
+          btn.textContent = "⋯";
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (btn.getAttribute("aria-expanded") === "true") {
+              closeDeployMenus();
+              return;
+            }
+            openDeployMenu(btn, (panel) => {
+              const open = document.createElement("a");
+              open.setAttribute("role", "menuitem");
+              open.href = previewHref(d);
+              open.target = "_blank";
+              open.rel = "noopener";
+              open.textContent = "Open";
+              const source = document.createElement("button");
+              source.type = "button";
+              source.setAttribute("role", "menuitem");
+              source.className = "menuitem";
+              source.textContent = "View source";
+              source.addEventListener("click", () => {
+                closeDeployMenus();
+                openSourceDeploy(d.id);
+              });
+              const sep = document.createElement("div");
+              sep.className = "menu-sep";
+              sep.setAttribute("role", "separator");
+              const rb = document.createElement("button");
+              rb.type = "button";
+              rb.setAttribute("role", "menuitem");
+              rb.className = "menuitem";
+              rb.textContent = "Rollback";
+              rb.addEventListener("click", () => {
+                closeDeployMenus();
+                startRollbackConfirm(d.id, actTd);
+              });
+              panel.append(open, source, sep, rb);
+            });
+          });
+          menu.appendChild(btn);
+          actTd.appendChild(menu);
+        }
+        tr.append(envTd, srcTd, urlTd, stTd, detTd, actTd);
+        return tr;
+      }
+
+      function startRollbackConfirm(deployId, actTd) {
+        actTd.replaceChildren();
+        const wrap = document.createElement("span");
+        wrap.className = "row";
+        wrap.style.gap = "0.35rem";
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "btn";
+        btn.textContent = "Confirm";
+        const cancel = document.createElement("button");
+        cancel.type = "button";
+        cancel.className = "btn ghost";
+        cancel.textContent = "Cancel";
+        cancel.addEventListener("click", () => renderDeploys());
+        btn.addEventListener("click", () => rollback(deployId, btn));
+        wrap.append(btn, cancel);
+        actTd.appendChild(wrap);
+      }
+
       function renderDeploys() {
+        paintProdDomains();
+        const prod = document.getElementById("prod-body");
         const body = document.getElementById("deploys-body");
+        prod.replaceChildren();
         body.replaceChildren();
         const deploys = info.deploys || [];
+        const current =
+          deploys.find((d) => d.id === info.deployId) ||
+          (info.deployId
+            ? { id: info.deployId, createdAt: info.updatedAt, source: "post" }
+            : null);
+        if (current) prod.appendChild(deployRow(current, { menu: false }));
+        else {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td colspan="6" style="color:var(--quiet)">No production deploy yet</td>`;
+          prod.appendChild(tr);
+        }
         if (!deploys.length) {
           const tr = document.createElement("tr");
-          tr.innerHTML = `<td colspan="4" style="color:var(--quiet)">No deploy history yet</td>`;
+          tr.innerHTML = `<td colspan="6" style="color:var(--quiet)">No deploy history yet</td>`;
           body.appendChild(tr);
           return;
         }
-        for (const d of deploys) {
-          const tr = document.createElement("tr");
-          const current = d.id === info.deployId;
-          const idTd = document.createElement("td");
-          idTd.innerHTML = `<code>${(d.id || "").slice(0, 14)}</code>${
-            current ? ' <span class="pill current">current</span>' : ""
-          }`;
-          const when = document.createElement("td");
-          when.textContent = fmt(d.createdAt);
-          const src = document.createElement("td");
-          src.textContent = d.source || "—";
-          const act = document.createElement("td");
-          if (canRollback() && !current) {
-            const wrap = document.createElement("span");
-            wrap.className = "row";
-            wrap.style.gap = "0.35rem";
-            const btn = document.createElement("button");
-            btn.type = "button";
-            btn.className = "btn ghost";
-            btn.textContent = "Rollback";
-            btn.addEventListener("click", () => {
-              if (btn.dataset.confirm !== "1") {
-                btn.dataset.confirm = "1";
-                btn.textContent = "Confirm";
-                btn.classList.remove("ghost");
-                const cancel = document.createElement("button");
-                cancel.type = "button";
-                cancel.className = "btn ghost";
-                cancel.textContent = "Cancel";
-                cancel.addEventListener("click", () => {
-                  btn.dataset.confirm = "";
-                  btn.textContent = "Rollback";
-                  btn.classList.add("ghost");
-                  cancel.remove();
-                });
-                wrap.appendChild(cancel);
-                return;
-              }
-              rollback(d.id, btn);
-            });
-            wrap.appendChild(btn);
-            act.appendChild(wrap);
-          }
-          tr.append(idTd, when, src, act);
-          body.appendChild(tr);
-        }
+        for (const d of deploys) body.appendChild(deployRow(d, { menu: true }));
       }
 
       function renderCaps() {
@@ -1444,6 +1700,7 @@
         if (!active) {
           dt.hidden = true;
           dd.hidden = true;
+          paintProdDomains();
           return;
         }
         dt.hidden = false;
@@ -1451,6 +1708,7 @@
         a.href = "https://" + active.hostname;
         a.textContent =
           active.hostname + (active.status === "active" ? "" : " · " + active.status);
+        paintProdDomains();
       }
 
       let domainPoll = 0;
@@ -1883,6 +2141,10 @@
         sourceLoadedFor = "";
         void loadSource(true);
       });
+      document.addEventListener("click", () => closeDeployMenus());
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeDeployMenus();
+      });
       document.getElementById("logs-refresh").addEventListener("click", () => {
         void loadLogs(true);
       });
@@ -2076,7 +2338,7 @@
 
       async function rollback(deployId, btn) {
         if (!canRollback()) return;
-        btn.disabled = true;
+        if (btn) btn.disabled = true;
         setMsg(document.getElementById("deploys-msg"), "Rolling back…");
         try {
           const res = await fetch(
@@ -2095,20 +2357,16 @@
               body.hint || body.error || "Rollback failed",
               "err",
             );
-            btn.disabled = false;
-            btn.dataset.confirm = "";
-            btn.textContent = "Rollback";
-            btn.classList.add("ghost");
+            if (btn) btn.disabled = false;
+            renderDeploys();
             return;
           }
           setMsg(document.getElementById("deploys-msg"), "Rolled back", "ok");
           await refresh();
         } catch (_) {
           setMsg(document.getElementById("deploys-msg"), "Network error", "err");
-          btn.disabled = false;
-          btn.dataset.confirm = "";
-          btn.textContent = "Rollback";
-          btn.classList.add("ghost");
+          if (btn) btn.disabled = false;
+          renderDeploys();
         }
       }
 

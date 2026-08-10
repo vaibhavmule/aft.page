@@ -1,0 +1,18 @@
+{
+  "name": "aft-page",
+  "owner": {
+    "name": "aft.page",
+    "email": "hello@aft.page"
+  },
+  "metadata": {
+    "description": "Deploy small software to a live *.aft.page URL"
+  },
+  "plugins": [
+    {
+      "name": "aft-page",
+      "source": "./apps/plugin",
+      "description": "Deploy small software to a live, shareable *.aft.page URL.",
+      "version": "0.1.0"
+    }
+  ]
+}

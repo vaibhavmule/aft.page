@@ -34,6 +34,7 @@ Limits (static): 200 files, 10 MB/file, 50 MB total.
 Limits (`runtime` ≠ `static` in `aft.json`): 200 files, 10 MB/file, 50 MB total.
 
 Deploy is anonymous; each deploy returns an **`editToken`** for redeploy and claim.
+Unclaimed sites pause after 7 days idle (no visit or update) and are deleted after 30. Claim or PATCH to keep them.
 Never overwrites an existing slug on first deploy (collision → suffix like `about-me-mist`).
 Response includes `runtime` when `aft.json` declares one.
 

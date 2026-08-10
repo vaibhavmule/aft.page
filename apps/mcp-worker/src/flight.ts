@@ -99,7 +99,7 @@ async function probeDomains(rows: DomainRow[]): Promise<NonNullable<PublicFlight
   };
 }
 
-async function hit(url: string, redirect: RequestRedirect = "follow"): Promise<{
+async function hit(url: string, redirect: RequestInit["redirect"] = "follow"): Promise<{
   status: number;
   text: string;
   location: string | null;
