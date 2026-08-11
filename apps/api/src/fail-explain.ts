@@ -31,7 +31,7 @@ export function explainDeployFailure(f: FailureExplainIn): FailureExplain {
       };
     case "file_too_large":
       return {
-        why: `${path} is over the per-file cap (static 10 MB, lattice/worker/next 10 MB).${size}`,
+        why: `${path} is over the per-file cap (static 10 MB, worker/next 10 MB).${size}`,
         fix: "Shrink or split that file. Do not upload a Next.js + native SQLite tree to Drop.",
       };
     case "payload_too_large":

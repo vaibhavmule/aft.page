@@ -1,8 +1,0 @@
-{
-  "name": "polymerize-lattice",
-  "runtime": "lattice-js",
-  "capabilities": {
-    "secrets": ["ANTHROPIC_API_KEY"],
-    "egress": ["api.anthropic.com"]
-  }
-}

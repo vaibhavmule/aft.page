@@ -1150,7 +1150,6 @@ function renderTodos(): string {
     ${todoItem("10 live demos; ask “will you use this next week?”", "plan.md")}
     ${todoItem("≥1 paid or signed pilot / LOI (non-friend)", "plan.md")}
     ${todoItem("Outreach: 50 targets · 30 DMs · 5 calls — human-speed bottleneck", "plan.md")}
-    ${todoItem("Lattice convert demo: owner sets ANTHROPIC_API_KEY", "todo.txt")}
   </ul>
   <h3>Distribution / raise</h3>
   <ul class="todos">

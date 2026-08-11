@@ -47,14 +47,13 @@ curl -X PUT https://api.aft.page/v1/sites/my-demo/secrets/ANTHROPIC_API_KEY \
   -d '{"value":"sk-…"}'
 ```
 
-Owner/editor only. Names listed; values never returned. Used by `lattice-js` and declared via `capabilities.secrets`.
+Owner/editor only. Names listed; values never returned. Declare via `capabilities.secrets`.
 
 ### Runtimes
 
 | `aft.json` runtime | Behavior |
 | --- | --- |
 | `static` (default) | R2 file serve |
-| `lattice-js` | Hosted `/api/health` + `/api/convert`; UI from R2 |
 | `worker` / `next` | Proxy to `upstream` URL after ACL |
 
 ### Redeploy + claim

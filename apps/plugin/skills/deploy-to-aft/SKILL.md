@@ -76,7 +76,7 @@ Choose one path:
 3. Create React App or Rsbuild: run the project build and upload its actual
    `build/` or `dist/` output.
 4. Next.js configured for static export: run the build and upload `out/`.
-5. SSR, server-only, Worker, `next`, or `lattice-js` runtimes: stop. Do not
+5. SSR, server-only, Worker, or `next` runtimes: stop. Do not
    upload `.next/` or source. This plugin's deploy path is static-only.
 
 If `aft.json` contains a local `output` convention, confirm that it matches the

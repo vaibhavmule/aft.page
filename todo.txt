@@ -1,16 +1,14 @@
 # aft.page — todo
-# Updated: 2026-08-09
+# Updated: 2026-08-10
 
 ## Dual track — now
 ### Platform
 - [x] Spike CF Temporary Accounts (ADR-TEMP-ACCOUNTS.md) — Worker+API works; brand URL → aft-owned
-- [x] Runtime manifest (`aft.json` runtime: static | lattice-js | worker | next)
+- [x] Runtime manifest (`aft.json` runtime: static | worker | next)
 - [x] Per-site secrets vault (GET/PUT/DELETE /v1/sites/{slug}/secrets/…)
-- [x] Lattice JS hosted runtime (`https://lattice.aft.page`) — set ANTHROPIC_API_KEY to convert
 - [x] Upstream proxy for worker/next runtimes
 - [x] OpenNext orchestration script (no custom adapter) — docs/OPENNEXT-ORCHESTRATION.md
 - [x] OpenNext dogfood live: https://next-hello.aft.page (`examples/next-hello`)
-- [x] Sandbox Python follow-up ADR — docs/ADR-SANDBOX-LATTICE.md
 - [ ] Publish extension to Chrome Web Store
 - [ ] Publish `@aft.page/mcp` to npm (optional)
 - [x] Get Agent Plugin ready for `npx plugins add vaibhavmule/aft.page`
@@ -27,13 +25,16 @@
 - [x] Launchpad Cohort #7 email (8 Aug 2026 → Workers-Launchpad@cloudflare.com) — see docs/FUNDRAISE.md
 - [ ] Google for Startups Cloud Program — step 1 done; **finish credits apply** + checklist (docs/FUNDRAISE.md)
 - [ ] Cloudflare for Startups Tier 3 $10k — submit with hello@aft.page + CF account
-- [ ] Owner sets ANTHROPIC_API_KEY on lattice + full convert demo
 
 ### Later / on demand
+- [ ] Remix / clone: owner **allow clone** (off by default) → new slug, new owner
+      remix.txt · mill-ideas.txt
+- [ ] Daily idea-agent → deploy to *.aft.page (1h/day dogfood; noindex unless kept)
+      pull from mill-ideas.txt — one keep, not 365 indexed souvenirs
 - [ ] Editable preview
 - [ ] Claude marketplace
 - [ ] Workspace / Entra SSO
-- [ ] Connector deepen / Lattice Python via CF Sandbox
+- [ ] Connector deepen / CF Sandbox only if a partner needs it
 - [ ] Workers for Platforms (only if aft-owned Workers proliferate)
       Costing vs now: ADR-TEMP-ACCOUNTS.md § Costing. $5 Paid / 500 scripts / 2 billed reqs
       on proxy → WfP $25 / unlimited scripts / 1 billed req. Static Drop stays on one Worker.

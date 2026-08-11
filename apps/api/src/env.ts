@@ -39,7 +39,7 @@ export const MAX_FILES = 200;
 export const MAX_TOTAL_BYTES = 50 * 1024 * 1024;
 export const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
-/** Higher per-file cap for worker / lattice-js / next deploys. */
+/** Higher per-file cap for worker / next deploys. */
 export const MAX_FILES_RUNTIME = 200;
 export const MAX_TOTAL_BYTES_RUNTIME = 50 * 1024 * 1024;
 export const MAX_FILE_BYTES_RUNTIME = 10 * 1024 * 1024;

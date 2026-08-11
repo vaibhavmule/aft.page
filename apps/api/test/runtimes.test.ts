@@ -26,21 +26,34 @@ describe("site secrets vault", () => {
 });
 
 describe("aft.json manifest", () => {
-  it("parses lattice-js runtime", () => {
+  it("parses worker runtime", () => {
     const files = [
       {
         path: "aft.json",
         contentType: "application/json",
         bytes: new TextEncoder().encode(
           JSON.stringify({
-            runtime: "lattice-js",
+            runtime: "worker",
             capabilities: { secrets: ["ANTHROPIC_API_KEY"] },
           }),
         ).buffer,
       },
     ];
     const m = extractAftManifest(files);
-    expect(m?.runtime).toBe("lattice-js");
+    expect(m?.runtime).toBe("worker");
+  });
+
+  it("treats removed lattice-js runtime as static", () => {
+    const files = [
+      {
+        path: "aft.json",
+        contentType: "application/json",
+        bytes: new TextEncoder().encode(
+          JSON.stringify({ runtime: "lattice-js" }),
+        ).buffer,
+      },
+    ];
+    expect(extractAftManifest(files)?.runtime).toBe("static");
   });
 
   it("reads slug for first-hit allocate", () => {

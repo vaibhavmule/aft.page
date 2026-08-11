@@ -1,5 +1,5 @@
 aft.page — growth experiments
-Updated: 2026-08-09
+Updated: 2026-08-10
 
 Internal backlog of growth bets. Distribution is the constraint, not the product
 (see STRATEGY.md + plan.md). Every experiment must feed the core wedge —
@@ -147,6 +147,24 @@ G12. Gallery of real agent-made apps deployed on aft (with permission)
     Metric     : gallery -> deploy.
     Effort     : M. Status : idea.
 
+--- Theme: viral mill (invent, don’t clone) ---
+
+G20. Original vibe-sites that can travel like saloon.wtf
+    Hypothesis : one-click, consumer, fun Small Software (nostalgia / place /
+                 music / “leave the tab open”) on *.aft.page + a short video
+                 can pull X/IG/WhatsApp traffic the way saloon.wtf did
+                 (~2.8M post views, 8 Aug 2026). We invent the next idea —
+                 not a Deluxe Saloon copy. Growth for AFT, not a second co.
+    Build      : mill-ideas.txt is the list. 1h → original site on AFT →
+                 15–30s clip → post. Powered-by badge (G5). Clone later
+                 (remix.txt) so copies stay on AFT. Kill exact clones of
+                 a live viral URL.
+    Metric     : site opens + new aft deploys / claims from that traffic
+                 (not X impressions). Secondary: “online” stickiness.
+    Effort     : S per idea. Status : idea. List: mill-ideas.txt.
+    Kill if    : we ship saloon.wtf with our hostname, or views with zero
+                 AFT deploys.
+
 --- Theme: outreach / community (human-speed, the bottleneck) ---
 
 G13. "What did your agent build that never left localhost?" outreach
@@ -244,4 +262,5 @@ DONE
 Related: STRATEGY.md (wedge + dual-track + suggest-5 visual review),
 plan.md (30-day scoreboard), METRICS.md (event schema for wiring experiment
 metrics), COMPETITION.md (Codex deploy-shelf), brand-board-2026-08-08.md
-(first suggest-5 receipt).
+(first suggest-5 receipt), mill-ideas.txt (viral-class ideas), remix.txt,
+youtube-moment.txt (consumer + fun host).

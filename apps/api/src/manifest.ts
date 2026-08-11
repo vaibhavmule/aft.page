@@ -3,7 +3,7 @@
  */
 import { isValidSlug } from "./slug";
 
-export type AftRuntime = "static" | "worker" | "lattice-js" | "next";
+export type AftRuntime = "static" | "worker" | "next";
 
 export type AftManifest = {
   name?: string;
@@ -32,9 +32,7 @@ export function extractAftManifest(files: UploadFile[]): AftManifest | null {
     >;
     const runtimeRaw = String(json.runtime || "static").toLowerCase();
     const runtime: AftRuntime =
-      runtimeRaw === "worker" ||
-      runtimeRaw === "lattice-js" ||
-      runtimeRaw === "next"
+      runtimeRaw === "worker" || runtimeRaw === "next"
         ? runtimeRaw
         : "static";
     const slugRaw =

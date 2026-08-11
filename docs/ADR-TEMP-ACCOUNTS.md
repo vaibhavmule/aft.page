@@ -2,7 +2,7 @@
 
 ## Context
 
-Cloudflare Drop commoditizes static upload → URL → claim. Temporary Accounts extend the same pattern to real Workers for agents (`wrangler deploy --temporary`). We spiked whether Temporary Accounts can be AFT’s full-stack ownership model for Lattice-shaped apps.
+Cloudflare Drop commoditizes static upload → URL → claim. Temporary Accounts extend the same pattern to real Workers for agents (`wrangler deploy --temporary`). We spiked whether Temporary Accounts can be AFT’s full-stack ownership model for worker-shaped apps.
 
 ## Spike results
 
@@ -59,5 +59,5 @@ Until then $5 Workers Paid (or free) wins. WfP is a second product (dispatch nam
 
 - AFT owns lifecycle UX (claim, share, secrets, inventory) above CF primitives.
 - We do not rebuild Drop, OpenNext adapters, or Sandbox.
-- Lattice dogfood targets aft-account Worker + proxy, not temp workers.dev alone.
+- Full-stack dogfood targets aft-account Worker + proxy, not temp workers.dev alone.
 - Temp Accounts stay in the toolkit for zero-account agent previews.

@@ -1,8 +1,9 @@
 # aft.page — strategy
 
 Internal north star. Canonical mission: [`../rfs.txt`](../rfs.txt).
+Belief: [`../youtube-moment.txt`](../youtube-moment.txt).
 
-Updated: 2026-08-09
+Updated: 2026-08-10
 
 ## Company thesis
 
@@ -68,8 +69,7 @@ needs a runtime Drop cannot provide.
 | Redeployment / versioning | Update without losing the URL |
 | Organization-wide discovery | Find team Small Software |
 
-See [ADR-TEMP-ACCOUNTS.md](./ADR-TEMP-ACCOUNTS.md), [OPENNEXT-ORCHESTRATION.md](./OPENNEXT-ORCHESTRATION.md),
-[ADR-SANDBOX-LATTICE.md](./ADR-SANDBOX-LATTICE.md).
+See [ADR-TEMP-ACCOUNTS.md](./ADR-TEMP-ACCOUNTS.md), [OPENNEXT-ORCHESTRATION.md](./OPENNEXT-ORCHESTRATION.md).
 
 ### Agent Plugins = highest-priority distribution
 
@@ -147,11 +147,12 @@ Claude / Codex / Cursor / ChatGPT / Git / human
 | Sharing | Public, private, invite, revoke | Shipped / outsider proof |
 | Secrets | Per-site vault + capability approve | Shipped |
 | **Distribution** | **Agent Plugin → Cursor “Deploy with AFT”** | **Highest-priority next ship** |
-| Full stack | lattice-js APIs; worker/next via upstream proxy | Lattice dogfood live; OpenNext orchestrate script |
+| Full stack | worker/next via upstream proxy | OpenNext dogfood live (`next-hello.aft.page`) |
 | Anything Drop | More generous static upload (any folder) | Limits raised; deepen on demand |
 | Plugins | Agent Plugin install across coding agents | P0 this month |
-| Cron | Schedule a script / DB hit / timed punch-in | Later — **private claimed sites only** (not anonymous Drop) |
-| AI automations | Prompt + schedule (e.g. 9am project brief) | After Cron; same private gate; Slack/mobile = notify sinks |
+| Cron | Schedule a script / DB hit / timed punch-in | **In scope for AFT Cloud** — private claimed only; ship when an app needs a clock |
+| **Remix / clone** | Owner allows “Make a copy” → new slug, new owner | **In scope** — allow clone off by default. RFS hole. Build order ≠ “not the product” |
+| AI automations | Prompt + schedule (e.g. 9am project brief) | **In scope** — same private gate; Slack/mobile = sinks |
 | Portability | Hosted default; customer cloud when needed | CLI proof exists |
 | Browser automation | Kitesurf-class if apps need it | Explicitly deferred |
 
@@ -159,7 +160,7 @@ Claude / Codex / Cursor / ChatGPT / Git / human
 
 | Track A — Proof | Track B — Platform |
 | --- | --- |
-| Strangers deploy without founder help | Agent → URL dependable (static + lattice-js) |
+| Strangers deploy without founder help | Agent → URL dependable (static + worker/next) |
 | Repeat use after 7 / 30 days | **Agent Plugin install path (Cursor first)** |
 | Share: owner + another person | Secrets, invite, rollback across runtimes |
 | Design partners, evidence pack, YC | Temp Accounts for demos; aft-owned Workers for brand URL |
@@ -174,7 +175,7 @@ Claude / Codex / Cursor / ChatGPT / Git / human
 | Plugin installs → first deploy in Cursor | Distribution proof |
 | Repeat deployers / apps used after 7 days | Durable utility |
 | Apps shared with another person | Google-Doc sharing proof |
-| Full-stack apps without cloud setup | Category expansion (Lattice / Next) |
+| Full-stack apps without cloud setup | Category expansion (Next / worker) |
 
 Reliability: [NASA LLIS 803](https://llis.nasa.gov/lesson/803) Critical Items List — name the box, test it in prod, or leave it on the list. Scorecard: [OPS.md](./OPS.md).
 
@@ -184,6 +185,38 @@ Reliability: [NASA LLIS 803](https://llis.nasa.gov/lesson/803) Critical Items Li
 > one-command Agent Plugin — while proving people return to it and share it.
 > Compete on the Doc-simple experience (publish, permission, keep alive)—not on
 > rebuilding Cloudflare for its own sake.
+
+## AFT Cloud (all-in) · 10 Aug 2026
+
+The company **is** AFT Cloud: **anything Small Software needs, deploy it** —
+static, SPA, worker/next, secrets, share, data, cron, automations, clone,
+whatever the app grows into. That is Plan A and the only product category.
+Cron / remix / automations are **the cloud**, not a fallback roadmap.
+
+Build order (plugin + strangers this month) is capacity, not a smaller
+ambition. After ESOP exercise + variable → leave Polymerize → all-in hours
+on the same cloud. YT + IG are brand for that cloud, after quit. Daily 1h
+now is dogfood + GTM (G20), not Plan B.
+
+Canonical line: [`../motivation.txt`](../motivation.txt).
+
+```text
+AFT Cloud = deploy anything Small Software needs
+  → 1h/day (job on) ships on it
+  → leave → all-in on the same cloud
+  → if the cloud still isn’t a company: still all-in building
+     (named apps / embed / OSS) — not a cozy job forever
+```
+
+Worst case remains: impressive infra, no habit. Then you still go all-in
+on building — not back to half-time Polymerize as the plan. Quiet death
+of the *category name* is fine; stopping shipping is not.
+
+Harsh bar: **five strangers** deploy, return, share, would notice if AFT
+disappeared. Remix = allow clone (off by default). Cron = private claimed.
+
+Honest floor until leave: don’t resign before ESOP exercise + variable
+(`FOUNDER.md`). After that: all-in.
 
 ## Visual review (approve on HTML)
 

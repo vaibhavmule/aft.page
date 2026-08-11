@@ -61,7 +61,7 @@ ops.aft.page → Time to URL card.
 
 - n today / 24h / 7d
 - p50 / p95 machine ms
-- if n=0: go get one stranger, do not polish Lattice
+- if n=0: go get one stranger, do not polish the runtime
 - if p50 blows the bar: fix the deploy path, not the marketing site
 
 Sunday scoreboard still counts repeat deployers. T2U is the weekday

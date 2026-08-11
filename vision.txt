@@ -1,8 +1,11 @@
 # aft.page — vision
-# Updated: 2026-08-08
+# Updated: 2026-08-10
 
 Mission: **a cloud for small software.** Purpose-built software for one person
 or a small handful should be as easy to deploy and share as a Google Doc.
+
+Belief: coding’s YouTube moment — creation got easy; **publish is the gap.**
+We are the host + share half, not the consumer Cursor. [`youtube-moment.txt`](youtube-moment.txt).
 
 The product expands with what AI creates — not with website-builder features.
 

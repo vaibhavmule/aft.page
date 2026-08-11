@@ -39,8 +39,8 @@ The product grows with the application:
 
 1. Static HTML or files from any agent → live URL in seconds today.
 2. Ownership, updates, rollback, public/private sharing, invite, and revoke.
-3. Secrets vault, hosted APIs (`lattice-js`), and upstream worker/next runtimes —
-   without exposing their infrastructure.
+3. Secrets vault and upstream worker/next runtimes — without exposing their
+   infrastructure.
 4. Capabilities, isolation, connectors, and customer-cloud execution make
    arbitrary code safe and customizable when an application needs them.
 
@@ -90,11 +90,10 @@ Early: design partners on team plans; not chasing enterprise procurement before 
 **Live product:** https://aft.page — paste/upload or MCP → `*.aft.page` URL. Chrome
 extension. Magic-link claim, projects inventory, private invite, capabilities
 approve-on-deploy, connector v0. Per-site secrets vault. First full-stack dogfood:
-[lattice.aft.page](https://lattice.aft.page) (`runtime: lattice-js`). Sibling OSS
+[next-hello.aft.page](https://next-hello.aft.page) (`runtime: next`). Sibling OSS
 CLI (`aft`) deploys to customer AWS / Cloudflare Pages. Worker tests green.
 
-**Not yet:** Workspace/Entra orgs, OpenNext end-to-end dogfood on aft URL (script
-exists; wrap CF adapter), secrets UI, custom domains, Sandbox Python path.
+**Not yet:** Workspace/Entra orgs, secrets UI polish, custom domains GA.
 
 Honest: Drop-class static is commodity; differentiation is lifecycle + small
 full-stack without cloud ceremony. Evidence of stranger retention is the gap,
@@ -109,8 +108,7 @@ aft CLI + aft.page: concentrated build from mid/late July 2026 (nights/weekends 
 1. Submit this application; clear employment IP (personal hardware/accounts only).
 2. Prove strangers reach a URL and return to the app.
 3. Prove Doc-style sharing with one app used by its owner and another person.
-4. Put a secret on Lattice and demo convert end-to-end; then OpenNext via
-   Cloudflare’s adapter (no custom adapter) when a Next app demands it.
+4. Prove secrets + a worker/next app end-to-end when a design partner needs it.
 5. Reach ~10 real apps, ≥5 repeat deployers, and ≥3 apps used after seven days.
 
 ## Something surprising / impressive you’ve done (founder)

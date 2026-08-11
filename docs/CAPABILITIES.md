@@ -2,7 +2,7 @@
 
 On deploy, if the upload includes `aft.json` with a `capabilities` block, aft.page records the request and returns it in the deploy response for **approve-on-deploy**.
 
-`aft.json` may also set `runtime` (`static` | `lattice-js` | `worker` | `next`), optional `main`, and optional `upstream` (proxy target for worker/next).
+`aft.json` may also set `runtime` (`static` | `worker` | `next`), optional `main`, and optional `upstream` (proxy target for worker/next).
 
 ## Shape
 
@@ -14,19 +14,6 @@ On deploy, if the upload includes `aft.json` with a `capabilities` block, aft.pa
     "data": ["expenses:read", "expenses:approve"],
     "secrets": ["slack-webhook"],
     "egress": ["hooks.slack.com"]
-  }
-}
-```
-
-Lattice dogfood:
-
-```json
-{
-  "name": "polymerize-lattice",
-  "runtime": "lattice-js",
-  "capabilities": {
-    "secrets": ["ANTHROPIC_API_KEY"],
-    "egress": ["api.anthropic.com"]
   }
 }
 ```
@@ -45,7 +32,7 @@ Status is `pending` until the owner approves, or stays `approved` if a prior gra
 - `PUT /v1/sites/{slug}/secrets/{name}` — body `{ "value": "…" }` (owner/editor session or edit token)
 - `DELETE /v1/sites/{slug}/secrets/{name}`
 
-Values are encrypted at rest (AES-GCM via `AUTH_SECRET`) and injected into hosted runtimes such as `lattice-js` (e.g. `ANTHROPIC_API_KEY`).
+Values are encrypted at rest (AES-GCM via `AUTH_SECRET`). Names are listed; values are never returned. Static HTML cannot read the vault.
 
 ## MCP (thin surface)
 
@@ -65,10 +52,9 @@ the web API / owner session after claim.
 
 - **Approve-on-deploy** records grants in D1 (`GET|POST /v1/sites/{slug}/capabilities`).
 - **Connector path** enforces approved `data` capabilities at invoke time. v0 executable capability: `expenses:read` (see [CONNECTOR.md](./CONNECTOR.md)).
-- **Secrets:** vault storage + runtime injection for lattice-js — shipped. Arbitrary egress proxy is still a stub (declare `egress` for approve-on-deploy visibility).
+- **Secrets:** vault storage shipped. Arbitrary egress proxy is still a stub (declare `egress` for approve-on-deploy visibility).
 
 ## Dogfood
 
 - `examples/expense-approval/` — capabilities + connector
-- `examples/lattice-js/` — `runtime: lattice-js` + secrets; live at [lattice.aft.page](https://lattice.aft.page)
 - `examples/next-hello/` — `runtime: next` + upstream proxy; live at [next-hello.aft.page](https://next-hello.aft.page)

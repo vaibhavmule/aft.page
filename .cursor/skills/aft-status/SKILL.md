@@ -62,7 +62,7 @@ Source of truth: `STRATEGY.md` progression + `todo.txt`. As of skill authoring:
 | Ownership / claim / rollback | Shipped |
 | Sharing (public / private / invite) | Shipped |
 | Secrets vault | Shipped |
-| Lattice JS + OpenNext dogfood | Live (`lattice.aft.page`, `next-hello.aft.page`) |
+| OpenNext dogfood | Live (`next-hello.aft.page`) |
 | **Agent Plugin** | **P0** — `npx plugins add vaibhavmule/aft.page` (push + demo + 5 users still open) |
 | Cron | **Later.** Private claimed sites only. Slug `cron` reserved. No product yet. |
 | AI automations | **After Cron.** Same private gate; Slack/mobile = notify sinks. Slugs reserved. Not started. |
@@ -87,7 +87,7 @@ Proof gaps (todo, not ops): ≥5 repeat deployers, ≥1 invite-accepted share, Y
 - ops: opened / 302 login / key T2U + failure rate if user pasted
 
 ## Product
-- Now: Drop + claim/share/secrets + lattice/OpenNext
+- Now: Drop + claim/share/secrets + OpenNext
 - This month: Agent Plugin
 - Not yet: Cron → then AI automations
 ```

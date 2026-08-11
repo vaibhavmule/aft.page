@@ -14,7 +14,6 @@ import { ensureDefaultOgMeta, isHtmlContentType } from "./og";
 import { isJunkPath } from "./junk-path";
 import { queueOwnerLog } from "./site-logs";
 import { renderSiteOgImage, siteOgImagePath } from "./og-image";
-import { handleLatticeJsApi } from "./runtimes/lattice-js";
 import { proxyUpstream } from "./runtimes/proxy";
 import { canAccessSite, privateDeniedHtml } from "./sharing";
 import { getObject } from "./storage";
@@ -199,18 +198,6 @@ export async function serveSite(
       });
     }
     return proxyUpstream(request, upstreamUrl);
-  }
-
-  if (runtime === "lattice-js" && pathname.startsWith("/api/")) {
-    const api = await handleLatticeJsApi(request, env, slug, pathname);
-    if (api) {
-      void touchLastServed(env, slug);
-      noteServe(env, request, slug, {
-        httpStatus: api.status,
-        path: servePath(pathname),
-      });
-      return api;
-    }
   }
 
   if (pathname.startsWith("/api/")) {

@@ -16,7 +16,6 @@ needed, then upload ready files.
 | Vite / React / Vue | `npm run build` → **`dist/` only** | [vite-hello.aft.page](https://vite-hello.aft.page) |
 | CRA / Rsbuild | `npm run build` → `build/` or `dist/` | — |
 | Next.js static export | `output: 'export'` → **`out/`** | — |
-| lattice-js | `aft.json` `runtime: lattice-js` + UI files | [lattice.aft.page](https://lattice.aft.page) |
 | Next SSR / Worker | OpenNext (or any Worker) + `runtime: next` / `worker` + `upstream` | [next-hello.aft.page](https://next-hello.aft.page) |
 
 **Not this product:** uploading `src/`, `node_modules`, or `.next/`; in-Worker
@@ -103,7 +102,7 @@ Declare intended names in `aft.json` so approve-on-deploy can show them:
 ```json
 {
   "name": "my-app",
-  "runtime": "lattice-js",
+  "runtime": "next",
   "capabilities": {
     "secrets": ["ANTHROPIC_API_KEY"],
     "egress": ["api.anthropic.com"]
@@ -111,10 +110,9 @@ Declare intended names in `aft.json` so approve-on-deploy can show them:
 }
 ```
 
-Secrets are **injected into hosted runtimes** (e.g. lattice-js `/api/*`). They
-are not baked into static HTML. A Vite SPA that needs a public API key should
-use a public env prefix at **build** time; keep private keys in the vault for
-server runtimes.
+Secrets are **not** baked into static HTML. A Vite SPA that needs a public API
+key should use a public env prefix at **build** time; keep private keys in the
+vault for worker / next runtimes.
 
 ## Custom domain
 
@@ -145,7 +143,7 @@ or destroy. Same URL stays.
 
 ## Limits
 
-| | Static | lattice-js / worker / next |
+| | Static | worker / next |
 | --- | --- | --- |
 | Files | 200 | 200 |
 | Per file | 10 MB | 10 MB |
@@ -157,7 +155,6 @@ Always include `index.html` for static sites.
 
 - [hello.aft.page](https://hello.aft.page) — plain HTML
 - [vite-hello.aft.page](https://vite-hello.aft.page) — React + Vite `dist/`
-- [lattice.aft.page](https://lattice.aft.page) — lattice-js + secrets
 - [next-hello.aft.page](https://next-hello.aft.page) — Next via upstream
 - [share-checklist.aft.page](https://share-checklist.aft.page) — static multi-file
 

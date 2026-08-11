@@ -23,7 +23,7 @@ SHIPPED AGENT PLUGIN.
 [x] Share like a Google Doc (invite / list / revoke / members + ACL)
 [~] Default private/unguessable (link = credential)
     -> MISMATCH: anonymous drops default PUBLIC; private is opt-in after claim.
-[x] "Slightly more than static" feels easy (built: lattice-js + secrets)
+[x] "Slightly more than static" feels easy (built: secrets + next/worker upstream)
     -> not yet validated with strangers.
 
 Why not A: playbook wants default PRIVATE, public opt-in. Loop defaults public.
@@ -34,7 +34,7 @@ Make it a conscious decision, not drift.
 ----------------------------------------------------------------
 [x] Auth non-technical users can use (magic link now, SSO later) — exact playbook order
 [~] Secure execution of arbitrary agent code
-    -> leans on Cloudflare primitives (lattice-js / Sandbox); capability
+    -> leans on Cloudflare primitives (worker / next / Sandbox); capability
        approve-on-deploy exists; EGRESS PROXY STILL A STUB; resource
        limits / billing story not documented.
 [~] Easy per-team env customization without AWS complexity
@@ -73,11 +73,11 @@ appears unfilled. This is where "execution wins" — riskiest if it stays theore
 5. ROADMAP PRIORITIES — B+
 ----------------------------------------------------------------
 1. Static + multi-file + persistent claimed URLs + private sharing — DONE
-2. Simple data layer (SQLite/KV that just works) — PARTIAL (lattice-js /api + secrets;
+2. Simple data layer (SQLite/KV that just works) — PARTIAL (secrets vault;
    D1 is internal plumbing, not a first-class "data just works" primitive)
 3. Built-in auth that feels magical — DONE (magic link)
 4. Remix/fork + version history — version history DONE, FORK MISSING
-5. Light compute (sandboxed functions/containers) — lattice-js live; OpenNext stretch
+5. Light compute (sandboxed functions/containers) — OpenNext dogfood live (`next-hello`)
 6. Team features / company controls — invite/members yes; SSO/audit deferred
 7. Custom domains, analytics — deferred/stretch
 
@@ -103,7 +103,7 @@ STRENGTHS (keep)
 ================================================================
 - Category fit is elite — named and positioned at the RFS bullseye.
 - Shipped the "hard" middle: ownership, versioning/rollback, magic-link auth,
-  Google-Doc private sharing, secrets vault, real full-stack runtime (lattice.aft.page).
+  Google-Doc private sharing, secrets vault, real full-stack runtime (next-hello.aft.page).
 - Disciplined non-goals (no BYOC theatre, no static-hosting race).
 
 ================================================================

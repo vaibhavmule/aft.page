@@ -4,16 +4,16 @@
 → get a durable `*.aft.page` URL → share it like a Google Doc.
 
 Hosted path: HTML/files via MCP, paste, upload, or API — plus runtimes
-(`lattice-js`, upstream `worker` / `next`) with claim, share, and per-site
-secrets. See [`rfs.txt`](rfs.txt) and [`docs/STRATEGY.md`](docs/STRATEGY.md).
+(upstream `worker` / `next`) with claim, share, and per-site secrets. See
+[`rfs.txt`](rfs.txt) and [`docs/STRATEGY.md`](docs/STRATEGY.md).
 
 | Path | Role |
 | --- | --- |
 | [`www/`](www/) | Apex website (landing, login, docs — Cloudflare Pages) |
-| [`apps/api/`](apps/api/) | Worker: deploy, serve, secrets, lattice-js APIs, upstream proxy |
+| [`apps/api/`](apps/api/) | Worker: deploy, serve, secrets, upstream proxy |
 | [`apps/extension/`](apps/extension/) | Chrome: aft icon / Deploy to aft.page on ChatGPT / Claude |
 | [`apps/mcp/`](apps/mcp/) | MCP: any agent can `deploy_html` / `deploy_files` |
-| [`examples/`](examples/) | `lattice-js`, `vite-hello`, `next-hello`, share-checklist |
+| [`examples/`](examples/) | `vite-hello`, `next-hello`, share-checklist |
 
 OSS CLI (customer AWS / Cloudflare): [vaibhavmule/aft](https://github.com/vaibhavmule/aft).  
 Hosted repo: [vaibhavmule/aft.page](https://github.com/vaibhavmule/aft.page).
@@ -28,7 +28,7 @@ curl -X POST https://api.aft.page/v1/deploy \
 # → { "url": "https://{slug}.aft.page", ... }
 ```
 
-Live: [hello.aft.page](https://hello.aft.page) · [vite-hello.aft.page](https://vite-hello.aft.page) (Vite SPA) · [lattice.aft.page](https://lattice.aft.page) (full-stack dogfood) · [next-hello.aft.page](https://next-hello.aft.page) (Next SSR SPOC) · [share-checklist.aft.page](https://share-checklist.aft.page)
+Live: [hello.aft.page](https://hello.aft.page) · [vite-hello.aft.page](https://vite-hello.aft.page) (Vite SPA) · [next-hello.aft.page](https://next-hello.aft.page) (Next SSR SPOC) · [share-checklist.aft.page](https://share-checklist.aft.page)
 
 Human landings: [Docs](https://aft.page/docs) · [Drop](https://aft.page/drop/) · [host](https://aft.page/host-html/) · [share](https://aft.page/share-html/) · [upload](https://aft.page/upload-html/)
 
@@ -38,13 +38,13 @@ Human landings: [Docs](https://aft.page/docs) · [Drop](https://aft.page/drop/) 
 # List names only
 curl https://api.aft.page/v1/sites/{slug}/secrets -H "Cookie: …"
 
-# Set env value (e.g. Lattice Anthropic key)
+# Set env value
 curl -X PUT https://api.aft.page/v1/sites/{slug}/secrets/ANTHROPIC_API_KEY \
   -H "Content-Type: application/json" -H "Cookie: …" \
   -d '{"value":"sk-…"}'
 ```
 
-`aft.json` may declare `"runtime": "lattice-js" | "worker" | "next" | "static"` and
+`aft.json` may declare `"runtime": "worker" | "next" | "static"` and
 `capabilities.secrets` / `egress`. See [`docs/CAPABILITIES.md`](docs/CAPABILITIES.md).
 
 ## Develop the API
