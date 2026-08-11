@@ -143,14 +143,11 @@ the public site:
 | App (projects, project, preview) | `www/app.css` |
 | Worker HTML (status, private gate) | `apps/api/src/brand.ts` |
 | Auth emails | `apps/api/src/auth.ts` (CTA = white on black) |
+| Auth pages (login, claim) | inline `:root` in each page (see `www/README.md`) — keep `www/login/index.html` and `www/claim/index.html` byte-identical by hand |
+| Per-site OG cards (user-deployed sites) | `apps/api/src/og-image.ts` |
 
 Do **not** reintroduce Fraunces, DM Sans, JetBrains Mono, or beacon orange (`#e85d1a`)
 on product chrome. User-deployed sites keep their own design.
-
-## Implementation debt
-
-OG / `og-source.html` / `og-image.ts` may still lag (Fraunces + cream) — regenerate
-to Geist black/white when next touching social cards.
 
 ## Visual review
 

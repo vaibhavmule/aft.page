@@ -1,4 +1,10 @@
-/** Per-site Open Graph PNG cards — matches www/og.png visual language. */
+/**
+ * Per-site Open Graph PNG cards — default social-card fallback for any
+ * deployed *.aft.page site that doesn't supply its own og:image.
+ * Matches www/og.png / www/og-source.html visual language: Geist Variable
+ * on --void black, --good green accent. No Fraunces, no cream, no orange —
+ * see docs/BRAND.md.
+ */
 
 import { ImageResponse, loadGoogleFont } from "workers-og";
 
@@ -33,26 +39,24 @@ export async function renderSiteOgImage(opts: {
   const root = (opts.rootDomain || "aft.page").replace(/^https?:\/\//i, "").replace(/\/$/, "");
   const title = truncate(opts.title || opts.slug, 64);
   const host = `${opts.slug}.${root}`;
-  const fontText = `${title} ${host} aft.page`;
 
-  // Match www/og-source.html: Fraunces brand + Sora body on cream.
-  const [fraunces, sora500, sora400] = await Promise.all([
-    loadGoogleFont({ family: "Fraunces", weight: 600, text: "aft.page" }),
-    loadGoogleFont({ family: "Sora", weight: 500, text: fontText }),
-    loadGoogleFont({ family: "Sora", weight: 400, text: fontText }),
+  // Match www/og-source.html: Geist Variable on --void black, --good green accent.
+  const [geistWordmark, geistTitle, geistHost] = await Promise.all([
+    loadGoogleFont({ family: "Geist", weight: 650, text: "aft.page" }),
+    loadGoogleFont({ family: "Geist", weight: 500, text: title }),
+    loadGoogleFont({ family: "Geist", weight: 400, text: host }),
   ]);
 
   const html = `
-<div style="display:flex; width:1200px; height:630px; position:relative; background-color:#f1efe8; background-image:radial-gradient(ellipse 90% 65% at 10% -10%, rgba(196, 92, 38, 0.14), transparent 55%), radial-gradient(ellipse 70% 55% at 105% 15%, rgba(20, 17, 15, 0.06), transparent 50%), linear-gradient(180deg, #f1efe8 0%, #ddd9cf 100%); color:#14110f;">
-  <div style="display:flex; position:absolute; right:60px; bottom:40px; width:380px; height:380px; border-radius:50%; background:radial-gradient(circle, rgba(196, 92, 38, 0.18), transparent 70%);"></div>
+<div style="display:flex; width:1200px; height:630px; position:relative; background-color:#000000; background-image:radial-gradient(circle at 105% 115%, rgba(34, 197, 94, 0.12), transparent 45%); color:#fafafa;">
   <div style="display:flex; flex-direction:column; justify-content:center; padding:0 96px; width:1200px; height:630px; position:relative;">
-    <div style="display:flex; font-family:Fraunces, serif; font-size:120px; font-weight:600; letter-spacing:-0.045em; line-height:0.95; margin-bottom:28px;">
-      aft<span style="color:#c45c26;">.</span>page
+    <div style="display:flex; font-family:Geist, sans-serif; font-size:112px; font-weight:650; letter-spacing:-0.03em; line-height:0.95; margin-bottom:28px;">
+      aft<span style="color:#22c55e;">.</span>page
     </div>
-    <div style="display:flex; font-family:Sora, sans-serif; font-size:36px; font-weight:500; letter-spacing:-0.02em; line-height:1.2; max-width:900px; margin-bottom:16px;">
+    <div style="display:flex; font-family:Geist, sans-serif; font-size:36px; font-weight:500; letter-spacing:-0.02em; line-height:1.2; max-width:900px; margin-bottom:16px;">
       ${escapeHtml(title)}
     </div>
-    <div style="display:flex; font-family:Sora, sans-serif; font-size:24px; font-weight:400; color:#5c554c; max-width:900px;">
+    <div style="display:flex; font-family:Geist, sans-serif; font-size:24px; font-weight:400; color:#a1a1aa; max-width:900px;">
       ${escapeHtml(host)}
     </div>
   </div>
@@ -63,9 +67,9 @@ export async function renderSiteOgImage(opts: {
     width: 1200,
     height: 630,
     fonts: [
-      { name: "Fraunces", data: fraunces, weight: 600, style: "normal" },
-      { name: "Sora", data: sora500, weight: 500, style: "normal" },
-      { name: "Sora", data: sora400, weight: 400, style: "normal" },
+      { name: "Geist", data: geistWordmark, weight: 650, style: "normal" },
+      { name: "Geist", data: geistTitle, weight: 500, style: "normal" },
+      { name: "Geist", data: geistHost, weight: 400, style: "normal" },
     ],
     headers: {
       "cache-control": "public, max-age=3600",

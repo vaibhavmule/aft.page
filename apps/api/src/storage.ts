@@ -29,7 +29,10 @@ export async function putObject(
   }
   const key = kvFileKey(slug, deployId, path);
   await env.SITES.put(key, bytes, {
-    metadata: { contentType },
+    // KV list() never returns object size (unlike R2) — stash it in
+    // metadata so listDeployFiles can report real byte counts without an
+    // extra GET per file.
+    metadata: { contentType, size: bytes.byteLength },
   });
 }
 
@@ -142,7 +145,8 @@ export async function listDeployFiles(
       cursor: kvCursor,
     });
     for (const k of listing.keys) {
-      out.push({ path: k.name.slice(filePrefix.length), bytes: k.size ?? 0 });
+      const size = (k.metadata as { size?: number } | null)?.size ?? 0;
+      out.push({ path: k.name.slice(filePrefix.length), bytes: size });
     }
     kvCursor = listing.list_complete ? undefined : listing.cursor;
   } while (kvCursor);

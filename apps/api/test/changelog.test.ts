@@ -10,7 +10,10 @@ describe("changelog", () => {
       entries: { id: string; day: string; category: string; html: string }[];
     };
     const ids = body.entries.map((e) => e.id);
-    expect(ids[0]).toBe("custom-domains");
+    // Newest-first: day DESC, then sort ASC within a day. hosted-cli
+    // (2026-08-11, sort 0) ranks above mcp-ready (same day, sort 1) —
+    // see migrations 0024-0026.
+    expect(ids[0]).toBe("hosted-cli");
     expect(ids).toContain("ai-discovery-files");
     expect(ids).toContain("remote-mcp");
     expect(ids).toContain("seo-landings");
