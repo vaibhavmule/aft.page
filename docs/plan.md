@@ -123,7 +123,7 @@ not “we host HTML” (Cloudflare already commoditizes that).
 - [x] Inventory UX: login CTA, site actions, paste / preview links
 - [x] Evidence pack + Phase 1 success-test runbook ([EVIDENCE-PACK.md](./EVIDENCE-PACK.md))
 - [x] Full-stack dogfood live: OpenNext — https://next-hello.aft.page
-- [x] **Agent Plugin (P0):** `npx plugins add vaibhavmule/aft.page` (skill + remote MCP)
+- [~] **Agent Plugin (P0):** package scaffold in-repo; per-IDE / marketplace listings **pending**. MCP ready today.
 - [ ] Push plugin tree + 30-second demo clip for outreach
 - [ ] Optional later: AFT GitHub org / cursor.directory listing — not required for install
 - [ ] Analytics coverage: deploy, open, share, redeploy ([METRICS.md](./METRICS.md))

@@ -38,15 +38,7 @@ shape as a Vercel Drop of just a readme —
 [readme-black-chi.vercel.app](https://readme-black-chi.vercel.app/) is that,
 not a web app.
 
-### 2. Agent Plugin
-
-```bash
-npx plugins add vaibhavmule/aft.page
-```
-
-Restart the agent. Ask: **Deploy this to aft.page**. Details: [plugins](https://aft.page/plugins).
-
-### 3. Agent MCP
+### 2. Agent MCP (ready today)
 
 Remote: `https://mcp.aft.page/mcp`
 
@@ -55,6 +47,15 @@ Remote: `https://mcp.aft.page/mcp`
 ```
 
 Ask: **Deploy this to aft.page**. Full tool schemas: [mcp.md](https://aft.page/mcp.md).
+
+### 3. Hosted CLI
+
+```bash
+curl -fsSL https://aft.page/install | sh
+aft deploy
+```
+
+Login optional. Same durable URL as Drop and MCP.
 
 ### 4. API
 
@@ -163,7 +164,7 @@ Source lives in the [aft.page repo `examples/`](https://github.com/vaibhavmule/a
 ## More
 
 - MCP / API reference: https://aft.page/mcp · https://aft.page/mcp.md
-- Plugin: https://aft.page/plugins · `npx plugins add vaibhavmule/aft.page`
+- Plugin: https://aft.page/plugins — per-IDE / marketplace install still pending (use MCP today)
 - Drop: https://aft.page/drop/
 - CLI: `curl -fsSL https://aft.page/install | sh` then `aft deploy` (login optional)
 - Cursor: https://aft.page/with/cursor/

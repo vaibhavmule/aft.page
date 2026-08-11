@@ -203,13 +203,7 @@
               <a href="https://readme-black-chi.vercel.app/">readme-black-chi.vercel.app</a>
               is that, not a web app.
             </p>
-            <h3>Agent Plugin</h3>
-            <p>
-              <code>npx plugins add vaibhavmule/aft.page</code> — then ask
-              <strong>Deploy this to aft.page</strong>.
-              <a href="/plugins">/plugins</a>.
-            </p>
-            <h3>Agent MCP</h3>
+            <h3>Agent MCP (ready today)</h3>
             <p>Remote: <code>https://mcp.aft.page/mcp</code></p>
             <pre><code>{
   "mcpServers": {
@@ -221,6 +215,11 @@
               <a href="/mcp">/mcp</a> · <a href="/mcp.md">/mcp.md</a>. Cursor:
               <a href="/with/cursor/">/with/cursor/</a>.
             </p>
+            <h3>Hosted CLI</h3>
+            <p>
+              <code>curl -fsSL https://aft.page/install | sh</code> then
+              <code>aft deploy</code> (login optional).
+            </p>
             <h3>API</h3>
             <pre><code>curl -X POST https://api.aft.page/v1/deploy \
   -H 'Content-Type: text/html' \
@@ -230,6 +229,11 @@
               Multi-file: JSON <code>{ "files": [{ "path", "content" }] }</code>
               or multipart. Optional <code>?slug=vite-hello</code>. Collision
               gets a suffix — never overwrites.
+            </p>
+            <h3>Agent Plugin (pending)</h3>
+            <p>
+              Per-IDE plugin and marketplace listings are still pending. Use MCP
+              today. Status: <a href="/plugins">/plugins</a>.
             </p>
           </section>
 

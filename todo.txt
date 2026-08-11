@@ -18,20 +18,20 @@
 - [x] Upstream proxy for worker/next runtimes
 - [x] OpenNext orchestration script (no custom adapter) — docs/OPENNEXT-ORCHESTRATION.md
 - [x] OpenNext dogfood live: https://next-hello.aft.page (`examples/next-hello`)
-- [x] Get Agent Plugin ready for `npx plugins add vaibhavmule/aft.page`
-      marketplace.json + apps/plugin/{plugin.json,.plugin/plugin.json,.mcp.json,skills/}
-      Check: `node apps/plugin/check.mjs` · `npx plugins discover .`
-      Still human: push this tree · 30s demo · onboard 5 strangers
+- [x] Agent Plugin package scaffold (`apps/plugin` + marketplace.json + check.mjs)
+      Still pending: per-IDE marketplace listings · `npx plugins add` not ready for all
+      Until then: remote MCP `https://mcp.aft.page/mcp` is the agent path
       Refs: https://vercel.com/plugin · https://agent-plugins.org
 - [ ] Publish extension to Chrome Web Store          # FROZEN unless Drop strangers need it
 - [ ] Publish `@aft.page/mcp` to npm (optional)       # FROZEN
 - [x] **aft.page CLI** (hosted) — `curl -fsSL https://aft.page/install | sh` → `aft deploy` (login optional). Source `apps/cli`; Pages `www/cli` + `install.sh`. npm `@aft.page/cli` later when scope exists.
 - [x] **OSS CLI parked** (`cli/` / github.com/vaibhavmule/aft) — customer-cloud AWS path; different product. Don’t mix with `npx` for aft.page.
+- [x] **Remote MCP ready** — `https://mcp.aft.page/mcp` (`deploy`, `aft_deploys`, `aft_rollback`, `aft_health`)
 
 ### Proof — ONLY focus through 2026-09-10
 - [x] Prospect share-checklist app live: https://share-checklist.aft.page
 - [x] Ops distribute tracker: https://ops.aft.page/distribute (ready → listings → proof)
-- [ ] Push plugin · 30s demo live
+- [ ] Push plugin · marketplace submit · 30s demo live
 - [ ] Cursor marketplace + cursor.directory submit
 - [ ] ≥5 strangers deploy without founder help
 - [ ] ≥5 repeat deployers + evidence pack

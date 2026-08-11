@@ -6,7 +6,8 @@
 **Live docs (HTML):** https://aft.page/mcp  
 **This file (Markdown):** https://aft.page/mcp.md  
 **Agent index:** https://aft.page/llms.txt  
-**Plugin:** `npx plugins add vaibhavmule/aft.page` — https://aft.page/plugins  
+**Plugin:** Per-IDE / marketplace install still pending — https://aft.page/plugins · use MCP below today  
+
 **Remote MCP:** https://mcp.aft.page/mcp  
 **API:** https://api.aft.page  
 **Health:** https://api.aft.page/health  

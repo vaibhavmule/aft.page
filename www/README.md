@@ -42,7 +42,7 @@ Legal: /privacy/  /terms/
 | `/docs`, `/docs.md` | Human docs: support, deploy, secrets | `styles.css` |
 | `/changelog` | What shipped, by day (D1 via `GET /v1/changelog`) | `styles.css` |
 | `/mcp`, `/mcp.md`, `/llms.txt` | Agent / MCP reference | `styles.css` |
-| `/plugins` | Agent Plugin install (`npx plugins add vaibhavmule/aft.page`) | `styles.css` |
+| `/plugins` | Agent Plugin status (per-IDE marketplace pending; use MCP) | `styles.css` |
 | `/drop/`, `/host-html/`, `/share-html/`, `/upload-html/` | SEO landings | `styles.css` |
 | `/vs/vercel/`, `/vs/cloudflare-drop/`, `/vs/github-pages/` | Comparison landings | `styles.css` |
 | `/privacy/`, `/terms/` | Legal | `styles.css` |

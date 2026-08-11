@@ -52,7 +52,7 @@ You own multi-user, partway on secure, ZERO on remixable.
 [x] One-shot deploy tools agents call reliably
 [~] Agents manage site after deploy (update, invite, logs)
     -> intentionally OUT of MCP (thin-surface ADR). Post-deploy mgmt is web-only.
-[~] Agent Plugin (skill + MCP) — `npx plugins add vaibhavmule/aft.page`
+[~] Agent Plugin — package scaffold; per-IDE marketplace pending (use MCP)
     -> local discover works (1 skill + mcp). Needs push to origin + 30s demo + 5 users.
 
 Ship the demo + 5 stranger deploys -> this jumps to A-.
