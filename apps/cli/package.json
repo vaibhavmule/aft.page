@@ -1,0 +1,29 @@
+{
+  "name": "@aft.page/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Deploy to hosted aft.page — login, deploy, plugins",
+  "bin": {
+    "aft": "./bin/aft.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "check": "node check.mjs",
+    "aft": "node bin/aft.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md"
+  ],
+  "keywords": [
+    "aft",
+    "aft.page",
+    "deploy",
+    "cli"
+  ],
+  "license": "MIT"
+}

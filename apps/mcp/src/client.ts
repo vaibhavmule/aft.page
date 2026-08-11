@@ -12,6 +12,7 @@ export type DeployResult = {
   editToken: string;
   claimUrl?: string;
   owned?: boolean;
+  notice?: string;
 };
 
 export type DeployError = {

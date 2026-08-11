@@ -11,9 +11,19 @@ import {
   formatT2u,
   isOpsEmail,
   parseOpsEmails,
+  parseOpsHubPanel,
   percentileNearest,
   summarizeMs,
 } from "../src/ops";
+import {
+  fillDaySeries,
+  fillHourWindow,
+  normalizeBucketKey,
+  parseVisitsRange,
+  parseVisitsScope,
+  rollupCountries,
+  visitsCacheKey,
+} from "../src/visits";
 import { saveSnapshot, type StatusSnapshot } from "../src/status";
 import { compatDateFresh, runCfPracticeChecks } from "../src/cf-practices";
 import { call, deployPaste, uploadJson } from "./helpers";
@@ -43,6 +53,18 @@ async function sessionCookie(email: string): Promise<string> {
   return `aft_session=${session.token}`;
 }
 
+describe("ops hub paths", () => {
+  it("parses panel pathnames", () => {
+    expect(parseOpsHubPanel("/")).toBe("overview");
+    expect(parseOpsHubPanel("/overview")).toBe("overview");
+    expect(parseOpsHubPanel("/sites")).toBe("sites");
+    expect(parseOpsHubPanel("/sites/")).toBe("sites");
+    expect(parseOpsHubPanel("/visits")).toBe(null);
+    expect(parseOpsHubPanel("/distribute")).toBe("distribute");
+    expect(parseOpsHubPanel("/nope")).toBe(null);
+  });
+});
+
 describe("workers cost estimate", () => {
   it("is the $5 plan until included usage is exceeded", () => {
     expect(estimateWorkersPaid(3200, 8000)).toEqual({
@@ -55,6 +77,60 @@ describe("workers cost estimate", () => {
     expect(over.requestsUsd).toBe(0.6);
     expect(over.cpuUsd).toBe(0.2);
     expect(over.totalUsd).toBe(5.8);
+  });
+});
+
+describe("visits rollup helpers", () => {
+  it("parses range/scope defaults and cache keys", () => {
+    expect(parseVisitsRange(null)).toBe("7d");
+    expect(parseVisitsRange("24h")).toBe("24h");
+    expect(parseVisitsRange("nope")).toBe("7d");
+    expect(parseVisitsScope(undefined)).toBe("all");
+    expect(parseVisitsScope("all")).toBe("all");
+    expect(parseVisitsScope("hello")).toBe("hello");
+    expect(visitsCacheKey("hello", "7d")).toBe("ops:visits:hello:7d");
+  });
+
+  it("normalizes AE bucket keys and fills continuous windows", () => {
+    expect(normalizeBucketKey("2026-08-11 09:15:00", true)).toBe(
+      "2026-08-11T09:00:00.000Z",
+    );
+    expect(normalizeBucketKey("2026-08-11T12:00:00Z", false)).toBe("2026-08-11");
+    const now = new Date("2026-08-11T18:30:00.000Z");
+    const hours = fillHourWindow(
+      [{ t: "2026-08-11T17:00:00.000Z", n: 4 }],
+      24,
+      now,
+    );
+    expect(hours).toHaveLength(24);
+    expect(hours[hours.length - 1]).toEqual({
+      t: "2026-08-11T18:00:00.000Z",
+      n: 0,
+    });
+    expect(hours[hours.length - 2]).toEqual({
+      t: "2026-08-11T17:00:00.000Z",
+      n: 4,
+    });
+    const days = fillDaySeries(
+      [{ t: "2026-08-10", n: 9 }],
+      7,
+      now,
+    );
+    expect(days).toHaveLength(7);
+    expect(days[0].t).toBe("2026-08-05");
+    expect(days.find((d) => d.t === "2026-08-10")?.n).toBe(9);
+  });
+
+  it("rolls top countries and Other", () => {
+    const rows = Array.from({ length: 18 }, (_, i) => ({
+      country: `C${i}`,
+      n: 18 - i,
+    }));
+    const rolled = rollupCountries(rows, 15);
+    expect(rolled).toHaveLength(16);
+    expect(rolled[0]).toEqual({ country: "C0", n: 18 });
+    expect(rolled[15].country).toBe("Other");
+    expect(rolled[15].n).toBe(3 + 2 + 1); // C15..C17
   });
 });
 
@@ -234,7 +310,7 @@ describe("ops.aft.page host", () => {
     expect(html).toContain("day-chart");
     expect(html).toContain("day-ok");
     expect(html).toContain("hub-nav");
-    expect(html).toContain("#overview");
+    expect(html).toContain('href="/overview"');
     expect(html).toContain(">Overview<");
     expect(html).toContain("id=\"overview\"");
     expect(html).toContain("Scanner");
@@ -254,11 +330,20 @@ describe("ops.aft.page host", () => {
     expect(html).toContain("D1 binding");
     expect(html).toContain("id=\"network\"");
     expect(html).toContain('id="stories"');
+    expect(html).toContain('id="distribute"');
     expect(html).toContain('id="todos"');
-    expect(html).toContain("Agent or human ships files");
-    expect(html).toContain("G18 Claim-after-deploy");
-    expect(html).toContain("G4 Inject Summarize");
-    expect(html).toContain("Remix / fork one-click");
+    expect(html).toContain("30-day checklist");
+    expect(html).toContain("Plugin + CLI distribution");
+    expect(html).toContain("Cursor marketplace");
+    expect(html).toContain('href="/distribute"');
+    expect(html).toContain('data-check-nav="distribute"');
+    expect(html).toContain('data-check-nav="todos"');
+    expect(html).toContain("data-check-id");
+    expect(html).toContain("domain-primary");
+    expect(html).toContain("Company email on domain");
+    expect(html).toContain("X / Twitter handle claimed");
+    expect(html).toContain("launch-now");
+    expect(html).toContain("/api/checklist");
     expect(html).toContain("net-svg");
     expect(html).toContain("mcp.aft.page");
     expect(html).toContain("POST /v1/deploy");
@@ -269,7 +354,7 @@ describe("ops.aft.page host", () => {
     expect(html).toContain("data-live=\"sites\"");
     expect(html).toContain('id="users"');
     expect(html).toContain('id="domains"');
-    expect(html).toContain("href=\"#users\"");
+    expect(html).toContain('href="/users"');
     expect(html).toContain("Time to URL");
     expect(html).toContain("data-live=\"t2uP5024\"");
     expect(html).toContain('id="smoke"');
@@ -284,6 +369,31 @@ describe("ops.aft.page host", () => {
     expect(html).toContain("llis.nasa.gov/lesson/803");
     expect(html).toContain("Fail fast");
     expect(html).toContain("CIL / smoke");
+    expect(html).toContain('id="sites"');
+    expect(html).toContain("href=\"/sites\"");
+    expect(html).toContain("data-visits-root");
+    expect(html).toContain("data-visits-range");
+    expect(html).toContain(">Traffic<");
+    expect(html).toContain(">Inventory<");
+    expect(html).toContain("HTML views");
+    expect(html).not.toContain('id="visits"');
+    expect(html).not.toContain('href="#visits"');
+    expect(html).not.toContain("Top sites (7d views)");
+
+    const sitesRes = await call(
+      new Request("https://ops.aft.page/sites", { headers: { cookie } }),
+    );
+    expect(sitesRes.status).toBe(200);
+    expect(await sitesRes.text()).toContain('id="sites"');
+
+    const visitsRedirect = await call(
+      new Request("https://ops.aft.page/visits", {
+        headers: { cookie },
+        redirect: "manual",
+      }),
+    );
+    expect(visitsRedirect.status).toBe(302);
+    expect(visitsRedirect.headers.get("location")).toBe("https://ops.aft.page/sites");
 
     const jsonRes = await call(
       new Request("https://ops.aft.page/api.json", { headers: { cookie } }),
@@ -313,8 +423,33 @@ describe("ops.aft.page host", () => {
       };
       wfp: { status: string; siteWorkers: number };
       snapshot: { siteWorkers: number };
+      visits: {
+        range: string;
+        scope: string;
+        viewsTotal: number;
+        series: { t: string; n: number }[];
+        countries: { country: string; n: number }[];
+      };
     };
     expect(body.service).toBe("aft.page-ops");
+    expect(body.visits.range).toBe("7d");
+    expect(body.visits.scope).toBe("all");
+    expect(body.visits.series.length).toBe(7);
+
+    const visitsRes = await call(
+      new Request("https://ops.aft.page/api/visits?range=24h&scope=hello", {
+        headers: { cookie },
+      }),
+    );
+    expect(visitsRes.status).toBe(200);
+    const visitsBody = (await visitsRes.json()) as {
+      range: string;
+      scope: string;
+      series: unknown[];
+    };
+    expect(visitsBody.range).toBe("24h");
+    expect(visitsBody.scope).toBe("hello");
+    expect(visitsBody.series.length).toBe(24);
     expect(body.wfp.status).toBe("stay");
     expect(body.snapshot.siteWorkers).toBe(0);
     expect(body.failures24h).toBeGreaterThanOrEqual(1);
@@ -472,11 +607,12 @@ describe("ops.aft.page host", () => {
       await call(new Request("https://ops.aft.page/", { headers: { cookie } }))
     ).text();
     expect(listHtml).toContain('id="sites"');
-    expect(listHtml).toContain('href="#sites"');
+    expect(listHtml).toContain('href="/sites"');
     expect(listHtml).toContain("ops-listed");
     expect(listHtml).toContain("/s/ops-listed");
     expect(listHtml).toContain("Views today");
-    expect(listHtml).toContain("Top sites (7d views)");
+    expect(listHtml).toContain(">Traffic<");
+    expect(listHtml).not.toContain("Top sites (7d views)");
 
     const detailRes = await call(
       new Request("https://ops.aft.page/s/ops-listed", { headers: { cookie } }),

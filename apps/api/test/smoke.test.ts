@@ -16,7 +16,7 @@ describe("test host routing", () => {
   it("redirects test.aft.page to ops smoke", async () => {
     const res = await call(new Request("https://test.aft.page/"));
     expect(res.status).toBe(302);
-    expect(res.headers.get("location")).toBe("https://ops.aft.page/#smoke");
+    expect(res.headers.get("location")).toBe("https://ops.aft.page/smoke");
   });
 
   it("serves canary host after smoke slug deploy", async () => {
@@ -66,6 +66,7 @@ describe("smoke suite", () => {
     expect(result.ok).toBe(true);
     expect(result.cases.length).toBeGreaterThan(8);
     expect(result.cases.some((c) => c.id === "domains" && c.ok)).toBe(true);
+    expect(result.cases.some((c) => c.id === "cli" && c.ok)).toBe(true);
     expect(result.flight).toBe(null);
     await attachPublicFlight(env, result.id);
     const latest = await loadLatestSmokeRun(env);

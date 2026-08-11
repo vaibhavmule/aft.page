@@ -12,8 +12,16 @@ import {
   randomId,
   safeAuthRedirect,
 } from "./auth";
+import { handleCliAuthRoute } from "./auth-cli";
 import { getSiteInfo } from "./claim";
-import { deleteSite, getEditTokenHash, setSiteVisibility } from "./db";
+import {
+  deleteSite,
+  getEditTokenHash,
+  getSiteOwnerId,
+  removeSiteMember,
+  setSiteVisibility,
+  upsertSiteMember,
+} from "./db";
 import { deploy } from "./deploy";
 import { originMayActOnSlug } from "./http";
 import { handleLifecycleRoute } from "./lifecycle";
@@ -37,10 +45,13 @@ export const AUDIT_CASE_CATALOG: Record<string, { box: string; shakes: string }>
   next: { box: "Hijack", shakes: "safeAuthRedirect blocks open redirect" },
   path: { box: "Isolation", shakes: "../ and absolute paths → bad_path" },
   privbody: { box: "Isolation", shakes: "Private 302 has empty body" },
+  aclview: { box: "Isolation", shakes: "Viewer cannot PATCH deploy" },
+  aclrevoke: { box: "Isolation", shakes: "Revoked member denied on private site" },
   secrets: { box: "Isolation", shakes: "Unauth secrets 401; names only" },
   hash: { box: "Isolation", shakes: "D1 stores hash ≠ plaintext token" },
   ctype: { box: "Isolation", shakes: ".txt served as text/plain" },
   sess: { box: "Isolation", shakes: "Forged aft_session is logged out" },
+  cli: { box: "Isolation", shakes: "CLI code single-use; bad port rejected; Bearer deploy owns" },
   enum: { box: "Isolation", shakes: "Access request no email oracle" },
   reserved: { box: "Isolation", shakes: "ops + login reserved_slug" },
   cors: { box: "Isolation", shakes: "evil.example never gets ACAO+ACAC" },
@@ -308,6 +319,55 @@ export async function runAuditSuite(
     return { detail: "302 empty of site html", url: publicUrl(slug, root) };
   });
 
+  await run("aclview", async () => {
+    const slug = auditSlug("aclview");
+    const d = await deployHtml(env, slug, "<p>acl-view</p>");
+    assert(d.status === 200, errOf(d.body));
+    const owner = await findOrCreateUser(env, "audit-acl-owner@aft.page");
+    await assignSiteOwner(env, slug, owner.id);
+    const viewer = await findOrCreateUser(env, "audit-acl-viewer@aft.page");
+    await upsertSiteMember(env, slug, viewer.id, viewer.email, "view");
+    const session = await createSession(env, viewer.id);
+    const patch = await patchHtml(env, slug, "<p>pwn</p>", {
+      cookie: `aft_session=${session.token}`,
+      origin: `https://${root}`,
+    });
+    assert(patch.status === 403, `viewer patch ${patch.status} ${errOf(patch.body)}`);
+    return { detail: "viewer PATCH → 403", url: publicUrl(slug, root) };
+  });
+
+  await run("aclrevoke", async () => {
+    const slug = auditSlug("aclrev");
+    const d = await deployHtml(env, slug, "<p>acl-rev-secret</p>");
+    assert(d.status === 200, errOf(d.body));
+    const owner = await findOrCreateUser(env, "audit-acl-rev-owner@aft.page");
+    await assignSiteOwner(env, slug, owner.id);
+    await setSiteVisibility(env, slug, "private");
+    const member = await findOrCreateUser(env, "audit-acl-rev-mem@aft.page");
+    await upsertSiteMember(env, slug, member.id, member.email, "view");
+    const session = await createSession(env, member.id);
+    const cookie = `aft_session=${session.token}`;
+    const before = await serveSite(
+      new Request(`https://${slug}.${root}/`, { headers: { cookie, accept: "text/html" } }),
+      env,
+      slug,
+      "/",
+    );
+    assert(before.status === 200, `member before ${before.status}`);
+    assert((await before.text()).includes("acl-rev-secret"), "member should see html");
+    assert(await removeSiteMember(env, slug, member.id), "remove member");
+    const after = await serveSite(
+      new Request(`https://${slug}.${root}/`, { headers: { cookie, accept: "text/html" } }),
+      env,
+      slug,
+      "/",
+    );
+    assert(after.status === 401, `revoked ${after.status}`);
+    const body = await after.text();
+    assert(!body.includes("acl-rev-secret"), "revoked body leak");
+    return { detail: "revoke → 401 deny", url: publicUrl(slug, root) };
+  });
+
   await run("secrets", async () => {
     const slug = auditSlug("secrets");
     const d = await deployHtml(env, slug, "<p>sec</p>");
@@ -368,6 +428,68 @@ export async function runAuditSuite(
     );
     assert(ops.status === 302, `ops ${ops.status}`);
     return { detail: "forged session → login" };
+  });
+
+  await run("cli", async () => {
+    const bad = await handleCliAuthRoute(
+      new Request("https://api.aft.page/v1/auth/cli?port=80&state=audit_cli_ok_1"),
+      env,
+      new URL("https://api.aft.page/v1/auth/cli?port=80&state=audit_cli_ok_1"),
+    );
+    assert(bad && bad.status === 400, `bad port ${bad?.status}`);
+
+    const state = `audcli_${randomId().slice(0, 10)}`;
+    const port = 41234;
+    const startUrl = new URL("https://api.aft.page/v1/auth/cli");
+    startUrl.searchParams.set("port", String(port));
+    startUrl.searchParams.set("state", state);
+    const start = await handleCliAuthRoute(new Request(startUrl), env, startUrl);
+    assert(start && start.status === 302, `start ${start?.status}`);
+
+    const user = await findOrCreateUser(env, "audit-cli@aft.page");
+    const session = await createSession(env, user.id);
+    const completeUrl = new URL("https://api.aft.page/v1/auth/cli/complete");
+    completeUrl.searchParams.set("state", state);
+    const complete = await handleCliAuthRoute(
+      new Request(completeUrl, { headers: { cookie: `aft_session=${session.token}` } }),
+      env,
+      completeUrl,
+    );
+    assert(complete && complete.status === 302, `complete ${complete?.status}`);
+    const code = new URL(complete.headers.get("location") || "").searchParams.get("code") || "";
+    assert(code.startsWith("aft_cli_"), "no code");
+
+    const exchangeUrl = new URL("https://api.aft.page/v1/auth/cli/exchange");
+    const once = await handleCliAuthRoute(
+      new Request(exchangeUrl, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ code, state }),
+      }),
+      env,
+      exchangeUrl,
+    );
+    assert(once && once.status === 200, `exchange ${once?.status}`);
+    const twice = await handleCliAuthRoute(
+      new Request(exchangeUrl, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ code, state }),
+      }),
+      env,
+      exchangeUrl,
+    );
+    assert(twice && twice.status === 400, `reuse ${twice?.status}`);
+
+    const slug = auditSlug("cli");
+    const owned = await deployJson(env, {
+      slug,
+      html: "<p>cli-bearer</p>",
+      authorization: `Bearer ${session.token}`,
+    });
+    assert(owned.status === 200, errOf(owned.body));
+    assert((await getSiteOwnerId(env, slug)) === user.id, "not owned via Bearer");
+    return { detail: "bad port + single-use code + Bearer own" };
   });
 
   await run("enum", async () => {
@@ -659,11 +781,19 @@ async function accessReq(
 
 async function deployJson(
   env: Env,
-  opts: { html?: string; files?: { path: string; content: string }[]; slug?: string },
+  opts: {
+    html?: string;
+    files?: { path: string; content: string }[];
+    slug?: string;
+    authorization?: string;
+    cookie?: string;
+  },
 ): Promise<{ status: number; body: Record<string, unknown> }> {
   const url = new URL("https://api.aft.page/v1/deploy");
   if (opts.slug) url.searchParams.set("slug", opts.slug);
   const headers: Record<string, string> = { "x-aft-client": "audit" };
+  if (opts.authorization) headers.authorization = opts.authorization;
+  if (opts.cookie) headers.cookie = opts.cookie;
   let body: BodyInit;
   if (opts.html != null) {
     headers["content-type"] = "text/html; charset=utf-8";

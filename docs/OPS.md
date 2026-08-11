@@ -15,7 +15,7 @@ Cursor `mcp_auth` timeout is **C**. aft.page was up. See [USE-CASE-PARAKH.md](..
 | URL | Audience | Job |
 | --- | --- | --- |
 | `https://status.aft.page` | public | Uptime probes (API process, MCP `/health`, website, hello) |
-| `https://ops.aft.page` | founder (`OPS_EMAILS`) | Scoreboard + users/sites/domains + CF cost + failed deploys + feedback + retry + smoke + hijack audit + domain access |
+| `https://ops.aft.page` | founder (`OPS_EMAILS`) | Scoreboard + users/sites/domains + CF cost + failed deploys + feedback + retry + smoke + hijack audit + domain access + **[/distribute](https://ops.aft.page/distribute)** (plugin/CLI marketplace pipeline) |
 | `https://test--{case}.aft.page` | public canary (`noindex`) | Last smoke artifacts — not tenant inventory |
 | CF Workers Logs | you | Stacks / MCP JSON-RPC |
 
@@ -24,6 +24,8 @@ The status **API** probe means this Worker isolate is alive. It does **not** che
 No Sentry. No Grafana. Ops is the scoreboard + product counts + CF cost estimate + replay + feedback.
 
 Workers MTD request/CPU on the cost card comes from GraphQL (`CF_API_TOKEN`, Account Analytics Read) when set, otherwise STATUS KV `ops:cf-usage` written via Cloudflare MCP on API deploy. Overage is $0.30/M req and $0.02/M CPU-ms after 10M req / 30M CPU-ms included ($5 Workers Paid floor). Refresh the KV snapshot when deploying `aft-page-api` if the token is not set.
+
+Same `CF_API_TOKEN` powers **Sites → Traffic** Analytics Engine SQL — needs **Account Analytics Read** (AE SQL API).
 
 **WfP trigger** (same cost row): D1 count of non-test `runtime=worker|next` sites with `upstream_url`. Pill `stay` / `watch` / `switch`. Watch at **400** site Workers, switch at **450** (500 Paid cap) or when MTD overage **> $20** (WfP’s extra floor — only wins if most of that is proxy double-bill). Static Drop is not this count. Numbers: [ADR-TEMP-ACCOUNTS.md](./ADR-TEMP-ACCOUNTS.md) § Costing.
 
@@ -38,9 +40,10 @@ Ops page links both. Correlate with `x-aft-request-id` (also AE `blob6` / D1 `de
 
 ## Scoreboard
 
-`/` and `/api.json` show last **24h** and **7d**. Overview is **critical first** (health, hijack `#audit`, smoke CIL, deploy fails, scanner 200s), then **information** (T2U, rates, product, CF practices `#cf`, CF cost).
+`/` and `/api.json` show last **24h** and **7d**. Overview is **critical first** (health, hijack `/audit`, smoke CIL, deploy fails, scanner 200s), then **information** (T2U, rates, product, CF practices `/cf`, CF cost).
 
-- **CF practices** (`#cf`) — D1/R2/KV/AE/Email bindings, MCP service bind, secrets, `nodejs_compat`, `compatibility_date` &lt; 6mo, SaaS zone. First ops hit writes STATUS KV `ops:cf-practices`; status cron refreshes when older than 20h.
+- **Sites** (`/sites`) — **Traffic** (HTML `page_view` time series + `serve` by country; ranges 24h / 7d / 30d / 90d; Hello | All) then **Inventory** (filters + table, including Deleting ≤7d). AE via `CF_API_TOKEN` (Account Analytics Read), cached ~5m in STATUS KV `ops:visits:{scope}:{range}`. `GET /api/visits?range=&scope=`. `/visits` redirects to `/sites`. Hub panels use paths (`/overview`, `/smoke`, …), not hashes.
+- **CF practices** (`/cf`) — D1/R2/KV/AE/Email bindings, MCP service bind, secrets, `nodejs_compat`, `compatibility_date` &lt; 6mo, SaaS zone. First ops hit writes STATUS KV `ops:cf-practices`; status cron refreshes when older than 20h.
 
 - **Time-to-URL** (`deploys.ms`) — n / p50 / p95 machine clock (Worker → URL). Look at this every day. Human T2U is a stopwatch — [time-to-url.txt](../time-to-url.txt)
 - successes (`deploys`) + failures (`deploy_failures`) + success rate
@@ -86,7 +89,7 @@ skip the gate. Approve on [ops.aft.page](https://ops.aft.page/#users).
 Daily scanner junk: [SECURITY-AUDIT.md](./SECURITY-AUDIT.md) ·
 `cd apps/api && npm run audit:security`.
 
-Hijack CIL (origin↔slug, editToken dead after claim): ops `#audit` ·
+Hijack CIL (origin↔slug, editToken dead after claim): ops `/audit` ·
 `SMOKE_SECRET=… npm run audit` · same cron as smoke.
 
 Ops → Logs → **Probes**: `site_logs` grouped by path + status + slug + country
@@ -121,7 +124,7 @@ Not status. Status pings `/health`. Smoke **deploys**, hits MCP `tools/call`, cl
 | Twice daily | cron `0 4,16 * * *` UTC (not the `*/5` status cron) |
 | Founder | ops → Smoke. Run now + cron: isolate then MCP-isolate public TLS |
 
-`POST https://ops.aft.page/api/smoke/run` — `Authorization: Bearer $SMOKE_SECRET` or an `OPS_EMAILS` session. Results in D1 `smoke_runs` / `smoke_cases` (14 days). Clickable canaries: `test--{case}.aft.page` (`noindex`). Apex `test.aft.page` → ops `#smoke`. DNS `*.test.aft.page` is proxied; HTTPS handshake fails until an ACM pack covers `*.test.aft.page` (same shape as existing `*.mcp.aft.page`). Worker still maps `{case}.test.aft.page` → slug `test--{case}` in-process.
+`POST https://ops.aft.page/api/smoke/run` — `Authorization: Bearer $SMOKE_SECRET` or an `OPS_EMAILS` session. Results in D1 `smoke_runs` / `smoke_cases` (14 days). Clickable canaries: `test--{case}.aft.page` (`noindex`). Apex `test.aft.page` → ops `/smoke`. DNS `*.test.aft.page` is proxied; HTTPS handshake fails until an ACM pack covers `*.test.aft.page` (same shape as existing `*.mcp.aft.page`). Worker still maps `{case}.test.aft.page` → slug `test--{case}` in-process.
 
 Covers (Worker isolate): HTML paste, multi-file, missing index → 404, `no_files`, reserved `ai`, slug collision, PATCH + rollback, destroy, MCP **binding** `/health`, claimUrl row, private → `/login?next=`, invite+revoke, unknown canary 404, custom-domain **inventory** (D1 counts).
 

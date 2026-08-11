@@ -8,7 +8,11 @@ import {
   randomToken,
   sha256Hex,
 } from "../src/auth";
-import { createSiteInvite, setSiteVisibility, upsertSiteMember } from "../src/db";
+import {
+  createSiteInvite,
+  setSiteVisibility,
+  upsertSiteMember,
+} from "../src/db";
 import {
   API_ORIGIN,
   call,
@@ -195,6 +199,114 @@ describe("invites", () => {
       }),
     );
     expect([200, 503]).toContain(res.status);
+  });
+
+  it("invite token cannot be reused after accept", async () => {
+    const { slug } = await deployPaste("<h1>replay</h1>", "invite-replay");
+    const { userId } = await ownSite(slug, "owner-replay@example.com");
+    await setSiteVisibility(env, slug, "private");
+
+    const token = randomToken("aft_inv_");
+    const tokenHash = await sha256Hex(`${env.AUTH_SECRET}:invite:${token}`);
+    await createSiteInvite(env, {
+      id: crypto.randomUUID().replace(/-/g, ""),
+      slug,
+      email: "replay@example.com",
+      role: "view",
+      tokenHash,
+      invitedBy: userId,
+      expiresAt: new Date(Date.now() + 86400000).toISOString(),
+    });
+
+    const acceptUrl = `${API_ORIGIN}/v1/invites/accept?token=${encodeURIComponent(token)}`;
+    const once = await call(new Request(acceptUrl, { redirect: "manual" }));
+    expect(once.status).toBe(302);
+    const twice = await call(new Request(acceptUrl, { redirect: "manual" }));
+    expect(twice.status).toBeGreaterThanOrEqual(400);
+  });
+});
+
+describe("viewer vs editor ACL", () => {
+  it("viewer cannot PATCH deploy; editor can", async () => {
+    const { slug } = await deployPaste("<h1>roles</h1>", "acl-roles");
+    const { cookie: ownerCookie } = await ownSite(slug, "owner-roles@example.com");
+
+    const viewer = await findOrCreateUser(env, "viewer-roles@example.com");
+    await upsertSiteMember(env, slug, viewer.id, viewer.email, "view");
+    const viewerCookie = await sessionCookieFor("viewer-roles@example.com");
+
+    const denied = await call(
+      new Request(`${API_ORIGIN}/v1/deploy?slug=${slug}`, {
+        method: "PATCH",
+        headers: {
+          origin: "https://aft.page",
+          "content-type": "text/html; charset=utf-8",
+          cookie: viewerCookie,
+        },
+        body: "<h1>nope</h1>",
+      }),
+    );
+    expect(denied.status).toBe(403);
+
+    const editor = await findOrCreateUser(env, "editor-roles@example.com");
+    await upsertSiteMember(env, slug, editor.id, editor.email, "edit");
+    const editorCookie = await sessionCookieFor("editor-roles@example.com");
+
+    const allowed = await call(
+      new Request(`${API_ORIGIN}/v1/deploy?slug=${slug}`, {
+        method: "PATCH",
+        headers: {
+          origin: "https://aft.page",
+          "content-type": "text/html; charset=utf-8",
+          cookie: editorCookie,
+        },
+        body: "<h1>edited</h1>",
+      }),
+    );
+    expect(allowed.status).toBe(200);
+
+    // owner still works
+    const ownerPatch = await call(
+      new Request(`${API_ORIGIN}/v1/deploy?slug=${slug}`, {
+        method: "PATCH",
+        headers: {
+          origin: "https://aft.page",
+          "content-type": "text/html; charset=utf-8",
+          cookie: ownerCookie,
+        },
+        body: "<h1>owner</h1>",
+      }),
+    );
+    expect(ownerPatch.status).toBe(200);
+  });
+
+  it("revoked member loses private access", async () => {
+    const { slug } = await deployPaste("<h1>gone</h1>", "acl-revoke");
+    const { cookie: ownerCookie } = await ownSite(slug, "owner-revoke@example.com");
+    await setSiteVisibility(env, slug, "private");
+
+    const pal = await findOrCreateUser(env, "pal-revoke@example.com");
+    await upsertSiteMember(env, slug, pal.id, pal.email, "view");
+    const palCookie = await sessionCookieFor("pal-revoke@example.com");
+
+    const before = await call(
+      new Request(`https://${slug}.aft.page/`, { headers: { cookie: palCookie } }),
+    );
+    expect(before.status).toBe(200);
+
+    const del = await call(
+      new Request(`${API_ORIGIN}/v1/sites/${slug}/members/${pal.id}`, {
+        method: "DELETE",
+        headers: { origin: "https://aft.page", cookie: ownerCookie },
+      }),
+    );
+    expect(del.status).toBe(200);
+
+    const after = await call(
+      new Request(`https://${slug}.aft.page/`, { headers: { cookie: palCookie } }),
+    );
+    expect(after.status).toBe(401);
+    expect(await after.text()).not.toContain("<h1>gone</h1>");
   });
 });
 

@@ -1,0 +1,2 @@
+# Copy to .dev.vars for local `npm run dev`
+SALES_SECRET=dev-local-secret

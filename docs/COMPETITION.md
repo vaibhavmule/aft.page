@@ -21,7 +21,7 @@ Codex listings exist. They are account consoles.
 
 | Name | Their job | Threat | What they miss | AFT move |
 | --- | --- | --- | --- | --- |
-| Vercel | Production framework apps, Git, builds | Low on Small Software | Tiny-audience ceremony | `/vs/vercel/` — different job |
+| Vercel | Production framework apps, Git, builds | Low on Small Software | Tiny-audience ceremony; Deployment Protection priced for Advanced / Enterprise (see below) | `/vs/vercel/` — different job; own the permissioned URL without their plan wall |
 | Netlify | Same class as Vercel | Low | Same | Skip `/vs/` — thin dupe of Vercel |
 | Railway / Render | App hosting consoles | Low | Same | Ignore unless they ship no-git agent → URL |
 | Cloudflare plugin | Platform MCP / docs, not Drop | Low as listed | Drop is the static commoditizer; plugin is not Drop | Wrap CF primitives; `/vs/cloudflare-drop/` |
@@ -60,9 +60,44 @@ hackathon finders, “build a website by chatting”).
 | Dynamic Workers | Commoditizes “run generated code.” Edge stays identity, sharing, lifecycle — not the sandbox. |
 | [Perch](https://mandarwagh9.github.io/perch/#access) | Same category language after the YC RFS. Watch for ideas; not a market threat. |
 
+## Vercel Deployment Protection = demand proof (small enterprise)
+
+Vercel’s Project Settings → Deployment Protection is the same job AFT sells —
+keep a deploy off the open web, let the right people in — then prices the
+useful parts past a small org:
+
+| Need | Vercel feature | Their gate |
+| --- | --- | --- |
+| Gate the deploy | Password Protection | Advanced Deployment Protection — **$150/mo** |
+| Office / VPN only | Trusted IPs | **Enterprise** |
+| Exclude a domain from protection | Deployment Protection Exceptions | Advanced — **$150/mo** |
+| Teammate access | Vercel Authentication | Must be logged into Vercel **and** on your team |
+| Outsider collaborator | Shareable Links / automation bypass secret | Escape hatches around the wrong ACL |
+
+Wrong ACL for Small Software: the colleague who should open the tool is usually
+in Slack with a company email, not on the customer’s Vercel team. Password and
+shareable-link ceremony is what you buy when invite-by-email isn’t the product.
+
+**AFT answer (tiered):**
+
+| Buyer | SKU | Perimeter |
+| --- | --- | --- |
+| Team of a few | Team **$99** | Private + invite ACL (view/edit/revoke). Doc-simple. No shared password. |
+| Small enterprise | Enterprise **$499** | Team, plus IP whitelist / Trusted IPs–class controls, automation bypass, protection exceptions, domain allowlist / SSO as they ship — the settings page above, without Vercel Advanced + Enterprise stacking |
+
+Do not chase Vercel’s full Deployment Protection UI on Free/Team. Invite is the
+default ACL. Perimeter knobs (IP allowlist and friends) are the **$499** upsell
+when a buyer points at that Vercel screen and asks for parity.
+
+Snapshot: Vercel UI, Aug 2026.
+
 ## Insight
 
 Software for three users should not require infrastructure designed for three
 million. The Codex shelf proves the *URL* half is table stakes. AFT’s
 understanding: the hard remaining job is who can open it, who can edit it, and
 whether the URL survives claim — not another bundled database.
+
+Vercel Deployment Protection proves enterprises already budget for that job;
+they just force small teams onto Advanced ($150 password) and Enterprise (IPs).
+AFT undercuts that stack: invite at $99, full perimeter at $499.

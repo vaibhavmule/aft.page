@@ -46,6 +46,18 @@
   Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=60
 
+/install
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=60
+
+/install.sh
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=60
+
+/cli/*
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=60
+
 /ai.json
   Content-Type: application/json; charset=utf-8
   Cache-Control: public, max-age=60

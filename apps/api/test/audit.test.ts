@@ -37,6 +37,7 @@ describe("audit suite", () => {
     expect(failed, JSON.stringify(failed, null, 2)).toEqual([]);
     expect(result.ok).toBe(true);
     expect(result.cases.length).toBeGreaterThan(12);
+    expect(result.cases.some((c) => c.id === "cli" && c.ok)).toBe(true);
     const { loadLatestAuditRun } = await import("../src/audit");
     const latest = await loadLatestAuditRun(env);
     expect(latest?.id).toBe(result.id);

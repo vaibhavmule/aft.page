@@ -1,4 +1,7 @@
 /llm.txt /llms.txt 301
+/install /install.sh 301
+/crons /projects 301
+/crons/ /projects 301
 /inventory /projects 301
 /inventory/ /projects 301
 /mcp.html /mcp 301

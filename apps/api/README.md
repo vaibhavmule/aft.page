@@ -137,6 +137,6 @@ SMOKE_SECRET=… npm run smoke
 
 Requires Cloudflare account access (`npx wrangler login`). Account id: set `CLOUDFLARE_ACCOUNT_ID` if needed.
 
-`npm run smoke` hits `POST https://ops.aft.page/api/smoke/run` (Bearer `SMOKE_SECRET`). Same suite also runs on cron `0 4,16 * * *` UTC. Scoreboard: [ops.aft.page](https://ops.aft.page/#smoke). Canaries: `https://test--{case}.aft.page`.
+`npm run smoke` hits `POST https://ops.aft.page/api/smoke/run` (Bearer `SMOKE_SECRET`). Same suite also runs on cron `0 4,16 * * *` UTC. Scoreboard: [ops.aft.page/smoke](https://ops.aft.page/smoke). Canaries: `https://test--{case}.aft.page`.
 
-`npm run audit` hits `POST https://ops.aft.page/api/audit/run` (same secret). Hijack cases: [ops.aft.page/#audit](https://ops.aft.page/#audit). Scanner junk is `npm run audit:security`.
+`npm run audit` hits `POST https://ops.aft.page/api/audit/run` (same secret). Hijack cases: [ops.aft.page/audit](https://ops.aft.page/audit). Scanner junk is `npm run audit:security`.

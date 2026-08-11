@@ -16,6 +16,7 @@ import {
   sessionCookieHeader,
 } from "./auth";
 import { handleGoogleCallback, handleGoogleStart } from "./auth-google";
+import { handleCliAuthRoute } from "./auth-cli";
 import { corsHeaders, json, optionsResponse, clientIp, privateJson } from "./http";
 import { rateLimit } from "./rate-limit";
 
@@ -28,6 +29,9 @@ export async function handleAuthRoute(
   env: Env,
   url: URL,
 ): Promise<Response | null> {
+  const cli = await handleCliAuthRoute(request, env, url);
+  if (cli) return cli;
+
   const origin = request.headers.get("origin");
 
   if (url.pathname === "/v1/auth/start" && request.method === "OPTIONS") {

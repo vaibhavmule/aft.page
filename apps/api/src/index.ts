@@ -118,6 +118,11 @@ async function routeRequest(
     return env.MCP.fetch(request);
   }
 
+  // Sales agent retired — send founders to ops checklist.
+  if (host === `sales.${root}`) {
+    return Response.redirect(`https://ops.${root}/todos`, 302);
+  }
+
   // Keep the public signup's preflight and redacted storage-error response
   // independent of the global schema bootstrap below.
   if (
@@ -160,7 +165,7 @@ async function routeRequest(
   const testCase = testHostCase(host, root);
   if (testCase !== null) {
     if (testCase === "") {
-      return Response.redirect(`https://ops.${root}/#smoke`, 302);
+      return Response.redirect(`https://ops.${root}/smoke`, 302);
     }
     return await serveSite(
       request,
@@ -273,7 +278,7 @@ async function handleApi(
       deploy: "POST /v1/deploy (multipart files, or text/html body)",
       redeploy: "PATCH /v1/deploy?slug= (editToken or session owner/editor)",
       claim: "POST /v1/claim/start, POST /v1/claim/session, GET /v1/claim/verify",
-      auth: "POST /v1/auth/start, GET /v1/auth/verify, GET /v1/auth/google, GET /v1/auth/google/callback, POST /v1/auth/logout, GET /v1/me",
+      auth: "POST /v1/auth/start, GET /v1/auth/verify, GET /v1/auth/google, GET /v1/auth/google/callback, GET /v1/auth/cli, GET /v1/auth/cli/complete, POST /v1/auth/cli/exchange, POST /v1/auth/logout, GET /v1/me",
       waitlist: "POST /v1/waitlist",
       changelog: "GET /v1/changelog · GET /v1/changelog.md",
       sharing:

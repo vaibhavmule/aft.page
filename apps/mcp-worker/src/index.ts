@@ -79,9 +79,10 @@ function formatDeploy(result: {
   deployId: string;
   files: number;
   claimUrl?: string;
+  notice?: string;
 }): string {
   const state = JSON.stringify({ slug: result.slug, editToken: result.editToken });
-  return [
+  const lines = [
     `Live: ${result.url}`,
     `Claim (give this to the human — email or Google): ${result.claimUrl || result.url}`,
     `editToken: ${result.editToken} (keep secret — redeploy + claim + rollback)`,
@@ -91,7 +92,9 @@ function formatDeploy(result: {
     `Persist: write .aft/state.json ${state} and gitignore .aft/`,
     "Next deploy: pass this slug + edit_token → same URL, this deployId becomes rollback history.",
     "Claim keeps this slug. Do not POST again without edit_token.",
-  ].join("\n");
+  ];
+  if (result.notice) lines.push(result.notice);
+  return lines.join("\n");
 }
 
 function createServer(api: ApiTransport) {

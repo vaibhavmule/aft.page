@@ -6,11 +6,44 @@ import {
   ensureLoginSentinelSite,
   findOrCreateUser,
 } from "../src/auth";
-import { sweepUnusedAnonSites } from "../src/anon-gc";
+import {
+  anonGcDaysRemaining,
+  isAnonGcWarn,
+  sweepUnusedAnonSites,
+} from "../src/anon-gc";
 import { getSiteRow, setSiteActive } from "../src/db";
 import { deployPaste, fetchSite } from "./helpers";
 
 const NOW = Date.parse("2026-08-09T12:00:00.000Z");
+
+describe("anonGcDaysRemaining / isAnonGcWarn", () => {
+  it("flags unclaimed sites in the last 7d before 30d idle delete", () => {
+    const base = {
+      slug: "agc-warn",
+      ownerEmail: null as string | null,
+      lastServedAt: null as string | null,
+      updatedAt: new Date(NOW - 25 * 86400000).toISOString(),
+    };
+    expect(anonGcDaysRemaining(base, NOW)).toBe(5);
+    expect(isAnonGcWarn(base, NOW)).toBe(true);
+    expect(
+      isAnonGcWarn(
+        { ...base, updatedAt: new Date(NOW - 20 * 86400000).toISOString() },
+        NOW,
+      ),
+    ).toBe(false);
+    expect(isAnonGcWarn({ ...base, ownerEmail: "x@y.z" }, NOW)).toBe(false);
+    expect(
+      anonGcDaysRemaining(
+        {
+          ...base,
+          updatedAt: new Date(NOW - 31 * 86400000).toISOString(),
+        },
+        NOW,
+      ),
+    ).toBeLessThanOrEqual(0);
+  });
+});
 
 async function backdate(
   slug: string,

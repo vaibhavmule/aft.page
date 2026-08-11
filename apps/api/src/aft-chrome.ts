@@ -6,6 +6,8 @@
  * have none. Worker/Next upstream is not HTML-rewritten (same as badge).
  */
 
+import { ANON_IDLE_NOTICE } from "./anon-gc";
+
 export function injectAftChrome(
   html: string,
   opts: { slug: string; rootDomain: string; showBadge?: boolean },
@@ -22,6 +24,7 @@ var slug=${JSON.stringify(opts.slug)};
 var root=${JSON.stringify(root)};
 var api="https://api."+root;
 var showBadge=${showBadge ? "true" : "false"};
+var notice=${JSON.stringify(ANON_IDLE_NOTICE)};
 var KEY="aft.editTokens";
 function qs(){return new URLSearchParams(location.search)}
 function token(){try{var m=JSON.parse(localStorage.getItem(KEY)||"{}");return m[slug]||""}catch(e){return ""}}
@@ -40,7 +43,8 @@ function openClaim(email){
   if(email&&tok){claimSession();return}
   var overlay=document.createElement("div");
   overlay.style.cssText="position:fixed;inset:0;z-index:2147483001;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:1rem";
-  overlay.innerHTML='<div role="dialog" aria-modal="true" aria-labelledby="aft-claim-t" style="width:min(22rem,100%);background:#111;color:#fafafa;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:1rem 1.1rem;font:14px/1.45 ui-sans-serif,system-ui,sans-serif"><h2 id="aft-claim-t" style="margin:0 0 .35rem;font-size:1rem">Claim this site</h2><p style="margin:0 0 .75rem;color:#a1a1aa;font-size:.85rem">We\\'ll email a link to own <strong></strong>. Unclaimed sites are removed after 30 days unused.</p><label style="display:block;font-size:.75rem;margin:0 0 .25rem;color:#a1a1aa">Email</label><input id="aft-claim-email" type="email" autocomplete="email" style="width:100%;box-sizing:border-box;margin:0 0 .65rem;padding:.55rem .65rem;border-radius:6px;border:1px solid #333;background:#0a0a0a;color:#fff;font:inherit"/><div id="aft-claim-tokwrap"><label style="display:block;font-size:.75rem;margin:0 0 .25rem;color:#a1a1aa">Edit token</label><input id="aft-claim-token" autocomplete="off" placeholder="aft_edit_…" style="width:100%;box-sizing:border-box;margin:0 0 .65rem;padding:.55rem .65rem;border-radius:6px;border:1px solid #333;background:#0a0a0a;color:#fff;font:inherit"/></div><div style="display:flex;gap:.5rem;justify-content:flex-end"><button type="button" id="aft-claim-x" style="padding:.45rem .75rem;border-radius:6px;border:0;background:transparent;color:#a1a1aa;font:inherit;cursor:pointer">Cancel</button><button type="button" id="aft-claim-go" style="padding:.45rem .85rem;border-radius:6px;border:0;background:#fff;color:#111;font:inherit;font-weight:650;cursor:pointer">Send link</button></div></div>';
+  overlay.innerHTML='<div role="dialog" aria-modal="true" aria-labelledby="aft-claim-t" style="width:min(22rem,100%);background:#111;color:#fafafa;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:1rem 1.1rem;font:14px/1.45 ui-sans-serif,system-ui,sans-serif"><h2 id="aft-claim-t" style="margin:0 0 .35rem;font-size:1rem">Claim this site</h2><p style="margin:0 0 .75rem;color:#a1a1aa;font-size:.85rem">We\\'ll email a link to own <strong></strong>. <span id="aft-claim-notice"></span></p><label style="display:block;font-size:.75rem;margin:0 0 .25rem;color:#a1a1aa">Email</label><input id="aft-claim-email" type="email" autocomplete="email" style="width:100%;box-sizing:border-box;margin:0 0 .65rem;padding:.55rem .65rem;border-radius:6px;border:1px solid #333;background:#0a0a0a;color:#fff;font:inherit"/><div id="aft-claim-tokwrap"><label style="display:block;font-size:.75rem;margin:0 0 .25rem;color:#a1a1aa">Edit token</label><input id="aft-claim-token" autocomplete="off" placeholder="aft_edit_…" style="width:100%;box-sizing:border-box;margin:0 0 .65rem;padding:.55rem .65rem;border-radius:6px;border:1px solid #333;background:#0a0a0a;color:#fff;font:inherit"/></div><div style="display:flex;gap:.5rem;justify-content:flex-end"><button type="button" id="aft-claim-x" style="padding:.45rem .75rem;border-radius:6px;border:0;background:transparent;color:#a1a1aa;font:inherit;cursor:pointer">Cancel</button><button type="button" id="aft-claim-go" style="padding:.45rem .85rem;border-radius:6px;border:0;background:#fff;color:#111;font:inherit;font-weight:650;cursor:pointer">Send link</button></div></div>';
+  overlay.querySelector("#aft-claim-notice").textContent=notice;
   overlay.querySelector("strong").textContent=slug+"."+root;
   var em=overlay.querySelector("#aft-claim-email");
   var tk=overlay.querySelector("#aft-claim-token");
@@ -78,7 +82,7 @@ function showClaim(email){
   b.addEventListener("click",function(){if(email&&token())claimSession();else openClaim(email)});
   host.appendChild(b);
   var note=document.createElement("div");
-  note.textContent="Unclaimed sites are removed after 30 days unused";
+  note.textContent=notice;
   note.style.cssText="font:500 11px/1.35 ui-sans-serif,system-ui,sans-serif;color:#a1a1aa;max-width:14rem;text-align:right;text-shadow:0 1px 2px #000";
   host.appendChild(note);
 }

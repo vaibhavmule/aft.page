@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { ANON_IDLE_NOTICE } from "../src/anon-gc";
 import { injectAftChrome } from "../src/aft-chrome";
 import {
   deployPreviewUrl,
@@ -51,7 +52,7 @@ describe("injectAftChrome", () => {
     );
     expect(out).toContain('id="aft-chrome"');
     expect(out).toContain("Claim this site");
-    expect(out).toContain("Unclaimed sites are removed after 30 days unused");
+    expect(out).toContain(ANON_IDLE_NOTICE);
     expect(out).toContain("/v1/claim/start");
     expect(out).toContain("demo");
     expect(out).not.toContain("/preview?url=");

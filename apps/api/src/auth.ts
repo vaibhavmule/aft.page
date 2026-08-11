@@ -227,6 +227,14 @@ export function parseSessionCookie(request: Request): string | null {
   return m ? decodeURIComponent(m[1]!) : null;
 }
 
+/** Cookie or `Authorization: Bearer <aft_sess_…>` (CLI). */
+export function parseSessionToken(request: Request): string | null {
+  const auth = request.headers.get("authorization") || "";
+  const bearer = /^Bearer\s+(\S+)$/i.exec(auth.trim());
+  if (bearer?.[1]) return bearer[1];
+  return parseSessionCookie(request);
+}
+
 /** Allow /path or https://{slug}.aft.page/... — never open redirects. */
 export function safeAuthRedirect(next: string, root: string): string {
   if (next.startsWith("/") && !next.startsWith("//")) {
@@ -249,7 +257,7 @@ export async function resolveSessionUser(
   env: Env,
   request: Request,
 ): Promise<{ id: string; email: string } | null> {
-  const token = parseSessionCookie(request);
+  const token = parseSessionToken(request);
   if (!token) return null;
   await ensureDb(env);
   const tokenHash = await sha256Hex(`${env.AUTH_SECRET}:session:${token}`);

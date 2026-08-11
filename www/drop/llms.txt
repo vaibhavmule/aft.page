@@ -40,10 +40,11 @@ For multi-file sites, use multipart `POST /v1/deploy` with `fileN` + `fileN_path
 
 After claim: private invite, rollback, and custom domains (request access, CNAME to `cname.aft.page`).
 
-After deployment, return both:
+After deployment, return:
 
 - The live `https://{slug}.aft.page` URL
 - The `claimUrl` (`https://aft.page/claim?slug=&token=`; keep editToken)
+- The deploy `notice` when present (unclaimed sites deleted after 30 days idle)
 
 Treat the edit/claim token as sensitive.
 

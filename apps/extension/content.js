@@ -109,7 +109,7 @@ function aftIconSvg() {
   return wrap;
 }
 
-function setIconState(btn, state) {
+function setIconState(btn, state, detail) {
   btn.dataset.aftState = state;
   btn.classList.toggle("aft-deploy-btn--err", state === "err");
   btn.classList.toggle("aft-deploy-btn--ok", state === "ok");
@@ -119,13 +119,13 @@ function setIconState(btn, state) {
     state === "busy"
       ? "Publishing…"
       : state === "ok"
-        ? "Live"
+        ? detail || "Live"
         : state === "err"
           ? "Failed"
           : "Share";
   btn.title = label;
-  btn.setAttribute("aria-label", label);
-  btn.setAttribute("data-tooltip", label);
+  btn.setAttribute("aria-label", state === "ok" && detail ? "Live" : label);
+  btn.setAttribute("data-tooltip", state === "ok" ? "Live" : label);
 }
 
 async function publishHtml(html) {
@@ -181,7 +181,7 @@ function createIconButton(getHtml) {
 
     try {
       const data = await publishHtml(html);
-      setIconState(btn, "ok");
+      setIconState(btn, "ok", data.notice ? `Live. ${data.notice}` : "Live");
       if (opened) opened.location.replace(liveOpenUrl(data.url, data.editToken, data.claimUrl));
       else window.open(liveOpenUrl(data.url, data.editToken, data.claimUrl), "_blank", "noopener,noreferrer");
       setTimeout(() => setIconState(btn, "idle"), 2200);
@@ -223,7 +223,8 @@ function createMenuItem(getHtml) {
     const opened = window.open("about:blank", "_blank");
     try {
       const data = await publishHtml(html);
-      btn.textContent = "Live — opening…";
+      btn.textContent = data.notice ? "Live — claim within 30d" : "Live — opening…";
+      if (data.notice) btn.title = data.notice;
       if (opened) opened.location.replace(liveOpenUrl(data.url, data.editToken, data.claimUrl));
       else window.open(liveOpenUrl(data.url, data.editToken, data.claimUrl), "_blank", "noopener,noreferrer");
     } catch (err) {
@@ -234,6 +235,7 @@ function createMenuItem(getHtml) {
       btn.disabled = false;
       setTimeout(() => {
         btn.textContent = "Deploy to aft.page";
+        btn.title = "Publish this HTML to a new *.aft.page URL";
       }, 2200);
     }
   });

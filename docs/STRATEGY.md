@@ -3,7 +3,21 @@
 Internal north star. Canonical mission: [`../rfs.txt`](../rfs.txt).
 Belief: [`../youtube-moment.txt`](../youtube-moment.txt).
 
-Updated: 2026-08-10
+Updated: 2026-08-11
+
+## 30-day freeze (2026-08-11 → 2026-09-10)
+
+**No new product lines.** Platform is enough to prove the RFS job.
+
+| Do | Don't |
+| --- | --- |
+| Ship Agent Plugin to strangers + 30s demo | AI automations / Cron / briefs |
+| ≥5 stranger deploys without founder help | Remix, CLI, extension, marketplace (unless blocked) |
+| ≥1 invite-accepted share | Matching Hatchable/AppDeploy feature dump |
+| YC video + credits paperwork | Browser automation / Kitesurf |
+
+Bugfixes that unblock deploy → claim → invite → return are in. New surfaces are out.
+Canonical checklist: [`../todo.txt`](../todo.txt).
 
 ## Company thesis
 
@@ -150,9 +164,8 @@ Claude / Codex / Cursor / ChatGPT / Git / human
 | Full stack | worker/next via upstream proxy | OpenNext dogfood live (`next-hello.aft.page`) |
 | Anything Drop | More generous static upload (any folder) | Limits raised; deepen on demand |
 | Plugins | Agent Plugin install across coding agents | P0 this month |
-| Cron | Schedule a script / DB hit / timed punch-in | **In scope for AFT Cloud** — private claimed only; ship when an app needs a clock |
 | **Remix / clone** | Owner allows “Make a copy” → new slug, new owner | **In scope** — allow clone off by default. RFS hole. Build order ≠ “not the product” |
-| AI automations | Prompt + schedule (e.g. 9am project brief) | **In scope** — same private gate; Slack/mobile = sinks |
+| AI automations | Prompt + schedule (e.g. 9am project brief) | **In scope** — same private gate; Slack/mobile = sinks. Schedule clock: [parked/cron.md](./parked/cron.md) |
 | Portability | Hosted default; customer cloud when needed | CLI proof exists |
 | Browser automation | Kitesurf-class if apps need it | Explicitly deferred |
 
@@ -189,9 +202,10 @@ Reliability: [NASA LLIS 803](https://llis.nasa.gov/lesson/803) Critical Items Li
 ## AFT Cloud (all-in) · 10 Aug 2026
 
 The company **is** AFT Cloud: **anything Small Software needs, deploy it** —
-static, SPA, worker/next, secrets, share, data, cron, automations, clone,
+static, SPA, worker/next, secrets, share, data, automations, clone,
 whatever the app grows into. That is Plan A and the only product category.
-Cron / remix / automations are **the cloud**, not a fallback roadmap.
+Remix / automations are **the cloud**, not a fallback roadmap.
+(Cron-as-product is [parked](./parked/cron.md) — schedule may return only as automations plumbing.)
 
 Build order (plugin + strangers this month) is capacity, not a smaller
 ambition. After ESOP exercise + variable → leave Polymerize → all-in hours
@@ -213,7 +227,7 @@ on building — not back to half-time Polymerize as the plan. Quiet death
 of the *category name* is fine; stopping shipping is not.
 
 Harsh bar: **five strangers** deploy, return, share, would notice if AFT
-disappeared. Remix = allow clone (off by default). Cron = private claimed.
+disappeared. Remix = allow clone (off by default).
 
 Honest floor until leave: don’t resign before ESOP exercise + variable
 (`FOUNDER.md`). After that: all-in.

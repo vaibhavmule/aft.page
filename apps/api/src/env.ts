@@ -59,6 +59,7 @@ export const RESERVED_SLUGS = new Set([
   "docs",
   "login",
   "mcp",
+  "sales",
   "drop",
   "cname",
   "aft",

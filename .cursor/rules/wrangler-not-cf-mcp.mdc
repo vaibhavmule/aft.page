@@ -1,0 +1,10 @@
+---
+description: Deploy via Wrangler personal profile (gmail), not Cloudflare MCP.
+alwaysApply: true
+---
+
+# Wrangler, not Cloudflare MCP
+
+Polymerize’s Cloudflare account is unpaid. **Every** Wrangler project on this laptop uses `vaibhavmule135@gmail.com` (profile `personal`, bound to `~/Projects`).
+
+Do not deploy or mutate prod via Cursor’s Cloudflare MCP (often still Polymerize OAuth). Use Wrangler CLI. aft.page `account_id` is `44255ec64e0080b678670b53bf810d27` — if a command targets another account, stop. Never deploy unless the user explicitly asks.

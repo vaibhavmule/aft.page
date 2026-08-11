@@ -45,6 +45,9 @@ Q: How do AI agents deploy to aft.page?
 A: Any agent that speaks MCP can use the remote server at
    https://mcp.aft.page/mcp with deploy (plus aft_deploys and aft_rollback),
    or call the API directly. It works with Claude, Cursor, Codex, and ChatGPT.
+   Humans can also use Drop, curl, or the hosted CLI:
+   `curl -fsSL https://aft.page/install | sh` then `aft deploy`
+   (no account required).
 URL: [MCP docs](https://aft.page/mcp)
 
 Q: Which MCP tools does aft.page expose?

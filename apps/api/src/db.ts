@@ -245,6 +245,7 @@ export async function deleteSite(env: Env, slug: string): Promise<boolean> {
     p(`DELETE FROM connector_invokes WHERE slug = ?`),
     p(`DELETE FROM connectors WHERE slug = ?`),
     p(`DELETE FROM site_secret_values WHERE slug = ?`),
+    p(`DELETE FROM site_crons WHERE slug = ?`),
     p(`DELETE FROM site_capability_grants WHERE slug = ?`),
     p(`DELETE FROM deploys WHERE slug = ?`),
     p(`DELETE FROM site_invites WHERE slug = ?`),

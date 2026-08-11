@@ -3,7 +3,8 @@
  * Runs after deploy (`npm run smoke`) and twice daily (SMOKE_CRON).
  */
 import type { Env } from "./env";
-import { assignSiteOwner, findOrCreateUser, randomId } from "./auth";
+import { assignSiteOwner, createSession, findOrCreateUser, randomId, resolveSessionUser } from "./auth";
+import { handleCliAuthRoute } from "./auth-cli";
 import {
   createSiteInvite,
   deleteSite,
@@ -37,6 +38,7 @@ export const SMOKE_CASE_CATALOG: Record<string, { box: string; shakes: string }>
   invite: { box: "Auth", shakes: "Invite create + revoke (no email send)" },
   nope: { box: "Serve", shakes: "Unknown canary branded 404" },
   domains: { box: "Custom domains", shakes: "D1 inventory of hostnames + SSL status" },
+  cli: { box: "Auth", shakes: "CLI loopback login start → exchange → Bearer /v1/me" },
 };
 
 export type SmokeCaseResult = {
@@ -339,6 +341,61 @@ export async function runSmokeSuite(
     return {
       detail: `${rows.length} total · ${active} active · ${pending} pending · ${errored} error`,
     };
+  });
+
+  await run("cli", async () => {
+    const state = `smkcli_${randomId().slice(0, 10)}`;
+    const port = 38473;
+    const startUrl = new URL("https://api.aft.page/v1/auth/cli");
+    startUrl.searchParams.set("port", String(port));
+    startUrl.searchParams.set("state", state);
+    const start = await handleCliAuthRoute(
+      new Request(startUrl.toString()),
+      env,
+      startUrl,
+    );
+    assert(start && start.status === 302, `cli start ${start?.status}`);
+    const loginLoc = start.headers.get("location") || "";
+    assert(loginLoc.includes("/login") && loginLoc.includes("cli=1"), `login ${loginLoc}`);
+
+    const user = await findOrCreateUser(env, "smoke-cli@aft.page");
+    const session = await createSession(env, user.id);
+    const completeUrl = new URL("https://api.aft.page/v1/auth/cli/complete");
+    completeUrl.searchParams.set("state", state);
+    const complete = await handleCliAuthRoute(
+      new Request(completeUrl.toString(), {
+        headers: { cookie: `aft_session=${session.token}` },
+      }),
+      env,
+      completeUrl,
+    );
+    assert(complete && complete.status === 302, `complete ${complete?.status}`);
+    const cb = complete.headers.get("location") || "";
+    assert(cb.startsWith(`http://127.0.0.1:${port}/callback?`), `cb ${cb}`);
+    const code = new URL(cb).searchParams.get("code") || "";
+    assert(code.startsWith("aft_cli_"), "missing code");
+
+    const exchange = await handleCliAuthRoute(
+      new Request("https://api.aft.page/v1/auth/cli/exchange", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ code, state }),
+      }),
+      env,
+      new URL("https://api.aft.page/v1/auth/cli/exchange"),
+    );
+    assert(exchange && exchange.status === 200, `exchange ${exchange?.status}`);
+    const traded = (await exchange.json()) as { token?: string; email?: string };
+    assert(traded.token === session.token && traded.email === "smoke-cli@aft.page", "token/email");
+
+    const meUser = await resolveSessionUser(
+      env,
+      new Request("https://api.aft.page/v1/me", {
+        headers: { authorization: `Bearer ${traded.token}` },
+      }),
+    );
+    assert(meUser?.email === "smoke-cli@aft.page", `me ${meUser?.email}`);
+    return { detail: "start → complete → exchange → Bearer me" };
   });
 
   const finishedAt = new Date().toISOString();

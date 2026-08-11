@@ -24,6 +24,7 @@ import {
   upsertSiteRow,
 } from "./db";
 import { corsHeaders, isAllowedWebOrigin, json } from "./http";
+import { ANON_IDLE_NOTICE } from "./anon-gc";
 import { claimSiteUrl, liveSiteUrl } from "./site-url";
 import { extractAftManifest } from "./manifest";
 import { explainDeployFailure } from "./fail-explain";
@@ -349,6 +350,7 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
               editToken,
               preview: liveSiteUrl(slug, root, { token: editToken }),
               claimUrl: claimSiteUrl(slug, root, editToken),
+              notice: ANON_IDLE_NOTICE,
             }
           : { preview: liveUrl }),
         owned,

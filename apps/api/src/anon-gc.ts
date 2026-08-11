@@ -4,6 +4,10 @@ import { deleteSite, ensureDb } from "./db";
 import { deleteSiteObjects } from "./storage";
 
 export const ANON_IDLE_DELETE_DAYS = 30;
+export const ANON_IDLE_NOTICE =
+  `Unclaimed sites are deleted after ${ANON_IDLE_DELETE_DAYS} days idle. Visit, update, or claim to keep.`;
+/** Ops “Deleting ≤7d” filter: last week before the 30d sweep (and overdue). */
+export const ANON_GC_WARN_DAYS = 7;
 
 const DELETE_BATCH = 10;
 const UNPAUSE_BATCH = 50;
@@ -13,6 +17,37 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const ANON_SCOPE = `owner_user_id IS NULL
   AND slug != ?
   AND slug NOT LIKE 'test--%'`;
+
+export type AnonGcSite = {
+  slug: string;
+  ownerEmail?: string | null;
+  lastServedAt: string | null;
+  updatedAt: string;
+};
+
+/**
+ * Days until anon GC would hard-delete this site (negative = overdue).
+ * null = not in scope (claimed / sentinel / test).
+ */
+export function anonGcDaysRemaining(
+  site: AnonGcSite,
+  nowMs = Date.now(),
+): number | null {
+  if (site.ownerEmail) return null;
+  if (site.slug === LOGIN_MAGIC_SLUG || site.slug.startsWith("test--")) {
+    return null;
+  }
+  const idleMs = Date.parse(site.lastServedAt || site.updatedAt);
+  if (Number.isNaN(idleMs)) return null;
+  const deleteAt = idleMs + ANON_IDLE_DELETE_DAYS * DAY_MS;
+  return Math.ceil((deleteAt - nowMs) / DAY_MS);
+}
+
+/** Unclaimed and within ANON_GC_WARN_DAYS of (or past) the 30d idle delete. */
+export function isAnonGcWarn(site: AnonGcSite, nowMs = Date.now()): boolean {
+  const days = anonGcDaysRemaining(site, nowMs);
+  return days != null && days <= ANON_GC_WARN_DAYS;
+}
 
 /**
  * Hard-delete unclaimed sites idle 30d. Idle = no successful serve and no

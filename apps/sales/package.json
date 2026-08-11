@@ -1,0 +1,42 @@
+{
+  "name": "@aft.page/sales",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Founder sales agent — draft outreach, quote pricing, CRM-lite pipeline",
+  "scripts": {
+    "dev": "vite dev",
+    "deploy": "vite build && wrangler deploy",
+    "types": "wrangler types --include-runtime false",
+    "typecheck": "tsc --noEmit",
+    "check": "node --experimental-strip-types ./check.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@ai-sdk/react": "^3.0.250",
+    "@babel/core": "^8.0.1",
+    "@cloudflare/ai-chat": "^0.10.1",
+    "@modelcontextprotocol/client": "^2.0.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "agents": "^0.20.1",
+    "ai": "^6.0.248",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "workers-ai-provider": "^3.3.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-decorators": "^8.0.2",
+    "@cloudflare/vite-plugin": "^1.51.2",
+    "@cloudflare/workers-types": "^5.20260811.1",
+    "@types/node": "^22.19.15",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.7.0",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.1",
+    "wrangler": "^4.120.1"
+  }
+}

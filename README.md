@@ -13,9 +13,17 @@ Hosted path: HTML/files via MCP, paste, upload, or API — plus runtimes
 | [`apps/api/`](apps/api/) | Worker: deploy, serve, secrets, upstream proxy |
 | [`apps/extension/`](apps/extension/) | Chrome: aft icon / Deploy to aft.page on ChatGPT / Claude |
 | [`apps/mcp/`](apps/mcp/) | MCP: any agent can `deploy_html` / `deploy_files` |
+| [`apps/cli/`](apps/cli/) | Hosted CLI: `curl -fsSL https://aft.page/install \| sh` → `aft deploy` |
 | [`examples/`](examples/) | `vite-hello`, `next-hello`, share-checklist |
 
-OSS CLI (customer AWS / Cloudflare): [vaibhavmule/aft](https://github.com/vaibhavmule/aft).  
+Hosted CLI (no account required):
+
+```bash
+curl -fsSL https://aft.page/install | sh
+aft deploy
+```
+
+OSS CLI (customer AWS / Cloudflare — parked, different product): [vaibhavmule/aft](https://github.com/vaibhavmule/aft).  
 Hosted repo: [vaibhavmule/aft.page](https://github.com/vaibhavmule/aft.page).
 
 ## Try it

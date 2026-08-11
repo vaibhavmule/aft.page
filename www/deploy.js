@@ -425,9 +425,15 @@ async function publish() {
       urlEl.textContent = liveUrl.replace(/^https:\/\//, "");
       urlEl.dataset.liveUrl = liveUrl;
     }
+    const claimHint = document.querySelector(
+      ".drop-claim-hint[data-aft-auth='guest'], .drop-claim-hint:not([data-aft-auth])",
+    );
+    if (data.notice && claimHint && !data.owned) {
+      claimHint.textContent = data.notice;
+    }
     if (autoDeploy) showDropPanel("result");
     else if (result) result.hidden = false;
-    setStatus("Live.", "ok");
+    setStatus(data.notice && !data.owned ? `Live. ${data.notice}` : "Live.", "ok");
     window.open(openUrl, "_blank", "noopener,noreferrer");
   } catch (err) {
     setStatus(
@@ -475,7 +481,7 @@ agentCopy?.addEventListener("click", async () => {
   }
 });
 
-/* —— Hero tabbed snippets (MCP · curl · Drop · CLI) —— */
+/* —— Hero tabbed snippets (CLI · Drop · MCP · cURL) —— */
 const heroDemo = document.querySelector("[data-hero-demo]");
 const demoCopyBtn = heroDemo?.querySelector("[data-demo-copy]");
 const demoTabs = heroDemo
@@ -503,7 +509,8 @@ function demoTabFromHash(hash = location.hash) {
   if (h === "hero-drop" || h === "drop") return "drop";
   if (h === "hero-curl" || h === "curl") return "curl";
   if (h === "hero-cli" || h === "cli") return "cli";
-  if (h === "hero-mcp" || h === "mcp" || h === "hero-demo") return "mcp";
+  if (h === "hero-mcp" || h === "mcp") return "mcp";
+  if (h === "hero-demo") return "cli";
   return null;
 }
 
@@ -552,7 +559,7 @@ async function copyDemoSnippet() {
 
 if (heroDemo) {
   const fromHash = demoTabFromHash();
-  selectDemoTab(fromHash || "mcp");
+  selectDemoTab(fromHash || "cli");
   if (fromHash && location.hash !== "#hero-drop") scrollHeroDemo();
 
   window.addEventListener("hashchange", () => {

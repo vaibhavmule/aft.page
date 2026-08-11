@@ -2,7 +2,11 @@
 
 Internal. Goal: prove **A Cloud for Small Software** with real users in 30 days.
 
-Updated: 2026-08-07
+Updated: 2026-08-11
+
+**Freeze in force (2026-08-11 → 2026-09-10):** no new product lines. See
+[STRATEGY.md](./STRATEGY.md) § 30-day freeze and [`../todo.txt`](../todo.txt).
+This window is distribution + proof only.
 
 Sam frame:
 

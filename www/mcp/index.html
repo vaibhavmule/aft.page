@@ -40,7 +40,6 @@
       href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css"
     />
     <link rel="stylesheet" href="/styles.css" />
-    <link rel="stylesheet" href="/mark.css?v=3" />
   </head>
   <body>
     <div class="site">
@@ -258,7 +257,8 @@ npm start</code></pre>
 Claim: https://aft.page/claim?slug=…&token=…
 slug: …
 deploy: dep_…
-files: 1</code></pre>
+files: 1
+Unclaimed sites are deleted after 30 days idle. Visit, update, or claim to keep.</code></pre>
             <p>
               Limits: 200 files · 10&nbsp;MB each · 50&nbsp;MB total. Paths: no
               <code>..</code>, no leading <code>/</code>, no
@@ -343,7 +343,11 @@ Content-Type: application/json
   "deployId": "dep_…",
   "url": "https://hello.aft.page",
   "files": 1,
-  "bytes": 42
+  "bytes": 42,
+  "editToken": "aft_edit_…",
+  "claimUrl": "https://aft.page/claim?slug=hello&token=…",
+  "owned": false,
+  "notice": "Unclaimed sites are deleted after 30 days idle. Visit, update, or claim to keep."
 }</code></pre>
             <p>
               Errors include <code>no_files</code>,

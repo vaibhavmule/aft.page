@@ -1,6 +1,6 @@
 ---
 name: aft-status
-description: Founder snapshot of aft git/deploy/sync, status.aft.page, ops.aft.page, and product line (Drop, plugin, cron, automations). Use when explicitly asked for status, "where are we", ops health, or whether everything is committed/deployed/synced.
+description: Founder snapshot of aft git/deploy/sync, status.aft.page, ops.aft.page, and product line (Drop, plugin, automations). Use when explicitly asked for status, "where are we", ops health, or whether everything is committed/deployed/synced.
 disable-model-invocation: true
 ---
 
@@ -43,7 +43,7 @@ No Sentry. No Grafana. Scanner junk (`.env`, `.php`, `wp-`) is expected — not 
 | URL | Job |
 | --- | --- |
 | `https://status.aft.page` | Public probes: API, MCP `/health`, website, site serve (hello) |
-| `https://ops.aft.page` | Founder: T2U, deploys/failures, CF cost, smoke, feedback, domains |
+| `https://ops.aft.page` | Founder: T2U, deploys/failures, CF cost, smoke, feedback, domains, [/distribute](https://ops.aft.page/distribute) |
 | `https://api.aft.page/health` | API isolate |
 | `https://mcp.aft.page/health` | MCP isolate |
 | `https://test--html.aft.page` | Last smoke canary (`noindex`) — 200 means last smoke left artifacts |
@@ -64,11 +64,13 @@ Source of truth: `STRATEGY.md` progression + `todo.txt`. As of skill authoring:
 | Secrets vault | Shipped |
 | OpenNext dogfood | Live (`next-hello.aft.page`) |
 | **Agent Plugin** | **P0** — `npx plugins add vaibhavmule/aft.page` (push + demo + 5 users still open) |
-| Cron | **Later.** Private claimed sites only. Slug `cron` reserved. No product yet. |
-| AI automations | **After Cron.** Same private gate; Slack/mobile = notify sinks. Slugs reserved. Not started. |
+| **Hosted CLI** | **Live** — `curl -fsSL https://aft.page/install \| sh` → `aft deploy` (login optional). npm `@aft.page/cli` later. |
+| AI automations | **Frozen** through 2026-09-10 — not started; do not open. |
 | Browser automation / Kitesurf | Explicitly deferred |
 
-OSS CLI is a separate track (`docs/PRODUCT.md`). Do not mix "aft cron the product" with the API status/smoke crons.
+**30-day freeze (2026-08-11 → 2026-09-10):** no new product lines. Only Plugin distribution, stranger proof, invite share, unblocker bugfixes, YC/credits. See `todo.txt` + STRATEGY § freeze.
+
+OSS CLI (`cli/`, customer-cloud AWS) is **parked** — different product from hosted aft.page. Hosted CLI is **live**: `curl -fsSL https://aft.page/install | sh` → `aft deploy`. Cron-as-product is **parked** (`docs/parked/cron.md`); API status/smoke crons are unrelated ops.
 
 Proof gaps (todo, not ops): ≥5 repeat deployers, ≥1 invite-accepted share, YC video, plugin install bar.
 
@@ -88,8 +90,8 @@ Proof gaps (todo, not ops): ≥5 repeat deployers, ≥1 invite-accepted share, Y
 
 ## Product
 - Now: Drop + claim/share/secrets + OpenNext
-- This month: Agent Plugin
-- Not yet: Cron → then AI automations
+- This month: Agent Plugin + stranger proof (30-day freeze — no new product lines)
+- Not yet: AI automations (frozen through 2026-09-10)
 ```
 
 Be blunt. "Working smooth" only if Class A is green **and** you did not skip ops. Uncommitted shipped work → say **not sync**, prod likely fine, GitHub is the hole.

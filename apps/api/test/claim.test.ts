@@ -1,6 +1,7 @@
 /** Claim + editToken flows. */
 import { describe, it, expect } from "vitest";
 import { env } from "cloudflare:test";
+import { ANON_IDLE_NOTICE } from "../src/anon-gc";
 import { hashEditToken, timingSafeEqual, verifyEditToken } from "../src/auth";
 import {
   API_ORIGIN,
@@ -67,9 +68,10 @@ describe("editToken on deploy", () => {
       }),
     );
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { owned?: boolean; editToken?: string };
+    const body = (await res.json()) as { owned?: boolean; editToken?: string; notice?: string };
     expect(body.owned).toBe(true);
     expect(body.editToken).toBeUndefined();
+    expect(body.notice).toBeUndefined();
   });
 
   it("returns editToken on successful deploy", async () => {
@@ -82,6 +84,7 @@ describe("editToken on deploy", () => {
       preview: string;
       claimUrl?: string;
       owned?: boolean;
+      notice?: string;
     };
     expect(body.editToken).toMatch(/^aft_edit_/);
     expect(body.slug).toBe("token-test");
@@ -93,6 +96,7 @@ describe("editToken on deploy", () => {
       `https://aft.page/claim?slug=${body.slug}&token=${encodeURIComponent(body.editToken!)}`,
     );
     expect(body.owned).toBe(false);
+    expect(body.notice).toBe(ANON_IDLE_NOTICE);
   });
 });
 

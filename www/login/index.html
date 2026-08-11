@@ -438,6 +438,8 @@
         google_failed: "Google sign-in failed. Try a magic link instead.",
         google_unavailable: "Google sign-in isn’t available yet. Use a magic link.",
         rate_limited: "Too many sign-in attempts. Try again in a bit.",
+        cli_expired: "That CLI login timed out. Run aft login again.",
+        cli_invalid: "That CLI login link is invalid. Run aft login again.",
       }[errorParam];
       if (errorText) {
         msg.className = "msg err";
@@ -502,9 +504,18 @@
       }
 
       const target = accessTarget(nextParam);
+      const isCli = params.get("cli") === "1" || /\/v1\/auth\/cli\/complete/.test(nextParam);
       let ctaLabel = "Send login link";
       let okMsg = "Check your email for a login link (15 minutes).";
-      if (target) {
+      if (isCli) {
+        document.title = "CLI login — aft.page";
+        titleEl.textContent = "CLI login";
+        subEl.hidden = false;
+        subEl.textContent = "Sign in to connect the aft CLI on this machine.";
+        ctaLabel = "Send login link";
+        label.textContent = ctaLabel;
+        okMsg = "Check your email for a login link (15 minutes).";
+      } else if (target) {
         document.title = "Access — aft.page";
         titleEl.textContent = "Continue";
         subEl.hidden = false;

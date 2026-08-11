@@ -1,6 +1,15 @@
 /**
  * Founder ops.aft.page — health + failed deploys + product feedback. Not a customer product.
  */
+import {
+  DISTRIBUTE,
+  STARTUP_30D,
+  checklistListForId,
+  checklistProgress,
+  loadChecklistDone,
+  toggleChecklistItem,
+  type ChecklistItem,
+} from "./ops-checklist";
 import { parseCsvLower, type Env } from "./env";
 import { resolveSessionUser, timingSafeEqual } from "./auth";
 import {
@@ -46,6 +55,16 @@ import {
   viewsForSlug,
   type ViewRollup,
 } from "./metrics";
+import {
+  HELLO_SLUGS,
+  loadVisitsPayload,
+  parseVisitsRange,
+  parseVisitsScope,
+  type VisitBucket,
+  type VisitsPayload,
+  type VisitsRange,
+  type VisitsScope,
+} from "./visits";
 import { listSiteSecretNames } from "./secrets";
 import { deploy } from "./deploy";
 import { explainDeployFailure, formatBytes } from "./fail-explain";
@@ -59,6 +78,12 @@ import {
 import { getFailurePayloadFile, listDeployFiles } from "./storage";
 import { buildPayload, type StatusPayload } from "./status";
 import { listProbeHits, type ProbeHitRow } from "./site-logs";
+import {
+  ANON_GC_WARN_DAYS,
+  ANON_IDLE_DELETE_DAYS,
+  anonGcDaysRemaining,
+  isAnonGcWarn,
+} from "./anon-gc";
 import {
   attachPublicFlight,
   loadLatestSmokeRun,
@@ -90,6 +115,37 @@ const PREVIEW_RE = /\.(html?|css|js|mjs|json|txt|svg|md)$/i;
 
 export function isOpsHost(host: string, root: string): boolean {
   return host === `ops.${root}`;
+}
+
+/** Hub panels served as path segments on ops.aft.page (not hash). */
+export const OPS_HUB_PANELS = [
+  "overview",
+  "audit",
+  "smoke",
+  "failures",
+  "logs",
+  "sites",
+  "users",
+  "domains",
+  "feedback",
+  "cf",
+  "network",
+  "stories",
+  "distribute",
+  "todos",
+] as const;
+
+export type OpsHubPanel = (typeof OPS_HUB_PANELS)[number];
+
+/** Map pathname → panel. `/` and `/overview` → overview. `/visits` is a redirect, not a panel. */
+export function parseOpsHubPanel(pathname: string): OpsHubPanel | null {
+  const p = pathname.replace(/\/+$/, "") || "/";
+  if (p === "/" || p === "") return "overview";
+  const seg = p.startsWith("/") ? p.slice(1) : p;
+  if (seg.includes("/")) return null;
+  return (OPS_HUB_PANELS as readonly string[]).includes(seg)
+    ? (seg as OpsHubPanel)
+    : null;
 }
 
 export function parseOpsEmails(raw: string | undefined): string[] {
@@ -199,6 +255,7 @@ export type OpsPayload = {
   audit: AuditRunResult | null;
   auditHistory: AuditRunSummary[];
   cfPractices: CfPracticesResult;
+  visits: VisitsPayload;
 };
 
 const REQ_INCLUDED = 10_000_000;
@@ -537,6 +594,128 @@ function renderDayChart(days: DayScore[]): string {
   </div>`;
 }
 
+function shortHour(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso.slice(11, 13) || iso;
+  return `${String(d.getUTCHours()).padStart(2, "0")}h`;
+}
+
+function seriesLabel(t: string, hourly: boolean): string {
+  return hourly ? shortHour(t) : shortDay(t);
+}
+
+/** Sparse labels for wide day strips (30d / 90d). */
+function seriesLabelStep(n: number): number {
+  if (n <= 12) return 1;
+  if (n <= 31) return 3;
+  return 7;
+}
+
+export function renderVisitsSeries(series: VisitBucket[], range: VisitsRange): string {
+  if (series.length === 0) {
+    return `<p class="empty">No page views in this window.</p>`;
+  }
+  const hourly = range === "24h";
+  const max = Math.max(1, ...series.map((b) => b.n));
+  const step = seriesLabelStep(series.length);
+  const cols = series
+    .map((b, i) => {
+      const h = (b.n / max) * 100;
+      const label =
+        i % step === 0 || i === series.length - 1
+          ? escapeHtml(seriesLabel(b.t, hourly))
+          : "";
+      const title = `${b.t} — ${b.n} views`;
+      const stack =
+        b.n === 0
+          ? `<span class="day-zero"></span>`
+          : `<div class="day-stack" style="height:${h}%"><span class="day-ok" style="flex:1 1 0"></span></div>`;
+      return `<div class="day-col" title="${escapeHtml(title)}">
+        <span class="day-n">${b.n || ""}</span>
+        <div class="day-track">${stack}</div>
+        <span class="day-d">${label}</span>
+      </div>`;
+    })
+    .join("");
+  const aria = hourly
+    ? "HTML page views per hour, last 24 hours"
+    : `HTML page views per day, last ${range}`;
+  return `<div class="day-chart" role="img" aria-label="${escapeHtml(aria)}" data-visits-series>
+    <div class="day-legend"><span class="swatch ok"></span> HTML views (page_view)</div>
+    <div class="day-cols" style="grid-template-columns: repeat(${series.length}, minmax(0, 1fr))">${cols}</div>
+  </div>`;
+}
+
+export function renderVisitsCountries(
+  countries: VisitsPayload["countries"],
+): string {
+  if (countries.length === 0) {
+    return `<p class="empty" data-visits-countries>No serve-by-country rows in this window.</p>`;
+  }
+  const max = Math.max(1, ...countries.map((c) => c.n));
+  const rows = countries
+    .map((c) => {
+      const pct = Math.round((c.n / max) * 100);
+      return `<div class="country-row" title="${escapeHtml(c.country)} — ${c.n}">
+        <span class="country-code">${escapeHtml(c.country)}</span>
+        <div class="country-track"><span class="country-bar" style="width:${pct}%"></span></div>
+        <span class="country-n">${c.n}</span>
+      </div>`;
+    })
+    .join("");
+  return `<div class="country-chart" role="img" aria-label="Serves by country" data-visits-countries>
+    <div class="day-legend"><span class="swatch ok"></span> serves by country (serve · blob4)</div>
+    ${rows}
+  </div>`;
+}
+
+function renderVisitsSection(visits: VisitsPayload): string {
+  const ranges: VisitsRange[] = ["24h", "7d", "30d", "90d"];
+  const scopes: VisitsScope[] = ["hello", "all"];
+  const rangePills = ranges
+    .map(
+      (r) =>
+        `<button type="button" data-visits-range="${r}"${
+          r === visits.range ? ' aria-current="true"' : ""
+        }>${r === "90d" ? "90d (all)" : r}</button>`,
+    )
+    .join("");
+  const scopePills = scopes
+    .map(
+      (s) =>
+        `<button type="button" data-visits-scope="${s}"${
+          s === visits.scope ? ' aria-current="true"' : ""
+        }>${s === "hello" ? "Hello" : "All sites"}</button>`,
+    )
+    .join("");
+  const helloList = HELLO_SLUGS.join(", ");
+  const emptyNote =
+    visits.source == null
+      ? `<p class="empty" data-visits-note>${
+          visits.error === "cf_api_token_missing"
+            ? "CF_API_TOKEN missing — needs Account Analytics Engine Read. See METRICS.md for curl SQL."
+            : `AE SQL unavailable${visits.error ? ` (${escapeHtml(visits.error)})` : ""}. Cached KV views still on Overview.`
+        }</p>`
+      : `<p class="empty" data-visits-note>HTML views ≠ serves-by-country (country only on serve). Scope Hello = ${escapeHtml(helloList)}. Cache ~5m.${
+          visits.checkedAt ? ` As of ${escapeHtml(visits.checkedAt)}.` : ""
+        }${visits.error ? ` Partial: ${escapeHtml(visits.error)}.` : ""}</p>`;
+
+  return `<div data-visits-root data-range="${escapeHtml(visits.range)}" data-scope="${escapeHtml(visits.scope)}">
+    <div class="filters" data-visits-scopes>${scopePills}</div>
+    <div class="filters" data-visits-ranges>${rangePills}</div>
+    <div class="stat-grid" data-visits-totals>
+      <div class="card"><strong data-visits-views>${visits.viewsTotal}</strong><span>HTML views</span></div>
+      <div class="card"><strong data-visits-serves>${visits.servesTotal}</strong><span>serves (countries)</span></div>
+      <div class="card"><strong data-visits-src>${visits.source || "—"}</strong><span>source</span></div>
+    </div>
+    <h3>Views over time</h3>
+    <div data-visits-series-wrap>${renderVisitsSeries(visits.series, visits.range)}</div>
+    <h3>By region</h3>
+    <div data-visits-countries-wrap>${renderVisitsCountries(visits.countries)}</div>
+    ${emptyNote}
+  </div>`;
+}
+
 async function buildOpsPayload(env: Env): Promise<OpsPayload> {
   const since24h = isoAgo(24 * 60 * 60 * 1000);
   const since7d = isoAgo(7 * 24 * 60 * 60 * 1000);
@@ -567,6 +746,7 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
     audit,
     auditHistory,
     cfPractices,
+    visits,
   ] = await Promise.all([
     buildPayload(env),
     listDeployFailures(env, 50),
@@ -597,6 +777,7 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
     loadLatestAuditRun(env).catch(() => null),
     loadAuditHistory(env, 7).catch(() => [] as AuditRunSummary[]),
     loadOrRunCfPractices(env),
+    loadVisitsPayload(env, { range: "7d", scope: "all" }),
   ]);
   const last24h = scoreWindow(successes24h, failures24h);
   const last7d = scoreWindow(successes7d, failures7d);
@@ -653,6 +834,7 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
     audit,
     auditHistory,
     cfPractices,
+    visits,
   };
 }
 
@@ -740,6 +922,31 @@ export async function handleOps(
         "content-type": "text/html; charset=utf-8",
         "cache-control": "private, no-store",
       },
+    });
+  }
+
+  if (url.pathname === "/api/checklist" && request.method === "POST") {
+    let body: { id?: string; done?: boolean; note?: string };
+    try {
+      body = (await request.json()) as { id?: string; done?: boolean; note?: string };
+    } catch {
+      return json({ error: "invalid_json" }, 400);
+    }
+    const id = String(body.id || "");
+    if (!id || typeof body.done !== "boolean") {
+      return json({ error: "invalid_body" }, 400);
+    }
+    const ok = await toggleChecklistItem(env, id, body.done, body.note);
+    if (!ok) return json({ error: "unknown_id" }, 404);
+    const done = await loadChecklistDone(env);
+    const list = checklistListForId(id) || "todos";
+    const items = list === "distribute" ? DISTRIBUTE : STARTUP_30D;
+    return json({
+      ok: true,
+      id,
+      done: body.done,
+      list,
+      progress: checklistProgress(done, items),
     });
   }
 
@@ -833,8 +1040,30 @@ export async function handleOps(
     return json({ ok: true, access: "approved" });
   }
 
+  if (url.pathname === "/api/visits") {
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      return json({ error: "method_not_allowed" }, 405);
+    }
+    const visits = await loadVisitsPayload(env, {
+      range: parseVisitsRange(url.searchParams.get("range")),
+      scope: parseVisitsScope(url.searchParams.get("scope")),
+    });
+    const body = JSON.stringify(visits, null, 2);
+    return new Response(request.method === "HEAD" ? null : body, {
+      status: 200,
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "private, no-store",
+      },
+    });
+  }
+
   if (request.method !== "GET" && request.method !== "HEAD") {
     return json({ error: "method_not_allowed" }, 405);
+  }
+
+  if (url.pathname === "/visits" || url.pathname === "/visits/") {
+    return Response.redirect(`https://ops.${root}/sites`, 302);
   }
 
   const payload = await buildOpsPayload(env);
@@ -857,8 +1086,10 @@ export async function handleOps(
     });
   }
 
-  if (url.pathname === "/" || url.pathname === "") {
-    const html = renderOpsHtml(payload, user.email, root);
+  const panel = parseOpsHubPanel(url.pathname);
+  if (panel) {
+    const checklistDone = await loadChecklistDone(env);
+    const html = renderOpsHtml(payload, user.email, root, panel, checklistDone);
     return new Response(request.method === "HEAD" ? null : html, {
       status: 200,
       headers: {
@@ -1038,7 +1269,7 @@ function renderNetworkDiagram(): string {
     ${box(215, 228, 130, 50, "R2", "file bytes", `${dash}/r2/default/buckets/aft-page-sites`)}
     ${box(375, 228, 130, 50, "KV", "sessions · views", `${dash}/workers/kv/namespaces/3bc4889e9e974a2bbb09433c8b932870`)}
     ${box(535, 228, 130, 50, "AE", "aft_page_metrics", `${dash}/workers/observability`)}
-    ${box(275, 322, 210, 52, "*.aft.page", "serve from R2", "#sites")}
+    ${box(275, 322, 210, 52, "*.aft.page", "serve from R2", "/sites")}
     <g fill="none" stroke="#52525b" stroke-width="1.25" marker-end="url(#net-arr)">
       <path d="M135 68V118"/>
       <path d="M380 68V118"/>
@@ -1129,70 +1360,74 @@ function renderStories(): string {
     "See every site / user / domain / network.",
   ])}
   ${renderList("Not the product yet", [
-    "Billing checkout, company SSO, hosted CLI, plugin store.",
+    "Billing checkout, company SSO, public plugin store UI.",
     "MCP does not do secrets / invites / billing.",
     "Connector is expenses:read only.",
     "Host does not run npm run build.",
   ])}`;
 }
 
-function todoItem(text: string, src: string): string {
-  return `<li>${escapeHtml(text)} <span class="src">${escapeHtml(src)}</span></li>`;
+function renderChecklist(
+  items: readonly ChecklistItem[],
+  doneMap: Map<string, { done: boolean; note: string }>,
+  opts: { list: "todos" | "distribute"; blurb: string },
+): string {
+  const prog = checklistProgress(doneMap, items);
+  const groups = new Map<string, ChecklistItem[]>();
+  for (const item of items) {
+    const list = groups.get(item.group) || [];
+    list.push(item);
+    groups.set(item.group, list);
+  }
+  const sections: string[] = [];
+  for (const [group, groupItems] of groups) {
+    const lis = groupItems
+      .map((item) => {
+        const st = doneMap.get(item.id);
+        const checked = st?.done ? " checked" : "";
+        const hint = item.hint
+          ? `<span class="hint">${escapeHtml(item.hint)}</span>`
+          : "";
+        const src = item.src
+          ? `<span class="src">${escapeHtml(item.src)}</span>`
+          : "";
+        return `<li>
+          <label>
+            <input type="checkbox" data-check-id="${escapeHtml(item.id)}" data-check-list="${opts.list}"${checked} />
+            <span class="lab">${escapeHtml(item.label)}</span>
+          </label>
+          ${hint}${src}
+        </li>`;
+      })
+      .join("");
+    sections.push(
+      `<h3>${escapeHtml(group)}</h3><ul class="todos check">${lis}</ul>`,
+    );
+  }
+  return `<p class="empty">${escapeHtml(opts.blurb)}
+    Progress: <strong data-check-progress="${opts.list}">${prog.done}/${prog.total}</strong>.
+    Tap a box to save.</p>
+  ${sections.join("\n")}`;
 }
 
-function renderTodos(): string {
-  return `<p class="empty">Open items from todo.txt, plan.md, gtm.txt, EVIDENCE-PACK.md, REPORT-CARD.txt, FUNDRAISE.md.</p>
-  <h3>Proof</h3>
-  <ul class="todos">
-    ${todoItem("≥5 repeat deployers + evidence pack filled", "todo.txt · plan.md")}
-    ${todoItem("≥1 app shared with another person (invite accept + both use it)", "todo.txt · plan.md")}
-    ${todoItem("Stranger evidence: recorded, not you, returns in 7d, redeploy without founder", "EVIDENCE-PACK.md")}
-    ${todoItem("10 live demos; ask “will you use this next week?”", "plan.md")}
-    ${todoItem("≥1 paid or signed pilot / LOI (non-friend)", "plan.md")}
-    ${todoItem("Outreach: 50 targets · 30 DMs · 5 calls — human-speed bottleneck", "plan.md")}
-  </ul>
-  <h3>Distribution / raise</h3>
-  <ul class="todos">
-    ${todoItem("Agent Plugin P0: public GH + npx plugins add + Cursor marketplace", "todo.txt · plan.md")}
-    ${todoItem("Publish Chrome extension to Web Store", "todo.txt")}
-    ${todoItem("Publish @aft.page/mcp to npm (optional)", "todo.txt")}
-    ${todoItem("YC late application + 1-min video", "todo.txt · plan.md")}
-    ${todoItem("Read Polymerize IP / moonlighting agreement", "plan.md")}
-    ${todoItem("Google for Startups — finish credits apply", "todo.txt · FUNDRAISE.md")}
-    ${todoItem("Cloudflare for Startups Tier 3 $10k — submit hello@aft.page", "todo.txt · FUNDRAISE.md")}
-    ${todoItem("Analytics: deploy, open, share, redeploy events", "plan.md · METRICS.md")}
-  </ul>
-  <h3>Product holes</h3>
-  <ul class="todos">
-    ${todoItem("Remix / fork one-click (RFS gap)", "REPORT-CARD.txt")}
-    ${todoItem("Default private vs anonymous public Drop (conscious decision)", "REPORT-CARD.txt")}
-    ${todoItem("Egress proxy is a stub", "REPORT-CARD.txt · CAPABILITIES.md")}
-    ${todoItem("Editable preview", "todo.txt")}
-    ${todoItem("Workspace / Entra SSO — later", "todo.txt · plan.md")}
-    ${todoItem("Claude marketplace — later", "todo.txt")}
-    ${todoItem("No connector deepen / BYOC / Kitesurf unless a partner requires it", "plan.md")}
-  </ul>
-  <h3>GTM</h3>
-  <ul class="todos">
-    ${todoItem("G1 Summarize launcher — add click → waitlist/deploy metric", "gtm.txt")}
-    ${todoItem("G18 Claim-after-deploy — track claimed / anonymous deploys (7d)", "gtm.txt")}
-    ${todoItem("G16 Suggest-5 boards — expand beyond brand (favicon, hero CTA)", "gtm.txt")}
-    ${todoItem("G13 30 DMs/week: “what did your agent build that never left localhost?”", "gtm.txt · plan.md")}
-    ${todoItem("G2 Summarize prompt A/B", "gtm.txt")}
-    ${todoItem("G3 AI-readable everything — llms.txt + FAQ extraction block", "gtm.txt")}
-    ${todoItem("G4 Inject Summarize + Feedback into hosted *.aft.page sites", "gtm.txt")}
-    ${todoItem("G5 Powered-by-aft.page badge on shared URLs", "gtm.txt")}
-    ${todoItem("G7 Ship Agent Plugin to Cursor marketplace + cursor.directory (needs AFT GH org)", "gtm.txt")}
-    ${todoItem("G8 Cross-agent plugin reach after G7", "gtm.txt")}
-    ${todoItem("G9 Claude Code .claude-plugin manifest", "gtm.txt")}
-    ${todoItem("G10 Expand /with/<agent> pages + deploy snippet", "gtm.txt")}
-    ${todoItem("G12 Gallery of real agent-made apps (opt-in)", "gtm.txt")}
-    ${todoItem("G14 Feedback → fix → tell-them weekly loop", "gtm.txt")}
-    ${todoItem("G15 Invitee first-run that nudges their own deploy", "gtm.txt")}
-    ${todoItem("G17 Public “how we decide” write-up after 2–3 board receipts", "gtm.txt")}
-    ${todoItem("G19 Student work URL: apply = curl + MCP, no form (work.aft.page)", "gtm.txt")}
-    ${todoItem("G6 External summarize embed — only if G4/G5 convert", "gtm.txt")}
-  </ul>`;
+function renderTodos(
+  doneMap: Map<string, { done: boolean; note: string }>,
+): string {
+  return renderChecklist(STARTUP_30D, doneMap, {
+    list: "todos",
+    blurb:
+      "30-day founder check-in — domains, email, socials, entity, then YC motion.",
+  });
+}
+
+function renderDistribute(
+  doneMap: Map<string, { done: boolean; note: string }>,
+): string {
+  return renderChecklist(DISTRIBUTE, doneMap, {
+    list: "distribute",
+    blurb:
+      "Plugin + CLI distribution — ready → marketplace listings → stranger proof. Not a store.",
+  });
 }
 
 async function loadOpsSiteDetail(env: Env, slug: string, root: string) {
@@ -1243,18 +1478,6 @@ async function loadOpsSiteDetail(env: Env, slug: string, root: string) {
   };
 }
 
-function renderTopViews(bySlug: ViewRollup["bySlug"]): string {
-  const top = bySlug.filter((r) => r.d7 > 0).slice(0, 10);
-  if (top.length === 0) return "";
-  return `<h2>Top sites (7d views)</h2>
-    <ol class="top-views">${top
-      .map(
-        (r) =>
-          `<li><a href="/s/${escapeHtml(r.slug)}"><code>${escapeHtml(r.slug)}</code></a> · ${r.d7} <span class="faint">(today ${r.today})</span></li>`,
-      )
-      .join("")}</ol>`;
-}
-
 function renderProbeHits(rows: ProbeHitRow[]): string {
   if (rows.length === 0) {
     return `<p class="empty">No scanner probes in 7 days.</p>`;
@@ -1280,13 +1503,28 @@ function renderSitesTable(
   root: string,
 ): string {
   if (sites.length === 0) return `<p class="empty">No sites yet.</p>`;
+  const now = Date.now();
   const rows = sites
     .map((s) => {
       const claimed = s.ownerEmail ? "1" : "0";
       const active = s.active ? "1" : "0";
+      const gcWarn = isAnonGcWarn(s, now);
+      const gcDays = anonGcDaysRemaining(s, now);
       const live = `https://${s.slug}.${root}`;
       const preview = `https://${root}/preview?url=${encodeURIComponent(live)}`;
-      return `<tr data-claimed="${claimed}" data-active="${active}">
+      const gcTitle =
+        gcDays == null
+          ? ""
+          : gcDays <= 0
+            ? ` title="Anon GC overdue (${ANON_IDLE_DELETE_DAYS}d idle)"`
+            : ` title="Anon GC in ~${gcDays}d (${ANON_IDLE_DELETE_DAYS}d idle delete)"`;
+      const servedCell =
+        gcWarn && gcDays != null
+          ? `${escapeHtml(s.lastServedAt || "—")} <span class="pill warn">${
+              gcDays <= 0 ? "GC now" : `GC ${gcDays}d`
+            }</span>`
+          : escapeHtml(s.lastServedAt || "—");
+      return `<tr data-claimed="${claimed}" data-active="${active}" data-gc="${gcWarn ? "1" : "0"}"${gcTitle}>
         <td><a href="/s/${escapeHtml(s.slug)}"><code>${escapeHtml(s.slug)}</code></a></td>
         <td>${escapeHtml(s.ownerEmail || "unclaimed")}</td>
         <td>${escapeHtml(s.visibility)}</td>
@@ -1297,7 +1535,7 @@ function renderSitesTable(
         <td>${s.failureCount}</td>
         <td>${s.viewsToday}</td>
         <td>${s.views7d}</td>
-        <td>${escapeHtml(s.lastServedAt || "—")}</td>
+        <td>${servedCell}</td>
         <td><a href="${escapeHtml(live)}">live</a> · <a href="${escapeHtml(preview)}">preview</a></td>
       </tr>`;
     })
@@ -1307,6 +1545,7 @@ function renderSitesTable(
       <button type="button" data-filter="claimed">Claimed</button>
       <button type="button" data-filter="unclaimed">Unclaimed</button>
       <button type="button" data-filter="inactive">Inactive</button>
+      <button type="button" data-filter="gc" title="Unclaimed idle ≥${ANON_IDLE_DELETE_DAYS - ANON_GC_WARN_DAYS}d — hard-delete at ${ANON_IDLE_DELETE_DAYS}d">Deleting ≤${ANON_GC_WARN_DAYS}d</button>
     </div>
     <table data-sites><thead><tr>
       <th>Slug</th><th>Owner</th><th>Vis</th><th>Runtime</th><th>Active</th>
@@ -1461,7 +1700,7 @@ function renderSiteHtml(
   <div class="wrap">
     <header class="top">
       <a class="brand" href="https://${escapeHtml(root)}/">aft<span>.</span>page</a>
-      <a href="/#sites">← all sites</a>
+      <a href="/sites">← all sites</a>
     </header>
     <h1><code>${escapeHtml(s.slug)}</code></h1>
     <p class="who">${escapeHtml(email)} · <a href="${escapeHtml(detail.liveUrl)}">${escapeHtml(detail.liveUrl)}</a>
@@ -1677,7 +1916,13 @@ function renderSmokeFlight(flight: SmokeFlight | null): string {
     ${probes ? `<table><thead><tr><th>Hostname</th><th></th><th>HTTP</th><th>SSL</th></tr></thead><tbody>${probes}</tbody></table>` : ""}`;
 }
 
-function renderOpsHtml(payload: OpsPayload, email: string, root: string): string {
+function renderOpsHtml(
+  payload: OpsPayload,
+  email: string,
+  root: string,
+  activePanel: OpsHubPanel = "overview",
+  checklistDone: Map<string, { done: boolean; note: string }> = new Map(),
+): string {
   const health = payload.health;
   const s = payload.snapshot;
   const c = payload.cost;
@@ -1797,6 +2042,12 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
     .day-fail { background: var(--bad); min-height: 2px; }
     .day-zero { height: 2px; width: 100%; background: var(--line); }
     .day-d { font-size: 0.7rem; color: var(--faint); margin-top: 0.35rem; font-variant-numeric: tabular-nums; }
+    .country-chart { border: 1px solid var(--line); border-radius: 0.4rem; background: var(--panel); padding: 0.75rem 1rem 0.85rem; }
+    .country-row { display: grid; grid-template-columns: 3.2rem 1fr 3.5rem; gap: 0.55rem; align-items: center; margin: 0.35rem 0; }
+    .country-code { font-family: var(--font-mono); font-size: 0.78rem; color: var(--quiet); }
+    .country-track { height: 0.55rem; background: var(--line); border-radius: 0.15rem; overflow: hidden; }
+    .country-bar { display: block; height: 100%; background: var(--good); border-radius: 0.15rem; min-width: 2px; }
+    .country-n { font-variant-numeric: tabular-nums; font-size: 0.78rem; color: var(--quiet); text-align: right; }
     .score { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
     .score.crit { grid-template-columns: repeat(5, minmax(0, 1fr)); }
     .stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem; }
@@ -1812,8 +2063,14 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
     .net-svg a { text-decoration: none; }
     .net-svg a:hover rect { stroke: var(--ink); }
     .net figcaption { color: var(--quiet); font-size: 0.78rem; margin: 0.65rem 0.1rem 0.1rem; }
-    .stories, .todos { margin: 0 0 1rem; padding-left: 1.2rem; color: var(--quiet); }
-    .stories li, .todos li { margin: 0.28rem 0; }
+    .stories, .todos { margin: 0 0 1rem; padding-left: 0; list-style: none; color: var(--quiet); }
+    .stories { padding-left: 1.2rem; list-style: disc; }
+    .stories li, .todos li { margin: 0.35rem 0; }
+    .todos.check li { display: flex; flex-wrap: wrap; gap: 0.35rem 0.6rem; align-items: baseline; }
+    .todos.check label { display: flex; gap: 0.5rem; align-items: flex-start; cursor: pointer; color: var(--ink); flex: 1 1 14rem; }
+    .todos.check input { margin-top: 0.2rem; }
+    .todos.check .lab { font-weight: 500; }
+    .todos.check .hint { font-size: 0.8rem; color: var(--faint); flex: 1 1 100%; padding-left: 1.5rem; }
     .todos .src { color: var(--faint); font-size: 0.75rem; }
     .card { border: 1px solid var(--line); border-radius: 0.4rem; background: var(--panel); padding: 0.9rem 1rem; }
     a.card-link { text-decoration: none; color: inherit; display: block; }
@@ -1868,24 +2125,26 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
     <div class="hub-shell">
       <nav class="hub-nav" aria-label="Ops sections">
         <span class="nav-g">Operate</span>
-        <a href="#overview" aria-current="page">Overview</a>
-        <a href="#audit">Audit <span class="n" data-live="auditN">${payload.audit?.cases.length ?? 0}</span></a>
-        <a href="#smoke">Smoke <span class="n" data-live="smokeN">${payload.smoke?.cases.length ?? 0}</span></a>
-        <a href="#failures">Failures <span class="n">${payload.failures.length}</span></a>
-        <a href="#logs">Logs <span class="n">${payload.probes.length}</span></a>
+        <a href="/overview"${activePanel === "overview" ? ' aria-current="page"' : ""}>Overview</a>
+        <a href="/audit"${activePanel === "audit" ? ' aria-current="page"' : ""}>Audit <span class="n" data-live="auditN">${payload.audit?.cases.length ?? 0}</span></a>
+        <a href="/smoke"${activePanel === "smoke" ? ' aria-current="page"' : ""}>Smoke <span class="n" data-live="smokeN">${payload.smoke?.cases.length ?? 0}</span></a>
+        <a href="/failures"${activePanel === "failures" ? ' aria-current="page"' : ""}>Failures <span class="n">${payload.failures.length}</span></a>
+        <a href="/logs"${activePanel === "logs" ? ' aria-current="page"' : ""}>Logs <span class="n">${payload.probes.length}</span></a>
         <span class="nav-g">Inventory</span>
-        <a href="#sites">Sites <span class="n" data-live="sites">${s.sites}</span></a>
-        <a href="#users">Users <span class="n" data-live="users">${s.users}</span></a>
-        <a href="#domains">Domains <span class="n" data-live="domains">${s.domains}</span></a>
-        <a href="#feedback">Feedback <span class="n">${payload.feedback.length}</span></a>
+        <a href="/sites"${activePanel === "sites" ? ' aria-current="page"' : ""}>Sites <span class="n" data-live="sites">${s.sites}</span></a>
+        <a href="/users"${activePanel === "users" ? ' aria-current="page"' : ""}>Users <span class="n" data-live="users">${s.users}</span></a>
+        <a href="/domains"${activePanel === "domains" ? ' aria-current="page"' : ""}>Domains <span class="n" data-live="domains">${s.domains}</span></a>
+        <a href="/feedback"${activePanel === "feedback" ? ' aria-current="page"' : ""}>Feedback <span class="n">${payload.feedback.length}</span></a>
         <span class="nav-g">Map</span>
-        <a href="#cf">CF <span class="n" data-live="cfN">${payload.cfPractices.cases.length}</span></a>
-        <a href="#network">Network</a>
-        <a href="#stories">Stories</a>
-        <a href="#todos">Todos</a>
+        <a href="/cf"${activePanel === "cf" ? ' aria-current="page"' : ""}>CF <span class="n" data-live="cfN">${payload.cfPractices.cases.length}</span></a>
+        <a href="/network"${activePanel === "network" ? ' aria-current="page"' : ""}>Network</a>
+        <a href="/stories"${activePanel === "stories" ? ' aria-current="page"' : ""}>Stories</a>
+        <span class="nav-g">Grow</span>
+        <a href="/distribute"${activePanel === "distribute" ? ' aria-current="page"' : ""}>Distribute <span class="n" data-check-nav="distribute">${checklistProgress(checklistDone, DISTRIBUTE).done}/${DISTRIBUTE.length}</span></a>
+        <a href="/todos"${activePanel === "todos" ? ' aria-current="page"' : ""}>Todos <span class="n" data-check-nav="todos">${checklistProgress(checklistDone, STARTUP_30D).done}/${STARTUP_30D.length}</span></a>
       </nav>
       <div class="hub-main">
-        <section class="panel is-active" id="overview">
+        <section class="panel${activePanel === "overview" ? " is-active" : ""}" id="overview">
           <h2>Critical</h2>
           <div class="score crit">
             <a class="card card-link" href="https://status.aft.page/">
@@ -1894,26 +2153,26 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
                 <div><strong><span class="pill ${healthOk ? "ok" : "fail"}">${escapeHtml(health.overall.replace(/_/g, " "))}</span></strong><span>status probes</span></div>
               </div>
             </a>
-            <a class="card card-link" href="#audit">
+            <a class="card card-link" href="/audit">
               <h3>Hijack / audit</h3>
               <div class="nums">
                 <div><strong><span class="pill ${payload.audit?.ok ? "ok" : "fail"}" data-live="auditOk">${payload.audit ? (payload.audit.ok ? "pass" : "fail") : "—"}</span></strong><span data-live="auditN">${payload.audit?.cases.length ?? 0}</span><span>cases</span></div>
               </div>
             </a>
-            <a class="card card-link" href="#smoke">
+            <a class="card card-link" href="/smoke">
               <h3>CIL / smoke</h3>
               <div class="nums">
                 <div><strong><span class="pill ${payload.smoke?.ok ? "ok" : "fail"}" data-live="smokeOk">${payload.smoke ? (payload.smoke.ok ? "pass" : "fail") : "—"}</span></strong><span data-live="smokeN">${payload.smoke?.cases.length ?? 0}</span><span>cases</span></div>
               </div>
             </a>
-            <a class="card card-link" href="#failures">
+            <a class="card card-link" href="/failures">
               <h3>Deploy fails</h3>
               <div class="nums">
                 <div><strong data-live="failn">${payload.failures.length}</strong><span>inbox</span></div>
                 <div><strong data-live="toFix">${payload.toFix.length}</strong><span>codes 7d</span></div>
               </div>
             </a>
-            <a class="card card-link" href="#logs">
+            <a class="card card-link" href="/logs">
               <h3>Scanner</h3>
               <div class="nums">
                 <div><strong><span class="pill ${junk200 ? "fail" : "ok"}">${junk200 || "ok"}</span></strong><span>${junk200 ? "junk 200s" : "no junk 200"}</span></div>
@@ -1957,17 +2216,17 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
           ${days}
           <h3>Product</h3>
           <div class="stat-grid">
-            <a class="card card-link" href="#sites"><strong data-live="sites">${s.sites}</strong><span>sites</span></a>
+            <a class="card card-link" href="/sites"><strong data-live="sites">${s.sites}</strong><span>sites</span></a>
             <div class="card"><strong data-live="claimed">${s.claimed}</strong><span>claimed</span></div>
-            <a class="card card-link" href="#users"><strong data-live="users">${s.users}</strong><span>users</span></a>
-            <a class="card card-link" href="#domains"><strong data-live="domains">${s.domains}</strong><span>domains</span></a>
+            <a class="card card-link" href="/users"><strong data-live="users">${s.users}</strong><span>users</span></a>
+            <a class="card card-link" href="/domains"><strong data-live="domains">${s.domains}</strong><span>domains</span></a>
             <div class="card"><strong data-live="active24h">${s.active24h}</strong><span>served 24h</span></div>
-            <div class="card"><strong data-live="views7d">${payload.views.d7}</strong><span>views 7d</span></div>
+            <a class="card card-link" href="/sites"><strong data-live="views7d">${payload.views.d7}</strong><span>views 7d</span></a>
             <div class="card"><strong data-live="deploysMtd">${s.deploysMtd}</strong><span>deploys MTD</span></div>
             <div class="card"><strong data-live="waitlist">${s.waitlist}</strong><span>waitlist</span></div>
           </div>
           <div class="score">
-            <a class="card card-link" href="#cf">
+            <a class="card card-link" href="/cf">
               <h3>CF practices</h3>
               <div class="nums">
                 <div><strong><span class="pill ${payload.cfPractices.ok ? "ok" : "fail"}" data-live="cfOk">${payload.cfPractices.ok ? "pass" : "fail"}</span></strong><span data-live="cfN">${payload.cfPractices.cases.length}</span><span>checks · daily</span></div>
@@ -2014,20 +2273,20 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
           <h3>By source (7d)</h3>
           ${sources}
         </section>
-        <section class="panel" id="audit">
+        <section class="panel${activePanel === "audit" ? " is-active" : ""}" id="audit">
           <h2>Audit</h2>
           ${renderAuditSection(payload.audit, payload.auditHistory)}
         </section>
-        <section class="panel" id="smoke">
+        <section class="panel${activePanel === "smoke" ? " is-active" : ""}" id="smoke">
           <h2>Smoke</h2>
           ${renderSmokeSection(payload.smoke, payload.smokeHistory)}
         </section>
-        <section class="panel" id="failures">
+        <section class="panel${activePanel === "failures" ? " is-active" : ""}" id="failures">
           <h2>Failures</h2>
           <p class="empty">Click the error code → why / files / retry.</p>
           ${rows}
         </section>
-        <section class="panel" id="logs">
+        <section class="panel${activePanel === "logs" ? " is-active" : ""}" id="logs">
           <h2>Probes</h2>
           <p class="empty">Scanner hits from owner site_logs (path + country, no IP). Last 7 days.</p>
           ${renderProbeHits(payload.probes)}
@@ -2037,40 +2296,46 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
             <a href="${CF_LOGS_MCP}">aft-page-mcp</a> (protocol / Zod).
           </p>
         </section>
-        <section class="panel" id="sites">
+        <section class="panel${activePanel === "sites" ? " is-active" : ""}" id="sites">
           <h2>Sites</h2>
-          ${renderTopViews(payload.views.bySlug)}
+          <h3>Traffic</h3>
+          ${renderVisitsSection(payload.visits)}
+          <h3>Inventory</h3>
           ${renderSitesTable(payload.sites, root)}
         </section>
-        <section class="panel" id="users">
+        <section class="panel${activePanel === "users" ? " is-active" : ""}" id="users">
           <h2>Users</h2>
           <p class="empty">Requested custom domains sort first. Approve here.</p>
           ${renderUsersTable(payload.users)}
         </section>
-        <section class="panel" id="domains">
+        <section class="panel${activePanel === "domains" ? " is-active" : ""}" id="domains">
           <h2>Domains</h2>
           ${renderDomainsTable(payload.domains, root)}
         </section>
-        <section class="panel" id="feedback">
+        <section class="panel${activePanel === "feedback" ? " is-active" : ""}" id="feedback">
           <h2>Feedback</h2>
           ${notes}
         </section>
-        <section class="panel" id="cf">
+        <section class="panel${activePanel === "cf" ? " is-active" : ""}" id="cf">
           <h2>Cloudflare</h2>
           ${renderCfPractices(payload.cfPractices)}
         </section>
-        <section class="panel" id="network">
+        <section class="panel${activePanel === "network" ? " is-active" : ""}" id="network">
           <h2>Network</h2>
           ${renderNetworkDiagram()}
         </section>
-        <section class="panel" id="stories">
+        <section class="panel${activePanel === "stories" ? " is-active" : ""}" id="stories">
           <h2>Stories</h2>
           <p class="empty">Shipped one-liners. What a person can do — not a second product host.</p>
           ${renderStories()}
         </section>
-        <section class="panel" id="todos">
-          <h2>Todos</h2>
-          ${renderTodos()}
+        <section class="panel${activePanel === "distribute" ? " is-active" : ""}" id="distribute">
+          <h2>Distribute</h2>
+          ${renderDistribute(checklistDone)}
+        </section>
+        <section class="panel${activePanel === "todos" ? " is-active" : ""}" id="todos">
+          <h2>30-day checklist</h2>
+          ${renderTodos(checklistDone)}
         </section>
       </div>
     </div>
@@ -2078,30 +2343,66 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
   </div>
   <script>
     (function () {
-      var tabs = ["overview", "audit", "smoke", "failures", "logs", "sites", "users", "domains", "feedback", "cf", "network", "stories", "todos"];
-      function show(name) {
+      var tabs = ${JSON.stringify([...OPS_HUB_PANELS])};
+      var initial = ${JSON.stringify(activePanel)};
+      function pathFor(name) {
+        return name === "overview" ? "/overview" : "/" + name;
+      }
+      function panelFromPath() {
+        var p = (location.pathname || "/").replace(/\\/+$/, "") || "/";
+        if (p === "/" || p === "") return "overview";
+        if (p === "/visits") return "sites";
+        var seg = p.slice(1);
+        if (seg === "visits") return "sites";
+        return tabs.indexOf(seg) >= 0 ? seg : "overview";
+      }
+      function show(name, push) {
+        if (name === "visits") name = "sites";
         if (tabs.indexOf(name) < 0) name = "overview";
         document.querySelectorAll(".hub-nav a").forEach(function (a) {
-          if (a.getAttribute("href") === "#" + name) a.setAttribute("aria-current", "page");
-          else a.removeAttribute("aria-current");
+          var href = a.getAttribute("href") || "";
+          if (href === pathFor(name) || (name === "overview" && (href === "/" || href === "/overview"))) {
+            a.setAttribute("aria-current", "page");
+          } else a.removeAttribute("aria-current");
         });
         document.querySelectorAll(".hub-main .panel").forEach(function (p) {
           p.classList.toggle("is-active", p.id === name);
         });
-        if ((location.hash || "").replace(/^#/, "") !== name) {
-          history.replaceState(null, "", "#" + name);
+        var next = pathFor(name);
+        if (location.pathname !== next || location.hash) {
+          if (push) history.pushState(null, "", next);
+          else history.replaceState(null, "", next);
         }
       }
       document.querySelector(".wrap").addEventListener("click", function (e) {
-        var a = e.target.closest("a[href^='#']");
+        var a = e.target.closest("a[href]");
         if (!a || a.getAttribute("target") === "_blank") return;
+        var href = a.getAttribute("href") || "";
+        if (href.charAt(0) !== "/") return;
+        if (href.indexOf("//") === 0) return;
+        var path = href.split("?")[0].split("#")[0];
+        if (path === "/visits") {
+          e.preventDefault();
+          show("sites", true);
+          return;
+        }
+        var seg = path === "/" || path === "/overview" ? "overview" : path.replace(/^\\//, "");
+        if (tabs.indexOf(seg) < 0) return;
         e.preventDefault();
-        show(a.getAttribute("href").slice(1));
+        show(seg, true);
       });
-      window.addEventListener("hashchange", function () {
-        show((location.hash || "#overview").slice(1));
+      window.addEventListener("popstate", function () {
+        show(panelFromPath(), false);
       });
-      show((location.hash || "#overview").slice(1));
+      if (location.hash === "#visits" || location.pathname === "/visits") {
+        show("sites", false);
+      } else if (location.hash && location.hash.length > 1) {
+        var legacy = location.hash.slice(1);
+        if (legacy === "visits") legacy = "sites";
+        show(tabs.indexOf(legacy) >= 0 ? legacy : initial, false);
+      } else {
+        show(initial, false);
+      }
 
       var filters = document.querySelector("[data-site-filters]");
       if (filters) {
@@ -2116,15 +2417,133 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
           document.querySelectorAll("[data-sites] tbody tr").forEach(function (tr) {
             var claimed = tr.getAttribute("data-claimed") === "1";
             var active = tr.getAttribute("data-active") === "1";
+            var gc = tr.getAttribute("data-gc") === "1";
             var showRow =
               f === "all" ||
               (f === "claimed" && claimed) ||
               (f === "unclaimed" && !claimed) ||
-              (f === "inactive" && !active);
+              (f === "inactive" && !active) ||
+              (f === "gc" && gc);
             tr.style.display = showRow ? "" : "none";
           });
         });
       }
+
+      (function visitsUi() {
+        var root = document.querySelector("[data-visits-root]");
+        if (!root) return;
+        var loading = false;
+        function esc(s) {
+          return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+        }
+        function shortDay(iso) {
+          var p = String(iso).split("-");
+          return Number(p[1]) + "/" + Number(p[2]);
+        }
+        function shortHour(iso) {
+          var d = new Date(iso);
+          if (isNaN(d.getTime())) return String(iso).slice(11, 13) || iso;
+          return String(d.getUTCHours()).padStart(2, "0") + "h";
+        }
+        function labelStep(n) {
+          if (n <= 12) return 1;
+          if (n <= 31) return 3;
+          return 7;
+        }
+        function renderSeries(series, range) {
+          if (!series || !series.length) return '<p class="empty">No page views in this window.</p>';
+          var hourly = range === "24h";
+          var max = 1;
+          series.forEach(function (b) { if (b.n > max) max = b.n; });
+          var step = labelStep(series.length);
+          var cols = series.map(function (b, i) {
+            var h = (b.n / max) * 100;
+            var lab = (i % step === 0 || i === series.length - 1)
+              ? esc(hourly ? shortHour(b.t) : shortDay(b.t))
+              : "";
+            var stack = b.n === 0
+              ? '<span class="day-zero"></span>'
+              : '<div class="day-stack" style="height:' + h + '%"><span class="day-ok" style="flex:1 1 0"></span></div>';
+            return '<div class="day-col" title="' + esc(b.t + " — " + b.n + " views") + '">' +
+              '<span class="day-n">' + (b.n || "") + '</span>' +
+              '<div class="day-track">' + stack + '</div>' +
+              '<span class="day-d">' + lab + '</span></div>';
+          }).join("");
+          return '<div class="day-chart" role="img" aria-label="HTML page views" data-visits-series>' +
+            '<div class="day-legend"><span class="swatch ok"></span> HTML views (page_view)</div>' +
+            '<div class="day-cols" style="grid-template-columns: repeat(' + series.length + ', minmax(0, 1fr))">' + cols + '</div></div>';
+        }
+        function renderCountries(countries) {
+          if (!countries || !countries.length) {
+            return '<p class="empty" data-visits-countries>No serve-by-country rows in this window.</p>';
+          }
+          var max = 1;
+          countries.forEach(function (c) { if (c.n > max) max = c.n; });
+          var rows = countries.map(function (c) {
+            var pct = Math.round((c.n / max) * 100);
+            return '<div class="country-row" title="' + esc(c.country + " — " + c.n) + '">' +
+              '<span class="country-code">' + esc(c.country) + '</span>' +
+              '<div class="country-track"><span class="country-bar" style="width:' + pct + '%"></span></div>' +
+              '<span class="country-n">' + c.n + '</span></div>';
+          }).join("");
+          return '<div class="country-chart" role="img" aria-label="Serves by country" data-visits-countries>' +
+            '<div class="day-legend"><span class="swatch ok"></span> serves by country (serve · blob4)</div>' + rows + '</div>';
+        }
+        function apply(v) {
+          root.setAttribute("data-range", v.range);
+          root.setAttribute("data-scope", v.scope);
+          root.querySelectorAll("[data-visits-range]").forEach(function (b) {
+            if (b.getAttribute("data-visits-range") === v.range) b.setAttribute("aria-current", "true");
+            else b.removeAttribute("aria-current");
+          });
+          root.querySelectorAll("[data-visits-scope]").forEach(function (b) {
+            if (b.getAttribute("data-visits-scope") === v.scope) b.setAttribute("aria-current", "true");
+            else b.removeAttribute("aria-current");
+          });
+          var viewsEl = root.querySelector("[data-visits-views]");
+          var servesEl = root.querySelector("[data-visits-serves]");
+          var srcEl = root.querySelector("[data-visits-src]");
+          if (viewsEl) viewsEl.textContent = v.viewsTotal || 0;
+          if (servesEl) servesEl.textContent = v.servesTotal || 0;
+          if (srcEl) srcEl.textContent = v.source || "—";
+          var sw = root.querySelector("[data-visits-series-wrap]");
+          var cw = root.querySelector("[data-visits-countries-wrap]");
+          if (sw) sw.innerHTML = renderSeries(v.series || [], v.range);
+          if (cw) cw.innerHTML = renderCountries(v.countries || []);
+          var note = root.querySelector("[data-visits-note]");
+          if (note) {
+            if (!v.source) {
+              note.textContent = v.error === "cf_api_token_missing"
+                ? "CF_API_TOKEN missing — needs Account Analytics Engine Read. See METRICS.md for curl SQL."
+                : "AE SQL unavailable" + (v.error ? " (" + v.error + ")" : "") + ". Cached KV views still on Overview.";
+            } else {
+              note.textContent = "HTML views ≠ serves-by-country (country only on serve). Cache ~5m." +
+                (v.checkedAt ? " As of " + v.checkedAt + "." : "") +
+                (v.error ? " Partial: " + v.error + "." : "");
+            }
+          }
+        }
+        async function load(range, scope) {
+          if (loading) return;
+          loading = true;
+          try {
+            var r = await fetch("/api/visits?range=" + encodeURIComponent(range) + "&scope=" + encodeURIComponent(scope), {
+              credentials: "same-origin",
+            });
+            if (!r.ok) return;
+            apply(await r.json());
+          } catch (e) {}
+          loading = false;
+        }
+        root.addEventListener("click", function (e) {
+          var rb = e.target.closest("[data-visits-range]");
+          var sb = e.target.closest("[data-visits-scope]");
+          if (!rb && !sb) return;
+          var range = rb ? rb.getAttribute("data-visits-range") : root.getAttribute("data-range");
+          var scope = sb ? sb.getAttribute("data-visits-scope") : root.getAttribute("data-scope");
+          load(range, scope);
+        });
+      })();
 
       function pct(rate) {
         if (rate == null) return "—";
@@ -2230,8 +2649,7 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
             if (!r.ok) throw new Error("http " + r.status);
             go.textContent = "TLS…";
             await new Promise(function (ok) { setTimeout(ok, 20000); });
-            location.hash = "#smoke";
-            location.reload();
+            location.assign("/smoke");
           } catch (e) {
             go.disabled = false;
             go.textContent = "Run now";
@@ -2246,14 +2664,39 @@ function renderOpsHtml(payload: OpsPayload, email: string, root: string): string
           try {
             var ar = await fetch("/api/audit/run", { method: "POST", credentials: "same-origin" });
             if (!ar.ok) throw new Error("http " + ar.status);
-            location.hash = "#audit";
-            location.reload();
+            location.assign("/audit");
           } catch (e) {
             ago.disabled = false;
             ago.textContent = "Run now";
           }
         });
       }
+      document.querySelectorAll("[data-check-id]").forEach(function (box) {
+        box.addEventListener("change", async function () {
+          var id = box.getAttribute("data-check-id");
+          var list = box.getAttribute("data-check-list") || "todos";
+          var done = !!box.checked;
+          box.disabled = true;
+          try {
+            var r = await fetch("/api/checklist", {
+              method: "POST",
+              credentials: "same-origin",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ id: id, done: done }),
+            });
+            if (!r.ok) throw new Error("http " + r.status);
+            var j = await r.json();
+            var p = j && j.progress ? j.progress.done + "/" + j.progress.total : "";
+            var which = (j && j.list) || list;
+            document.querySelectorAll('[data-check-progress="' + which + '"], [data-check-nav="' + which + '"]').forEach(function (el) {
+              if (p) el.textContent = p;
+            });
+          } catch (e) {
+            box.checked = !done;
+          }
+          box.disabled = false;
+        });
+      });
       setInterval(tick, 8000);
     })();
   </script>

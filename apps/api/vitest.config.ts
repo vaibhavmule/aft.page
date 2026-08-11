@@ -20,6 +20,7 @@ export default defineConfig(async () => {
             AUTH_SECRET: "test-auth-secret-for-vitest-only",
             OPS_EMAILS: "ops@example.com,vaibhavmule135@gmail.com",
             SMOKE_SECRET: "test-smoke-secret",
+            CF_API_TOKEN: "test-cf-api-token",
             TEST_MIGRATIONS: migrations,
           },
           serviceBindings: {
@@ -45,6 +46,11 @@ export default defineConfig(async () => {
                 headers: { "content-type": "application/json" },
               });
             },
+            SALES: () =>
+              new Response(JSON.stringify({ ok: true, service: "aft-page-sales" }), {
+                status: 200,
+                headers: { "content-type": "application/json" },
+              }),
           },
         },
       }),

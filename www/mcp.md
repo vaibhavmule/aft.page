@@ -122,6 +122,7 @@ Claim: https://aft.page/claim?slug=…&token=…
 slug: …
 deploy: dep_…
 files: …
+Unclaimed sites are deleted after 30 days idle. Visit, update, or claim to keep.
 ```
 
 **Agent rules:**
@@ -245,7 +246,11 @@ Form fields: `file0`, `file0_path`, `file1`, `file1_path`, … (or repeated `fil
   "deployId": "dep_…",
   "url": "https://hello.aft.page",
   "files": 1,
-  "bytes": 42
+  "bytes": 42,
+  "editToken": "aft_edit_…",
+  "claimUrl": "https://aft.page/claim?slug=hello&token=…",
+  "owned": false,
+  "notice": "Unclaimed sites are deleted after 30 days idle. Visit, update, or claim to keep."
 }
 ```
 
@@ -375,7 +380,8 @@ Trailing UI junk after `</html>` (e.g. scraped “Deploy” labels) is stripped 
 - Docs: https://aft.page/docs · https://aft.page/docs.md
 - Example site: https://hello.aft.page · https://vite-hello.aft.page (Vite SPA)
 - Metrics (internal): see repo `docs/METRICS.md`
-- OSS CLI (your cloud): https://github.com/vaibhavmule/aft
+- Hosted CLI: `curl -fsSL https://aft.page/install | sh` → `aft deploy` (no account required)
+- OSS CLI (your cloud — different product): https://github.com/vaibhavmule/aft
 
 ---
 

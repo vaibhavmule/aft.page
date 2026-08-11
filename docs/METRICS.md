@@ -53,7 +53,7 @@ Account: `44255ec64e0080b678670b53bf810d27`
 
 ```bash
 ACCOUNT=44255ec64e0080b678670b53bf810d27
-TOKEN=…   # Account Analytics Engine Read
+TOKEN=…   # Account Analytics Read (AE SQL + Workers cost GraphQL on ops)
 
 curl -sS "https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/analytics_engine/sql" \
   -H "Authorization: Bearer ${TOKEN}" \
@@ -156,7 +156,7 @@ ORDER BY n DESC
 ```sql
 SELECT
   toStartOfInterval(timestamp, INTERVAL '1' DAY) AS day,
-  count() AS views
+  SUM(_sample_interval) AS views
 FROM aft_page_metrics
 WHERE index1 = 'page_view'
   AND timestamp > NOW() - INTERVAL '14' DAY
@@ -164,12 +164,43 @@ GROUP BY day
 ORDER BY day
 ```
 
+### Hello dogfood views / hour (24h)
+
+```sql
+SELECT
+  toStartOfInterval(timestamp, INTERVAL '1' HOUR) AS t,
+  SUM(_sample_interval) AS n
+FROM aft_page_metrics
+WHERE index1 = 'page_view'
+  AND timestamp > NOW() - INTERVAL '1' DAY
+  AND blob3 IN ('hello', 'vite-hello', 'next-hello')
+GROUP BY t
+ORDER BY t
+```
+
+### Serves by country (region)
+
+`serve` stores `cf-ipcountry` in `blob4` (page_view uses blob4 for a hashed IP — do not mix).
+
+```sql
+SELECT
+  blob4 AS country,
+  SUM(_sample_interval) AS n
+FROM aft_page_metrics
+WHERE index1 = 'serve'
+  AND timestamp > NOW() - INTERVAL '7' DAY
+  AND blob3 IN ('hello', 'vite-hello', 'next-hello')
+GROUP BY country
+ORDER BY n DESC
+LIMIT 25
+```
+
 ### Top viewed slugs
 
 ```sql
 SELECT
   blob3 AS slug,
-  count() AS views
+  SUM(_sample_interval) AS views
 FROM aft_page_metrics
 WHERE index1 = 'page_view'
   AND timestamp > NOW() - INTERVAL '7' DAY
@@ -190,8 +221,9 @@ GROUP BY event
 
 ## Dashboard
 
-Founder: [ops.aft.page](https://ops.aft.page) (Time-to-URL + scoreboard + failures + retry).  
-Cloudflare → Analytics & Logs → Workers Analytics Engine, or paste the SQL above into the SQL API.
+Founder: [ops.aft.page](https://ops.aft.page) — scoreboard + **[/sites](https://ops.aft.page/sites)** Traffic (AE SQL graphs).  
+Token needs **Account Analytics Read** (AE SQL + Workers cost GraphQL).  
+`/visits` redirects to `/sites`.
 
 Grafana: use the [Analytics Engine SQL datasource](https://developers.cloudflare.com/analytics/analytics-engine/grafana/) if you want a standing board.
 

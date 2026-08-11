@@ -1,4 +1,4 @@
-/** ponytail: smoke check for static hero snippets + Drop + CLI soon */
+/** ponytail: smoke check for static hero snippets + Drop + live CLI */
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -17,9 +17,14 @@ for (const needle of [
   'href="#hero-mcp"',
   'href="#hero-curl"',
   'href="#hero-drop"',
-  "coming soon",
+  "https://aft.page/install",
+  "aft deploy",
 ]) {
   if (!html.includes(needle)) throw new Error(`index.html missing ${needle}`);
+}
+
+if (html.includes("coming soon") || html.includes("CLI next")) {
+  throw new Error("index.html still marks CLI as coming soon");
 }
 
 if (html.includes("data-demo-run") || html.includes("Run sample")) {

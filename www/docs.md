@@ -165,5 +165,6 @@ Source lives in the [aft.page repo `examples/`](https://github.com/vaibhavmule/a
 - MCP / API reference: https://aft.page/mcp · https://aft.page/mcp.md
 - Plugin: https://aft.page/plugins · `npx plugins add vaibhavmule/aft.page`
 - Drop: https://aft.page/drop/
+- CLI: `curl -fsSL https://aft.page/install | sh` then `aft deploy` (login optional)
 - Cursor: https://aft.page/with/cursor/
-- OSS CLI (your AWS / Cloudflare): https://github.com/vaibhavmule/aft
+- OSS CLI (your AWS / Cloudflare — different product): https://github.com/vaibhavmule/aft

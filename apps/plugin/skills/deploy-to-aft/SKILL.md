@@ -29,12 +29,13 @@ directory exists.
 ## Public-deploy safety
 
 An anonymous MCP deployment is public immediately. Claiming it does not make
-it private automatically. Unclaimed deploys are deleted after 30 days unused —
-tell the user to claim if they want the URL to last. A visit or redeploy
-resets that clock. If the user asks for a private deployment, the
-project appears to contain sensitive content, or publication intent is not
-clear, stop and explain that this MCP cannot make the first upload atomically
-private. Get explicit confirmation before publishing anything sensitive.
+it private automatically. Unclaimed deploys are deleted after 30 days idle —
+when the deploy result includes `notice`, include that exact line in the final
+user reply. A visit, update, or claim resets that clock. If the user asks for
+a private deployment, the project appears to contain sensitive content, or
+publication intent is not clear, stop and explain that this MCP cannot make
+the first upload atomically private. Get explicit confirmation before
+publishing anything sensitive.
 
 Treat an upload as irreversible disclosure. Failed upload bytes may be kept in
 short-lived operational diagnostics. Never upload secrets or credentials,
@@ -112,7 +113,8 @@ Use this flow only when no valid hosted `.aft/state.json` exists:
    the returned values. Preserve it as secret local state.
 6. Verify the live URL with an HTTP GET when available.
 7. Return the live URL and, when the first-deploy result contains a distinct
-   `claimUrl`, the claim URL. State that the site is public.
+   `claimUrl`, the claim URL. State that the site is public. When the result
+   includes `notice`, include that exact line in the user-facing reply.
 
 ## Update the same URL
 

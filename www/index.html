@@ -290,7 +290,7 @@
         <div class="hero-copy">
           <a class="hero-pill" href="#hero-drop">
             <i class="hero-pill-dot" aria-hidden="true"></i>
-            No account to start
+            No account or credit card required
           </a>
           <h1 class="hero-title">
             Turn your agent-built app into a shareable URL in seconds.
@@ -329,24 +329,12 @@
                   type="button"
                   class="hero-demo-tab"
                   role="tab"
-                  id="demo-tab-mcp"
-                  aria-controls="demo-panel-mcp"
+                  id="demo-tab-cli"
+                  aria-controls="demo-panel-cli"
                   aria-selected="true"
-                  data-demo-tab="mcp"
+                  data-demo-tab="cli"
                 >
-                  MCP
-                </button>
-                <button
-                  type="button"
-                  class="hero-demo-tab"
-                  role="tab"
-                  id="demo-tab-curl"
-                  aria-controls="demo-panel-curl"
-                  aria-selected="false"
-                  tabindex="-1"
-                  data-demo-tab="curl"
-                >
-                  cURL
+                  CLI
                 </button>
                 <button
                   type="button"
@@ -364,13 +352,25 @@
                   type="button"
                   class="hero-demo-tab"
                   role="tab"
-                  id="demo-tab-cli"
-                  aria-controls="demo-panel-cli"
+                  id="demo-tab-mcp"
+                  aria-controls="demo-panel-mcp"
                   aria-selected="false"
                   tabindex="-1"
-                  data-demo-tab="cli"
+                  data-demo-tab="mcp"
                 >
-                  CLI
+                  MCP
+                </button>
+                <button
+                  type="button"
+                  class="hero-demo-tab"
+                  role="tab"
+                  id="demo-tab-curl"
+                  aria-controls="demo-panel-curl"
+                  aria-selected="false"
+                  tabindex="-1"
+                  data-demo-tab="curl"
+                >
+                  cURL
                 </button>
               </div>
               <button
@@ -385,36 +385,18 @@
                 </svg>
                 <span class="sr-only">Copy snippet</span>
               </button>
+              <p class="hero-demo-title" aria-hidden="true">aft — -zsh — 80×24</p>
             </div>
 
             <div
               class="hero-demo-panel"
               role="tabpanel"
-              id="demo-panel-mcp"
-              aria-labelledby="demo-tab-mcp"
-              data-demo-panel="mcp"
+              id="demo-panel-cli"
+              aria-labelledby="demo-tab-cli"
+              data-demo-panel="cli"
             >
-              <pre class="hero-demo-code"><code id="demo-mcp-code"><span class="hero-demo-ps">%</span> # Add to your agent
-<span class="hero-demo-ps">%</span> <a href="https://mcp.aft.page/mcp">https://mcp.aft.page/mcp</a>
-
-deploy({
-  html: "&lt;!DOCTYPE html&gt;&lt;title&gt;Hello&lt;/title&gt;&lt;h1&gt;Live from MCP&lt;/h1&gt;",
-  preferred_slug: "hello"
-})
-# → <a class="hero-demo-liveurl" href="https://hello.aft.page">hello.aft.page</a></code></pre>
-            </div>
-
-            <div
-              class="hero-demo-panel"
-              role="tabpanel"
-              id="demo-panel-curl"
-              aria-labelledby="demo-tab-curl"
-              data-demo-panel="curl"
-              hidden
-            >
-              <pre class="hero-demo-code"><code id="demo-curl-code"><span class="hero-demo-ps">%</span> curl -sS -X POST "<a href="https://api.aft.page/v1/deploy">https://api.aft.page/v1/deploy</a>" \
-  -H "content-type: text/html; charset=utf-8" \
-  -d '&lt;!DOCTYPE html&gt;&lt;title&gt;Hello&lt;/title&gt;&lt;h1&gt;Live from curl&lt;/h1&gt;'
+              <pre class="hero-demo-code"><code id="demo-cli-code"><span class="hero-demo-ps">%</span> curl -fsSL <a href="https://aft.page/install">https://aft.page/install</a> | sh
+<span class="hero-demo-ps">%</span> aft deploy
 # → <a class="hero-demo-liveurl" href="https://hello.aft.page">hello.aft.page</a></code></pre>
             </div>
 
@@ -466,7 +448,7 @@ deploy({
                     </h2>
                     <p class="drop-zone-lede">
                       HTML, CSS, JS → <code>*.aft.page</code> instantly. No
-                      account to start.
+                      account or credit card required.
                     </p>
                     <div class="drop-zone-actions">
                       <button
@@ -513,8 +495,8 @@ deploy({
                       rel="noopener noreferrer"
                     ></a>
                     <p class="drop-claim-hint">
-                      Claim when you want to keep it. Ownership is on the manage
-                      page.
+                      Unclaimed sites are deleted after 30 days idle. Visit,
+                      update, or claim to keep.
                     </p>
                     <button type="button" class="btn btn-ghost" id="drop-again">
                       Drop another
@@ -527,17 +509,36 @@ deploy({
             <div
               class="hero-demo-panel"
               role="tabpanel"
-              id="demo-panel-cli"
-              aria-labelledby="demo-tab-cli"
-              data-demo-panel="cli"
+              id="demo-panel-mcp"
+              aria-labelledby="demo-tab-mcp"
+              data-demo-panel="mcp"
               hidden
             >
-              <pre class="hero-demo-code"><code id="demo-cli-code"># aft CLI — coming soon
-<span class="hero-demo-ps">%</span> aft deploy .
+              <pre class="hero-demo-code"><code id="demo-mcp-code"><span class="hero-demo-ps">%</span> # Agent Plugin — Cursor, Claude Code, Codex…
+<span class="hero-demo-ps">%</span> npx plugins add <a href="https://aft.page/plugins">vaibhavmule/aft.page</a>
+
+<span class="hero-demo-ps">%</span> # Or remote MCP URL
+<span class="hero-demo-ps">%</span> <a href="https://mcp.aft.page/mcp">https://mcp.aft.page/mcp</a>
+
+deploy({
+  html: "&lt;!DOCTYPE html&gt;&lt;title&gt;Hello&lt;/title&gt;&lt;h1&gt;Live from MCP&lt;/h1&gt;",
+  preferred_slug: "hello"
+})
 # → <a class="hero-demo-liveurl" href="https://hello.aft.page">hello.aft.page</a></code></pre>
-              <p class="hero-demo-soon">
-                MCP, cURL, and Drop ship today. CLI next.
-              </p>
+            </div>
+
+            <div
+              class="hero-demo-panel"
+              role="tabpanel"
+              id="demo-panel-curl"
+              aria-labelledby="demo-tab-curl"
+              data-demo-panel="curl"
+              hidden
+            >
+              <pre class="hero-demo-code"><code id="demo-curl-code"><span class="hero-demo-ps">%</span> curl -sS -X POST "<a href="https://api.aft.page/v1/deploy">https://api.aft.page/v1/deploy</a>" \
+  -H "content-type: text/html; charset=utf-8" \
+  -d '&lt;!DOCTYPE html&gt;&lt;title&gt;Hello&lt;/title&gt;&lt;h1&gt;Live from curl&lt;/h1&gt;'
+# → <a class="hero-demo-liveurl" href="https://hello.aft.page">hello.aft.page</a></code></pre>
             </div>
           </div>
         </div>
@@ -679,7 +680,7 @@ deploy({
               <span class="path-num">002</span>
               <svg class="path-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="5" height="5"/><rect x="15" y="4" width="5" height="5"/><rect x="4" y="15" width="5" height="5"/><rect x="15" y="15" width="5" height="5"/></svg>
               <h3>Drop</h3>
-              <p>Folder or zip in the browser. No account to start.</p>
+              <p>Folder or zip in the browser. No account or credit card required.</p>
             </a>
           </li>
           <li>

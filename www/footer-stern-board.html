@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>aft.page — stern craft (approve / kill)</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        --void: #000000;
+        --panel: #0a0a0a;
+        --line: #27272a;
+        --line-bright: #3f3f46;
+        --ink: #fafafa;
+        --quiet: #a1a1aa;
+        --faint: #52525b;
+        --good: #22c55e;
+        --bad: #ff6b6b;
+        --font-sans: "Geist Variable", "Geist", "Segoe UI", system-ui, sans-serif;
+        --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, Menlo, Consolas, monospace;
+        --page: 1180px;
+        --page-gutter: 2.5rem;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: var(--font-sans);
+        color: var(--ink);
+        background: var(--void);
+        -webkit-font-smoothing: antialiased;
+        padding-bottom: 7rem;
+      }
+
+      a { color: inherit; text-decoration: none; }
+      code { font-family: var(--font-mono); font-size: 0.86em; color: var(--quiet); }
+
+      .wrap {
+        width: min(1080px, calc(100% - 2.5rem));
+        margin: 0 auto;
+        padding: 2.5rem 0 2rem;
+      }
+
+      .eyebrow {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--faint);
+        margin: 0 0 0.65rem;
+      }
+
+      h1 {
+        margin: 0 0 0.55rem;
+        font-size: clamp(1.6rem, 3vw, 2.1rem);
+        font-weight: 600;
+        letter-spacing: -0.035em;
+      }
+
+      .lede {
+        margin: 0 0 1.25rem;
+        max-width: 44rem;
+        color: var(--quiet);
+        line-height: 1.55;
+        font-size: 0.98rem;
+      }
+
+      .how {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        padding: 1rem 1.15rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+        color: var(--quiet);
+        line-height: 1.55;
+      }
+
+      .how strong { color: var(--ink); font-weight: 600; }
+      .how ol { margin: 0.55rem 0 0; padding-left: 1.2rem; }
+      .how li { margin: 0.25rem 0; }
+
+      .toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .toc a {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--quiet);
+        border: 1px solid var(--line);
+        padding: 0.35rem 0.55rem;
+      }
+
+      .toc a:hover { color: var(--ink); border-color: var(--line-bright); }
+
+      .spec {
+        border-top: 1px solid var(--line);
+        padding: 2rem 0 0.25rem;
+      }
+
+      .spec[data-vote="approve"] {
+        background: color-mix(in srgb, var(--good) 4%, var(--void));
+      }
+
+      .spec[data-vote="kill"] { opacity: 0.5; }
+
+      .spec-head {
+        width: min(1080px, calc(100% - 2.5rem));
+        margin: 0 auto 1rem;
+      }
+
+      .spec-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 0.45rem;
+      }
+
+      .spec-top h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+
+      .meta {
+        font-family: var(--font-mono);
+        font-size: 0.62rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--faint);
+        white-space: nowrap;
+      }
+
+      .meta.shipped { color: var(--good); }
+      .meta.pick { color: var(--ink); border: 1px solid var(--line); padding: 0.15rem 0.4rem; }
+
+      .note {
+        margin: 0;
+        font-size: 0.84rem;
+        line-height: 1.5;
+        color: var(--quiet);
+        max-width: 44rem;
+      }
+
+      .stage-page {
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        background: var(--void);
+      }
+
+      .crumb {
+        width: min(var(--page), calc(100% - var(--page-gutter)));
+        margin: 0 auto;
+        padding: 1rem 0 0;
+        pointer-events: none;
+        user-select: none;
+      }
+
+      .crumb-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding-bottom: 0.85rem;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .crumb-wm {
+        font-weight: 600;
+        font-size: 0.95rem;
+        letter-spacing: -0.02em;
+      }
+
+      .crumb-wm span { color: var(--good); }
+
+      .crumb-beta {
+        font-family: var(--font-mono);
+        font-size: 0.58rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--quiet);
+        border: 1px solid var(--line);
+        padding: 0.18rem 0.4rem;
+      }
+
+      .crumb-cta {
+        margin-left: auto;
+        background: #fff;
+        color: #000;
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 0.32rem 0.55rem;
+        border-radius: 4px;
+      }
+
+      .crumb-body {
+        height: 2.5rem;
+        background: linear-gradient(
+          180deg,
+          color-mix(in srgb, var(--ink) 4%, transparent),
+          transparent 90%
+        );
+      }
+
+      .vote {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        width: min(1080px, calc(100% - 2.5rem));
+        margin: 0.9rem auto 1.75rem;
+      }
+
+      .vote button {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: var(--quiet);
+        padding: 0.4rem 0.65rem;
+        cursor: pointer;
+      }
+
+      .vote button:hover { color: var(--ink); border-color: var(--line-bright); }
+
+      .spec[data-vote="approve"] .vote [data-action="approve"],
+      .vote [data-action="approve"][aria-pressed="true"] {
+        color: #000;
+        background: var(--good);
+        border-color: var(--good);
+      }
+
+      .spec[data-vote="kill"] .vote [data-action="kill"],
+      .vote [data-action="kill"][aria-pressed="true"] {
+        color: #000;
+        background: var(--bad);
+        border-color: var(--bad);
+      }
+
+      /* —— Specimen footer (bb-foot — leave footer.js alone) —— */
+      .bb-foot {
+        position: relative;
+        background: var(--void);
+        color: var(--ink);
+        overflow: hidden;
+        border-top: 1px solid var(--line);
+      }
+
+      .bb-inner {
+        position: relative;
+        z-index: 1;
+        width: min(var(--page), calc(100% - var(--page-gutter)));
+        margin: 0 auto;
+        padding: 2.25rem 0 0;
+      }
+
+      .bb-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem 1.5rem;
+        margin-bottom: 2.25rem;
+      }
+
+      .bb-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+        padding: 0.35rem 0.7rem 0.35rem 0.55rem;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--panel) 80%, transparent);
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+        color: var(--good);
+      }
+
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--good);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--good) 22%, transparent);
+        flex-shrink: 0;
+      }
+
+      .bb-copy {
+        margin: 0;
+        font-size: 0.82rem;
+        color: var(--faint);
+      }
+
+      .bb-top {
+        display: grid;
+        grid-template-columns: minmax(14rem, 1.2fr) minmax(0, 2fr);
+        gap: 2rem 3rem;
+        padding-bottom: 2.5rem;
+      }
+
+      .bb-brand { max-width: 28rem; }
+
+      .bb-mark {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.04em;
+        margin-bottom: 0.85rem;
+        font-weight: 600;
+        font-size: 1.2rem;
+        letter-spacing: -0.02em;
+      }
+
+      .bb-mark .sq {
+        display: inline-block;
+        width: 0.22em;
+        height: 0.22em;
+        border-radius: 0.03em;
+        background: var(--good);
+        transform: translateY(0.02em);
+      }
+
+      .bb-tagline {
+        margin: 0;
+        font-size: 0.92rem;
+        line-height: 1.55;
+        color: var(--quiet);
+      }
+
+      .bb-cols {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1.5rem 1.25rem;
+      }
+
+      .bb-col h3 {
+        margin: 0 0 0.85rem;
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--faint);
+      }
+
+      .bb-col a {
+        display: block;
+        margin: 0 0 0.55rem;
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: var(--quiet);
+      }
+
+      .bb-col a:last-child { margin-bottom: 0; }
+
+      /* A — Shipping control (matches styles.css .footer-giant today) */
+      .bb-giant-wrap {
+        position: relative;
+        margin: 0.5rem -1.25rem 0;
+        padding: 1.5rem 0 0;
+        overflow: hidden;
+        pointer-events: none;
+        user-select: none;
+      }
+
+      .bb-giant {
+        margin: 0;
+        text-align: center;
+        font-size: clamp(5.5rem, 28vw, 16rem);
+        font-weight: 600;
+        letter-spacing: -0.06em;
+        line-height: 0.78;
+        color: transparent;
+        background: linear-gradient(
+          185deg,
+          color-mix(in srgb, var(--ink) 30%, transparent) 0%,
+          color-mix(in srgb, var(--ink) 12%, transparent) 42%,
+          transparent 80%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        filter: drop-shadow(0 0 40px color-mix(in srgb, var(--ink) 12%, transparent));
+      }
+
+      .bb-giant .sq {
+        display: inline-block;
+        width: 0.2em;
+        height: 0.2em;
+        margin-left: 0.02em;
+        border-radius: 0.02em;
+        vertical-align: 0.02em;
+        background: linear-gradient(
+          185deg,
+          color-mix(in srgb, var(--ink) 28%, transparent) 0%,
+          color-mix(in srgb, var(--ink) 10%, transparent) 55%,
+          transparent 85%
+        );
+        filter: none;
+      }
+
+      /* B — Bleed: crop bottom third into void */
+      .fx-bleed .bb-giant-wrap {
+        margin: 0.5rem -1.25rem -2.75rem;
+        padding: 1.25rem 0 0;
+        max-height: 7.5rem;
+      }
+
+      @media (min-width: 900px) {
+        .fx-bleed .bb-giant-wrap { max-height: 11rem; }
+      }
+
+      /* C — Stronger top stop */
+      .fx-stronger .bb-giant {
+        background: linear-gradient(
+          185deg,
+          color-mix(in srgb, var(--ink) 40%, transparent) 0%,
+          color-mix(in srgb, var(--ink) 16%, transparent) 40%,
+          transparent 75%
+        );
+      }
+
+      .fx-stronger .bb-giant .sq {
+        background: linear-gradient(
+          185deg,
+          color-mix(in srgb, var(--ink) 38%, transparent) 0%,
+          color-mix(in srgb, var(--ink) 14%, transparent) 55%,
+          transparent 85%
+        );
+      }
+
+      /* D — Flat: no drop-shadow */
+      .fx-flat .bb-giant { filter: none; }
+
+      /* E — Optical square: sit with letter feet */
+      .fx-optical .bb-giant .sq {
+        vertical-align: -0.02em;
+        transform: translateY(0.04em);
+      }
+
+      /* F — Package: bleed + stronger + flat + optical */
+      .fx-package .bb-giant-wrap {
+        margin: 0.5rem -1.25rem -2.75rem;
+        padding: 1.25rem 0 0;
+        max-height: 7.5rem;
+      }
+
+      @media (min-width: 900px) {
+        .fx-package .bb-giant-wrap { max-height: 11rem; }
+      }
+
+      .fx-package .bb-giant {
+        filter: none;
+        background: linear-gradient(
+          185deg,
+          color-mix(in srgb, var(--ink) 40%, transparent) 0%,
+          color-mix(in srgb, var(--ink) 16%, transparent) 40%,
+          transparent 75%
+        );
+      }
+
+      .fx-package .bb-giant .sq {
+        vertical-align: -0.02em;
+        transform: translateY(0.04em);
+        background: linear-gradient(
+          185deg,
+          color-mix(in srgb, var(--ink) 38%, transparent) 0%,
+          color-mix(in srgb, var(--ink) 14%, transparent) 55%,
+          transparent 85%
+        );
+      }
+
+      @media (max-width: 820px) {
+        .bb-top { grid-template-columns: 1fr; }
+        .bb-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      }
+
+      @media (max-width: 560px) {
+        .bb-cols { grid-template-columns: 1fr 1fr; }
+        .bb-giant { font-size: clamp(4.5rem, 32vw, 8rem); }
+        .fx-bleed .bb-giant-wrap,
+        .fx-package .bb-giant-wrap { max-height: 5.5rem; margin-bottom: -1.75rem; }
+      }
+
+      .dock {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 40;
+        background: color-mix(in srgb, var(--panel) 92%, transparent);
+        backdrop-filter: blur(10px);
+        border-top: 1px solid var(--line);
+        padding: 0.75rem 0;
+      }
+
+      .dock-inner {
+        width: min(1080px, calc(100% - 2.5rem));
+        margin: 0 auto;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem 1rem;
+      }
+
+      .dock-stats {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        color: var(--quiet);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.85rem;
+      }
+
+      .dock-stats b { color: var(--ink); font-weight: 600; }
+      .dock-stats .ok { color: var(--good); }
+      .dock-stats .no { color: var(--bad); }
+
+      .dock-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+
+      .dock-actions button {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: var(--quiet);
+        padding: 0.45rem 0.7rem;
+        cursor: pointer;
+      }
+
+      .dock-actions button:hover { color: var(--ink); border-color: var(--line-bright); }
+      .dock-actions button.primary {
+        background: #fff;
+        color: #000;
+        border-color: #fff;
+        font-weight: 600;
+      }
+
+      #export-panel {
+        display: none;
+        width: min(1080px, calc(100% - 2.5rem));
+        margin: 1.5rem auto 0;
+      }
+
+      #export-panel.open { display: block; }
+
+      #export-panel textarea {
+        width: 100%;
+        min-height: 12rem;
+        background: #050505;
+        color: var(--ink);
+        border: 1px solid var(--line);
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        line-height: 1.5;
+        padding: 0.85rem;
+        resize: vertical;
+      }
+
+      .page-foot {
+        width: min(1080px, calc(100% - 2.5rem));
+        margin: 1.5rem auto 0;
+        padding: 1rem 0 0;
+        border-top: 1px solid var(--line);
+        font-size: 0.8rem;
+        color: var(--faint);
+        line-height: 1.5;
+      }
+
+      #board-mount { min-height: 40vh; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <p class="eyebrow">Open-source design review · noindex · Round 7</p>
+      <h1>Stern craft — bleed / stronger / flat</h1>
+      <p class="lede">
+        Keep wordmark <code>aft.page</code>. Giant stays <code>aft.</code>.
+        Compare shipping fade against four craft levers, plus one package.
+        Approve only what should ship; kill the rest.
+      </p>
+
+      <div class="how">
+        <strong>Workflow</strong>
+        <ol>
+          <li>Scroll each specimen. Look at the giant only — chrome is identical.</li>
+          <li>Approve or Kill (votes stay in this browser).</li>
+          <li>Copy decisions → paste into chat. Implement only Approve.</li>
+        </ol>
+      </div>
+
+      <nav class="toc" aria-label="Specimens" id="toc"></nav>
+    </div>
+
+    <div id="board-mount"></div>
+
+    <div id="export-panel">
+      <textarea id="export-text" readonly spellcheck="false"></textarea>
+    </div>
+
+    <p class="page-foot">
+      Board: <code>www/footer-stern-board.html</code> · Round 7 stern craft ·
+      Votes in <code>localStorage</code> only. Do not invent outside Approve.
+    </p>
+
+    <div class="dock" role="region" aria-label="Decision dock">
+      <div class="dock-inner">
+        <div class="dock-stats" id="dock-stats">
+          <span><b id="stat-total">0</b> options</span>
+          <span class="ok"><b id="stat-approve">0</b> approve</span>
+          <span class="no"><b id="stat-kill">0</b> kill</span>
+          <span><b id="stat-open">0</b> open</span>
+        </div>
+        <div class="dock-actions">
+          <button type="button" id="btn-clear">Clear votes</button>
+          <button type="button" id="btn-copy">Copy decisions</button>
+          <button type="button" class="primary" id="btn-export">Show export</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (() => {
+        const KEY = "aft.footer-stern-board.votes.v7";
+
+        const SPECS = [
+          {
+            id: "fx-shipping",
+            label: "A — Shipping (control)",
+            badge: "Shipping",
+            badgeClass: "shipped",
+            cls: "",
+            note: "Live today: 30%→void fade + soft drop-shadow. Control.",
+          },
+          {
+            id: "fx-bleed",
+            label: "B — Bleed crop",
+            badge: "Craft",
+            badgeClass: "pick",
+            cls: "fx-bleed",
+            note: "Crop so ~bottom third falls off the page. Sunk, not parked.",
+          },
+          {
+            id: "fx-stronger",
+            label: "C — Stronger top",
+            badge: "Craft",
+            badgeClass: "pick",
+            cls: "fx-stronger",
+            note: "Top ~40% ink, still transparent by ~75%. Same fade idea, less ghost.",
+          },
+          {
+            id: "fx-flat",
+            label: "D — Flat (no shadow)",
+            badge: "Craft",
+            badgeClass: "pick",
+            cls: "fx-flat",
+            note: "Kill drop-shadow. Cleaner recess; matches board flat call.",
+          },
+          {
+            id: "fx-optical",
+            label: "E — Optical square",
+            badge: "Craft",
+            badgeClass: "pick",
+            cls: "fx-optical",
+            note: "Nudge square down so it sits with letter feet, not mid-stem.",
+          },
+          {
+            id: "fx-package",
+            label: "F — Package (B+C+D+E)",
+            badge: "Pick?",
+            badgeClass: "pick",
+            cls: "fx-package",
+            note: "Bleed + stronger + flat + optical. One approve if you want the stack.",
+          },
+        ];
+
+        function footHtml(cls) {
+          return (
+            '<footer class="bb-foot ' +
+            cls +
+            '">' +
+            '<div class="bb-inner">' +
+            '<div class="bb-meta">' +
+            '<span class="bb-status"><span class="status-dot"></span>All systems operational</span>' +
+            '<p class="bb-copy">© 2026 aft.page</p>' +
+            "</div>" +
+            '<div class="bb-top">' +
+            '<div class="bb-brand">' +
+            '<a class="bb-mark" href="/">aft<span class="sq" aria-hidden="true"></span>page</a>' +
+            '<p class="bb-tagline">Your agent made the app. aft makes it real.<br />Live links. Invite teammates. Clear ownership.</p>' +
+            "</div>" +
+            '<div class="bb-cols">' +
+            '<div class="bb-col"><h3>Product</h3><a href="#">Docs</a><a href="#">Pricing</a><a href="#">Drop</a></div>' +
+            '<div class="bb-col"><h3>Agents</h3><a href="#">MCP</a><a href="#">Cursor</a><a href="#">API</a></div>' +
+            '<div class="bb-col"><h3>Company</h3><a href="#">Status</a><a href="#">Contact</a><a href="#">Privacy</a></div>' +
+            "</div></div>" +
+            '<div class="bb-giant-wrap" aria-hidden="true">' +
+            '<p class="bb-giant">aft<span class="sq"></span></p>' +
+            "</div></div></footer>"
+          );
+        }
+
+        const mount = document.getElementById("board-mount");
+        const toc = document.getElementById("toc");
+
+        for (const s of SPECS) {
+          const a = document.createElement("a");
+          a.href = "#" + s.id;
+          a.textContent = s.label.split("—")[0].trim();
+          toc.appendChild(a);
+
+          const art = document.createElement("article");
+          art.className = "spec";
+          art.id = s.id;
+          art.dataset.id = s.id;
+          art.dataset.label = s.label;
+          art.innerHTML =
+            '<div class="spec-head">' +
+            '<div class="spec-top">' +
+            "<h2>" +
+            s.label +
+            "</h2>" +
+            '<span class="meta ' +
+            s.badgeClass +
+            '">' +
+            s.badge +
+            "</span>" +
+            "</div>" +
+            '<p class="note">' +
+            s.note +
+            "</p>" +
+            "</div>" +
+            '<div class="stage-page">' +
+            '<div class="crumb" aria-hidden="true">' +
+            '<div class="crumb-bar">' +
+            '<span class="crumb-wm">aft<span>.</span>page</span>' +
+            '<span class="crumb-beta">Beta</span>' +
+            '<span class="crumb-cta">Deploy an app</span>' +
+            "</div>" +
+            '<div class="crumb-body"></div>' +
+            "</div>" +
+            footHtml(s.cls) +
+            "</div>" +
+            '<div class="vote"></div>';
+          mount.appendChild(art);
+        }
+
+        const cards = [...document.querySelectorAll(".spec[data-id]")];
+
+        function load() {
+          try {
+            return JSON.parse(localStorage.getItem(KEY) || "{}");
+          } catch {
+            return {};
+          }
+        }
+
+        let votes = load();
+
+        function save() {
+          localStorage.setItem(KEY, JSON.stringify(votes));
+        }
+
+        function renderVoteBar(card) {
+          const el = card.querySelector(".vote");
+          if (!el || el.dataset.ready) return;
+          el.dataset.ready = "1";
+          el.innerHTML =
+            '<button type="button" data-action="approve">Approve</button>' +
+            '<button type="button" data-action="kill">Kill</button>' +
+            '<button type="button" data-action="clear">Clear</button>';
+          el.addEventListener("click", (e) => {
+            const btn = e.target.closest("button[data-action]");
+            if (!btn) return;
+            const id = card.dataset.id;
+            const action = btn.dataset.action;
+            if (action === "clear") delete votes[id];
+            else votes[id] = action;
+            save();
+            paint();
+          });
+        }
+
+        function buildExport() {
+          const lines = [
+            "# aft.page stern craft board decisions",
+            "",
+            "Date: " + new Date().toISOString().slice(0, 10),
+            "Board: www/footer-stern-board.html",
+            "Round: 7 — stern craft (bleed / stronger / flat / optical)",
+            "",
+            "## Approve",
+          ];
+          const approved = cards.filter((c) => votes[c.dataset.id] === "approve");
+          const killed = cards.filter((c) => votes[c.dataset.id] === "kill");
+          const open = cards.filter((c) => !votes[c.dataset.id]);
+
+          if (approved.length === 0) lines.push("(none)");
+          else
+            for (const c of approved)
+              lines.push("- [x] " + c.dataset.label + " (`" + c.dataset.id + "`)");
+
+          lines.push("", "## Kill");
+          if (killed.length === 0) lines.push("(none)");
+          else
+            for (const c of killed)
+              lines.push("- [x] " + c.dataset.label + " (`" + c.dataset.id + "`)");
+
+          lines.push("", "## Still open");
+          if (open.length === 0) lines.push("(none)");
+          else
+            for (const c of open)
+              lines.push("- [ ] " + c.dataset.label + " (`" + c.dataset.id + "`)");
+
+          lines.push(
+            "",
+            "## Next",
+            "Implement only Approve in styles.css (.footer-giant*).",
+            "If F Package is approved, ship that stack and ignore overlapping B–E.",
+            "Do not invent visuals outside this board without a new revision."
+          );
+          return lines.join("\n");
+        }
+
+        function paint() {
+          let approve = 0;
+          let kill = 0;
+          for (const card of cards) {
+            renderVoteBar(card);
+            const v = votes[card.dataset.id] || "";
+            card.dataset.vote = v;
+            for (const btn of card.querySelectorAll(".vote button[data-action]")) {
+              btn.setAttribute(
+                "aria-pressed",
+                btn.dataset.action === v ? "true" : "false"
+              );
+            }
+            if (v === "approve") approve++;
+            if (v === "kill") kill++;
+          }
+          const total = cards.length;
+          document.getElementById("stat-total").textContent = String(total);
+          document.getElementById("stat-approve").textContent = String(approve);
+          document.getElementById("stat-kill").textContent = String(kill);
+          document.getElementById("stat-open").textContent = String(total - approve - kill);
+          document.getElementById("export-text").value = buildExport();
+        }
+
+        document.getElementById("btn-clear").addEventListener("click", () => {
+          if (!confirm("Clear all votes on this board?")) return;
+          votes = {};
+          save();
+          paint();
+        });
+
+        document.getElementById("btn-export").addEventListener("click", () => {
+          document.getElementById("export-panel").classList.toggle("open");
+          document.getElementById("export-text").value = buildExport();
+        });
+
+        document.getElementById("btn-copy").addEventListener("click", async () => {
+          const text = buildExport();
+          document.getElementById("export-text").value = text;
+          document.getElementById("export-panel").classList.add("open");
+          try {
+            await navigator.clipboard.writeText(text);
+            const btn = document.getElementById("btn-copy");
+            const prev = btn.textContent;
+            btn.textContent = "Copied";
+            setTimeout(() => (btn.textContent = prev), 1200);
+          } catch {
+            document.getElementById("export-text").select();
+          }
+        });
+
+        paint();
+      })();
+    </script>
+  </body>
+</html>

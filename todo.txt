@@ -1,5 +1,14 @@
 # aft.page — todo
-# Updated: 2026-08-10
+# Updated: 2026-08-11
+#
+# ═══════════════════════════════════════════════════════════════
+# 30-DAY FREEZE (2026-08-11 → 2026-09-10): NO NEW PRODUCT LINES
+# Allowed: Plugin distribution, stranger proof, invite share, bugfixes
+#          that unblock deploy/claim/share, YC/credits paperwork.
+# Frozen:  AI automations, Cron, remix, extension/npm publish polish unless a
+#          stranger is blocked without them, BaaS dump features.
+# Shipped: Hosted CLI (`curl -fsSL https://aft.page/install | sh`)
+# ═══════════════════════════════════════════════════════════════
 
 ## Dual track — now
 ### Platform
@@ -9,16 +18,22 @@
 - [x] Upstream proxy for worker/next runtimes
 - [x] OpenNext orchestration script (no custom adapter) — docs/OPENNEXT-ORCHESTRATION.md
 - [x] OpenNext dogfood live: https://next-hello.aft.page (`examples/next-hello`)
-- [ ] Publish extension to Chrome Web Store
-- [ ] Publish `@aft.page/mcp` to npm (optional)
 - [x] Get Agent Plugin ready for `npx plugins add vaibhavmule/aft.page`
       marketplace.json + apps/plugin/{plugin.json,.plugin/plugin.json,.mcp.json,skills/}
       Check: `node apps/plugin/check.mjs` · `npx plugins discover .`
       Still human: push this tree · 30s demo · onboard 5 strangers
       Refs: https://vercel.com/plugin · https://agent-plugins.org
+- [ ] Publish extension to Chrome Web Store          # FROZEN unless Drop strangers need it
+- [ ] Publish `@aft.page/mcp` to npm (optional)       # FROZEN
+- [x] **aft.page CLI** (hosted) — `curl -fsSL https://aft.page/install | sh` → `aft deploy` (login optional). Source `apps/cli`; Pages `www/cli` + `install.sh`. npm `@aft.page/cli` later when scope exists.
+- [x] **OSS CLI parked** (`cli/` / github.com/vaibhavmule/aft) — customer-cloud AWS path; different product. Don’t mix with `npx` for aft.page.
 
-### Proof (same weeks)
+### Proof — ONLY focus through 2026-09-10
 - [x] Prospect share-checklist app live: https://share-checklist.aft.page
+- [x] Ops distribute tracker: https://ops.aft.page/distribute (ready → listings → proof)
+- [ ] Push plugin · 30s demo live
+- [ ] Cursor marketplace + cursor.directory submit
+- [ ] ≥5 strangers deploy without founder help
 - [ ] ≥5 repeat deployers + evidence pack
 - [ ] ≥1 app shared with another person (invite accept)
 - [ ] YC late application + 1-min video
@@ -26,23 +41,15 @@
 - [ ] Google for Startups Cloud Program — step 1 done; **finish credits apply** + checklist (docs/FUNDRAISE.md)
 - [ ] Cloudflare for Startups Tier 3 $10k — submit with hello@aft.page + CF account
 
-### Later / on demand
+### Later / on demand — DO NOT START during freeze
 - [ ] Remix / clone: owner **allow clone** (off by default) → new slug, new owner
-      remix.txt · mill-ideas.txt
-- [ ] Daily idea-agent → deploy to *.aft.page (1h/day dogfood; noindex unless kept)
-      pull from mill-ideas.txt — one keep, not 365 indexed souvenirs
+- [ ] Daily idea-agent → deploy to *.aft.page
 - [ ] Editable preview
-- [ ] Claude marketplace
+- [ ] Claude marketplace          # track on ops /distribute (dist-claude-marketplace)
 - [ ] Workspace / Entra SSO
 - [ ] Connector deepen / CF Sandbox only if a partner needs it
 - [ ] Workers for Platforms (only if aft-owned Workers proliferate)
-      Costing vs now: ADR-TEMP-ACCOUNTS.md § Costing. $5 Paid / 500 scripts / 2 billed reqs
-      on proxy → WfP $25 / unlimited scripts / 1 billed req. Static Drop stays on one Worker.
-- [ ] Product line after Drop: Anything Drop → Plugins → Cron → AI automations
-      Cron = private-only (claimed site, visibility private). Schedule a script /
-      DB hit / timed job (punch-in/out dogfood). Not on anonymous public Drop.
-      AI automations = same gate; prompt + schedule (e.g. 9am project brief).
-      Slack + mobile notify = sinks on job results, not a third product.
+- [ ] AI automations / Cron product — parked (docs/parked/cron.md)
 
 ### This round (reserve / claim / generous Drop)
 - [x] Reserve product slugs (`ai`, `cron`, `cname`, automations, …)
