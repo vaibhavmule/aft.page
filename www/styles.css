@@ -1773,6 +1773,66 @@ a.band-stage-url:hover {
   color: var(--beacon);
 }
 
+/* —— Reprise: mid-page echo of the footer's stern mark. Rhythm break
+   between the capability/path sections and the comparison table. —— */
+.reprise {
+  position: relative;
+  margin: 1rem 0 0;
+  padding: 3.5rem 0 3rem;
+  text-align: center;
+  overflow: hidden;
+}
+
+.reprise-giant-wrap {
+  pointer-events: none;
+  user-select: none;
+}
+
+.reprise-giant {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(3.5rem, 15vw, 8rem);
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  line-height: 0.85;
+  color: transparent;
+  background: linear-gradient(
+    185deg,
+    color-mix(in srgb, var(--ink) 22%, transparent) 0%,
+    color-mix(in srgb, var(--ink) 8%, transparent) 55%,
+    transparent 90%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.reprise-giant .sq {
+  display: inline-block;
+  width: 0.2em;
+  height: 0.2em;
+  margin-left: 0.02em;
+  border-radius: 0.02em;
+  vertical-align: 0.06em;
+  background: color-mix(in srgb, var(--ink) 16%, transparent);
+}
+
+.reprise-line {
+  margin: 0.85rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--faint);
+  letter-spacing: 0.02em;
+}
+
+.reprise-line .flow-arrow {
+  margin: 0 0.4rem;
+}
+
+.reprise-sep {
+  margin: 0 0.55rem;
+  color: var(--line-bright);
+}
+
 /* —— Comparison —— */
 .compare {
   width: min(var(--page), calc(100% - var(--page-gutter)));
