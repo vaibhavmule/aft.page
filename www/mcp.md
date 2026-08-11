@@ -6,7 +6,9 @@
 **Live docs (HTML):** https://aft.page/mcp  
 **This file (Markdown):** https://aft.page/mcp.md  
 **Agent index:** https://aft.page/llms.txt  
-**Plugin:** Per-IDE / marketplace install still pending — https://aft.page/plugins · use MCP below today  
+**Agents today:** MCP below, or hosted CLI (`curl -fsSL https://aft.page/install | sh` → `aft deploy`)  
+**Humans:** [Drop](https://aft.page/drop/) or the same CLI  
+**Pending:** Per-IDE Agent Plugin / marketplace — https://aft.page/plugins  
 
 **Remote MCP:** https://mcp.aft.page/mcp  
 **API:** https://api.aft.page  

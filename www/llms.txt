@@ -10,9 +10,10 @@ Specification: [AI Visibility](https://www.ai-visibility.org.uk/)
 
 ## Services
 
-- [Drop deploy](https://aft.page/drop/): Upload a folder or zip of static files and get a live `*.aft.page` URL instantly, no account required
-- [Agent MCP deploy](https://aft.page/mcp): Remote MCP at `https://mcp.aft.page/mcp` with `deploy`, `aft_deploys`, `aft_rollback`, and `aft_health` — ready today
-- [Agent Plugin](https://aft.page/plugins): Per-IDE plugin / marketplace install still pending — use MCP until listings ship
+- [Agent MCP deploy](https://aft.page/mcp): Remote MCP at `https://mcp.aft.page/mcp` — agents use MCP or CLI today
+- [Hosted CLI](https://aft.page/install): `curl -fsSL https://aft.page/install | sh` then `aft deploy` — agents or humans
+- [Drop deploy](https://aft.page/drop/): Humans — folder or zip → live `*.aft.page` URL, no account required
+- [Agent Plugin](https://aft.page/plugins): Pending — per-IDE plugin / marketplace listings
 - [API deploy](https://api.aft.page): `POST /v1/deploy` and redeploy with an edit token for agents and scripts
 - [Claim and share](https://aft.page/preview): Attach an anonymous deploy to an account, make it private, or invite people by email
 - [Custom domains](https://aft.page/docs#domain): After claim, request access, CNAME to `cname.aft.page` (invite-only during beta)
@@ -90,6 +91,5 @@ Thin deploy adapter only (not a control plane):
 
 ## Optional
 
-- [Hosted CLI](https://aft.page/install): `curl -fsSL https://aft.page/install | sh` then `aft deploy` (no account required)
 - [Open-source BYO-cloud CLI](https://github.com/vaibhavmule/aft): Deploy into the customer's AWS / Cloudflare (not the hosted aft.page service)
 - [Sitemap](https://aft.page/sitemap.xml): Site structure for crawlers

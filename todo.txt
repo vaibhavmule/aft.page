@@ -26,7 +26,9 @@
 - [ ] Publish `@aft.page/mcp` to npm (optional)       # FROZEN
 - [x] **aft.page CLI** (hosted) — `curl -fsSL https://aft.page/install | sh` → `aft deploy` (login optional). Source `apps/cli`; Pages `www/cli` + `install.sh`. npm `@aft.page/cli` later when scope exists.
 - [x] **OSS CLI parked** (`cli/` / github.com/vaibhavmule/aft) — customer-cloud AWS path; different product. Don’t mix with `npx` for aft.page.
-- [x] **Remote MCP ready** — `https://mcp.aft.page/mcp` (`deploy`, `aft_deploys`, `aft_rollback`, `aft_health`)
+- [x] **Remote MCP ready** — agents: MCP or CLI today
+- [x] **Drop + CLI for humans** — Drop or `curl …/install | sh`
+- [ ] Per-IDE Agent Plugin / marketplace listings
 
 ### Proof — ONLY focus through 2026-09-10
 - [x] Prospect share-checklist app live: https://share-checklist.aft.page

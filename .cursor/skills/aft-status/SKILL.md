@@ -63,15 +63,16 @@ Source of truth: `STRATEGY.md` progression + `todo.txt`. As of skill authoring:
 | Sharing (public / private / invite) | Shipped |
 | Secrets vault | Shipped |
 | OpenNext dogfood | Live (`next-hello.aft.page`) |
-| **Agent Plugin** | **Pending** — package scaffold exists; per-IDE / marketplace listings not ready. Use MCP. |
-| **Remote MCP** | **Ready** — `https://mcp.aft.page/mcp` (`deploy`, `aft_deploys`, `aft_rollback`, `aft_health`) |
-| **Hosted CLI** | **Live** — `curl -fsSL https://aft.page/install \| sh` → `aft deploy` (login optional). npm `@aft.page/cli` later. |
+| **Remote MCP** | **Ready** — agents use MCP or CLI today (`https://mcp.aft.page/mcp`) |
+| **Hosted CLI** | **Live** — agents or humans (`curl -fsSL https://aft.page/install \| sh` → `aft deploy`) |
+| **Drop** | **Live** — humans (folder/zip → URL) |
+| **Agent Plugin** | **Pending** — per-IDE / marketplace listings |
 | AI automations | **Frozen** through 2026-09-10 — not started; do not open. |
 | Browser automation / Kitesurf | Explicitly deferred |
 
 **30-day freeze (2026-08-11 → 2026-09-10):** no new product lines. Only Plugin distribution, stranger proof, invite share, unblocker bugfixes, YC/credits. See `todo.txt` + STRATEGY § freeze.
 
-OSS CLI (`cli/`, customer-cloud AWS) is **parked** — different product from hosted aft.page. Hosted CLI is **live**: `curl -fsSL https://aft.page/install | sh` → `aft deploy`. Remote MCP is **ready**. Cron-as-product is **parked** (`docs/parked/cron.md`); API status/smoke crons are unrelated ops.
+OSS CLI (`cli/`, customer-cloud AWS) is **parked** — different product from hosted aft.page. Agents today: **MCP or CLI**. Humans: **Drop or CLI**. Plugin marketplace pending. Cron-as-product is **parked** (`docs/parked/cron.md`); API status/smoke crons are unrelated ops.
 
 Proof gaps (todo, not ops): ≥5 repeat deployers, ≥1 invite-accepted share, YC video, per-IDE plugin marketplace.
 

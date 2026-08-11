@@ -27,7 +27,11 @@ build, then upload the output folder only.
 
 ## Deploy
 
-Four ways. Same result: `https://{slug}.aft.page`.
+Same result either way: `https://{slug}.aft.page`.
+
+**Agents today:** MCP or CLI.  
+**Humans:** Drop or CLI.  
+**Pending:** Per-IDE Agent Plugin / marketplace listings.
 
 ### 1. Drop (humans)
 
@@ -38,7 +42,7 @@ shape as a Vercel Drop of just a readme —
 [readme-black-chi.vercel.app](https://readme-black-chi.vercel.app/) is that,
 not a web app.
 
-### 2. Agent MCP (ready today)
+### 2. Agent MCP (agents · ready today)
 
 Remote: `https://mcp.aft.page/mcp`
 
@@ -48,7 +52,7 @@ Remote: `https://mcp.aft.page/mcp`
 
 Ask: **Deploy this to aft.page**. Full tool schemas: [mcp.md](https://aft.page/mcp.md).
 
-### 3. Hosted CLI
+### 3. Hosted CLI (agents or humans)
 
 ```bash
 curl -fsSL https://aft.page/install | sh
@@ -164,7 +168,7 @@ Source lives in the [aft.page repo `examples/`](https://github.com/vaibhavmule/a
 ## More
 
 - MCP / API reference: https://aft.page/mcp · https://aft.page/mcp.md
-- Plugin: https://aft.page/plugins — per-IDE / marketplace install still pending (use MCP today)
+- Plugin: https://aft.page/plugins — pending (per-IDE / marketplace). Agents: MCP or CLI. Humans: Drop or CLI.
 - Drop: https://aft.page/drop/
 - CLI: `curl -fsSL https://aft.page/install | sh` then `aft deploy` (login optional)
 - Cursor: https://aft.page/with/cursor/
