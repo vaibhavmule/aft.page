@@ -48,12 +48,29 @@ describe("slug allocation", () => {
     expect(slugs.size).toBe(6);
   });
 
-  it("mints a random name when none is requested", async () => {
+  it("mints a random name when none is requested and there is no title", async () => {
     const out = await deployPaste(page("anon"));
     expect(out.slug).toMatch(/^[a-z0-9]{8}$/);
   });
 
-  it("falls back to a random name when the request slug is malformed", async () => {
+  it("uses <title> as the slug base when none is requested (Drop parity)", async () => {
+    const html =
+      "<!doctype html><html><head><title>Signal Garden</title></head><body><h1>Signal Garden</h1></body></html>";
+    const out = await deployPaste(html);
+    expect(out.slug).toBe("signal-garden");
+    expect(out.url).toBe("https://signal-garden.aft.page");
+  });
+
+  it("suffixes a taken title-based slug instead of overwriting", async () => {
+    const html =
+      "<!doctype html><html><head><title>Moonlit Harbor</title></head><body></body></html>";
+    const first = await deployPaste(html);
+    const second = await deployPaste(html);
+    expect(first.slug).toBe("moonlit-harbor");
+    expect(second.slug).toMatch(/^moonlit-harbor-[a-z]+(-[a-z]+)?$/);
+  });
+
+  it("falls back to a random name when the request slug is malformed and there is no title", async () => {
     const out = await deployPaste(page("weird"), "Not A Slug!!");
     expect(out.slug).toMatch(/^[a-z0-9]{8}$/);
   });

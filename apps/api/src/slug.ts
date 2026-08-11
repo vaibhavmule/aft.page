@@ -31,6 +31,37 @@ export function isValidSlug(slug: string): boolean {
   return /^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$/.test(slug);
 }
 
+/** Same rules as Drop (`www/deploy.js` slugFromHtml): <title>, then <h1>. */
+export function slugBaseFromHtml(html: string): string | undefined {
+  const title = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim();
+  const h1 = html.match(/<h1[^>]*>([^<]+)<\/h1>/i)?.[1]?.trim();
+  const raw = (title || h1 || "").toLowerCase();
+  if (!raw) return undefined;
+  const slug = raw
+    .normalize("NFKD")
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/[\s_]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+  if (!slug || slug.length < 2) return undefined;
+  if (RESERVED_SLUGS.has(slug)) return undefined;
+  if (!isValidSlug(slug)) return undefined;
+  return slug;
+}
+
+export function slugBaseFromFiles(
+  files: Array<{ path: string; bytes: ArrayBuffer }>,
+): string | undefined {
+  const index =
+    files.find((f) => f.path === "index.html") ||
+    files.find((f) => f.path.endsWith("/index.html")) ||
+    files.find((f) => f.path === "index.htm");
+  if (!index) return undefined;
+  return slugBaseFromHtml(new TextDecoder().decode(index.bytes));
+}
+
 function pick<T extends string>(list: readonly T[]): T {
   const bytes = crypto.getRandomValues(new Uint8Array(1));
   return list[bytes[0]! % list.length]!;

@@ -34,7 +34,7 @@ import {
   trackRedeploy,
   type DeployTrackFields,
 } from "./metrics";
-import { allocateUniqueSlug, isValidSlug } from "./slug";
+import { allocateUniqueSlug, isValidSlug, slugBaseFromFiles } from "./slug";
 import { putFailurePayload, putObject } from "./storage";
 
 export { sanitizeHtmlDocument } from "./upload";
@@ -267,10 +267,12 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
         },
       );
     }
+    // Explicit ?slug=/aft.json wins. Else Drop-style base from <title>/<h1> in index.html.
+    const fromHtml = slugBaseFromFiles(files);
     const base =
       preferred && isValidSlug(preferred) && !RESERVED_SLUGS.has(preferred)
         ? preferred
-        : undefined;
+        : fromHtml;
     if (preferred && RESERVED_SLUGS.has(preferred)) {
       return done(deployJson(request, { error: "reserved_slug", slug: preferred }, 400), {
         error: "reserved_slug",
