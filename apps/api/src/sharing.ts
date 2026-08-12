@@ -18,6 +18,7 @@ import {
   sendLoginEmail,
   sessionCookieHeader,
   sha256Hex,
+  verifyEditToken,
 } from "./auth";
 import {
   acceptSiteInvite,
@@ -28,12 +29,14 @@ import {
   findPendingInviteByEmail,
   findSiteInviteByTokenHash,
   findUserByEmail,
+  getEditTokenHash,
   getSiteMemberRole,
   getSiteOwnerId,
   getSiteVisibility,
   listSiteInvites,
   listSiteMembers,
   removeSiteMember,
+  renameSiteSlug,
   setSiteActive,
   setSiteVisibility,
   upsertSiteMember,
@@ -42,8 +45,11 @@ import {
 import { corsHeaders, json, originMayActOnSlug, privateJson } from "./http";
 import { rateLimit } from "./rate-limit";
 import { clientIp } from "./http";
-import { deleteSiteObjects } from "./storage";
+import { deleteSiteObjects, moveSiteObjects } from "./storage";
 import { releaseCustomDomains } from "./custom-domains";
+import { RESERVED_SLUGS } from "./env";
+import { isValidSlug } from "./slug";
+import { liveSiteUrl } from "./site-url";
 
 const INVITE_DAYS = 7;
 
@@ -66,6 +72,11 @@ export async function handleSharingRoute(
   }
   if (siteMatch && request.method === "DELETE") {
     return destroySite(request, env, siteMatch[1]!, origin);
+  }
+
+  const renameMatch = url.pathname.match(/^\/v1\/sites\/([a-z0-9-]+)\/rename$/);
+  if (renameMatch && request.method === "POST") {
+    return renameSite(request, env, renameMatch[1]!, origin);
   }
 
   const accessMatch = url.pathname.match(/^\/v1\/sites\/([a-z0-9-]+)\/access$/);
@@ -222,6 +233,123 @@ async function patchSite(
   }
 
   return json(result, 200, extra);
+}
+
+/** Owner (claimed) or editToken (unclaimed): change the *.aft.page slug. */
+async function renameSite(
+  request: Request,
+  env: Env,
+  fromSlug: string,
+  origin: string | null,
+): Promise<Response> {
+  const extra = Object.fromEntries(corsHeaders(origin, true));
+  const root = env.ROOT_DOMAIN || "aft.page";
+  if (!originMayActOnSlug(request, fromSlug, root)) {
+    return json({ error: "forbidden" }, 403, extra);
+  }
+
+  const ownerId = await getSiteOwnerId(env, fromSlug);
+  if (ownerId) {
+    const user = await resolveSessionUser(env, request);
+    if (!user) return json({ error: "unauthorized" }, 401, extra);
+    if (user.id !== ownerId) return json({ error: "forbidden" }, 403, extra);
+  } else {
+    const editToken = request.headers.get("x-aft-edit-token") || "";
+    const storedHash = await getEditTokenHash(env, fromSlug);
+    if (!(await verifyEditToken(env, fromSlug, editToken, storedHash))) {
+      return json({ error: "unauthorized" }, 401, extra);
+    }
+  }
+
+  let body: { slug?: string };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return json({ error: "invalid_json" }, 400, extra);
+  }
+
+  const toSlug = String(body.slug || "")
+    .toLowerCase()
+    .trim();
+  if (!toSlug || !isValidSlug(toSlug)) {
+    return json(
+      { error: "invalid_slug", hint: "slug must be 2–48 chars [a-z0-9-]" },
+      400,
+      extra,
+    );
+  }
+  if (RESERVED_SLUGS.has(toSlug)) {
+    return json({ error: "reserved_slug", slug: toSlug }, 400, extra);
+  }
+  if (toSlug === fromSlug) {
+    return json(
+      { ok: true, slug: toSlug, url: liveSiteUrl(toSlug, root) },
+      200,
+      extra,
+    );
+  }
+
+  const ip = clientIp(request);
+  if (!(await rateLimit(env, `rename:ip:${ip}`, 10, 3600))) {
+    return json({ error: "rate_limited" }, 429, extra);
+  }
+
+  const existing = await env.SITES.get(`site:${toSlug}`);
+  if (existing) {
+    return json({ error: "slug_taken", slug: toSlug }, 409, extra);
+  }
+
+  try {
+    await renameSiteSlug(env, fromSlug, toSlug);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message === "slug_taken") {
+      return json({ error: "slug_taken", slug: toSlug }, 409, extra);
+    }
+    console.error(
+      JSON.stringify({
+        level: "error",
+        where: "rename_db",
+        fromSlug,
+        toSlug,
+        message,
+      }),
+    );
+    return json({ error: "internal" }, 500, extra);
+  }
+
+  try {
+    await moveSiteObjects(env, fromSlug, toSlug);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(
+      JSON.stringify({
+        level: "error",
+        where: "rename_storage",
+        fromSlug,
+        toSlug,
+        message,
+      }),
+    );
+    // Best-effort rollback of D1 so the old slug still works if R2 failed mid-move.
+    try {
+      await renameSiteSlug(env, toSlug, fromSlug);
+    } catch {
+      /* leave ops to pick up */
+    }
+    return json({ error: "internal", hint: "storage_move_failed" }, 500, extra);
+  }
+
+  return json(
+    {
+      ok: true,
+      slug: toSlug,
+      previousSlug: fromSlug,
+      url: liveSiteUrl(toSlug, root),
+    },
+    200,
+    extra,
+  );
 }
 
 /** Owner-only, irreversible: wipe the site row, its children, and stored files. */

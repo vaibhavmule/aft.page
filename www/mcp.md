@@ -211,7 +211,7 @@ CORS: `*` on deploy + site GET (for preview tooling).
 
 Query: optional `?slug=preferred-name`
 
-Header (optional): `X-Aft-Client: mcp|web|extension|curl|cli` — used for product metrics.
+Header (optional): `X-Aft-Client: mcp|web|extension|curl|cli|mac` — used for product metrics.
 
 **A) Raw HTML**
 
@@ -380,10 +380,10 @@ Trailing UI junk after `</html>` (e.g. scraped “Deploy” labels) is stripped 
 - MCP docs (MD): https://aft.page/mcp.md
 - llms.txt: https://aft.page/llms.txt
 - API: https://api.aft.page
-- Docs: https://aft.page/docs · https://aft.page/docs.md
+- Docs: https://aft.page/docs · agent index https://aft.page/docs.md · CLI https://aft.page/docs/cli/
 - Example site: https://hello.aft.page · https://vite-hello.aft.page (Vite SPA)
 - Metrics (internal): see repo `docs/METRICS.md`
-- Hosted CLI: `curl -fsSL https://aft.page/install | sh` → `aft deploy` (no account required)
+- Hosted CLI: `curl -fsSL https://aft.page/install | sh` → `aft deploy` (no login). After claim: `aft login` for rename / env / rollback / sites ([CLI guide](https://aft.page/docs/cli/))
 - OSS CLI (your cloud — different product): https://github.com/vaibhavmule/aft
 
 ---

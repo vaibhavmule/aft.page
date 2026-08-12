@@ -11,11 +11,17 @@ Homepage
 
 Docs              App
 ────              ───
-/docs · /docs.md  /login · /claim
-/changelog · .md  /projects
-/mcp · /mcp.md    /projects/new
-/plugins          Agent Plugin install
-/llms.txt         /project
+/docs · guides    /login · /claim
+  /docs/cli/      /projects
+  /docs/claim/    /projects/new
+  /docs/env/      Agent Plugin install
+  /docs/domains/  /project
+  /docs/frameworks/
+/docs.md (agent index — not HTML twin)
+/changelog · .md
+/mcp · /mcp.md
+/plugins
+/llms.txt
 /with/*/
 SEO landings
 /drop/ …
@@ -39,7 +45,8 @@ Legal: /privacy/  /terms/
 | `/claim` | Post-deploy email / Google → own the slug | inline (login chrome) |
 | `/projects`, `/projects/new/`, `/project/` | App (session) | `app.css` |
 | `/preview` | Legacy shell (unlinked; claim is on the live slug) | `app.css` |
-| `/docs`, `/docs.md` | Human docs: support, deploy, secrets | `styles.css` |
+| `/docs`, `/docs/cli/`, `/docs/claim/`, `/docs/env/`, `/docs/domains/`, `/docs/frameworks/` | Human docs (HTML source of truth) | `styles.css` |
+| `/docs.md` | Short agent index (not an HTML twin) | — |
 | `/changelog` | What shipped, by day (D1 via `GET /v1/changelog`) | `styles.css` |
 | `/mcp`, `/mcp.md`, `/llms.txt` | Agent / MCP reference | `styles.css` |
 | `/plugins` | Agent Plugin pending (agents: MCP/CLI · humans: Drop/CLI) | `styles.css` |

@@ -1,0 +1,8 @@
+{
+  "name": "aft-t2u-vue",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "vite build" },
+  "dependencies": { "vue": "3.5.41" },
+  "devDependencies": { "@vitejs/plugin-vue": "6.0.8", "vite": "8.2.1" }
+}

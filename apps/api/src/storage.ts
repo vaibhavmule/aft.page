@@ -179,6 +179,66 @@ export async function deleteDeployObjects(
 }
 
 /**
+ * Move every stored object for a site from `fromSlug` → `toSlug` (R2 + KV
+ * fallback + `site:{slug}` meta). Caller must ensure `toSlug` is free.
+ * Deletes the old prefix after a successful copy.
+ */
+export async function moveSiteObjects(
+  env: Env,
+  fromSlug: string,
+  toSlug: string,
+): Promise<void> {
+  if (fromSlug === toSlug) return;
+
+  if (env.BUCKET) {
+    const prefix = `sites/${fromSlug}/`;
+    let cursor: string | undefined;
+    do {
+      const listing = await env.BUCKET.list({ prefix, cursor });
+      for (const o of listing.objects) {
+        const rel = o.key.slice(prefix.length);
+        const obj = await env.BUCKET.get(o.key);
+        if (!obj) continue;
+        await env.BUCKET.put(`sites/${toSlug}/${rel}`, obj.body, {
+          httpMetadata: obj.httpMetadata,
+          customMetadata: {
+            ...(obj.customMetadata || {}),
+            slug: toSlug,
+          },
+        });
+      }
+      cursor = listing.truncated ? listing.cursor : undefined;
+    } while (cursor);
+  }
+
+  const filePrefix = `file:${fromSlug}:`;
+  let kvCursor: string | undefined;
+  do {
+    const listing = await env.SITES.list({
+      prefix: filePrefix,
+      cursor: kvCursor,
+    });
+    for (const k of listing.keys) {
+      const rest = k.name.slice(filePrefix.length);
+      const got = await env.SITES.getWithMetadata<ArrayBuffer>(
+        k.name,
+        "arrayBuffer",
+      );
+      if (!got.value) continue;
+      await env.SITES.put(`file:${toSlug}:${rest}`, got.value, {
+        metadata: got.metadata ?? undefined,
+      });
+    }
+    kvCursor = listing.list_complete ? undefined : listing.cursor;
+  } while (kvCursor);
+
+  const meta = await env.SITES.get(`site:${fromSlug}`);
+  if (meta) await env.SITES.put(`site:${toSlug}`, meta);
+
+  await deleteSiteObjects(env, fromSlug);
+}
+
+/**
  * Delete every stored object for a site: R2 objects under `sites/{slug}/`,
  * KV file blobs `file:{slug}:*` (used when no R2 bucket), and the `site:{slug}`
  * metadata pointer. Safe to call repeatedly.

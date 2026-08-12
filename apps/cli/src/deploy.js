@@ -1,8 +1,18 @@
 /** Walk a directory and deploy to api.aft.page. */
+import { spawnSync } from "node:child_process";
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 import { apiFetch, readJson } from "./api.js";
+import { ensureAftJson } from "./init.js";
+import { confirm, isInteractive } from "./prompt.js";
+import {
+  attachProjectManifest,
+  hasIndexHtml,
+  readSlugHint,
+  resolveDeployTarget,
+} from "./resolve.js";
 import { loadState, readAftJsonSlug, saveState } from "./state.js";
+import { note, ok, say } from "./ui.js";
 
 const SKIP_DIR_NAMES = new Set(["node_modules", ".git", ".aft"]);
 const SKIP_FILE_PREFIX = [".env"];
@@ -57,18 +67,85 @@ export async function collectFiles(root) {
   return out;
 }
 
-export async function cmdDeploy(args) {
-  const dir = args[0] || ".";
-  const root = join(process.cwd(), dir);
-  const slugFlag = flagValue(args, "--slug");
+function runBuild(projectRoot, script) {
+  say(`Running npm run ${script}…`);
+  const r = spawnSync("npm", ["run", script], {
+    cwd: projectRoot,
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  });
+  if (r.status !== 0) {
+    throw new Error(`npm run ${script} failed (exit ${r.status ?? "?"})`);
+  }
+}
 
-  const files = await collectFiles(root);
+async function ensureDeployable(cwd, dirArg) {
+  let target = await resolveDeployTarget(cwd, dirArg);
+
+  if (!target.needsBuild) return target;
+
+  const detected = target.detected;
+  const script = detected?.buildScript || "build";
+
+  if (!detected?.staticDeployable && detected?.runtime && detected.runtime !== "static") {
+    throw new Error(
+      `${detected.label} needs runtime "${detected.runtime}" + upstream in aft.json — not a static folder deploy. See https://aft.page/docs`,
+    );
+  }
+
+  if (isInteractive()) {
+    const okBuild = await confirm(
+      `No build output yet. Run npm run ${script}?`,
+      { defaultYes: true },
+    );
+    if (!okBuild) {
+      throw new Error(
+        `no build output (dist/, out/, or build/ with index.html). Run: npm run ${script}`,
+      );
+    }
+    runBuild(target.projectRoot, script);
+  } else {
+    throw new Error(
+      `no build output (dist/, out/, or build/ with index.html). Run: npm run ${script}`,
+    );
+  }
+
+  target = await resolveDeployTarget(cwd, dirArg);
+  if (target.needsBuild || !(await hasIndexHtml(target.deployRoot))) {
+    throw new Error(
+      `still no index.html after build — expected ${detected?.outDir || "dist/"}/`,
+    );
+  }
+  return target;
+}
+
+export async function cmdDeploy(args) {
+  const dirArg = positionalDir(args);
+  const slugFlag = flagValue(args, "--slug");
+  const { deployRoot, projectRoot } = await ensureDeployable(
+    process.cwd(),
+    dirArg,
+  );
+
+  if (deployRoot !== projectRoot) {
+    say(`Using ${deployRoot.replace(projectRoot + "/", "")}/`);
+  }
+
+  const initSlug = await ensureAftJson(projectRoot);
+  if (initSlug) note(`Wrote aft.json → ${initSlug}`);
+
+  let files = await collectFiles(deployRoot);
+  files = await attachProjectManifest(files, projectRoot, deployRoot);
   if (files.length === 0) throw new Error("no files to deploy");
   if (files.length > 200) throw new Error(`too many files (${files.length}; max 200)`);
 
-  const state = await loadState(root);
+  const state = await loadState(projectRoot);
   const slug =
-    slugFlag || state?.slug || (await readAftJsonSlug(root)) || undefined;
+    slugFlag ||
+    state?.slug ||
+    (await readAftJsonSlug(projectRoot)) ||
+    (await readSlugHint(projectRoot)) ||
+    undefined;
   const editToken = state?.editToken;
 
   const method = editToken ? "PATCH" : "POST";
@@ -82,7 +159,7 @@ export async function cmdDeploy(args) {
   const headers = {};
   if (editToken) headers["x-aft-edit-token"] = editToken;
 
-  console.error(`Deploying ${files.length} file(s)${slug ? ` → ${slug}` : ""}…`);
+  say(`Deploying ${files.length} file(s)${slug ? ` → ${slug}` : ""}…`);
   const res = await apiFetch(path, {
     method,
     headers,
@@ -96,18 +173,29 @@ export async function cmdDeploy(args) {
   }
 
   if (body.editToken) {
-    await saveState(root, { slug: body.slug, editToken: body.editToken });
+    await saveState(projectRoot, {
+      slug: body.slug,
+      editToken: body.editToken,
+    });
   } else if (body.slug && state?.editToken) {
-    await saveState(root, { slug: body.slug, editToken: state.editToken });
+    await saveState(projectRoot, {
+      slug: body.slug,
+      editToken: state.editToken,
+    });
   }
 
+  ok(body.url);
   console.log(body.url);
-  if (body.claimUrl) console.error(`Claim: ${body.claimUrl}`);
-  if (body.notice) console.error(body.notice);
+  if (body.claimUrl) note(`Claim: ${body.claimUrl}`);
+  if (body.notice) note(body.notice);
 }
 
 function flagValue(args, name) {
   const i = args.indexOf(name);
   if (i === -1) return undefined;
   return args[i + 1];
+}
+
+function positionalDir(args) {
+  return args.find((a) => !a.startsWith("-")) || ".";
 }

@@ -1,0 +1,63 @@
+aft.page — P0 (this week)
+Updated: 2026-08-11
+
+===============================================================================
+POSITIONING (say this)
+===============================================================================
+
+AFT is the publishing and permission layer for software created by AI agents.
+Your agent made it. aft makes it live, persistent, and shareable — like a Google Doc.
+
+Not “cheaper Vercel.” Not “another Drop.”
+Job: agent output → durable URL → who can open it.
+Moat vs Drop/Vercel: invite ACL now; IP whitelist / perimeter at $499 when they
+point at Deployment Protection.
+
+===============================================================================
+PRICING (close rule)
+===============================================================================
+
+List: Team $99 · Enterprise/Connector $499 · BYOC only on ~$15K+/yr demand.
+Close whatever a real user will pay this week (pilot, discount, INR band) as long
+as they deploy + return or invite. Do not invent a fourth SKU. Do not put IP
+whitelist on Team — that is the $499 upsell. Any non-friend paid money or signed
+LOI counts as Phase 4 proof. Details: docs/PRICING.md · docs/COMPETITION.md
+
+===============================================================================
+DECISION
+===============================================================================
+
+Free users first (activation + repeat use). Paid as soon as a retained app needs
+private/team. Don’t wait for Stripe polish to start outreach.
+
+  1  Free activation   strangers deploy → claim → return in 7 days
+  2  Share loop        one private invite used by a second human
+  3  Paid              $99 Team (or any pilot/LOI); $499 only for perimeter/connector
+
+===============================================================================
+NEXT 7 DAYS — ONLY THESE
+===============================================================================
+
+1. Plugin path live for strangers
+   Push plugin + 30s clip: npx plugins add … → private URL. (G7)
+
+2. Outreach every day
+   5–10 DMs: “What did your agent build that never left localhost?”
+   Ask them to deploy on aft this week. (G13)
+
+3. Force the claim
+   Every Drop/MCP deploy you watch should open claim; track claimed / anonymous. (G18)
+
+4. One design-partner ask
+   Anyone who redeploys or invites: “$99 Team keeps private + invites; or a
+   30-day pilot — what works?” Take the yes.
+
+5. Fill Evidence Pack
+   ≥5 repeat deployers · ≥1 shared app · ≥1 paid/LOI/dated intent.
+   Stop building features until those boxes move. (docs/EVIDENCE-PACK.md)
+
+===============================================================================
+NOT THIS WEEK
+===============================================================================
+
+IP whitelist build · BYOC · remix (unless a partner blocks without it) · more /vs/ pages

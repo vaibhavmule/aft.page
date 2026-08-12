@@ -1,0 +1,7 @@
+{
+  "name": "aft-t2u-astro",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "astro build" },
+  "devDependencies": { "astro": "7.2.1" }
+}

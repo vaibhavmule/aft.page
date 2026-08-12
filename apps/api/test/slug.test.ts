@@ -6,6 +6,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { env } from "cloudflare:test";
+import { slugFromHint } from "../src/slug";
 import { call, deployPaste, pasteHtml } from "./helpers";
 
 const page = (body: string) => `<html><body>${body}</body></html>`;
@@ -59,6 +60,22 @@ describe("slug allocation", () => {
     const out = await deployPaste(html);
     expect(out.slug).toBe("signal-garden");
     expect(out.url).toBe("https://signal-garden.aft.page");
+  });
+
+  it("derives a slug from a long title without a trailing hyphen", () => {
+    expect(
+      slugFromHint(
+        "Include XI — Intelligence that sells. Systems that scale.",
+      ),
+    ).toBe("include-xi-intelligence-that-sells-systems-that");
+  });
+
+  it("uses a long marketing title on deploy instead of a random slug", async () => {
+    const html =
+      '<!doctype html><html><head><title>Include XI — Intelligence that sells. Systems that scale.</title></head><body><h1>Hi</h1></body></html>';
+    const out = await deployPaste(html);
+    expect(out.slug).toBe("include-xi-intelligence-that-sells-systems-that");
+    expect(out.slug).not.toMatch(/^[a-z0-9]{8}$/);
   });
 
   it("suffixes a taken title-based slug instead of overwriting", async () => {

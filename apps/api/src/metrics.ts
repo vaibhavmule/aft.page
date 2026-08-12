@@ -2,11 +2,11 @@
  * Product metrics via Workers Analytics Engine.
  *
  * Schema (dataset: aft_page_metrics):
- *   indexes[0]  event        deploy | page_view | serve | claim | redeploy | waitlist | feedback | mcp
- *   blobs[0]    source       mcp | web | extension | curl | cli | other
+ *   indexes[0]  event        deploy | page_view | serve | claim | redeploy | waitlist | feedback | mcp | cli
+ *   blobs[0]    source       mcp | web | extension | curl | cli | mac | other
  *                (mcp event: JSON-RPC method)
- *   blobs[1]    status       ok | error code (no_files, …)
- *   blobs[2]    slug         site slug when known (mcp event: tool name)
+ *   blobs[1]    status       ok | error code (no_files, …) — cli: command name
+ *   blobs[2]    slug         site slug when known (mcp: tool; cli: CLI version)
  *   blobs[3]    deployer     sha256(cf-connecting-ip)[:16] — approx unique
  *   blobs[4]    path         failing file path when known
  *   blobs[5]    request_id   cf-ray or generated id
@@ -24,7 +24,8 @@ export type MetricEvent =
   | "redeploy"
   | "waitlist"
   | "feedback"
-  | "mcp";
+  | "mcp"
+  | "cli";
 
 const VIEW_TTL_SEC = 21 * 24 * 60 * 60;
 
@@ -121,6 +122,7 @@ export type AftClient =
   | "extension"
   | "curl"
   | "cli"
+  | "mac"
   | "ops-retry"
   | "other";
 
@@ -130,6 +132,7 @@ const KNOWN_CLIENTS = new Set<string>([
   "extension",
   "curl",
   "cli",
+  "mac",
   "ops-retry",
 ]);
 
@@ -363,5 +366,22 @@ export function trackFeedback(
     source: "web",
     status,
     httpStatus,
+  });
+}
+
+/** Opt-in anonymous CLI usage (command + version; IP hashed like deploys). */
+export async function trackCliUsage(
+  env: MetricsEnv,
+  request: Request,
+  opts: { cmd: string; version?: string },
+): Promise<void> {
+  writeMetric(env, {
+    event: "cli",
+    source: "cli",
+    status: (opts.cmd || "unknown").slice(0, 64),
+    slug: (opts.version || "").slice(0, 32),
+    deployer: await deployerKey(request),
+    requestId: request.headers.get("cf-ray") || undefined,
+    httpStatus: 204,
   });
 }

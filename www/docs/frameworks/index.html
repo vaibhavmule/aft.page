@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Frameworks — Docs — aft.page</title>
+    <meta name="description" content="aft.page hosts prebuilt static output (and optional Worker upstreams). Detect the project, build locally, upload the output folder only." />
+    <link rel="canonical" href="https://aft.page/docs/frameworks/" />
+    <link rel="alternate" type="text/markdown" href="https://aft.page/docs.md" title="Docs agent index (Markdown)" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#000000" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="aft.page" />
+    <meta property="og:title" content="Frameworks — Docs — aft.page" />
+    <meta property="og:description" content="aft.page hosts prebuilt static output (and optional Worker upstreams). Detect the project, build locally, upload the output folder only." />
+    <meta property="og:url" content="https://aft.page/docs/frameworks/" />
+    <meta property="og:image" content="https://aft.page/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Frameworks — Docs — aft.page" />
+    <meta name="twitter:description" content="aft.page hosts prebuilt static output (and optional Worker upstreams). Detect the project, build locally, upload the output folder only." />
+    <meta name="twitter:image" content="https://aft.page/og.png" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="site">
+      <nav class="topnav topnav-rail" aria-label="Primary">
+        <div class="topnav-inner">
+        <div class="topnav-brand-wrap">
+          <a class="topnav-brand" href="/">aft<span>.</span>page</a>
+          <span class="nav-beta">Beta</span>
+        </div>
+        <div class="topnav-links">
+          <a href="/#product">Product</a>
+          <div class="nav-mega" data-nav-mega>
+            <button type="button" class="nav-mega-trigger" aria-expanded="false" aria-controls="nav-agents-panel-docs" id="nav-agents-trigger-docs">
+              Agents
+              <svg class="nav-mega-chevron" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="nav-mega-panel" id="nav-agents-panel-docs" role="region" aria-label="Agents menu" hidden>
+              <div class="nav-mega-col">
+                <p class="nav-mega-label">Get started</p>
+                <a href="/docs">
+                  <span class="nav-mega-title">Documentation</span>
+                  <span class="nav-mega-desc">Guides for deploy, CLI, claim, secrets.</span>
+                </a>
+                <a href="/drop">
+                  <span class="nav-mega-title">Drop files</span>
+                  <span class="nav-mega-desc">Folder or zip → live URL.</span>
+                </a>
+              </div>
+              <div class="nav-mega-col nav-mega-list">
+                <p class="nav-mega-label">Integrations</p>
+                <a href="/with/claude/">Claude Code</a>
+                <a href="/with/codex/">Codex</a>
+                <a href="/with/cursor/">Cursor</a>
+                <a href="/with/openclaw/">OpenClaw</a>
+                <a href="/with/replit/">Replit</a>
+                <a href="/with/lovable/">Lovable</a>
+                <a href="/with/vercel/">Vercel</a>
+                <a href="/with/windsurf/">Windsurf</a>
+                <a href="/with/hermes/">Hermes</a>
+                <a href="/with/kilo/">Kilo</a>
+                <a href="/with/aws/">AWS</a>
+                <a href="/with/chatgpt/">ChatGPT</a>
+                <a href="/with/api/">API</a>
+              </div>
+            </div>
+          </div>
+          <a href="/docs" aria-current="page">Docs</a>
+          <a href="/login" data-aft-auth="login">Log in</a>
+          <a class="topnav-cta" href="/drop">Deploy an app</a>
+        </div>
+        <button
+          type="button"
+          class="mobile-nav-toggle"
+          aria-label="Open menu"
+          aria-controls="mobile-nav-drawer"
+          aria-expanded="false"
+          data-mobile-nav-open
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 8h14M5 16h14" />
+          </svg>
+        </button>
+        </div>
+      </nav>
+
+      <div
+        class="mobile-nav-drawer"
+        id="mobile-nav-drawer"
+        data-mobile-nav
+        role="dialog"
+        aria-modal="true"
+        aria-label="Site menu"
+        hidden
+      >
+        <div class="mobile-nav-shell">
+          <div class="mobile-nav-head">
+            <div class="topnav-brand-wrap">
+              <a class="topnav-brand" href="/">aft<span>.</span>page</a>
+              <span class="nav-beta">Beta</span>
+            </div>
+            <button
+              type="button"
+              class="mobile-nav-close"
+              aria-label="Close menu"
+              data-mobile-nav-close
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 6l12 12M18 6 6 18" />
+              </svg>
+            </button>
+          </div>
+
+          <nav class="mobile-nav-links" aria-label="Mobile primary">
+            <a href="/#product">Product</a>
+            <details class="mobile-nav-agents">
+              <summary>
+                Agents
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="m3 6 5 5 5-5" />
+                </svg>
+              </summary>
+              <div class="mobile-nav-agents-list">
+                <a href="/with/claude/">Claude Code</a>
+                <a href="/with/cursor/">Cursor</a>
+                <a href="/with/codex/">Codex</a>
+                <a href="/with/chatgpt/">ChatGPT</a>
+                <a href="/mcp">MCP</a>
+                <a href="/docs">All integrations</a>
+              </div>
+            </details>
+            <a href="/docs" aria-current="page">Docs</a>
+          </nav>
+
+          <div class="mobile-nav-actions">
+            <a href="/login" data-aft-auth="login">Log in</a>
+            <a class="btn btn-primary" href="/drop">Deploy an app</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="docs-hero">
+        <p class="docs-crumb"><a href="/docs">Docs</a> / Frameworks</p>
+        <h1>Frameworks</h1>
+        <p class="lede">aft.page hosts prebuilt static output (and optional Worker upstreams). Detect the project, build locally, upload the output folder only.</p>
+        <div class="docs-machine">
+          <a class="btn btn-ghost" href="/docs">All docs</a>
+          <a class="btn btn-ghost" href="/docs.md">Agent index</a>
+        </div>
+      </div>
+
+      <div class="docs-layout">
+        <nav class="docs-toc" aria-label="Docs navigation">
+          <p>Guides</p>
+          <ol>
+            <li><a href="/docs/">Hub</a></li>
+            <li><a href="/docs/cli/">CLI</a></li>
+            <li><a href="/docs/claim/">Claim & share</a></li>
+            <li><a href="/docs/env/">Secrets / env</a></li>
+            <li><a href="/docs/domains/">Custom domains</a></li>
+            <li><a href="/docs/capabilities/">Capabilities</a></li>
+            <li><a href="/docs/frameworks/" aria-current="page">Frameworks</a></li>
+          </ol>
+          <p style="margin-top:1.25rem">On this page</p>
+          <ol>
+            <li><a href="#rule">Detect & ship</a></li>
+            <li><a href="#html">Plain HTML</a></li>
+            <li><a href="#vite">Vite / React / Vue / Svelte</a></li>
+            <li><a href="#next-static">Next.js static export</a></li>
+            <li><a href="#next-ssr">Next SSR / OpenNext</a></li>
+            <li><a href="#matrix">Full compatibility matrix</a></li>
+          </ol>
+        </nav>
+
+        <article class="docs-body">
+          <section id="rule">
+            <h2>Detect &amp; ship</h2>
+            <p>
+              Look at <code>package.json</code>, <code>vite.config.*</code>,
+              <code>next.config.*</code>, <code>index.html</code>.
+            </p>
+            <ul>
+              <li>Plain HTML → upload those files (Drop, CLI, MCP).</li>
+              <li>
+                Bundler app → <code>npm run build</code>, then upload
+                <strong>output only</strong> (<code>dist/</code>,
+                <code>out/</code>, <code>build/</code>).
+              </li>
+            </ul>
+            <p>
+              Never upload <code>src/</code>, <code>node_modules</code>, or
+              <code>.next/</code>. The hosted CLI auto-picks common output
+              folders — <a href="/docs/cli/">CLI guide</a>.
+            </p>
+          </section>
+
+          <section id="html">
+            <h2>Plain HTML</h2>
+            <pre><code>aft deploy
+# or Drop a folder / zip with index.html</code></pre>
+            <p>
+              Live: <a href="https://hello.aft.page">hello.aft.page</a>.
+              README-only (no <code>index.html</code>): <code>/</code> is 404;
+              the file is at <code>/README.md</code>.
+            </p>
+          </section>
+
+          <section id="vite">
+            <h2>Vite / React / Vue / Svelte / Astro</h2>
+            <pre><code>npm run build
+aft deploy          # uses dist/
+# aft deploy dist</code></pre>
+            <p>
+              Example:
+              <a href="https://vite-hello.aft.page">vite-hello.aft.page</a>.
+              CRA / Rsbuild usually emit <code>build/</code> or
+              <code>dist/</code>.
+            </p>
+          </section>
+
+          <section id="next-static">
+            <h2>Next.js static export</h2>
+            <p>
+              In <code>next.config</code> set <code>output: 'export'</code>, then:
+            </p>
+            <pre><code>npm run build
+aft deploy out</code></pre>
+            <p>
+              This is static hosting only — no Next server in the Worker unless
+              you use the upstream path below.
+            </p>
+          </section>
+
+          <section id="next-ssr">
+            <h2>Next SSR / OpenNext</h2>
+            <p>
+              Deploy the Worker with OpenNext (or any HTTP upstream), then
+              register it with aft via <code>aft.json</code>:
+            </p>
+            <pre><code>{
+  "name": "next-hello",
+  "runtime": "next",
+  "upstream": "https://your-worker.example.workers.dev"
+}</code></pre>
+            <p>
+              Live dogfood:
+              <a href="https://next-hello.aft.page">next-hello.aft.page</a>.
+              aft.page does not build or deploy the Worker for you yet — you
+              own that Worker and its deploys; aft.page just proxies to it.
+            </p>
+          </section>
+
+          <section id="matrix">
+            <h2>Full compatibility matrix</h2>
+            <p>
+              Three tiers. "Verified" means the hosted CLI has actually
+              detected, built, and shipped it end to end. "Static-capable,
+              unverified" means the framework's build output <em>should</em>
+              work as plain static files, but nobody has run it through the
+              CLI yet — try it, but expect rough edges. "Needs a runtime we
+              don't run" means it needs an automatic build, adapter, or
+              container aft.page doesn't provide — bring your own upstream
+              Worker (see <a href="#next-ssr">Next SSR</a> above) or it won't
+              deploy.
+            </p>
+
+            <h3>Verified, shipped today</h3>
+            <ul>
+              <li>Plain HTML</li>
+              <li>React + Vite, Vue + Vite, Svelte + Vite</li>
+              <li>Astro (static output)</li>
+              <li>Next.js static export</li>
+              <li>Next.js via an existing OpenNext Cloudflare Worker upstream</li>
+            </ul>
+
+            <h3>Static-capable, unverified — try it, no promises</h3>
+            <p>
+              Angular, Brunch, Create React App, Docusaurus, Dojo, Eleventy,
+              Ember.js, Gatsby, Gridsome, Hexo, Hugo, Ionic (Angular/React),
+              Jekyll, Middleman, Parcel, Polymer, Preact, Nuxt (static
+              generation), React Router (static/SPA mode), Remix
+              (static/SPA mode), RedwoodJS (static web output), Saber,
+              Sanity Studio, Scully, SolidStart (static output), Stencil,
+              Storybook, SvelteKit (static adapter), TanStack Start (static
+              output), UmiJS, VitePress, VuePress, Zola.
+            </p>
+
+            <h3>Needs a runtime we don't run yet</h3>
+            <p>
+              Containers; Python (Django, FastAPI, FastHTML, Flask); Node
+              backends (Express, Fastify, Hono, Koa, NestJS, Nitro); Go;
+              Next.js SSR beyond the manual OpenNext upstream flow above;
+              Nuxt SSR, React Router SSR, Remix SSR, SvelteKit SSR, SolidStart
+              SSR, TanStack Start SSR; multi-function "Services" deployments.
+            </p>
+          </section>
+        </article>
+      </div>
+
+      <footer class="site-footer">
+        <div class="footer-inner">
+          <div class="footer-meta">
+            <a class="footer-status" href="https://status.aft.page">
+              <span class="status-dot" aria-hidden="true"></span>
+              All systems operational
+            </a>
+            <p class="footer-copy">© 2026 aft.page</p>
+          </div>
+          <div class="footer-top">
+            <div class="footer-brand-block">
+              <a class="footer-mark" href="/" aria-label="aft.page home">
+                <span class="footer-wordmark">aft<span class="sq" aria-hidden="true"></span>page</span>
+              </a>
+              <p class="footer-tagline">
+                Your agent made the app. aft makes it real.<br />
+                Live links. Invite teammates. Clear ownership.
+              </p>
+            </div>
+            <div class="footer-cols">
+              <div class="footer-col">
+                <h3>Product</h3>
+                <a href="/docs">Docs</a>
+                <a href="/#pricing">Pricing</a>
+                <a href="/changelog">Changelog</a>
+                <a href="/drop">Drop</a>
+                <a href="/projects">Projects</a>
+              </div>
+              <div class="footer-col">
+                <h3>Agents</h3>
+                <a href="/mcp">MCP</a>
+                <a href="/plugins">Plugin</a>
+                <a href="/with/claude/">Claude Code</a>
+                <a href="/with/cursor/">Cursor</a>
+                <a href="/with/codex/">Codex</a>
+                <a href="/with/chatgpt/">ChatGPT</a>
+                <a href="/with/kilo/">Kilo</a>
+                <a href="/with/windsurf/">Windsurf</a>
+                <a href="/with/api/">API</a>
+              </div>
+              <div class="footer-col">
+                <h3>Company</h3>
+                <a href="https://status.aft.page">Status</a>
+                <a href="#feedback" data-aft-feedback>Feedback</a>
+                <a href="mailto:hello@aft.page">Contact</a>
+                <a href="/privacy/">Privacy</a>
+                <a href="/terms/">Terms</a>
+                <a href="/cookies/">Cookies</a>
+              </div>
+            </div>
+          </div>
+          <div class="footer-giant-wrap" aria-hidden="true">
+            <p class="footer-giant">aft<span class="sq" aria-hidden="true"></span></p>
+          </div>
+        </div>
+      </footer>
+    </div>
+    <script src="/auth-me.js" defer></script>
+    <script src="/agents-nav.js" defer></script>
+    <script src="/auth-nav.js" defer></script>
+    <script src="/summarize.js" defer></script>
+    <script src="/footer.js?v=20260812-docs" defer></script>
+    <script src="/feedback.js?v=20260808-footer" defer></script>
+  </body>
+</html>

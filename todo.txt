@@ -44,6 +44,10 @@
 - [ ] Cloudflare for Startups Tier 3 $10k — submit with hello@aft.page + CF account
 
 ### Later / on demand — DO NOT START during freeze
+- [ ] **Vercel framework compatibility target** — docs/FRAMEWORK-COMPATIBILITY.md
+      Add CLI detection/build adapters and live T2U fixtures for every static-capable framework.
+      Add hosted runtime adapters for the documented Node/Python/Go/full-stack/container group.
+      Do not mark a framework supported until its clean-build → CLI → HTTP 200 acceptance test passes.
 - [ ] Remix / clone: owner **allow clone** (off by default) → new slug, new owner
 - [ ] Daily idea-agent → deploy to *.aft.page
 - [ ] Editable preview

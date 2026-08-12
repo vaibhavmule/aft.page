@@ -8,6 +8,7 @@ import {
   loadCredentials,
   saveCredentials,
 } from "./creds.js";
+import { ok, say, note } from "./ui.js";
 
 function openBrowser(url) {
   const cmd =
@@ -74,8 +75,8 @@ export async function cmdLogin() {
       const addr = server.address();
       const port = typeof addr === "object" && addr ? addr.port : 0;
       const url = `${apiBase()}/v1/auth/cli?port=${port}&state=${encodeURIComponent(state)}`;
-      console.error("Opening browser for aft.page login…");
-      console.error(url);
+      say("Opening browser for aft.page login…");
+      note(url);
       openBrowser(url);
     });
     server.on("error", (err) => finish(reject, err));
@@ -97,27 +98,24 @@ export async function cmdLogin() {
     email: body.email,
     expiresAt: body.expiresAt,
   });
-  console.log(`Logged in as ${body.email || "unknown"}`);
+  ok(`Logged in as ${body.email || "unknown"}`);
+  console.log(body.email || "ok");
 }
 
 export async function cmdLogout() {
   await clearCredentials();
-  console.log("Logged out.");
+  ok("Logged out.");
 }
 
 export async function cmdWhoami() {
   const creds = await loadCredentials();
   if (!creds?.token && !process.env.AFT_TOKEN) {
-    console.error("Not logged in. Run: aft login");
-    process.exitCode = 1;
-    return;
+    throw new Error("Not logged in. Run: aft login");
   }
   const res = await apiFetch("/v1/me");
   const body = await readJson(res);
   if (!res.ok) {
-    console.error(body.error || `unauthorized (${res.status})`);
-    process.exitCode = 1;
-    return;
+    throw new Error(body.error || `unauthorized (${res.status})`);
   }
   console.log(body.email || body.id);
 }

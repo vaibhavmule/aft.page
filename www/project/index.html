@@ -315,6 +315,22 @@
       #panel-danger { border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
       #panel-danger h2 { color: var(--danger); }
       .danger-desc { font-size: 0.86rem; color: var(--quiet); margin: 0.25rem 0 0.9rem; }
+      .rename-form label {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--quiet);
+        margin-bottom: 0.35rem;
+      }
+      .rename-form input {
+        flex: 1;
+        min-width: 0;
+        font: inherit;
+        padding: 0.55rem 0.7rem;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--bg);
+        color: inherit;
+      }
       button.btn-danger {
         background: var(--danger);
         color: #fff;
@@ -525,7 +541,12 @@
           <div class="row" id="link-actions"></div>
           <dl class="meta-grid">
             <dt>Live</dt>
-            <dd><a id="live-url" href="#" target="_blank" rel="noopener"></a></dd>
+            <dd>
+              <a id="live-url" href="#" target="_blank" rel="noopener"></a>
+              <button type="button" class="btn ghost" id="overview-rename" hidden style="margin-left:0.5rem">
+                Change URL
+              </button>
+            </dd>
             <dt id="custom-dt" hidden>Custom</dt>
             <dd id="custom-dd" hidden><a id="custom-url" href="#" target="_blank" rel="noopener"></a></dd>
             <dt>Current deploy</dt>
@@ -742,6 +763,27 @@
         <section class="panel" id="panel-danger" data-tab="danger" hidden>
           <h2>Danger zone</h2>
           <p class="danger-desc">
+            Change the public <code>*.aft.page</code> URL. The old URL stops
+            working immediately. Custom domains stay attached.
+          </p>
+          <form class="rename-form" id="rename-form">
+            <label for="rename-input">New slug</label>
+            <div class="row">
+              <input
+                id="rename-input"
+                type="text"
+                autocomplete="off"
+                spellcheck="false"
+                pattern="[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?"
+                placeholder="my-app"
+                required
+              />
+              <button type="submit" class="btn" id="rename-btn">Change URL</button>
+            </div>
+          </form>
+          <div class="msg" id="rename-msg" role="status"></div>
+
+          <p class="danger-desc" style="margin-top: 1.5rem">
             Destroying this project permanently deletes the site, its files, all
             deploy history, members, and invites. This cannot be undone.
           </p>
@@ -934,6 +976,8 @@
         const liveA = document.getElementById("live-url");
         liveA.href = live;
         liveA.textContent = live.replace(/^https:\/\//, "");
+        const overviewRename = document.getElementById("overview-rename");
+        overviewRename.hidden = !canManageAccess();
         document.getElementById("deploy-id").textContent = info.deployId || "—";
         document.getElementById("created-at").textContent = fmt(info.createdAt);
         document.getElementById("updated-at").textContent = fmt(info.updatedAt);
@@ -984,6 +1028,7 @@
         document.getElementById("panel-danger").hidden = !allow;
         document.querySelector('.hub-nav [data-tab="danger"]').hidden = !allow;
         document.getElementById("destroy-slug").textContent = slug;
+        document.getElementById("rename-input").value = slug;
       }
 
       function updateVisPill() {
@@ -2375,6 +2420,71 @@
           renderDeploys();
         }
       }
+
+      (function initRename() {
+        const form = document.getElementById("rename-form");
+        const input = document.getElementById("rename-input");
+        const msg = document.getElementById("rename-msg");
+        const overviewBtn = document.getElementById("overview-rename");
+        overviewBtn.addEventListener("click", () => {
+          showTab("danger");
+          input.value = slug;
+          input.focus();
+          input.select();
+        });
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          if (!canManageAccess()) return;
+          const next = (input.value || "").trim().toLowerCase();
+          if (!/^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$/.test(next)) {
+            setMsg(msg, "Slug must be 2–48 chars: a-z, 0-9, hyphens", "err");
+            return;
+          }
+          if (next === slug) {
+            setMsg(msg, "That’s already the current URL", "ok");
+            return;
+          }
+          if (
+            !confirm(
+              `Change URL from ${slug}.aft.page to ${next}.aft.page?\n\nThe old URL will stop working immediately.`,
+            )
+          ) {
+            return;
+          }
+          const btn = document.getElementById("rename-btn");
+          btn.disabled = true;
+          setMsg(msg, "Changing URL…");
+          try {
+            const res = await fetch(
+              `${API}/v1/sites/${encodeURIComponent(slug)}/rename`,
+              {
+                method: "POST",
+                credentials: "include",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ slug: next }),
+              },
+            );
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              setMsg(
+                msg,
+                body.hint || body.error || "Couldn’t change URL",
+                "err",
+              );
+              btn.disabled = false;
+              return;
+            }
+            try {
+              sessionStorage.removeItem("aft.projects.sites.v1");
+            } catch (_) {}
+            setMsg(msg, "URL updated. Redirecting…", "ok");
+            location.replace(`/project/?slug=${encodeURIComponent(body.slug)}`);
+          } catch (_) {
+            setMsg(msg, "Network error", "err");
+            btn.disabled = false;
+          }
+        });
+      })();
 
       (function initDestroy() {
         const openBtn = document.getElementById("destroy-btn");

@@ -1,51 +1,39 @@
 # @aft.page/cli
 
-Hosted [aft.page](https://aft.page) CLI — deploy static sites, browser login, Agent Plugin install.
+Hosted [aft.page](https://aft.page) CLI.
 
-This is **not** the parked OSS AWS CLI (`github.com/vaibhavmule/aft`).
+**No login:** `aft deploy` (and `aft init`).  
+**Login required:** everything else — same as the project dashboard after claim.
 
-## Install (public)
+## Install
 
 ```bash
 curl -fsSL https://aft.page/install | sh
-aft login
-aft deploy
 ```
 
-Requires Node.js ≥ 20. Puts `aft` in `~/.local/bin` (add to `PATH` if needed).
-
-npm (`npx @aft.page/cli`) comes later when the `@aft.page` scope is set up.
-
-## Run (dev)
-
-```bash
-node apps/cli/bin/aft.js login
-node apps/cli/bin/aft.js deploy .
-node apps/cli/bin/aft.js plugins add
-```
-
-Before Pages **production** deploy: `bash apps/cli/sync-www.sh` then  
-`npx wrangler pages deploy www --project-name=aft-page --branch=production`
+Node.js ≥ 20. Binary → `~/.local/bin/aft`.
 
 ## Commands
 
-| Command | Behavior |
-| --- | --- |
-| `aft login` | Opens browser → Google or magic link → stores session in `~/.config/aft.page/credentials.json` |
-| `aft logout` | Clears credentials |
-| `aft whoami` | `GET /v1/me` |
-| `aft deploy [dir]` | Upload files; uses `aft.json` slug and `.aft/state.json` editToken; Bearer if logged in |
-| `aft plugins add` | `npx plugins add vaibhavmule/aft.page` |
-
-## Env
-
-- `AFT_API` — default `https://api.aft.page`
-- `AFT_TOKEN` — session token override
-- `AFT_CREDENTIALS` — credentials file path
+| Command | Login? | Behavior |
+| --- | --- | --- |
+| `aft deploy [dir]` | no | Detect framework; offer build if needed; upload `dist/` / `out/` / `build/` |
+| `aft init` | no | Detect + confirm framework; write `aft.json` |
+| `aft update` | no | Reinstall latest CLI; first run asks about anonymous analytics |
+| `aft login` | — | Browser sign-in → `~/.config/aft.page/credentials.json` |
+| `aft logout` / `aft whoami` | yes | Session |
+| `aft sites` | yes | List claimed projects |
+| `aft open` | yes | Open live URL |
+| `aft rename <slug>` | yes | Change `*.aft.page` URL |
+| `aft env list\|set\|unset` | yes | Secrets vault |
+| `aft visibility public\|private` | yes | Access |
+| `aft rollback [deployId]` | yes | List / roll back deploys |
+| `aft plugins add` | — | Agent Plugin installer |
 
 ## Check
 
 ```bash
 node apps/cli/check.mjs
-# also runs at end of apps/api `npm test` (with plugin check)
 ```
+
+Before Pages production: `bash apps/cli/sync-www.sh`

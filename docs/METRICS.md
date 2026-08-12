@@ -45,7 +45,7 @@ Instrument before more features. These numbers beat another feature:
 | `double3` | files | file count |
 | `double4` | http_status | HTTP status |
 
-Clients send `X-Aft-Client: mcp|web|extension`. Remote MCP sends `mcp-remote`, stored as `mcp`. Curl without the header is inferred from User-Agent when possible.
+Clients send `X-Aft-Client: mcp|web|extension|cli|mac`. Remote MCP sends `mcp-remote`, stored as `mcp`. Curl without the header is inferred from User-Agent when possible.
 
 ## Query (SQL API)
 

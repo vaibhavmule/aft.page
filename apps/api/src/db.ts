@@ -259,6 +259,121 @@ export async function deleteSite(env: Env, slug: string): Promise<boolean> {
   return (siteDelete?.meta?.changes ?? 0) > 0;
 }
 
+/**
+ * Rename a site's primary key across D1. Caller must ensure `toSlug` is free
+ * and move R2/KV objects separately. Returns false if `fromSlug` is missing.
+ */
+export async function renameSiteSlug(
+  env: Env,
+  fromSlug: string,
+  toSlug: string,
+): Promise<boolean> {
+  await ensureDb(env);
+  if (fromSlug === toSlug) return true;
+
+  const row = await env.DB.prepare(`SELECT slug FROM sites WHERE slug = ?`)
+    .bind(fromSlug)
+    .first<{ slug: string }>();
+  if (!row) return false;
+
+  const taken = await env.DB.prepare(`SELECT slug FROM sites WHERE slug = ?`)
+    .bind(toSlug)
+    .first<{ slug: string }>();
+  if (taken) {
+    throw new Error("slug_taken");
+  }
+
+  const now = new Date().toISOString();
+  // Copy sites row → update children → delete old. PK-slug tables need
+  // INSERT+DELETE; others UPDATE. D1 may not enforce FKs per connection.
+  await env.DB.batch([
+    env.DB.prepare(
+      `INSERT INTO sites (
+         slug, deploy_id, owner_user_id, visibility, created_at, updated_at,
+         last_served_at, runtime, upstream_url, main_module, active
+       )
+       SELECT ?, deploy_id, owner_user_id, visibility, created_at, ?,
+              last_served_at, COALESCE(runtime, 'static'), upstream_url, main_module,
+              COALESCE(active, 1)
+       FROM sites WHERE slug = ?`,
+    ).bind(toSlug, now, fromSlug),
+
+    env.DB.prepare(
+      `INSERT INTO site_secrets (slug, edit_token_hash, created_at)
+       SELECT ?, edit_token_hash, created_at FROM site_secrets WHERE slug = ?`,
+    ).bind(toSlug, fromSlug),
+    env.DB.prepare(`DELETE FROM site_secrets WHERE slug = ?`).bind(fromSlug),
+
+    env.DB.prepare(
+      `INSERT INTO site_capability_grants (
+         slug, requested_json, approved_json, status, deploy_id,
+         approved_at, approved_by, updated_at
+       )
+       SELECT ?, requested_json, approved_json, status, deploy_id,
+              approved_at, approved_by, updated_at
+       FROM site_capability_grants WHERE slug = ?`,
+    ).bind(toSlug, fromSlug),
+    env.DB.prepare(`DELETE FROM site_capability_grants WHERE slug = ?`).bind(
+      fromSlug,
+    ),
+
+    env.DB.prepare(
+      `INSERT INTO site_secret_values (slug, name, ciphertext, updated_at)
+       SELECT ?, name, ciphertext, updated_at FROM site_secret_values WHERE slug = ?`,
+    ).bind(toSlug, fromSlug),
+    env.DB.prepare(`DELETE FROM site_secret_values WHERE slug = ?`).bind(
+      fromSlug,
+    ),
+
+    env.DB.prepare(
+      `INSERT INTO site_members (slug, user_id, email, role, created_at)
+       SELECT ?, user_id, email, role, created_at FROM site_members WHERE slug = ?`,
+    ).bind(toSlug, fromSlug),
+    env.DB.prepare(`DELETE FROM site_members WHERE slug = ?`).bind(fromSlug),
+
+    env.DB.prepare(`UPDATE deploys SET slug = ? WHERE slug = ?`).bind(
+      toSlug,
+      fromSlug,
+    ),
+    env.DB.prepare(`UPDATE site_invites SET slug = ? WHERE slug = ?`).bind(
+      toSlug,
+      fromSlug,
+    ),
+    env.DB.prepare(`UPDATE magic_links SET slug = ? WHERE slug = ?`).bind(
+      toSlug,
+      fromSlug,
+    ),
+    env.DB.prepare(`UPDATE custom_domains SET slug = ? WHERE slug = ?`).bind(
+      toSlug,
+      fromSlug,
+    ),
+    env.DB.prepare(`UPDATE connectors SET slug = ? WHERE slug = ?`).bind(
+      toSlug,
+      fromSlug,
+    ),
+    env.DB.prepare(`UPDATE connector_invokes SET slug = ? WHERE slug = ?`).bind(
+      toSlug,
+      fromSlug,
+    ),
+    env.DB.prepare(`UPDATE site_crons SET slug = ? WHERE slug = ?`).bind(
+      toSlug,
+      fromSlug,
+    ),
+    env.DB.prepare(`UPDATE site_logs SET slug = ? WHERE slug = ?`).bind(
+      toSlug,
+      fromSlug,
+    ),
+    env.DB.prepare(`UPDATE deploy_failures SET slug = ? WHERE slug = ?`).bind(
+      toSlug,
+      fromSlug,
+    ),
+
+    env.DB.prepare(`DELETE FROM sites WHERE slug = ?`).bind(fromSlug),
+  ]);
+
+  return true;
+}
+
 export async function createSiteInvite(
   env: Env,
   opts: {

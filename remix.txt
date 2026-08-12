@@ -1,0 +1,22 @@
+# aft.page — remix / clone
+# Updated: 2026-08-10
+
+File → Make a copy. Owner toggle: **allow clone** (off by default).
+On → anyone gets a new slug they own. Off → look only.
+
+Why it belongs on AFT: Small Software spreads like a Doc. Hosting is
+commodity (saloon.wtf → five clones on Vercel/Netlify in 48h, 8–10 Aug
+2026). The wave goes to whoever makes copy one click. `saloon.aft.page`
+without clone is just another URL. With clone, AFT is where the copies live.
+
+Status: **later.** Not this month. Plugin + stranger proof first.
+See STRATEGY.md progression · mill-ideas.txt · todo.txt later.
+
+Fun mill (same primitive): remix websites just for fun — clone a vibe,
+tweak, ship. Traffic follows the original; AFT keeps the copies.
+
+Lazy-builder (same spirit, different surface): don’t start from a prompt.
+Show real HTML, section by section → Approve / Reject / Suggest → assemble
+the site. Prompt is faster; this is for people who can’t picture a prompt
+but can judge a block. We already run this on brand boards. Productize it
+for whole pages. Idea only — mill-ideas.txt.

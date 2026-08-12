@@ -1,175 +1,61 @@
-# aft.page docs
+# aft.page docs (agent index)
 
-> What we host, how to deploy it, how to save environment secrets.
-> HTML twin: https://aft.page/docs · Agents: also see https://aft.page/mcp.md
+> Human guides (detailed HTML): https://aft.page/docs  
+> MCP / API schemas: https://aft.page/mcp.md  
+> This file is a short index for agents — not a twin of the HTML docs.
 
 aft.page is a **file host + permission layer** for small software. It does not
-run `npm run build`. You (or your agent) detect the project, build locally if
-needed, then upload ready files.
+run `npm run build`. Detect the project, build locally if needed, upload ready
+files → durable `https://{slug}.aft.page`.
 
-## What we support
+## What we host
 
-| Kind | What to ship | Live |
-| --- | --- | --- |
-| Plain HTML | One file via Drop / MCP `deploy` | [hello.aft.page](https://hello.aft.page) |
-| Multi-file static | HTML + CSS + JS | [share-checklist.aft.page](https://share-checklist.aft.page) |
-| Vite / React / Vue | `npm run build` → **`dist/` only** | [vite-hello.aft.page](https://vite-hello.aft.page) |
-| CRA / Rsbuild | `npm run build` → `build/` or `dist/` | — |
-| Next.js static export | `output: 'export'` → **`out/`** | — |
-| Next SSR / Worker | OpenNext (or any Worker) + `runtime: next` / `worker` + `upstream` | [next-hello.aft.page](https://next-hello.aft.page) |
+| Kind | Ship |
+| --- | --- |
+| Plain HTML | files with `index.html` |
+| Vite / React / Vue / … | `npm run build` → **`dist/` only** |
+| Next static export | `output: 'export'` → **`out/`** |
+| Next SSR / Worker | OpenNext (or Worker) + `aft.json` `upstream` |
 
-**Not this product:** uploading `src/`, `node_modules`, or `.next/`; in-Worker
-Next SSR; a website builder; CI that builds for you.
+Never upload `src/`, `node_modules`, or `.next/`. Details: https://aft.page/docs/frameworks/
 
-Detect rule (same as the Cursor skill): look at `package.json`, `vite.config.*`,
-`next.config.*`, `index.html`. Plain HTML → upload those files. Bundler app →
-build, then upload the output folder only.
+## Ship
 
-## Deploy
+- **Drop:** https://aft.page/drop/ — folder or zip
+- **MCP:** `https://mcp.aft.page/mcp` — tools in https://aft.page/mcp.md
+- **CLI (no login):** `curl -fsSL https://aft.page/install | sh` then `aft deploy`
+- **API:** `POST https://api.aft.page/v1/deploy`
 
-Same result either way: `https://{slug}.aft.page`.
+CLI auto-picks `dist/` / `out/` / `build/`, writes `aft.json` on first deploy.
+Guide: https://aft.page/docs/cli/
 
-**Agents today:** MCP or CLI.  
-**Humans:** Drop or CLI.  
-**Pending:** Per-IDE Agent Plugin / marketplace listings.
+## Manage (after claim + `aft login`)
 
-### 1. Drop (humans)
+Claim: https://aft.page/docs/claim/  
+Then same as the project dashboard:
 
-[aft.page/drop](https://aft.page/drop/) — folder or zip. Include `index.html`.
+| Command | Guide |
+| --- | --- |
+| `aft rename <slug>` | /docs/cli/ · /docs/claim/ |
+| `aft env list\|set\|unset` | /docs/env/ |
+| `aft visibility public\|private` | /docs/claim/ |
+| `aft rollback [deployId]` | /docs/cli/ |
+| `aft sites` / `aft open` | /docs/cli/ |
+| `aft update` | /docs/cli/ |
+| Custom domains | /docs/domains/ |
+| `aft.json` capabilities | /docs/capabilities/ |
 
-README-only (no `index.html`): `/` is 404; the file is at `/README.md`. Same
-shape as a Vercel Drop of just a readme —
-[readme-black-chi.vercel.app](https://readme-black-chi.vercel.app/) is that,
-not a web app.
+Unclaimed sites deleted after 30 days idle. Limits: 200 files · 10 MB/file · 50 MB.
+Claimed sites can be paused (reversible) or destroyed (irreversible) — see /docs/claim/.
 
-### 2. Agent MCP (agents · ready today)
+## Links
 
-Remote: `https://mcp.aft.page/mcp`
-
-```json
-{ "mcpServers": { "aft-page": { "url": "https://mcp.aft.page/mcp" } } }
-```
-
-Ask: **Deploy this to aft.page**. Full tool schemas: [mcp.md](https://aft.page/mcp.md).
-
-### 3. Hosted CLI (agents or humans)
-
-```bash
-curl -fsSL https://aft.page/install | sh
-aft deploy
-```
-
-Login optional. Same durable URL as Drop and MCP.
-
-### 4. API
-
-```bash
-curl -X POST https://api.aft.page/v1/deploy \
-  -H 'Content-Type: text/html' \
-  -H 'X-Aft-Client: curl' \
-  --data '<h1>Hello from aft.page</h1>'
-```
-
-Multi-file: JSON `{ "files": [{ "path", "content" }] }` or multipart. Optional
-`?slug=vite-hello`. Collision gets a suffix — never overwrites.
-
-## Logs
-
-Owner and editors: project page → **Logs**, or `GET /v1/sites/{slug}/logs`.
-Document hits, errors, and failed deploys. No IP addresses. Kept 7 days.
-
-## Source
-
-Owner, editors, and viewers: project page → **Source**, or
-`GET /v1/sites/{slug}/files`. File list for a deploy; click a text file to
-preview. Not a public URL — live `*.aft.page/{path}` is unchanged.
-
-## Secrets / environment
-
-MCP does **not** set secrets. Claim the site first, then save env on the project
-page or API. Values are encrypted at rest; only names are listed.
-
-1. Open `https://aft.page/claim?slug=…&token=…` (deploy `claimUrl`) or Claim on the live URL.
-2. Sign in → the site appears under [Projects](https://aft.page/projects).
-3. **Secrets** panel: name + value → Save. Or:
-
-```bash
-# names only
-curl https://api.aft.page/v1/sites/{slug}/secrets -H "Cookie: …"
-
-curl -X PUT https://api.aft.page/v1/sites/{slug}/secrets/ANTHROPIC_API_KEY \
-  -H "Content-Type: application/json" -H "Cookie: …" \
-  -d '{"value":"sk-…"}'
-```
-
-Declare intended names in `aft.json` so approve-on-deploy can show them:
-
-```json
-{
-  "name": "my-app",
-  "runtime": "next",
-  "capabilities": {
-    "secrets": ["ANTHROPIC_API_KEY"],
-    "egress": ["api.anthropic.com"]
-  }
-}
-```
-
-Secrets are **not** baked into static HTML. A Vite SPA that needs a public API
-key should use a public env prefix at **build** time; keep private keys in the
-vault for worker / next runtimes.
-
-## Custom domain
-
-Invite-only during beta. Claim the site → project **Domains** → request access.
-Once approved, add `app.example.com`, then at your DNS host:
-
-```
-CNAME  app.example.com  →  cname.aft.page
-```
-
-HTTPS issues after DNS is live (progress on the same tab). Apex
-(`example.com`) needs ALIAS / ANAME / CNAME flattening to the same target.
-The `*.aft.page` URL stays. Private sign-in still uses that subdomain.
-
-```bash
-curl https://api.aft.page/v1/sites/{slug}/domains -H "Cookie: …"
-curl -X POST https://api.aft.page/v1/sites/{slug}/domains \
-  -H "Content-Type: application/json" -H "Cookie: …" \
-  -d '{"hostname":"app.example.com"}'
-```
-
-## Claim, private, invite
-
-Anonymous deploy is live immediately. Unclaimed sites stay live; they are
-permanently deleted after 30 days without a visit or update. Claim to keep the
-URL forever, make it private, invite by email, redeploy in place, roll back,
-or destroy. Same URL stays.
-
-## Limits
-
-| | Static | worker / next |
-| --- | --- | --- |
-| Files | 200 | 200 |
-| Per file | 10 MB | 10 MB |
-| Total | 50 MB | 50 MB |
-
-Always include `index.html` for static sites.
-
-## Examples
-
-- [hello.aft.page](https://hello.aft.page) — plain HTML
-- [vite-hello.aft.page](https://vite-hello.aft.page) — React + Vite `dist/`
-- [next-hello.aft.page](https://next-hello.aft.page) — Next via upstream
-- [share-checklist.aft.page](https://share-checklist.aft.page) — static multi-file
-
-Source lives in the [aft.page repo `examples/`](https://github.com/vaibhavmule/aft.page/tree/main/examples).
-
-## More
-
-- MCP / API reference: https://aft.page/mcp · https://aft.page/mcp.md
-- Plugin: https://aft.page/plugins — pending (per-IDE / marketplace). Agents: MCP or CLI. Humans: Drop or CLI.
-- Drop: https://aft.page/drop/
-- CLI: `curl -fsSL https://aft.page/install | sh` then `aft deploy` (login optional)
-- Cursor: https://aft.page/with/cursor/
-- OSS CLI (your AWS / Cloudflare — different product): https://github.com/vaibhavmule/aft
+- Docs hub: https://aft.page/docs
+- CLI: https://aft.page/docs/cli/
+- Claim & share: https://aft.page/docs/claim/
+- Secrets: https://aft.page/docs/env/
+- Domains: https://aft.page/docs/domains/
+- Capabilities: https://aft.page/docs/capabilities/
+- Frameworks: https://aft.page/docs/frameworks/
+- MCP: https://aft.page/mcp.md
+- Examples: https://github.com/vaibhavmule/aft.page/tree/main/examples

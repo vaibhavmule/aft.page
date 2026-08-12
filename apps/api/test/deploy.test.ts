@@ -41,6 +41,21 @@ describe("deploy input", () => {
     );
   });
 
+  it("uses aft.json name when slug is omitted", async () => {
+    const res = await call(
+      uploadJson([
+        { path: "index.html", content: "<h1>named</h1>" },
+        {
+          path: "aft.json",
+          content: JSON.stringify({ name: "my-vite-app", runtime: "static" }),
+        },
+      ]),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { slug: string };
+    expect(body.slug).toBe("my-vite-app");
+  });
+
   it("accepts a JSON file list from an agent", async () => {
     const res = await call(
       uploadJson(

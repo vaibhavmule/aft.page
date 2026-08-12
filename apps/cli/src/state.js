@@ -38,10 +38,13 @@ export async function saveState(dir, state) {
 export async function readAftJsonSlug(dir) {
   try {
     const raw = await readFile(join(dir, "aft.json"), "utf8");
-    const slug = String(JSON.parse(raw).slug || "")
-      .toLowerCase()
-      .trim();
-    if (/^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$/.test(slug)) return slug;
+    const json = JSON.parse(raw);
+    for (const field of [json.slug, json.name]) {
+      const slug = String(field || "")
+        .toLowerCase()
+        .trim();
+      if (/^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$/.test(slug)) return slug;
+    }
   } catch {
     /* none */
   }

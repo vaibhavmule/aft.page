@@ -1,0 +1,36 @@
+# aft.page — belief: coding’s YouTube moment
+# Updated: 2026-08-10
+# Founder: we believe this. Not a pricing promise. Not a second product.
+
+Seniors calling Claude / Cursor “not serious” is Hollywood calling YouTube
+not real movies.
+
+YouTube moment (video): hosting went free · editing went easy / mobile ·
+cameras got good. Anyone could publish. Elite club broke.
+
+Coding is in that shape. AI + frameworks made *building* easy. **Hosting
+is still the hard, expensive-feeling step.** The moment completes when:
+
+1. Hosting is one-click and can stay free (YouTube-like; rev-share later
+   if bandwidth has to be unbounded).
+2. UI is consumer and fun — not terminal-first, not “serious IDE.”
+3. Text-to-code (or section Approve / Reject / Suggest) can carry a
+   non-programmer to a live URL.
+
+Replit is close and still developer-centric. Whoever ships a consumer
+Cursor unlocks a new class of apps. Programming stays the leverage;
+the missing half is publish.
+
+## AFT’s cut
+
+We are not building the consumer Cursor (that’s Claude / Cursor / the
+agent). We are the **host + share layer** of that moment: agent output →
+durable URL → share like a Doc. Same gap the YC RFS names
+(`rfs.txt`). Remix / clone (`remix.txt`) is “make a copy” once it’s live.
+
+Free-forever + no bandwidth cap is the *direction*, not today’s SKU.
+Charge for keep / private / team when it costs real money — YouTube also
+monetized the supply side.
+
+Canonical mission still: a cloud for Small Software.
+`motivation.txt` · `vision.txt` · `rfs.txt`

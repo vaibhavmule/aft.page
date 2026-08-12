@@ -31,24 +31,29 @@ export function isValidSlug(slug: string): boolean {
   return /^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$/.test(slug);
 }
 
-/** Same rules as Drop (`www/deploy.js` slugFromHtml): <title>, then <h1>. */
-export function slugBaseFromHtml(html: string): string | undefined {
-  const title = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim();
-  const h1 = html.match(/<h1[^>]*>([^<]+)<\/h1>/i)?.[1]?.trim();
-  const raw = (title || h1 || "").toLowerCase();
-  if (!raw) return undefined;
+/** package.json name, aft.json name, <title>, <h1>, etc. */
+export function slugFromHint(raw: string): string | undefined {
   const slug = raw
+    .toLowerCase()
     .normalize("NFKD")
     .replace(/[^\w\s-]/g, "")
     .trim()
     .replace(/[\s_]+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 48);
+    .slice(0, 48)
+    .replace(/-+$/g, "");
   if (!slug || slug.length < 2) return undefined;
   if (RESERVED_SLUGS.has(slug)) return undefined;
   if (!isValidSlug(slug)) return undefined;
   return slug;
+}
+
+/** Same rules as Drop (`www/deploy.js` slugFromHtml): <title>, then <h1>. */
+export function slugBaseFromHtml(html: string): string | undefined {
+  const title = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim();
+  const h1 = html.match(/<h1[^>]*>([^<]+)<\/h1>/i)?.[1]?.trim();
+  return slugFromHint((title || h1 || "").toLowerCase());
 }
 
 export function slugBaseFromFiles(

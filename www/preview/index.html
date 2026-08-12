@@ -42,12 +42,16 @@
         display: flex;
         align-items: center;
         gap: 0.75rem;
+        width: min(var(--page), calc(100% - var(--page-gutter)));
+        margin: 0 auto;
         padding: 1.35rem clamp(1.25rem, 3vw, 2.25rem);
         background: var(--void);
-        border-bottom: 1px solid var(--line);
+        border-left: 1px solid var(--line);
+        border-right: 1px solid var(--line);
         flex-wrap: wrap;
         flex-shrink: 0;
       }
+      .preview-bar-shell { flex-shrink: 0; }
       .brand {
         font-family: var(--font-display);
         font-weight: 600;
@@ -443,6 +447,7 @@
     </style>
   </head>
   <body>
+    <header class="preview-bar-shell">
     <div class="bar">
       <div class="app-brand-wrap">
         <a class="brand" href="/">aft<span>.</span>page</a>
@@ -457,6 +462,7 @@
         <a class="btn btn-ghost" id="back" hidden>Back to chat</a>
         <button class="btn btn-ghost" id="copy" hidden>Copy link</button>
         <a class="btn btn-ghost" id="open" target="_blank" rel="noopener noreferrer" hidden>Open live</a>
+        <button class="btn btn-ghost" id="rename-open" type="button" hidden>Change URL</button>
         <div class="share-cluster" id="share-cluster" hidden>
           <button class="btn btn-ghost is-busy" id="access" type="button" disabled aria-busy="true">
             <span class="btn-spinner" aria-hidden="true"></span> Checking…
@@ -466,6 +472,7 @@
         <a class="btn btn-ghost" href="/login" data-aft-auth="login">Log in</a>
       </div>
     </div>
+    </header>
 
     <div class="workspace" id="workspace" hidden>
       <div class="split">
@@ -551,6 +558,26 @@
       </div>
     </div>
 
+    <div class="claim-dialog" id="rename-dialog" role="dialog" aria-modal="true" aria-labelledby="rename-title" hidden>
+      <div class="claim-panel">
+        <h2 id="rename-title">Change URL</h2>
+        <p>Current: <strong id="rename-current"></strong>. The old URL stops working immediately.</p>
+        <label for="rename-input" style="display:block;font-size:0.85rem;color:var(--quiet);margin:0 0 0.35rem">New slug</label>
+        <input
+          type="text"
+          id="rename-input"
+          placeholder="my-app"
+          autocomplete="off"
+          spellcheck="false"
+          pattern="[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?"
+        />
+        <div class="claim-actions">
+          <button class="btn btn-ghost" type="button" id="rename-cancel">Cancel</button>
+          <button class="btn btn-claim" type="button" id="rename-send">Change URL</button>
+        </div>
+      </div>
+    </div>
+
     <div class="claim-dialog" id="invite-dialog" role="dialog" aria-modal="true" aria-labelledby="invite-title" hidden>
       <div class="claim-panel">
         <h2 id="invite-title">Access</h2>
@@ -618,6 +645,12 @@
       const claimSend = document.getElementById("claim-send");
       const claimCancel = document.getElementById("claim-cancel");
       const claimSlugLabel = document.getElementById("claim-slug-label");
+      const renameOpen = document.getElementById("rename-open");
+      const renameDialog = document.getElementById("rename-dialog");
+      const renameCurrent = document.getElementById("rename-current");
+      const renameInput = document.getElementById("rename-input");
+      const renameSend = document.getElementById("rename-send");
+      const renameCancel = document.getElementById("rename-cancel");
       const inviteDialog = document.getElementById("invite-dialog");
       const inviteEmail = document.getElementById("invite-email");
       const inviteRole = document.getElementById("invite-role");
@@ -868,9 +901,94 @@
         inviteDialog.classList.remove("open");
       }
 
+      function canRename() {
+        return Boolean(isOwner || tokenForSlug(slug));
+      }
+
+      function updateRenameButton() {
+        if (!renameOpen) return;
+        renameOpen.hidden = !slug || !canRename();
+      }
+
+      function openRenameDialog() {
+        if (!canRename()) {
+          showToast("Need the deploy link with ?token= (or claim the site) to change the URL");
+          return;
+        }
+        renameCurrent.textContent = slug + ".aft.page";
+        renameInput.value = slug;
+        renameDialog.hidden = false;
+        renameDialog.classList.add("open");
+        renameInput.focus();
+        renameInput.select();
+      }
+
+      function closeRenameDialog() {
+        renameDialog.hidden = true;
+        renameDialog.classList.remove("open");
+      }
+
+      async function submitRename() {
+        const next = (renameInput.value || "").trim().toLowerCase();
+        if (!/^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$/.test(next)) {
+          showToast("Slug must be 2–48 chars: a-z, 0-9, hyphens");
+          return;
+        }
+        if (next === slug) {
+          closeRenameDialog();
+          return;
+        }
+        if (
+          !confirm(
+            `Change URL from ${slug}.aft.page to ${next}.aft.page?\n\nThe old URL will stop working immediately.`,
+          )
+        ) {
+          return;
+        }
+        const token = tokenForSlug(slug);
+        const headers = { "content-type": "application/json" };
+        if (token && !isOwner) headers["x-aft-edit-token"] = token;
+        const label = renameSend.textContent;
+        renameSend.disabled = true;
+        renameSend.classList.add("is-busy");
+        renameSend.innerHTML =
+          `<span class="btn-spinner" aria-hidden="true"></span> Changing…`;
+        try {
+          const res = await fetch(
+            `${API}/v1/sites/${encodeURIComponent(slug)}/rename`,
+            {
+              method: "POST",
+              credentials: "include",
+              headers,
+              body: JSON.stringify({ slug: next }),
+            },
+          );
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            showToast(data.hint || data.error || "Couldn’t change URL");
+            return;
+          }
+          if (token) saveToken(data.slug, token);
+          showToast("URL updated");
+          const nextUrl = new URL(location.href);
+          nextUrl.searchParams.set(
+            "url",
+            data.url || `https://${data.slug}.aft.page`,
+          );
+          location.replace(nextUrl.toString());
+        } catch (_) {
+          showToast("Network error");
+        } finally {
+          renameSend.disabled = false;
+          renameSend.classList.remove("is-busy");
+          renameSend.textContent = label;
+        }
+      }
+
       async function applySiteInfo(info) {
         if (!info) {
           setClaimAvailable(null);
+          updateRenameButton();
           return;
         }
         sessionEmail = info.email || null;
@@ -881,6 +999,7 @@
         } else {
           setClaimAvailable(sessionEmail);
         }
+        updateRenameButton();
         if (info.visibility) setVisibility(info.visibility);
         if (info.owner) {
           siteMembers = info.members || [];
@@ -1116,6 +1235,7 @@
         openA.hidden = false;
         copyBtn.hidden = false;
         shareCluster.hidden = false;
+        updateRenameButton();
         codeErrorLink.href = url;
         workspace.hidden = false;
         empty.hidden = true;
@@ -1289,6 +1409,19 @@
 
         claimBtn.addEventListener("click", openClaimDialog);
 
+        renameOpen.addEventListener("click", openRenameDialog);
+        renameCancel.addEventListener("click", closeRenameDialog);
+        renameSend.addEventListener("click", submitRename);
+        renameDialog.addEventListener("click", (e) => {
+          if (e.target === renameDialog) closeRenameDialog();
+        });
+        renameInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            submitRename();
+          }
+        });
+
         capApprove.addEventListener("click", async () => {
           const capLabel = capApprove.textContent;
           capApprove.disabled = true;
@@ -1374,6 +1507,7 @@
         copyBtn.hidden = true;
         openA.hidden = true;
         shareCluster.hidden = true;
+        if (renameOpen) renameOpen.hidden = true;
 
         const hubForm = document.getElementById("hub-form");
         const hubUrl = document.getElementById("hub-url");

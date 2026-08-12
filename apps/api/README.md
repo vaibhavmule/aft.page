@@ -91,7 +91,7 @@ Optional Google login: wrangler secrets `GOOGLE_CLIENT_ID` and
 `https://api.aft.page/v1/auth/google/callback`. Without them, `/login` still
 offers magic link; Google start redirects back with `error=google_unavailable`.
 
-Optional header: `X-Aft-Client: mcp|web|extension|curl|cli` (product metrics).
+Optional header: `X-Aft-Client: mcp|web|extension|curl|cli|mac` (product metrics).
 
 ## Storage
 

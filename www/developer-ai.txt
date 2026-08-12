@@ -67,12 +67,14 @@ Deploy size limits: 200 files · 10 MB per file · 50 MB total.
 
 ## Documentation
 
+- [Docs hub](https://aft.page/docs): human guides (CLI, claim, env, domains, frameworks)
+- [Docs agent index](https://aft.page/docs.md): short Markdown index (not an HTML twin)
 - [MCP + API Markdown](https://aft.page/mcp.md): preferred agent reference
 - [MCP + API HTML](https://aft.page/mcp): human-readable docs
 - [Agent index](https://aft.page/llms.txt): product identity for AI systems
 - [Drop agent instructions](https://aft.page/drop/llms.txt): Drop-specific agent notes
 - [Status](https://status.aft.page/): uptime and incidents
-- [Hosted CLI](https://aft.page/install): `curl -fsSL https://aft.page/install | sh` → `aft deploy`
+- [Hosted CLI](https://aft.page/install): `curl -fsSL https://aft.page/install | sh` → `aft deploy` (no login). After claim: `aft login` for rename, env, sites, rollback — [CLI guide](https://aft.page/docs/cli/)
 - [Open-source BYO-cloud CLI](https://github.com/vaibhavmule/aft): customer-cloud tooling (different product)
 
 ## Developer Notes

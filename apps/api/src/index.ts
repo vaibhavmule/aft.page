@@ -24,6 +24,7 @@ import {
 import { handleAuthRoute, authNeedsCredentials } from "./auth-login";
 import { handleWaitlistSignup } from "./waitlist";
 import { handleFeedback } from "./feedback";
+import { handleCliEvent } from "./cli-event";
 import { handleOps, isOpsHost } from "./ops";
 import {
   handleStatus,
@@ -146,6 +147,15 @@ async function routeRequest(
       return optionsResponse(request.headers.get("origin"), false);
     }
     return await handleFeedback(request, env);
+  }
+
+  // Opt-in anonymous CLI usage (command + version). No auth.
+  if (
+    isApiHost(host, root) &&
+    url.pathname === "/v1/cli/event" &&
+    (request.method === "POST" || request.method === "OPTIONS")
+  ) {
+    return await handleCliEvent(request, env);
   }
 
   if (isStatusHost(host, root)) {
@@ -282,7 +292,7 @@ async function handleApi(
       waitlist: "POST /v1/waitlist",
       changelog: "GET /v1/changelog · GET /v1/changelog.md",
       sharing:
-        "PATCH /v1/sites/{slug}, POST /v1/sites/{slug}/access, POST/GET/DELETE /v1/sites/{slug}/invites, PATCH|DELETE /v1/sites/{slug}/members/{id}, GET /v1/invites/accept",
+        "PATCH /v1/sites/{slug}, POST /v1/sites/{slug}/rename, POST /v1/sites/{slug}/access, POST/GET/DELETE /v1/sites/{slug}/invites, PATCH|DELETE /v1/sites/{slug}/members/{id}, GET /v1/invites/accept",
       inventory: "GET /v1/me, GET /v1/me/sites?page=&limit=, GET /v1/sites/{slug}/deploys, GET /v1/sites/{slug}/files, GET /v1/sites/{slug}/logs, POST /v1/sites/{slug}/rollback",
       capabilities: "GET|POST /v1/sites/{slug}/capabilities",
       secrets: "GET /v1/sites/{slug}/secrets, PUT|DELETE /v1/sites/{slug}/secrets/{name}",

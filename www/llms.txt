@@ -11,12 +11,12 @@ Specification: [AI Visibility](https://www.ai-visibility.org.uk/)
 ## Services
 
 - [Agent MCP deploy](https://aft.page/mcp): Remote MCP at `https://mcp.aft.page/mcp` — agents use MCP or CLI today
-- [Hosted CLI](https://aft.page/install): `curl -fsSL https://aft.page/install | sh` then `aft deploy` — agents or humans
+- [Hosted CLI](https://aft.page/install): `curl -fsSL https://aft.page/install | sh` → `aft deploy` (no login). After claim: `aft login` for rename, env, rollback, sites — [CLI guide](https://aft.page/docs/cli/)
 - [Drop deploy](https://aft.page/drop/): Humans — folder or zip → live `*.aft.page` URL, no account required
 - [Agent Plugin](https://aft.page/plugins): Pending — per-IDE plugin / marketplace listings
 - [API deploy](https://api.aft.page): `POST /v1/deploy` and redeploy with an edit token for agents and scripts
-- [Claim and share](https://aft.page/preview): Attach an anonymous deploy to an account, make it private, or invite people by email
-- [Custom domains](https://aft.page/docs#domain): After claim, request access, CNAME to `cname.aft.page` (invite-only during beta)
+- [Claim and share](https://aft.page/docs/claim/): Attach an anonymous deploy to an account, make it private, or invite people by email
+- [Custom domains](https://aft.page/docs/domains/): After claim, request access, CNAME to `cname.aft.page` (invite-only during beta)
 - [Hosted small software](https://aft.page/): Serve agent-built HTML, static SPAs, and small apps at a durable HTTPS URL
 
 ## What We Do Not Do
@@ -39,8 +39,9 @@ aft.page does not provide:
 ## Key Information
 
 - [Home](https://aft.page/): Product overview and live Drop
-- [Docs](https://aft.page/docs): What we support, deploy, secrets
-- [Docs Markdown](https://aft.page/docs.md): Same docs for agents
+- [Docs](https://aft.page/docs): Human guides (CLI, claim, env, domains, frameworks)
+- [Docs agent index](https://aft.page/docs.md): Short Markdown index for agents (not a twin of the HTML)
+- [CLI guide](https://aft.page/docs/cli/): Install, deploy, login-required commands
 - [Changelog](https://aft.page/changelog): What shipped, by day
 - [Changelog Markdown](https://api.aft.page/v1/changelog.md): Same changelog for agents
 - [MCP docs](https://aft.page/mcp.md): Agent tools, API, and config (Markdown)

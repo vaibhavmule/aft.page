@@ -34,6 +34,13 @@ describe("resolveClient", () => {
     expect(
       resolveClient(
         new Request("https://api.aft.page/v1/deploy", {
+          headers: { "x-aft-client": "mac" },
+        }),
+      ),
+    ).toBe("mac");
+    expect(
+      resolveClient(
+        new Request("https://api.aft.page/v1/deploy", {
           headers: { "x-aft-client": "mcp-remote" },
         }),
       ),

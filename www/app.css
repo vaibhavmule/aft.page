@@ -11,7 +11,7 @@
   --line-bright: #3f3f46;
   --ink: #fafafa;
   --quiet: #a1a1aa;
-  --faint: #52525b;
+  --faint: #767680; /* was #52525b (~2.7:1 on --void); bumped to ~4.7:1 for WCAG AA on small text */
 
   --cta: #ffffff;
   --cta-ink: #000000;

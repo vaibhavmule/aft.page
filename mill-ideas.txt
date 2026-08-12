@@ -1,0 +1,56 @@
+# aft.page — mill ideas (traffic)
+# Updated: 2026-08-10
+# Invent original ideas that can travel like saloon.wtf. Do not clone it.
+# Growth = GTM G20. Remix later = remix.txt. Viral ≠ retained.
+
+How
+- Add freely. One idea = name + why it might travel + AFT hook + status.
+- Status: idea | later | now | killed.
+- Kill if it’s someone else’s viral URL with our hostname.
+
+Pattern (saloon class — the shape, not the shop):
+  one feeling · one screen · music or motion · “leave the tab open” ·
+  20s video that is the product · no account · no README.
+  saloon.wtf ~8 Aug 2026: ~2.8M X views; site visits estimated 200–600k/48h;
+  then ~30 concurrent. Five *other* originals appeared in 48h (truck, dhaba,
+  railway…). That’s the mill: invent the next one, deploy on AFT, film it.
+
+-------------------------------------------------------------------------------
+
+M1. [example only] Nostalgia place + music
+    Why travel : Indian street/road/salon feeling is proven. Ours must be a
+                 *new* place/feeling — not Deluxe Saloon.
+    AFT hook   : *.aft.page + later allow clone so copies stay here.
+    Status     : pattern — invent a specific idea below, don’t ship “saloon”
+
+M2. Remix websites just for fun
+    Why travel : “I forked yours.” Copies are the distribution.
+    AFT hook   : remix.txt. Gallery of opted-in origins.
+    Status     : later (needs allow-clone)
+
+M3. HTML section board → whole site (lazy builder)
+    Why travel : Approve / reject / suggest real HTML, no prompt.
+    AFT hook   : board URL → deploy. Same as brand board, for pages.
+    Status     : idea
+
+M4. Agency client preview
+    Why travel : pitch needs a link. Not viral-class; real loop.
+    AFT hook   : private + invite. Already shipped.
+    Status     : now-shaped if you have a client this week
+
+M5. Named tiny tool (daily job)
+    Why travel : slow. Retention, not a 48h spike.
+    AFT hook   : claimed private → later AI automations (Cron parked).
+    Status     : idea
+
+# — invent next viral-class ideas here (G20) —
+
+M6. ________
+    Why travel :
+    AFT hook   : *.aft.page + 20s clip
+    Status     : idea
+
+-------------------------------------------------------------------------------
+
+GTM: docs/gtm.txt G20. Brand: youtube-moment.txt (consumer + fun).
+YouTube + IG grind = post-quit (FOUNDER.md).

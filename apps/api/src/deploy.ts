@@ -34,7 +34,12 @@ import {
   trackRedeploy,
   type DeployTrackFields,
 } from "./metrics";
-import { allocateUniqueSlug, isValidSlug, slugBaseFromFiles } from "./slug";
+import {
+  allocateUniqueSlug,
+  isValidSlug,
+  slugBaseFromFiles,
+  slugFromHint,
+} from "./slug";
 import { putFailurePayload, putObject } from "./storage";
 
 export { sanitizeHtmlDocument } from "./upload";
@@ -221,8 +226,11 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
     const sessionUser = await resolveSessionUser(env, request);
     const { manifest, runtime, unlimited, maxFiles, maxFile, maxTotal } =
       limitsForFiles(env, files, querySlug, [sessionUser?.email]);
-    // Query wins; aft.json.slug is the fallback so agents who forget ?slug= still stick.
-    const preferred = querySlug || manifest?.slug;
+    // Query wins; aft.json slug/name next; else <title>/<h1> from index.html.
+    const preferred =
+      querySlug ||
+      manifest?.slug ||
+      (manifest?.name ? slugFromHint(manifest.name) : undefined);
 
     if (!unlimited && files.length > maxFiles) {
       return done(deployJson(request, { error: "too_many_files", max: maxFiles }, 400), {

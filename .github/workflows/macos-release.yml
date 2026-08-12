@@ -1,0 +1,63 @@
+name: macOS release
+
+on:
+  push:
+    tags:
+      - "mac-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test
+        run: swift test --package-path apps/macos
+
+      - name: Import Developer ID certificate
+        env:
+          CERTIFICATE_P12_BASE64: ${{ secrets.DEVELOPER_ID_APPLICATION_P12 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPER_ID_APPLICATION_P12_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.BUILD_KEYCHAIN_PASSWORD }}
+        run: |
+          certificate="$RUNNER_TEMP/developer-id.p12"
+          keychain="$RUNNER_TEMP/aft-signing.keychain-db"
+          printf '%s' "$CERTIFICATE_P12_BASE64" | base64 --decode > "$certificate"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$keychain"
+          security import "$certificate" -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
+          security list-keychains -d user -s "$keychain"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$keychain"
+
+      - name: Build signed universal app
+        env:
+          AFT_UNIVERSAL: "1"
+          AFT_VERSION: ${{ github.ref_name }}
+          AFT_BUILD_NUMBER: ${{ github.run_number }}
+          AFT_CODESIGN_IDENTITY: ${{ secrets.DEVELOPER_ID_APPLICATION_NAME }}
+        run: |
+          version="${AFT_VERSION#mac-v}"
+          AFT_VERSION="$version" apps/macos/scripts/build-app.sh
+
+      - name: Notarize DMG
+        env:
+          AFT_VERSION: ${{ github.ref_name }}
+          AFT_CODESIGN_IDENTITY: ${{ secrets.DEVELOPER_ID_APPLICATION_NAME }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          version="${AFT_VERSION#mac-v}"
+          key="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8"
+          printf '%s' "$APPLE_API_KEY_P8" > "$key"
+          AFT_VERSION="$version" APPLE_API_KEY_PATH="$key" apps/macos/scripts/create-dmg.sh
+          spctl --assess --type execute --verbose=2 "apps/macos/build/aft Drop.app"
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" apps/macos/build/*.dmg apps/macos/build/*.sha256 --generate-notes

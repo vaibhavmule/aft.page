@@ -6,10 +6,10 @@
     <title>Docs — aft.page</title>
     <meta
       name="description"
-      content="What aft.page supports (HTML, Vite, React, Next), how to deploy, and how to save environment secrets."
+      content="What aft.page supports, how to ship (Drop, CLI, MCP), claim, secrets, domains, capabilities, and frameworks."
     />
     <link rel="canonical" href="https://aft.page/docs" />
-    <link rel="alternate" type="text/markdown" href="https://aft.page/docs.md" title="Docs (Markdown)" />
+    <link rel="alternate" type="text/markdown" href="https://aft.page/docs.md" title="Docs agent index (Markdown)" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -19,7 +19,7 @@
     <meta property="og:title" content="Docs — aft.page" />
     <meta
       property="og:description"
-      content="What we host, how to deploy, how to save environment secrets."
+      content="Detailed guides for deploy, CLI, claim, secrets, domains, capabilities, and frameworks."
     />
     <meta property="og:url" content="https://aft.page/docs" />
     <meta property="og:image" content="https://aft.page/og.png" />
@@ -27,7 +27,7 @@
     <meta name="twitter:title" content="Docs — aft.page" />
     <meta
       name="twitter:description"
-      content="Support matrix, deploy paths, secrets vault."
+      content="Support matrix, guides, and agent index."
     />
     <meta name="twitter:image" content="https://aft.page/og.png" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
@@ -43,7 +43,8 @@
   </head>
   <body>
     <div class="site">
-      <nav class="topnav" aria-label="Primary">
+      <nav class="topnav topnav-rail" aria-label="Primary">
+        <div class="topnav-inner">
         <div class="topnav-brand-wrap">
           <a class="topnav-brand" href="/">aft<span>.</span>page</a>
           <span class="nav-beta">Beta</span>
@@ -60,7 +61,7 @@
                 <p class="nav-mega-label">Get started</p>
                 <a href="/docs" aria-current="page">
                   <span class="nav-mega-title">Documentation</span>
-                  <span class="nav-mega-desc">What we support, deploy, secrets.</span>
+                  <span class="nav-mega-desc">Guides for deploy, CLI, claim, secrets.</span>
                 </a>
                 <a href="/drop">
                   <span class="nav-mega-title">Drop files</span>
@@ -89,39 +90,113 @@
           <a href="/login" data-aft-auth="login">Log in</a>
           <a class="topnav-cta" href="/drop">Deploy an app</a>
         </div>
+        <button
+          type="button"
+          class="mobile-nav-toggle"
+          aria-label="Open menu"
+          aria-controls="mobile-nav-drawer"
+          aria-expanded="false"
+          data-mobile-nav-open
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 8h14M5 16h14" />
+          </svg>
+        </button>
+        </div>
       </nav>
+
+      <div
+        class="mobile-nav-drawer"
+        id="mobile-nav-drawer"
+        data-mobile-nav
+        role="dialog"
+        aria-modal="true"
+        aria-label="Site menu"
+        hidden
+      >
+        <div class="mobile-nav-shell">
+          <div class="mobile-nav-head">
+            <div class="topnav-brand-wrap">
+              <a class="topnav-brand" href="/">aft<span>.</span>page</a>
+              <span class="nav-beta">Beta</span>
+            </div>
+            <button
+              type="button"
+              class="mobile-nav-close"
+              aria-label="Close menu"
+              data-mobile-nav-close
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 6l12 12M18 6 6 18" />
+              </svg>
+            </button>
+          </div>
+
+          <nav class="mobile-nav-links" aria-label="Mobile primary">
+            <a href="/#product">Product</a>
+            <details class="mobile-nav-agents">
+              <summary>
+                Agents
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="m3 6 5 5 5-5" />
+                </svg>
+              </summary>
+              <div class="mobile-nav-agents-list">
+                <a href="/with/claude/">Claude Code</a>
+                <a href="/with/cursor/">Cursor</a>
+                <a href="/with/codex/">Codex</a>
+                <a href="/with/chatgpt/">ChatGPT</a>
+                <a href="/mcp">MCP</a>
+                <a href="/docs">All integrations</a>
+              </div>
+            </details>
+            <a href="/docs" aria-current="page">Docs</a>
+          </nav>
+
+          <div class="mobile-nav-actions">
+            <a href="/login" data-aft-auth="login">Log in</a>
+            <a class="btn btn-primary" href="/drop">Deploy an app</a>
+          </div>
+        </div>
+      </div>
 
       <div class="docs-hero">
         <p class="eyebrow">Documentation</p>
         <h1>What we support. How to ship it.</h1>
         <p class="lede">
-          aft.page hosts small software at a durable <code>*.aft.page</code> URL.
-          Detect the project, build if needed, upload ready files — then claim,
-          share, and save environment secrets.
+          aft.page is a file host plus a permission layer for small software.
+          Build locally if needed, upload ready files, get a durable
+          <code>*.aft.page</code> URL — then claim, share, and manage.
         </p>
         <div class="docs-machine">
-          <a class="btn btn-primary" href="/docs.md">Read as Markdown</a>
+          <a class="btn btn-primary" href="/docs/cli/">CLI guide</a>
           <a class="btn btn-ghost" href="/mcp">MCP reference</a>
-          <a class="btn btn-ghost" href="#support">Support matrix</a>
+          <a class="btn btn-ghost" href="/docs.md">Agent index</a>
         </div>
         <p class="docs-callout">
           <strong>Agents:</strong>
+          short index at
           <a href="/docs.md"><code>https://aft.page/docs.md</code></a>
           · tool schemas at
           <a href="/mcp.md"><code>/mcp.md</code></a>.
+          Humans: use the guides below (HTML is the detailed source of truth).
         </p>
       </div>
 
       <div class="docs-layout">
-        <nav class="docs-toc" aria-label="On this page">
-          <p>On this page</p>
+        <nav class="docs-toc" aria-label="Docs navigation">
+          <p>Guides</p>
           <ol>
             <li><a href="#support">What we support</a></li>
-            <li><a href="#deploy">Deploy</a></li>
+            <li><a href="#start">Quick start</a></li>
+            <li><a href="/docs/cli/">CLI</a></li>
+            <li><a href="/docs/claim/">Claim &amp; share</a></li>
+            <li><a href="/docs/env/">Secrets / env</a></li>
+            <li><a href="/docs/domains/">Custom domains</a></li>
+            <li><a href="/docs/capabilities/">Capabilities</a></li>
+            <li><a href="/docs/frameworks/">Frameworks</a></li>
             <li><a href="#logs">Logs</a></li>
             <li><a href="#source">Source</a></li>
-            <li><a href="#secrets">Secrets / environment</a></li>
-            <li><a href="#share">Claim &amp; invite</a></li>
             <li><a href="#limits">Limits</a></li>
             <li><a href="#examples">Examples</a></li>
           </ol>
@@ -131,17 +206,16 @@
           <section id="support">
             <h2>What we support</h2>
             <p>
-              aft.page is a file host plus a permission layer. It does
-              <strong>not</strong> run <code>npm run build</code>. You (or your
-              agent) detect the project, build locally if needed, then upload
-              ready files.
+              aft.page does <strong>not</strong> run <code>npm run build</code>.
+              You (or your agent) detect the project, build locally if needed,
+              then upload ready files.
             </p>
             <div class="docs-table-wrap">
               <table>
                 <thead>
                   <tr>
                     <th>Kind</th>
-                    <th>What to ship</th>
+                    <th>Ship</th>
                     <th>Live</th>
                   </tr>
                 </thead>
@@ -157,18 +231,13 @@
                     <td><a href="https://share-checklist.aft.page">share-checklist</a></td>
                   </tr>
                   <tr>
-                    <td>Vite / React / Vue</td>
-                    <td><code>npm run build</code> → <strong><code>dist/</code> only</strong></td>
+                    <td>Vite / React / Vue / Svelte / Astro</td>
+                    <td><code>dist/</code> only</td>
                     <td><a href="https://vite-hello.aft.page">vite-hello.aft.page</a></td>
                   </tr>
                   <tr>
-                    <td>CRA / Rsbuild</td>
-                    <td><code>npm run build</code> → <code>build/</code> or <code>dist/</code></td>
-                    <td>—</td>
-                  </tr>
-                  <tr>
                     <td>Next.js static export</td>
-                    <td><code>output: 'export'</code> → <strong><code>out/</code></strong></td>
+                    <td><code>out/</code> only</td>
                     <td>—</td>
                   </tr>
                   <tr>
@@ -180,65 +249,63 @@
               </table>
             </div>
             <p>
-              Look at <code>package.json</code>, <code>vite.config.*</code>,
-              <code>next.config.*</code>, <code>index.html</code>. Plain HTML →
-              upload those files. Bundler app → build, then upload the output
-              folder only. Never upload <code>src/</code>,
-              <code>node_modules</code>, or <code>.next/</code>.
+              Never upload <code>src/</code>, <code>node_modules</code>, or
+              <code>.next/</code>. Always include <code>index.html</code> for
+              static sites. Per-framework build steps, verified vs. untested
+              frameworks, and what still needs a runtime we don't run yet:
+              <a href="/docs/frameworks/">Frameworks guide</a>.
             </p>
           </section>
 
-          <section id="deploy">
-            <h2>Deploy</h2>
+          <section id="start">
+            <h2>Quick start</h2>
             <p>
-              Agents today: MCP or CLI. Humans: Drop or CLI. Pending: Per-IDE
-              Agent Plugin / marketplace. Same result:
+              Agents today: MCP or CLI. Humans: Drop or CLI. Same result:
               <code>https://{slug}.aft.page</code>.
             </p>
-            <h3>Drop (humans)</h3>
-            <p>
-              <a href="/drop">aft.page/drop</a> — folder or zip. Include
-              <code>index.html</code>.
-            </p>
-            <p>
-              README-only (no <code>index.html</code>): <code>/</code> is 404;
-              the file is at <code>/README.md</code>. Same shape as a Vercel
-              Drop of just a readme —
-              <a href="https://readme-black-chi.vercel.app/">readme-black-chi.vercel.app</a>
-              is that, not a web app.
-            </p>
-            <h3>Agent MCP (agents · ready today)</h3>
-            <p>Remote: <code>https://mcp.aft.page/mcp</code></p>
-            <pre><code>{
-  "mcpServers": {
-    "aft-page": { "url": "https://mcp.aft.page/mcp" }
-  }
-}</code></pre>
-            <p>
-              Ask: <strong>Deploy this to aft.page</strong>. Tool schemas:
-              <a href="/mcp">/mcp</a> · <a href="/mcp.md">/mcp.md</a>. Cursor:
-              <a href="/with/cursor/">/with/cursor/</a>.
-            </p>
-            <h3>Hosted CLI (agents or humans)</h3>
-            <p>
-              <code>curl -fsSL https://aft.page/install | sh</code> then
-              <code>aft deploy</code> (login optional).
-            </p>
-            <h3>API</h3>
+            <ul class="docs-guide-list">
+              <li>
+                <a href="/drop"><strong>Drop</strong></a> — folder or zip with
+                <code>index.html</code>.
+              </li>
+              <li>
+                <a href="/docs/cli/"><strong>CLI</strong></a> —
+                <code>curl -fsSL https://aft.page/install | sh</code> then
+                <code>aft deploy</code> (no login to ship).
+              </li>
+              <li>
+                <a href="/mcp"><strong>MCP</strong></a> — remote
+                <code>https://mcp.aft.page/mcp</code>; ask "Deploy this to
+                aft.page".
+              </li>
+              <li>
+                <a href="/docs/claim/"><strong>Claim &amp; share</strong></a> —
+                keep the URL, private invites, rename.
+              </li>
+              <li>
+                <a href="/docs/env/"><strong>Secrets / env</strong></a> —
+                vault after claim (<code>aft env</code> or UI).
+              </li>
+              <li>
+                <a href="/docs/domains/"><strong>Custom domains</strong></a> —
+                CNAME to <code>cname.aft.page</code> (beta invite).
+              </li>
+              <li>
+                <a href="/docs/capabilities/"><strong>Capabilities</strong></a> —
+                declare what an app needs; an owner approves it.
+              </li>
+            </ul>
+            <h3>API (one-shot)</h3>
             <pre><code>curl -X POST https://api.aft.page/v1/deploy \
   -H 'Content-Type: text/html' \
   -H 'X-Aft-Client: curl' \
   --data '&lt;h1&gt;Hello from aft.page&lt;/h1&gt;'</code></pre>
             <p>
               Multi-file: JSON <code>{ "files": [{ "path", "content" }] }</code>
-              or multipart. Optional <code>?slug=vite-hello</code>. Collision
-              gets a suffix — never overwrites.
-            </p>
-            <h3>Agent Plugin (pending)</h3>
-            <p>
-              Per-IDE plugin / marketplace listings are still pending. Agents:
-              MCP or CLI. Humans: Drop or CLI. Status:
-              <a href="/plugins">/plugins</a>.
+              or multipart. Optional <code>?slug=vite-hello</code>. A
+              collision gets a numeric suffix — an existing slug is never
+              overwritten by a new, unrelated deploy. Full schemas:
+              <a href="/mcp.md">/mcp.md</a>.
             </p>
           </section>
 
@@ -246,8 +313,24 @@
             <h2>Logs</h2>
             <p>
               Owner and editors: project page → <strong>Logs</strong>, or
-              <code>GET /v1/sites/{slug}/logs</code>. Document hits, errors, and
-              failed deploys. No IP addresses. Kept 7 days.
+              <code>GET /v1/sites/{slug}/logs</code>. Request-level hits and
+              errors for the live site, plus recent deploy failures. No IP
+              addresses. Kept 7 days.
+            </p>
+            <pre><code>{
+  "slug": "my-app",
+  "views": { "today": 12, "d7": 340 },
+  "lastServedAt": "2026-08-12T09:14:02.000Z",
+  "events": [
+    { "createdAt": "2026-08-12T09:14:02.000Z", "method": "GET",
+      "path": "/api/widgets", "status": 500, "bytes": 214, "country": "US" }
+  ],
+  "deployFailures": []
+}</code></pre>
+            <p>
+              <code>events</code> is capped at the most recent 100 rows; only
+              document-shaped hits and non-2xx responses stick around — noisy
+              favicon/robots-style paths are filtered before they're stored.
             </p>
           </section>
 
@@ -256,80 +339,20 @@
             <p>
               Owner, editors, and viewers: project page →
               <strong>Source</strong>, or
-              <code>GET /v1/sites/{slug}/files</code>. File list for a deploy;
-              click a text file to preview. Not a public URL — live
-              <code>*.aft.page/{path}</code> is unchanged.
-            </p>
-          </section>
-
-          <section id="secrets">
-            <h2>Secrets / environment</h2>
-            <p>
-              MCP does <strong>not</strong> set secrets. Claim the site first,
-              then save env on the project page or API. Values are encrypted at
-              rest; only names are listed.
-            </p>
-            <ol>
-              <li>
-                Open <code>https://aft.page/claim?slug=…&amp;token=…</code>
-                (deploy <code>claimUrl</code>) or Claim on the live URL.
-              </li>
-              <li>
-                Sign in → the site appears under
-                <a href="/projects">Projects</a>.
-              </li>
-              <li>Secrets panel: name + value → Save. Or use the API:</li>
-            </ol>
-            <pre><code># names only
-curl https://api.aft.page/v1/sites/{slug}/secrets -H "Cookie: …"
-
-curl -X PUT https://api.aft.page/v1/sites/{slug}/secrets/ANTHROPIC_API_KEY \
-  -H "Content-Type: application/json" -H "Cookie: …" \
-  -d '{"value":"sk-…"}'</code></pre>
-            <p>
-              Declare intended names in <code>aft.json</code> so
-              approve-on-deploy can show them:
+              <code>GET /v1/sites/{slug}/files</code>. File list for the
+              current deploy (or an older one via <code>?deployId=</code>);
+              click a text file to preview its contents. This is a private
+              read of what you uploaded — it's not a public URL, and the live
+              <code>*.aft.page/{path}</code> site is unchanged by looking at it.
             </p>
             <pre><code>{
-  "name": "my-app",
-  "runtime": "next",
-  "capabilities": {
-    "secrets": ["ANTHROPIC_API_KEY"],
-    "egress": ["api.anthropic.com"]
-  }
+  "slug": "my-app",
+  "deployId": "dep_abc123def456",
+  "files": [
+    { "path": "index.html", "bytes": 1820 },
+    { "path": "assets/app.js", "bytes": 44210 }
+  ]
 }</code></pre>
-            <p>
-              Secrets are not baked into static HTML. A Vite SPA that needs a
-              public API URL should bake it at <strong>build</strong> time; keep
-              private keys in the vault for worker / next runtimes.
-            </p>
-          </section>
-
-          <section id="domain">
-            <h2>Custom domain</h2>
-            <p>
-              Invite-only during beta. Claim the site → project
-              <strong>Domains</strong> → request access. Once approved, add
-              <code>app.example.com</code>, then at your DNS host:
-            </p>
-            <pre><code>CNAME  app.example.com  →  cname.aft.page</code></pre>
-            <p>
-              HTTPS issues after DNS is live (progress on the same tab). Apex
-              (<code>example.com</code>) needs ALIAS / ANAME / CNAME flattening
-              to the same target. The <code>*.aft.page</code> URL stays. Private
-              sign-in still uses that subdomain.
-            </p>
-          </section>
-
-          <section id="share">
-            <h2>Claim, private, invite</h2>
-            <p>
-              Anonymous deploy is live immediately. Unclaimed sites stay live;
-              they are permanently deleted after 30 days without a visit or
-              update. Claim to keep the URL forever, make it private, invite by
-              email, redeploy in place, roll back, or destroy. The URL stays
-              the same.
-            </p>
           </section>
 
           <section id="limits">
@@ -362,7 +385,10 @@ curl -X PUT https://api.aft.page/v1/sites/{slug}/secrets/ANTHROPIC_API_KEY \
                 </tbody>
               </table>
             </div>
-            <p>Always include <code>index.html</code> for static sites.</p>
+            <p>
+              Unclaimed sites are deleted after 30 days idle. Claim to keep them
+              — <a href="/docs/claim/">Claim guide</a>.
+            </p>
           </section>
 
           <section id="examples">
@@ -383,65 +409,67 @@ curl -X PUT https://api.aft.page/v1/sites/{slug}/secrets/ANTHROPIC_API_KEY \
       </div>
 
       <footer class="site-footer">
-      <div class="footer-inner">
-        <div class="footer-meta">
-          <a class="footer-status" href="https://status.aft.page">
-            <span class="status-dot" aria-hidden="true"></span>
-            All systems operational
-          </a>
-          <p class="footer-copy">© 2026 aft.page</p>
-        </div>
-        <div class="footer-top">
-          <div class="footer-brand-block">
-            <a class="footer-mark" href="/" aria-label="aft.page home">
-              <span class="footer-wordmark">aft<span class="sq" aria-hidden="true"></span>page</span>
+        <div class="footer-inner">
+          <div class="footer-meta">
+            <a class="footer-status" href="https://status.aft.page">
+              <span class="status-dot" aria-hidden="true"></span>
+              All systems operational
             </a>
-            <p class="footer-tagline">
-              Your agent made the app. aft makes it real.<br />
-              Live links. Invite teammates. Clear ownership.
-            </p>
+            <p class="footer-copy">© 2026 aft.page</p>
           </div>
-          <div class="footer-cols">
-            <div class="footer-col">
-              <h3>Product</h3>
-              <a href="/docs">Docs</a>
-              <a href="/drop">Drop</a>
-              <a href="/projects">Projects</a>
-              <a href="/preview">Preview</a>
+          <div class="footer-top">
+            <div class="footer-brand-block">
+              <a class="footer-mark" href="/" aria-label="aft.page home">
+                <span class="footer-wordmark">aft<span class="sq" aria-hidden="true"></span>page</span>
+              </a>
+              <p class="footer-tagline">
+                Your agent made the app. aft makes it real.<br />
+                Live links. Invite teammates. Clear ownership.
+              </p>
             </div>
-            <div class="footer-col">
-              <h3>Agents</h3>
-              <a href="/mcp">MCP</a>
-              <a href="/with/claude/">Claude Code</a>
-              <a href="/with/cursor/">Cursor</a>
-              <a href="/with/codex/">Codex</a>
-              <a href="/with/chatgpt/">ChatGPT</a>
-              <a href="/with/kilo/">Kilo</a>
-              <a href="/with/windsurf/">Windsurf</a>
-              <a href="/with/api/">API</a>
+            <div class="footer-cols">
+              <div class="footer-col">
+                <h3>Product</h3>
+                <a href="/docs">Docs</a>
+                <a href="/#pricing">Pricing</a>
+                <a href="/changelog">Changelog</a>
+                <a href="/drop">Drop</a>
+                <a href="/projects">Projects</a>
+              </div>
+              <div class="footer-col">
+                <h3>Agents</h3>
+                <a href="/mcp">MCP</a>
+                <a href="/plugins">Plugin</a>
+                <a href="/with/claude/">Claude Code</a>
+                <a href="/with/cursor/">Cursor</a>
+                <a href="/with/codex/">Codex</a>
+                <a href="/with/chatgpt/">ChatGPT</a>
+                <a href="/with/kilo/">Kilo</a>
+                <a href="/with/windsurf/">Windsurf</a>
+                <a href="/with/api/">API</a>
+              </div>
+              <div class="footer-col">
+                <h3>Company</h3>
+                <a href="https://status.aft.page">Status</a>
+                <a href="#feedback" data-aft-feedback>Feedback</a>
+                <a href="mailto:hello@aft.page">Contact</a>
+                <a href="/privacy/">Privacy</a>
+                <a href="/terms/">Terms</a>
+                <a href="/cookies/">Cookies</a>
+              </div>
             </div>
-            <div class="footer-col">
-              <h3>Company</h3>
-              <a href="https://status.aft.page">Status</a>
-              <a href="#feedback" data-aft-feedback>Feedback</a>
-              <a href="mailto:hello@aft.page">Contact</a>
-              <a href="/privacy/">Privacy</a>
-              <a href="/terms/">Terms</a>
-              <a href="/cookies/">Cookies</a>
-            </div>
+          </div>
+          <div class="footer-giant-wrap" aria-hidden="true">
+            <p class="footer-giant">aft<span class="sq" aria-hidden="true"></span></p>
           </div>
         </div>
-        <div class="footer-giant-wrap" aria-hidden="true">
-          <p class="footer-giant">aft<span class="sq" aria-hidden="true"></span></p>
-        </div>
-      </div>
-    </footer>
+      </footer>
     </div>
     <script src="/auth-me.js" defer></script>
     <script src="/agents-nav.js" defer></script>
     <script src="/auth-nav.js" defer></script>
     <script src="/summarize.js" defer></script>
-    <script src="/footer.js?v=20260809-cl" defer></script>
+    <script src="/footer.js?v=20260812-docs" defer></script>
     <script src="/feedback.js?v=20260808-footer" defer></script>
   </body>
 </html>

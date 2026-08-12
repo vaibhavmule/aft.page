@@ -47,8 +47,8 @@ A: Any agent that speaks MCP can use the remote server at
    or call the API directly. It works with Claude, Cursor, Codex, and ChatGPT.
    Humans can also use Drop, curl, or the hosted CLI:
    `curl -fsSL https://aft.page/install | sh` then `aft deploy`
-   (no account required).
-URL: [MCP docs](https://aft.page/mcp)
+   (no login for deploy; after claim use `aft login` for rename, env, rollback).
+URL: [MCP docs](https://aft.page/mcp) · [Docs](https://aft.page/docs) · [Agent index](https://aft.page/docs.md)
 
 Q: Which MCP tools does aft.page expose?
 A: A thin surface: deploy, aft_deploys, aft_rollback, and aft_health. First
@@ -67,7 +67,7 @@ Q: Can I use my own domain?
 A: Yes after you claim. Custom domains are invite-only during beta: project
    Domains tab → request access → CNAME the hostname to cname.aft.page. HTTPS
    issues from there. The *.aft.page URL stays.
-URL: [Docs](https://aft.page/docs#domain)
+URL: [Docs](https://aft.page/docs/domains/)
 
 Q: How is aft.page different from Vercel, Netlify, or Cloudflare Pages?
 A: Those are built for Big Software: repositories, builds, and cloud accounts.
