@@ -17,6 +17,7 @@ for (const needle of [
   'href="#hero-mcp"',
   'href="#hero-curl"',
   'href="#hero-drop"',
+  'href="#hero-cli"',
   "https://aft.page/install",
   "aft deploy",
 ]) {

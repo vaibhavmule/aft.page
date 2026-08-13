@@ -1,5 +1,5 @@
 aft.page — finance (cash out so far)
-Updated: 2026-08-08
+Updated: 2026-08-13
 
 Internal ledger for what we have actually spent standing up aft.
 Fill amounts marked TBD from Cloudflare billing email / Google invoice / card.
@@ -97,19 +97,18 @@ CREDITS / PROGRAMS — LESSON + NEXT
    If Startups rejects Workspace perk: keep cheap India seats; Cloud credits
    still useful later (not required for our CF stack).
 
-2) Cloudflare for Startups + Workers Launchpad  — TAKING SOON
+2) Cloudflare for Startups + Workers Launchpad
 
-   Cloudflare for Startups: usage credits tiers ($5k → $25k → $100k → $250k)
-   depending on stage / funding / partners.
-   Bootstrapped path often uses promo / lower tier — apply even pre-raise.
+   Cloudflare for Startups: usage credits tiers ($10k Tier 3 bootstrapped →
+   $100k / $350k with funding). Still **not submitted** — do that next.
+   Link: https://www.cloudflare.com/startups/
 
    Workers Launchpad: cohort + VC intros + Demo Day; Launchpad orgs can land
-   the top credit tier. We will apply when the next cohort window is open.
-   Links:
-     https://www.cloudflare.com/forstartups/
-     https://www.cloudflare.com/lp/workers-launchpad/
+   the top credit tier.
+   Link: https://www.cloudflare.com/startups/workers-launchpad/
 
-   Status: NOT applied yet. Do before paid Workers usage matters.
+   Status: **Launchpad applied 13 Aug 2026** (web form, hello@aft.page).
+   Waiting for CF reply / quarterly cohort review. Startups $10k still open.
 
 ===============================================================================
 HOW TO UPDATE THIS FILE

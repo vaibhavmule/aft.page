@@ -53,7 +53,9 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  /* See styles.css — global smooth-scroll caused a black-flash on long
+     in-page jumps because paint can't keep up. Kept instant here too. */
+  scroll-behavior: auto;
 }
 
 body {

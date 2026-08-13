@@ -11,6 +11,8 @@ Tier 3 **$10k**, no raise required (you). Tier 2 $100k / Tier 1 $350k need partn
 
 **[Workers Launchpad](https://www.cloudflare.com/startups/workers-launchpad/)** = quarterly cohort, **$0 equity from Cloudflare**. VC intros (Greylock, KP, Lightspeed, NEA, Bessemer, Pear…) + bootcamp + office hours + demo day. Any check is from partner VCs.
 
+**Status: applied 13 Aug 2026** (web form). Formal ack email same day: application under review; they notify **if selected**. Not accepted yet. Do not bump. Email also points at [Startup Program](https://www.cloudflare.com/startups/) credits — still unsubmitted.
+
 ## Google for Startups Cloud Program
 
 **Credits on GCP + Firebase**, not a VC check. Same class as Cloudflare for Startups.  
@@ -22,8 +24,9 @@ Up to **$200k USD over 2 years** (up to **$350k if they class you as AI startup*
 
 - **8 Aug 2026 11:31** — **Google for Startups:** “First step for application completed.” Next: **apply for credits** (button in email). Up to $200k / $350k AI over 2 years. Onboarding checklist required.
 - **8 Aug 2026 11:49** — second ack: “Thanks for your application… status in a few business days.” Treat as step-1 confirm, not credits approved. Checklist: [Google Cloud account setup for startups](https://cloud.google.com/startup).
-- **8 Aug 2026 13:08** — Launchpad Cohort #7 apply emailed from `hello@aft.page` → `Workers-Launchpad@cloudflare.com` (web form `#form_workerslaunchpad` was broken). Wait for reply / apply link.
+- **8 Aug 2026 13:08** — Launchpad Cohort #7 apply emailed from `hello@aft.page` → `Workers-Launchpad@cloudflare.com` (web form `#form_workerslaunchpad` was broken). Superseded by form submit 13 Aug.
 - **8 Aug 2026** — Cloudflare Startups credits form started (company aft.page · https://aft.page · founded 2026 · India/Pune). Finish: connect Cloudflare account + submit.
+- **13 Aug 2026** — **Workers Launchpad form submitted** (hello@aft.page · account `44255ec64e0080b678670b53bf810d27` · https://aft.page · Pune). Immediate page ack, then email ack (below). Not accepted yet — quarterly review.
 
 ## Email sent (archive)
 
@@ -45,10 +48,19 @@ Up to **$200k USD over 2 years** (up to **$350k if they class you as AI startup*
 
 > Application received; status in a few business days. If approved, credits deposit immediately to the Cloud Billing Account ID and validity begins then. Not yet approval.
 
+### Workers Launchpad — apply ack (13 Aug 2026)
+
+> Hi Vaibhav,  
+> Thank you for applying to the Cloudflare Workers Launchpad funding program!  
+> Our team will review your application and notify you if you are selected for the upcoming Workers Launchpad Cohort. If you are interested in applying to our Startup Program and haven't done so already, feel free to apply here.  
+> As a reminder, the Workers Launchpad is only eligible for startups already building on Cloudflare Workers.  
+> Questions: Workers-Launchpad@cloudflare.com  
+> (Standard disclaimer: CF does not fund or decide funding; partner VCs do.)
+
 ## Next (US path)
 
 - **Google:** finish credits apply + onboarding checklist (not done until that button)  
 - Cloudflare Startups $10k submit  
-- Launchpad wait  
+- Launchpad: wait for CF reply / cohort decision (applied 13 Aug)  
 - SPC next Fellowship cycle (Fall 2026 deadline was Aug 2)  
 - YC after repeat deploys — [YC-APPLICATION.md](./YC-APPLICATION.md)
