@@ -6,7 +6,7 @@
     <title>aft.page — Deploy as easily as you build</title>
     <meta
       name="description"
-      content="You can build a website in Lovable. You can deploy it on aft. Drop your files or use your agent. Live link. No account."
+      content="Anyone can build. Deploy it on aft. Drop your files or use your agent. Live link. No account."
     />
     <link rel="canonical" href="https://aft.page/" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -21,7 +21,7 @@
     />
     <meta
       property="og:description"
-      content="You can build a website in Lovable. You can deploy it on aft. Drop your files or use your agent. Live link. No account."
+      content="Anyone can build. Deploy it on aft. Drop your files or use your agent. Live link. No account."
     />
     <meta property="og:url" content="https://aft.page/" />
     <meta property="og:image" content="https://aft.page/og.png" />
@@ -38,7 +38,7 @@
     />
     <meta
       name="twitter:description"
-      content="You can build a website in Lovable. You can deploy it on aft. Drop files or use your agent. No account."
+      content="Anyone can build. Deploy it on aft. Drop files or use your agent. No account."
     />
     <meta name="twitter:image" content="https://aft.page/og.png" />
     <script type="application/ld+json">
@@ -52,7 +52,7 @@
             "url": "https://aft.page/",
             "logo": "https://aft.page/apple-touch-icon.png",
             "email": "hello@aft.page",
-            "description": "You can build a website in Lovable, Cursor, or ChatGPT. aft.page is how you put it online — a live link you can share."
+            "description": "Anyone can build. aft.page is how you put it online — a live link you can share."
           },
           {
             "@type": "WebSite",
@@ -86,7 +86,7 @@
                 "name": "What is aft.page?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "You can build a website with Lovable, Cursor, or ChatGPT. aft is how you put it online — a live link you can share. Drop your files or let your agent deploy. No account."
+                  "text": "Anyone can build a website. aft is how you put it online — a live link you can share. Drop your files or let your agent deploy. No account."
                 }
               },
               {
@@ -142,7 +142,7 @@
                 "name": "What can I deploy, and what are the limits?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Single HTML documents or multi-file static sites and SPAs (include index.html). Limits: 200 files, 10 MB per file, and 50 MB total."
+                  "text": "Single HTML documents or multi-file static sites and SPAs (include index.html). Limits: 500 files, 25 MB per file, and 100 MB total."
                 }
               }
             ]
@@ -159,7 +159,7 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260813-ways" />
+    <link rel="stylesheet" href="/styles.css?v=20260813-plugin" />
   </head>
   <body data-aft-drop-auto="1">
     <nav class="topnav topnav-rail" aria-label="Primary">
@@ -296,7 +296,7 @@
             You built it. Now go live.
           </h1>
           <p class="support">
-            If you can make a website in Lovable, you can deploy it on aft.
+            Anyone can build. You can deploy it on aft.
             Drop your files or let your agent send them. Live link. No account.
           </p>
           <p class="hero-durable">
@@ -571,12 +571,19 @@ deploy({
             <a href="#hero-drop">
               <div class="cap-preview" aria-hidden="true">
                 <svg viewBox="0 0 240 170" fill="none">
-                  <line x1="40" y1="150" x2="200" y2="150" stroke="currentColor" stroke-width="1.4" opacity=".18"/>
-                  <path d="M100 118 L108 110 L116 118" stroke="currentColor" stroke-width="1.6" opacity=".14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M100 134 L108 126 L116 134" stroke="currentColor" stroke-width="1.6" opacity=".09" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                  <line x1="76" y1="150" x2="76" y2="24" stroke="currentColor" stroke-width="2.2" opacity=".32" stroke-linecap="round"/>
-                  <path d="M78 32 L164 47 L120 58 L164 69 L78 58 Z" fill="currentColor" opacity=".16" stroke="currentColor" stroke-width="1.3" stroke-opacity=".3"/>
-                  <circle cx="76" cy="24" r="4.4" fill="var(--good)"/>
+                  <rect x="28" y="38" width="168" height="112" rx="14" fill="currentColor" opacity=".1" transform="rotate(-6 28 38)"/>
+                  <rect x="40" y="28" width="168" height="112" rx="14" fill="currentColor" opacity=".16" transform="rotate(-2.2 40 28)"/>
+                  <rect x="50" y="18" width="168" height="112" rx="14" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-width="1.6"/>
+                  <circle cx="68" cy="38" r="3.6" fill="currentColor" opacity=".25"/>
+                  <circle cx="80" cy="38" r="3.6" fill="currentColor" opacity=".45"/>
+                  <circle cx="92" cy="38" r="3.6" fill="currentColor" opacity=".75"/>
+                  <rect x="108" y="32" width="94" height="12" rx="6" fill="currentColor" opacity=".12"/>
+                  <circle cx="116" cy="38" r="2.4" fill="var(--good)"/>
+                  <rect x="68" y="58" width="132" height="9" rx="4.5" fill="currentColor" opacity=".22"/>
+                  <rect x="68" y="74" width="98" height="8" rx="4" fill="currentColor" opacity=".12"/>
+                  <rect x="68" y="90" width="116" height="8" rx="4" fill="currentColor" opacity=".12"/>
+                  <rect x="68" y="106" width="78" height="8" rx="4" fill="currentColor" opacity=".12"/>
+                  <rect x="68" y="122" width="56" height="16" rx="8" fill="currentColor" opacity=".42"/>
                 </svg>
               </div>
               <div class="cap-meta">
@@ -593,12 +600,21 @@ deploy({
             <a href="#share">
               <div class="cap-preview" aria-hidden="true">
                 <svg viewBox="0 0 240 170" fill="none">
-                  <circle cx="60" cy="85" r="80" stroke="currentColor" stroke-width="1.4" opacity=".08" fill="none"/>
-                  <circle cx="60" cy="85" r="54" stroke="currentColor" stroke-width="1.5" opacity=".15" fill="none"/>
-                  <circle cx="60" cy="85" r="28" stroke="currentColor" stroke-width="1.6" opacity=".26" fill="none"/>
-                  <circle cx="128" cy="46" r="4.2" fill="currentColor" opacity=".45"/>
-                  <circle cx="142" cy="120" r="4.2" fill="currentColor" opacity=".45"/>
-                  <circle cx="60" cy="85" r="4.6" fill="var(--good)"/>
+                  <rect x="24" y="18" width="192" height="134" rx="16" fill="currentColor" fill-opacity=".05" stroke="currentColor" stroke-width="1.5"/>
+                  <rect x="40" y="36" width="160" height="48" rx="12" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-width="1.3"/>
+                  <circle cx="64" cy="60" r="14" fill="currentColor" opacity=".12"/>
+                  <circle cx="64" cy="55" r="5.5" fill="currentColor" opacity=".4"/>
+                  <path d="M52 68 Q64 76 76 68" stroke="currentColor" stroke-width="1.4" opacity=".35" fill="none"/>
+                  <rect x="88" y="50" width="58" height="9" rx="4.5" fill="currentColor" opacity=".3"/>
+                  <rect x="88" y="66" width="46" height="7" rx="3.5" fill="currentColor" opacity=".14"/>
+                  <rect x="162" y="50" width="26" height="16" rx="8" fill="currentColor" opacity=".18"/>
+                  <rect x="40" y="96" width="160" height="48" rx="12" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-width="1.3"/>
+                  <circle cx="64" cy="120" r="14" fill="currentColor" opacity=".12"/>
+                  <circle cx="64" cy="115" r="5.5" fill="currentColor" opacity=".4"/>
+                  <path d="M52 128 Q64 136 76 128" stroke="currentColor" stroke-width="1.4" opacity=".35" fill="none"/>
+                  <rect x="88" y="110" width="52" height="9" rx="4.5" fill="currentColor" opacity=".3"/>
+                  <rect x="88" y="126" width="40" height="7" rx="3.5" fill="currentColor" opacity=".14"/>
+                  <rect x="162" y="110" width="26" height="16" rx="8" fill="currentColor" opacity=".18"/>
                 </svg>
               </div>
               <div class="cap-meta">
@@ -615,15 +631,16 @@ deploy({
             <a href="#keep">
               <div class="cap-preview" aria-hidden="true">
                 <svg viewBox="0 0 240 170" fill="none">
-                  <circle cx="120" cy="30" r="10" stroke="currentColor" stroke-width="2.2" opacity=".35" fill="none"/>
-                  <line x1="98" y1="46" x2="142" y2="46" stroke="currentColor" stroke-width="2.2" opacity=".3" stroke-linecap="round"/>
-                  <line x1="120" y1="40" x2="120" y2="120" stroke="currentColor" stroke-width="2.2" opacity=".3" stroke-linecap="round"/>
-                  <line x1="96" y1="108" x2="144" y2="108" stroke="currentColor" stroke-width="2.2" opacity=".2" stroke-linecap="round"/>
-                  <path d="M70 108 C 70 138, 96 152, 120 152" stroke="currentColor" stroke-width="2.2" opacity=".26" fill="none" stroke-linecap="round"/>
-                  <path d="M170 108 C 170 138, 144 152, 120 152" stroke="currentColor" stroke-width="2.2" opacity=".26" fill="none" stroke-linecap="round"/>
-                  <path d="M60 100 L70 108 L78 98" stroke="currentColor" stroke-width="2" opacity=".3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M180 100 L170 108 L162 98" stroke="currentColor" stroke-width="2" opacity=".3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M104 118 L116 130 L142 100" stroke="var(--good)" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
+                  <rect x="36" y="28" width="168" height="28" rx="8" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-width="1.3" opacity=".55"/>
+                  <rect x="48" y="38" width="18" height="8" rx="2" fill="currentColor" opacity=".28"/>
+                  <rect x="72" y="38" width="96" height="8" rx="2" fill="currentColor" opacity=".16"/>
+                  <rect x="36" y="64" width="168" height="28" rx="8" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-width="1.3" opacity=".75"/>
+                  <rect x="48" y="74" width="18" height="8" rx="2" fill="currentColor" opacity=".35"/>
+                  <rect x="72" y="74" width="96" height="8" rx="2" fill="currentColor" opacity=".2"/>
+                  <rect x="36" y="100" width="168" height="42" rx="8" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="1.5"/>
+                  <circle cx="54" cy="121" r="3" fill="var(--good)"/>
+                  <rect x="66" y="117" width="108" height="8" rx="2" fill="currentColor" opacity=".4"/>
+                  <path d="M168 114 L176 122 L192 104" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>
                 </svg>
               </div>
               <div class="cap-meta">
@@ -638,7 +655,7 @@ deploy({
           </li>
         </ol>
         <p class="ship-limits">
-          Static HTML, CSS, and JS today. 200 files · 10&nbsp;MB each · 50&nbsp;MB
+          Static HTML, CSS, and JS today. 500 files · 25&nbsp;MB each · 100&nbsp;MB
           total. Claim to keep ownership.
         </p>
       </section>
@@ -648,12 +665,19 @@ deploy({
           <p class="section-tag">Get started</p>
           <h2 class="section-title" id="start-title">Ways in.</h2>
           <p class="section-lede">
-            Agents: MCP, CLI, or cURL. Humans: Drop or CLI. Same live URL.
+            Agents: MCP, CLI, cURL, or Plugin. Humans: Drop or CLI. Same live URL.
           </p>
         </div>
         <ol class="path-row">
           <li>
             <a href="#hero-mcp">
+              <span class="path-num">001</span>
+              <svg class="path-ico" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="4" y="4" width="5" height="5" />
+                <rect x="15" y="4" width="5" height="5" />
+                <rect x="4" y="15" width="5" height="5" />
+                <rect x="15" y="15" width="5" height="5" />
+              </svg>
               <h3>MCP</h3>
               <p class="path-cmd">mcp.aft.page/mcp</p>
               <p>Point your agent. Deploy and rollback.</p>
@@ -661,6 +685,11 @@ deploy({
           </li>
           <li>
             <a href="#hero-cli">
+              <span class="path-num">002</span>
+              <svg class="path-ico" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 8l5 4-5 4" />
+                <path d="M12 16h7" />
+              </svg>
               <h3>CLI</h3>
               <p class="path-cmd">aft deploy</p>
               <p>Install once. Ship from the terminal.</p>
@@ -668,16 +697,39 @@ deploy({
           </li>
           <li>
             <a href="#hero-drop">
+              <span class="path-num">003</span>
+              <svg class="path-ico" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 4v10" />
+                <path d="M8 10l4 4 4-4" />
+                <path d="M5 18h14" />
+              </svg>
               <h3>Drop</h3>
               <p class="path-cmd">aft.page/drop</p>
-              <p>Folder or zip in the browser. No account.</p>
+              <p>Folder or zip. No account.</p>
             </a>
           </li>
           <li>
             <a href="#hero-curl">
+              <span class="path-num">004</span>
+              <svg class="path-ico" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 12h13" />
+                <path d="M13 7l5 5-5 5" />
+              </svg>
               <h3>cURL</h3>
               <p class="path-cmd">POST /v1/deploy</p>
               <p>HTML in. Live URL back.</p>
+            </a>
+          </li>
+          <li>
+            <a href="/plugins">
+              <span class="path-num">005</span>
+              <svg class="path-ico" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="5" y="5" width="14" height="14" />
+                <path d="M12 9v6M9 12h6" />
+              </svg>
+              <h3>Plugin <span>pending</span></h3>
+              <p class="path-cmd">aft plugins add</p>
+              <p>One-click in your IDE. Uses MCP under the hood.</p>
             </a>
           </li>
         </ol>
@@ -848,7 +900,7 @@ deploy({
               <li>A public link you can share</li>
               <li>Drop files or deploy from your agent</li>
               <li>Keep it, invite people, or make it private</li>
-              <li>200 files · 10 MB each · 50 MB total</li>
+              <li>500 files · 25 MB each · 100 MB total</li>
             </ul>
           </article>
           <article class="price-card">
@@ -886,9 +938,9 @@ deploy({
           <details class="faq-item">
             <summary>What is aft.page?</summary>
             <p>
-              You can build a website with Lovable, Cursor, or ChatGPT. aft is
-              how you put it online — a live link you can share. Drop your files
-              or let your agent deploy. No account.
+              Anyone can build a website. aft is how you put it online — a live
+              link you can share. Drop your files or let your agent deploy. No
+              account.
             </p>
           </details>
           <details class="faq-item">
@@ -946,7 +998,7 @@ deploy({
             <summary>What can I deploy, and what are the limits?</summary>
             <p>
               Single HTML documents or multi-file static sites and SPAs (include
-              index.html). Limits: 200 files, 10 MB per file, and 50 MB total.
+              index.html). Limits: 500 files, 25 MB per file, and 100 MB total.
             </p>
           </details>
         </div>
