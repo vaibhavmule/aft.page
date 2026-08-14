@@ -32,7 +32,7 @@ fi
 
 mkdir -p "$ROOT/bin" "$ROOT/src" "$BIN_DIR"
 
-FILES="VERSION bin/aft.js src/analytics.js src/api.js src/auth.js src/creds.js src/deploy.js src/detect.js src/env.js src/index.js src/init.js src/open.js src/plugins.js src/prefs.js src/project.js src/prompt.js src/rename.js src/resolve.js src/rollback.js src/sites.js src/slug.js src/state.js src/ui.js src/update.js src/version.js src/visibility.js"
+FILES="VERSION bin/aft.js src/analytics.js src/api.js src/auth.js src/creds.js src/deploy.js src/detect.js src/env.js src/index.js src/init.js src/open.js src/plugins.js src/prefs.js src/preflight.js src/project.js src/prompt.js src/rename.js src/resolve.js src/rollback.js src/sites.js src/slug.js src/state.js src/ui.js src/update.js src/version.js src/visibility.js"
 
 # shellcheck disable=SC2086
 TOTAL=$(set -- $FILES; echo $#)
@@ -61,7 +61,7 @@ VER="$(tr -d '[:space:]' <"$ROOT/VERSION" 2>/dev/null || echo "?")"
 
 say ""
 printf '%s✓%s  %saft%s %sv%s%s ready\n' "$GREEN" "$RESET" "$BOLD" "$RESET" "$DIM" "$VER" "$RESET"
-printf '%s    %s → %s%s\n' "$DIM" "$BIN_DIR/aft" "*.aft.page" "$RESET"
+printf '%s    %s → %s%s\n' "$DIM" "$BIN_DIR/aft" "live URL" "$RESET"
 say ""
 printf '    %saft deploy%s     ship (no login)\n' "$CYAN" "$RESET"
 printf '    %saft update%s     latest CLI\n' "$CYAN" "$RESET"

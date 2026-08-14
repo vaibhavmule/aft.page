@@ -25,6 +25,7 @@ import { handleAuthRoute, authNeedsCredentials } from "./auth-login";
 import { handleWaitlistSignup } from "./waitlist";
 import { handleFeedback } from "./feedback";
 import { handleCliEvent } from "./cli-event";
+import { handleCliPreflight } from "./cli-preflight";
 import { handleOps, isOpsHost } from "./ops";
 import {
   handleStatus,
@@ -156,6 +157,15 @@ async function routeRequest(
     (request.method === "POST" || request.method === "OPTIONS")
   ) {
     return await handleCliEvent(request, env);
+  }
+
+  // CLI preflight — rules + optional Workers AI. No auth.
+  if (
+    isApiHost(host, root) &&
+    url.pathname === "/v1/cli/preflight" &&
+    (request.method === "POST" || request.method === "OPTIONS")
+  ) {
+    return await handleCliPreflight(request, env);
   }
 
   if (isStatusHost(host, root)) {
@@ -290,6 +300,7 @@ async function handleApi(
       claim: "POST /v1/claim/start, POST /v1/claim/session, GET /v1/claim/verify",
       auth: "POST /v1/auth/start, GET /v1/auth/verify, GET /v1/auth/google, GET /v1/auth/google/callback, GET /v1/auth/cli, GET /v1/auth/cli/complete, POST /v1/auth/cli/exchange, POST /v1/auth/logout, GET /v1/me",
       waitlist: "POST /v1/waitlist",
+      cli: "POST /v1/cli/event, POST /v1/cli/preflight",
       changelog: "GET /v1/changelog · GET /v1/changelog.md",
       sharing:
         "PATCH /v1/sites/{slug}, POST /v1/sites/{slug}/rename, POST /v1/sites/{slug}/access, POST/GET/DELETE /v1/sites/{slug}/invites, PATCH|DELETE /v1/sites/{slug}/members/{id}, GET /v1/invites/accept",

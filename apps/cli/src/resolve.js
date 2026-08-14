@@ -6,6 +6,22 @@ import { sanitizeSlug } from "./slug.js";
 
 export const OUTPUT_DIRS = ["dist", "out", "build"];
 
+const SKIP_DIR_NAMES = new Set(["node_modules", ".git", ".aft", ".npm"]);
+const SKIP_FILE_PREFIX = [".env"];
+const SKIP_FILES = new Set([".DS_Store"]);
+
+export function shouldSkip(relPath) {
+  const parts = relPath.split(/[/\\]/).filter(Boolean);
+  for (const p of parts) {
+    if (SKIP_DIR_NAMES.has(p)) return true;
+    if (SKIP_FILES.has(p)) return true;
+    if (SKIP_FILE_PREFIX.some((pre) => p === pre || p.startsWith(`${pre}.`))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 async function exists(path) {
   try {
     await access(path);
@@ -40,11 +56,6 @@ export async function resolveDeployTarget(cwd, explicitDir) {
     return { deployRoot, projectRoot };
   }
 
-  if (await hasIndexHtml(cwd)) {
-    const projectRoot = (await findProjectRoot(cwd)) || cwd;
-    return { deployRoot: cwd, projectRoot };
-  }
-
   if (await exists(join(cwd, "package.json"))) {
     const detected = await detectProject(cwd);
     for (const out of OUTPUT_DIRS) {
@@ -54,14 +65,11 @@ export async function resolveDeployTarget(cwd, explicitDir) {
       }
     }
     const preferred = join(cwd, detected.outDir || "dist");
-    if (await hasIndexHtml(preferred)) {
+    if (detected.outDir && detected.outDir !== "." && (await hasIndexHtml(preferred))) {
       return { deployRoot: preferred, projectRoot: cwd, detected };
     }
-    if (
-      (await exists(join(cwd, "src"))) ||
-      (await exists(join(cwd, "app"))) ||
-      detected.buildScript
-    ) {
+    // Vite/CRA source index.html lives at repo root — that is not the deploy root.
+    if (detected.staticDeployable && detected.outDir && detected.outDir !== ".") {
       return {
         deployRoot: cwd,
         projectRoot: cwd,
@@ -69,6 +77,18 @@ export async function resolveDeployTarget(cwd, explicitDir) {
         detected,
       };
     }
+    if (!detected.staticDeployable && detected.runtime && detected.runtime !== "static") {
+      return { deployRoot: cwd, projectRoot: cwd, detected };
+    }
+    if (await hasIndexHtml(cwd)) {
+      return { deployRoot: cwd, projectRoot: cwd, detected };
+    }
+    return { deployRoot: cwd, projectRoot: cwd, detected };
+  }
+
+  if (await hasIndexHtml(cwd)) {
+    const projectRoot = (await findProjectRoot(cwd)) || cwd;
+    return { deployRoot: cwd, projectRoot };
   }
 
   return { deployRoot: cwd, projectRoot: cwd };

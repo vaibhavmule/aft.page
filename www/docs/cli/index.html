@@ -305,6 +305,11 @@ aft sites</code></pre>
                     <td>Upload a static site</td>
                   </tr>
                   <tr>
+                    <td><code>aft deploy --check</code></td>
+                    <td>no</td>
+                    <td>Preflight JSON, no upload</td>
+                  </tr>
+                  <tr>
                     <td><code>aft init</code></td>
                     <td>no</td>
                     <td>Write <code>aft.json</code></td>
@@ -332,7 +337,7 @@ aft sites</code></pre>
                   <tr>
                     <td><code>aft rename &lt;slug&gt;</code></td>
                     <td>yes</td>
-                    <td>Change the <code>*.aft.page</code> URL</td>
+                    <td>Change the site URL</td>
                   </tr>
                   <tr>
                     <td><code>aft env list|set|unset</code> <span class="docs-alias">(<code>aft secrets</code>)</span></td>
@@ -381,11 +386,10 @@ aft rollback dep_abc123def456</code></pre>
               profile and open a new terminal.
             </p>
             <p>
-              <strong>"run npm run build first"</strong> — <code>aft deploy</code>
-              saw a <code>src/</code> or <code>app/</code> folder but no
-              <code>dist/</code>, <code>out/</code>, or <code>build/</code>
-              with an <code>index.html</code> in it. Build the project, or
-              point the CLI straight at the output folder:
+              <strong>"run npm run build first"</strong> — non-interactive
+              <code>aft deploy</code> runs the build itself. Use
+              <code>aft deploy --check</code> to see why/fix JSON without
+              uploading. Or point at output:
               <code>aft deploy dist</code>.
             </p>
             <p>

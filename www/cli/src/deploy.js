@@ -7,30 +7,17 @@ import { ensureAftJson } from "./init.js";
 import { confirm, isInteractive } from "./prompt.js";
 import {
   attachProjectManifest,
-  hasIndexHtml,
   readSlugHint,
-  resolveDeployTarget,
+  shouldSkip,
 } from "./resolve.js";
+import { adviseDeploy, collectSnapshot } from "./preflight.js";
 import { loadState, readAftJsonSlug, saveState } from "./state.js";
 import { note, ok, say } from "./ui.js";
 
-const SKIP_DIR_NAMES = new Set(["node_modules", ".git", ".aft", ".npm"]);
-const SKIP_FILE_PREFIX = [".env"];
-const SKIP_FILES = new Set([".DS_Store"]);
+export { shouldSkip };
+
 const MAX_FILES = 500;
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
-
-export function shouldSkip(relPath) {
-  const parts = relPath.split(/[/\\]/).filter(Boolean);
-  for (const p of parts) {
-    if (SKIP_DIR_NAMES.has(p)) return true;
-    if (SKIP_FILES.has(p)) return true;
-    if (SKIP_FILE_PREFIX.some((pre) => p === pre || p.startsWith(`${pre}.`))) {
-      return true;
-    }
-  }
-  return false;
-}
 
 export async function collectFiles(root) {
   const out = [];
@@ -81,56 +68,50 @@ function runBuild(projectRoot, script) {
   }
 }
 
-export async function ensureDeployable(cwd, dirArg) {
-  let target = await resolveDeployTarget(cwd, dirArg);
-  const detected = target.detected;
+function throwAdvice(advice) {
+  throw new Error(`${advice.why}\n  fix: ${advice.fix}`);
+}
 
-  if (!detected?.staticDeployable && detected?.runtime && detected.runtime !== "static") {
-    throw new Error(
-      `${detected.label} needs runtime "${detected.runtime}" + upstream in aft.json — not a static folder deploy. See https://aft.page/docs`,
-    );
-  }
+export async function ensureDeployable(cwd, dirArg, { checkOnly = false } = {}) {
+  let snapshot = await collectSnapshot(cwd, dirArg);
+  let advice = await adviseDeploy(snapshot);
 
-  if (!target.needsBuild) {
-    if (!(await hasIndexHtml(target.deployRoot))) {
-      throw new Error(
-        "no index.html — aft uploads a static site (dist/, out/, or build/), not a Node server. See https://aft.page/docs",
+  if (checkOnly) return { snapshot, advice };
+
+  if (advice.ok) return snapshot._target;
+
+  if (advice.action === "run_build") {
+    const script = snapshot.buildScript || "build";
+    if (isInteractive()) {
+      const okBuild = await confirm(
+        `No build output yet. Run npm run ${script}?`,
+        { defaultYes: true },
       );
+      if (!okBuild) throwAdvice(advice);
     }
-    return target;
+    runBuild(snapshot._target.projectRoot, script);
+    snapshot = await collectSnapshot(cwd, dirArg);
+    advice = await adviseDeploy(snapshot);
+    if (advice.ok) return snapshot._target;
   }
 
-  const script = detected?.buildScript || "build";
-
-  if (isInteractive()) {
-    const okBuild = await confirm(
-      `No build output yet. Run npm run ${script}?`,
-      { defaultYes: true },
-    );
-    if (!okBuild) {
-      throw new Error(
-        `no build output (dist/, out/, or build/ with index.html). Run: npm run ${script}`,
-      );
-    }
-    runBuild(target.projectRoot, script);
-  } else {
-    throw new Error(
-      `no build output (dist/, out/, or build/ with index.html). Run: npm run ${script}`,
-    );
-  }
-
-  target = await resolveDeployTarget(cwd, dirArg);
-  if (target.needsBuild || !(await hasIndexHtml(target.deployRoot))) {
-    throw new Error(
-      `still no index.html after build — expected ${detected?.outDir || "dist/"}/`,
-    );
-  }
-  return target;
+  throwAdvice(advice);
 }
 
 export async function cmdDeploy(args) {
   const dirArg = positionalDir(args);
   const slugFlag = flagValue(args, "--slug");
+  const checkOnly = args.includes("--check");
+
+  if (checkOnly) {
+    const { advice } = await ensureDeployable(process.cwd(), dirArg, {
+      checkOnly: true,
+    });
+    console.log(JSON.stringify(advice, null, 2));
+    if (!advice.ok) process.exitCode = 2;
+    return;
+  }
+
   const { deployRoot, projectRoot } = await ensureDeployable(
     process.cwd(),
     dirArg,

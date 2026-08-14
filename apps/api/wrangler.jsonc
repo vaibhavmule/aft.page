@@ -29,6 +29,7 @@
     "OPS_EMAILS": "hello@aft.page,vaibhavmule135@gmail.com",
     "UNLIMITED_SLUGS": "parakh",
     "CF_ZONE_ID": "c9c40ca61385a6346d90abfc954b44c9",
+    "CF_ACCOUNT_ID": "44255ec64e0080b678670b53bf810d27",
     "CUSTOM_DOMAIN_CNAME": "cname.aft.page"
   },
   "kv_namespaces": [
