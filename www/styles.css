@@ -65,6 +65,38 @@ html {
   scroll-behavior: auto;
 }
 
+/* Cross-document fade via View Transitions API (Transition Kit recipe).
+   Same-origin clicks get a short crossfade; Safari/Firefox ignore this. */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root) {
+  animation: aft-page-fade-out 220ms ease-in-out both;
+}
+
+::view-transition-new(root) {
+  animation: aft-page-fade-in 220ms ease-in-out both;
+}
+
+@keyframes aft-page-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes aft-page-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -1394,6 +1426,10 @@ strong {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+
   .terminal-line,
   .terminal-out,
   .terminal-gate,
