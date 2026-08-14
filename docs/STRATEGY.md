@@ -3,21 +3,28 @@
 Internal north star. Canonical mission: [`../rfs.txt`](../rfs.txt).
 Belief: [`../youtube-moment.txt`](../youtube-moment.txt).
 
-Updated: 2026-08-11
+Updated: 2026-08-14
 
 ## 30-day freeze (2026-08-11 → 2026-09-10)
 
 **No new product lines.** Platform is enough to prove the RFS job.
 
+**Gate:** one useful app used weekly by two people (invite accepted, both return).
+Until that proof: no new runtimes, no framework-list completion, no plugin
+marketplace expansion.
+
 | Do | Don't |
 | --- | --- |
-| Ship Agent Plugin to strangers + 30s demo | AI automations / Cron / briefs |
-| ≥5 stranger deploys without founder help | Remix, CLI, extension, marketplace (unless blocked) |
-| ≥1 invite-accepted share | Matching Hatchable/AppDeploy feature dump |
-| YC video + credits paperwork | Browser automation / Kitesurf |
+| Hosted CLI outsider: install → deploy → claim → update → private invite → second person | AI automations / Cron / briefs |
+| Record human T2U and every unhelped failure | Remix, CLI, extension, marketplace (unless blocked) |
+| ≥1 invite-accepted share used the next week | Matching Hatchable/AppDeploy feature dump |
+| YC video + credits paperwork | Browser automation / Kitesurf / OpenNext auto / containers |
 
 Bugfixes that unblock deploy → claim → invite → return are in. New surfaces are out.
 Canonical checklist: [`../todo.txt`](../todo.txt).
+Next runtime (likely automatic Next/OpenNext or a containerized backend) is chosen
+from what that outsider + compat-probe actually failed to deploy — not from
+[`FRAMEWORK-COMPATIBILITY.md`](./FRAMEWORK-COMPATIBILITY.md).
 
 ## Company thesis
 
@@ -256,7 +263,7 @@ Rules:
 
 - Do not treat chat “looks good” as approval. The board export is the receipt.
 - Do not invent logos, colors, or CTAs outside an open board revision.
-- Prefer a deployable preview URL (`*.aft.page` or local static) so review is
+- Prefer a deployable preview URL (live aft.page or local static) so review is
   shareable — same spirit as the product (URL you can open and decide on).
 - Brand identity source of truth remains [`BRAND.md`](./BRAND.md); the board is
   the **decision surface**, not a second brand system.

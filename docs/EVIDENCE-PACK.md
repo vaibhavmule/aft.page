@@ -13,13 +13,39 @@ Goal: an outsider completes this **without you operating their session** and
 returns to the resulting application later.
 
 ```text
-1. Deploy (drop, MCP, or CLI) → live https://{slug}.aft.page
+1. Deploy (drop, MCP, or CLI) → live URL
 2. Claim on the live slug URL (magic link) OR already own → /login
 3. Open /projects — site appears
 4. From /project: set private, invite colleague by email
 5. Colleague opens invite link, signs in, opens the app
 6. Owner redeploys (PATCH / edit) and rolls back from /project or API
 ```
+
+### Hosted CLI outsider (required path)
+
+Founder does **not** operate their session or hint around failures.
+Machine T2U on ops is a different clock — stopwatch **human T2U**
+([time-to-url.txt](../time-to-url.txt)): install → they can open the URL.
+
+```text
+1. curl -fsSL https://aft.page/install | sh
+2. aft deploy [dir] → live URL (start stopwatch at install; stop when URL loads)
+3. Claim on the live slug URL
+4. Update (aft deploy again or Drop) — same URL
+5. Set private, invite second person by email
+6. Second person opens invite, signs in, opens the app
+```
+
+Log every failure (PATH, Node version, claim mail, invite, second-person auth)
+in the table below. `qa/time-to-url/` is not a substitute.
+
+| Clock | Value | Notes |
+| --- | --- | --- |
+| Human T2U (install → working URL) | _not run_ | Needs a stranger, not founder |
+| Failures (unhelped) | _none recorded_ | |
+
+Gate after this: the app is used the next week by both people. Until then, no
+new runtime surface.
 
 ### Checklist
 
