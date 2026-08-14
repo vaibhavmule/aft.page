@@ -1,9 +1,9 @@
 const API = "https://api.aft.page/v1/deploy";
 
 // Mirror the Worker's limits so bad uploads fail here with a clear message.
-const MAX_FILES = 200;
-const MAX_FILE_BYTES = 10 * 1024 * 1024;
-const MAX_TOTAL_BYTES = 50 * 1024 * 1024;
+const MAX_FILES = 500;
+const MAX_FILE_BYTES = 25 * 1024 * 1024;
+const MAX_TOTAL_BYTES = 100 * 1024 * 1024;
 const RESERVED_SLUGS = new Set([
   "www",
   "api",

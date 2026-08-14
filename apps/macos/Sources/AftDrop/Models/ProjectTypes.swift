@@ -129,11 +129,11 @@ enum AftDropError: LocalizedError, Equatable {
     case .missingIndex:
       return "Include index.html at the root of the site output."
     case .tooManyFiles(let count):
-      return "The site contains \(count) files; aft.page accepts up to 200."
+      return "The site contains \(count) files; aft.page accepts up to \(FileCollector.maximumFiles)."
     case .fileTooLarge(let path):
-      return "\(path) is larger than the 10 MB per-file limit."
+      return "\(path) is larger than the \(FileCollector.maximumFileBytes / (1024 * 1024)) MB per-file limit."
     case .payloadTooLarge:
-      return "The site is larger than the 50 MB upload limit."
+      return "The site is larger than the \(FileCollector.maximumTotalBytes / (1024 * 1024)) MB upload limit."
     case .unsafeArchive(let path):
       return "The ZIP contains an unsafe path or symbolic link: \(path)."
     case .unsupportedProject(let note):

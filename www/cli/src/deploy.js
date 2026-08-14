@@ -14,9 +14,11 @@ import {
 import { loadState, readAftJsonSlug, saveState } from "./state.js";
 import { note, ok, say } from "./ui.js";
 
-const SKIP_DIR_NAMES = new Set(["node_modules", ".git", ".aft"]);
+const SKIP_DIR_NAMES = new Set(["node_modules", ".git", ".aft", ".npm"]);
 const SKIP_FILE_PREFIX = [".env"];
 const SKIP_FILES = new Set([".DS_Store"]);
+const MAX_FILES = 500;
+const MAX_FILE_BYTES = 25 * 1024 * 1024;
 
 export function shouldSkip(relPath) {
   const parts = relPath.split(/[/\\]/).filter(Boolean);
@@ -45,8 +47,8 @@ export async function collectFiles(root) {
       }
       if (!ent.isFile()) continue;
       const st = await stat(abs);
-      if (st.size > 10 * 1024 * 1024) {
-        throw new Error(`file too large (>10MB): ${rel}`);
+      if (st.size > MAX_FILE_BYTES) {
+        throw new Error(`file too large (>25MB): ${rel}`);
       }
       const buf = await readFile(abs);
       const text = buf.toString("utf8");
@@ -79,19 +81,26 @@ function runBuild(projectRoot, script) {
   }
 }
 
-async function ensureDeployable(cwd, dirArg) {
+export async function ensureDeployable(cwd, dirArg) {
   let target = await resolveDeployTarget(cwd, dirArg);
-
-  if (!target.needsBuild) return target;
-
   const detected = target.detected;
-  const script = detected?.buildScript || "build";
 
   if (!detected?.staticDeployable && detected?.runtime && detected.runtime !== "static") {
     throw new Error(
       `${detected.label} needs runtime "${detected.runtime}" + upstream in aft.json — not a static folder deploy. See https://aft.page/docs`,
     );
   }
+
+  if (!target.needsBuild) {
+    if (!(await hasIndexHtml(target.deployRoot))) {
+      throw new Error(
+        "no index.html — aft uploads a static site (dist/, out/, or build/), not a Node server. See https://aft.page/docs",
+      );
+    }
+    return target;
+  }
+
+  const script = detected?.buildScript || "build";
 
   if (isInteractive()) {
     const okBuild = await confirm(
@@ -137,7 +146,7 @@ export async function cmdDeploy(args) {
   let files = await collectFiles(deployRoot);
   files = await attachProjectManifest(files, projectRoot, deployRoot);
   if (files.length === 0) throw new Error("no files to deploy");
-  if (files.length > 200) throw new Error(`too many files (${files.length}; max 200)`);
+  if (files.length > MAX_FILES) throw new Error(`too many files (${files.length}; max ${MAX_FILES})`);
 
   const state = await loadState(projectRoot);
   const slug =

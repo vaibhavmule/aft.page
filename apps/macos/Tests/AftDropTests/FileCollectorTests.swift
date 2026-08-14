@@ -26,17 +26,17 @@ final class FileCollectorTests: XCTestCase {
     }
   }
 
-  func testRejectsMoreThanTwoHundredFiles() throws {
+  func testRejectsMoreThanFiveHundredFiles() throws {
     try withTemporaryDirectory { root in
       try Data("ok".utf8).write(to: root.appending(path: "index.html"))
-      for index in 0..<200 {
+      for index in 0..<500 {
         try Data("x".utf8).write(to: root.appending(path: "file-\(index).txt"))
       }
       XCTAssertThrowsError(try FileCollector.collect(root: root)) { error in
         guard case .tooManyFiles(let count) = error as? AftDropError else {
           return XCTFail("Expected tooManyFiles, got \(error)")
         }
-        XCTAssertEqual(count, 201)
+        XCTAssertEqual(count, 501)
       }
     }
   }

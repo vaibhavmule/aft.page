@@ -5,7 +5,7 @@ description: Build and publish a static site or small app to hosted aft.page thr
 
 # Deploy to aft.page
 
-Publish ready static files to a live HTTPS `*.aft.page` URL. The live URL is
+Publish ready static files to a live HTTPS URL. The live URL is
 the deliverable. The remote MCP is a thin upload adapter: inspect and build the
 project locally, then pass the final artifact to its tools.
 
@@ -89,7 +89,7 @@ Before calling `deploy`:
 
 - Enumerate only the selected output root and do not follow symlinks outside it.
 - Require `index.html` at the deployed root.
-- Enforce at most 200 files, 10 MB per file, and 50 MB total.
+- Enforce at most 500 files, 25 MB per file, and 100 MB total.
 - Use safe relative paths only: no absolute paths, `..`, or backslashes.
 - Exclude `.git`, `.env*`, `.aws`, `.ssh`, `.aft`, `node_modules`, `src`,
   `.next`, private keys, credentials, and unrelated project files.

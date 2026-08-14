@@ -9,8 +9,13 @@ describe("explainDeployFailure", () => {
       bytes: 2 * 1024 * 1024 + 1,
     });
     expect(ex.why).toContain("big.bin");
-    expect(ex.why).toMatch(/10 MB/);
+    expect(ex.why).toMatch(/25 MB/);
     expect(ex.fix.toLowerCase()).toContain("shrink");
+  });
+
+  it("tells Next SSR to export static", () => {
+    const ex = explainDeployFailure({ error: "not_static" });
+    expect(ex.fix).toMatch(/output: 'export'/);
   });
 
   it("surfaces internal hint", () => {

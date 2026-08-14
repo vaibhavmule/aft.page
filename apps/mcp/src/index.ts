@@ -74,13 +74,13 @@ server.registerTool(
   {
     title: "Deploy to aft.page",
     description:
-      "Publish to a live *.aft.page URL. Pass html (one page) OR files (built site). " +
+      "Publish to a live URL. Pass html (one page) OR files (built site). " +
       "Plain HTML → html. Vite/React → npm run build, then files from dist/. " +
       "Next static export → files from out/. Always include index.html. " +
       "Never upload src/, node_modules, or .next/. " +
       "First hit: preferred_slug from aft.json (include aft.json in files). " +
       "Later: same slug + edit_token from .aft/state.json. " +
-      "Limits: 200 files, 10MB each, 50MB total.",
+      "Limits: 500 files, 25MB each, 100MB total.",
     inputSchema: {
       html: z
         .string()
@@ -99,7 +99,7 @@ server.registerTool(
           }),
         )
         .min(1)
-        .max(200)
+        .max(500)
         .optional(),
       preferred_slug: slugSchema
         .optional()
@@ -242,7 +242,7 @@ server.registerPrompt(
   {
     title: "Deploy to aft.page",
     description:
-      "Guide for publishing small software the user just built to a live *.aft.page URL.",
+      "Guide for publishing small software the user just built to a live URL.",
     argsSchema: {
       html_or_files: z
         .string()

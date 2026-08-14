@@ -5,6 +5,7 @@ Deploy + serve for hosted sites.
 - **Deploy:** `POST https://api.aft.page/v1/deploy`
 - **Serve:** `https://{slug}.aft.page` (also `GET https://api.aft.page/s/{slug}/`)
 - **Early access:** `POST https://api.aft.page/v1/waitlist`
+- **CLI preflight:** `POST https://api.aft.page/v1/cli/preflight` (project snapshot → why/fix; Workers AI when blocked)
 
 ## Upload shapes
 
@@ -30,8 +31,8 @@ curl -X POST https://api.aft.page/v1/deploy \
   -d '{"files":[{"path":"index.html","content":"<h1>hi</h1>"}]}'
 ```
 
-Limits (static): 200 files, 10 MB/file, 50 MB total.  
-Limits (`runtime` ≠ `static` in `aft.json`): 200 files, 10 MB/file, 50 MB total.
+Limits (static): 500 files, 25 MB/file, 100 MB total.  
+Limits (`runtime` ≠ `static` in `aft.json`): 500 files, 25 MB/file, 100 MB total.
 
 Deploy is anonymous; each deploy returns an **`editToken`** for redeploy and claim.
 Unclaimed sites are deleted after 30 days idle (no visit or update). A visit, PATCH, or claim resets the clock; claimed sites stay.

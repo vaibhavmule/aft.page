@@ -1,9 +1,9 @@
 import Foundation
 
 struct FileCollector {
-  static let maximumFiles = 200
-  static let maximumFileBytes: Int64 = 10 * 1024 * 1024
-  static let maximumTotalBytes: Int64 = 50 * 1024 * 1024
+  static let maximumFiles = 500
+  static let maximumFileBytes: Int64 = 25 * 1024 * 1024
+  static let maximumTotalBytes: Int64 = 100 * 1024 * 1024
 
   private static let ignoredDirectories: Set<String> = [
     ".git", ".aft", "node_modules",

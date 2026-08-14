@@ -144,14 +144,14 @@ describe("deploy limits", () => {
   });
 
   it("rejects too many files", async () => {
-    const res = await call(uploadJson(manyTinyFiles(201)));
+    const res = await call(uploadJson(manyTinyFiles(501)));
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({ error: "too_many_files" });
   });
 
   it("rejects a single oversized file", async () => {
     const res = await call(
-      uploadJson([{ path: "big.bin", content: "x".repeat(10 * 1024 * 1024 + 1) }]),
+      uploadJson([{ path: "big.bin", content: "x".repeat(25 * 1024 * 1024 + 1) }]),
     );
     expect(res.status).toBe(400);
     expect(res.headers.get("x-aft-request-id")).toBeTruthy();
@@ -163,9 +163,9 @@ describe("deploy limits", () => {
   });
 
   it("rejects an oversized payload spread across files", async () => {
-    const files = Array.from({ length: 6 }, (_, i) => ({
+    const files = Array.from({ length: 5 }, (_, i) => ({
       path: `chunk-${i}.html`,
-      content: "x".repeat(9 * 1024 * 1024),
+      content: "x".repeat(21 * 1024 * 1024),
     }));
     const res = await call(uploadJson(files));
     expect(res.status).toBe(400);

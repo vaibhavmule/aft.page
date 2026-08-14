@@ -223,8 +223,8 @@
             <div class="stage-idle" id="stage-idle">
               <h1 class="drop-title" id="drop-title">Drop a folder. Or a zip.</h1>
               <p class="drop-hint">
-                HTML, CSS, JS → <code>*.aft.page</code>. Include an index.html.
-                Max 200 files, 50 MB total.
+                HTML, CSS, JS → a live URL. Include an index.html.
+                Max 500 files, 100 MB total.
               </p>
               <div class="drop-actions">
                 <button type="button" class="btn" data-browse="folder">
@@ -255,9 +255,9 @@
     <script src="/auth-me.js"></script>
     <script>
       const API = "https://api.aft.page";
-      const MAX_FILES = 200;
-      const MAX_FILE_BYTES = 10 * 1024 * 1024;
-      const MAX_TOTAL_BYTES = 50 * 1024 * 1024;
+      const MAX_FILES = 500;
+      const MAX_FILE_BYTES = 25 * 1024 * 1024;
+      const MAX_TOTAL_BYTES = 100 * 1024 * 1024;
       const RESERVED = new Set([
         "www", "api", "app", "mail", "ftp", "cdn", "static", "admin",
         "dashboard", "status", "ops", "docs", "login", "mcp", "drop",

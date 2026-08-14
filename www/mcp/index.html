@@ -6,7 +6,7 @@
     <title>MCP for agents — aft.page</title>
     <meta
       name="description"
-      content="aft.page MCP: deploy, aft_deploys, aft_rollback, aft_health. Same slug after first hit. Agents get a live *.aft.page URL with no account."
+      content="aft.page MCP: deploy, aft_deploys, aft_rollback, aft_health. Same slug after first hit. Agents get a live URL with no account."
     />
     <link rel="canonical" href="https://aft.page/mcp" />
     <link rel="alternate" type="text/markdown" href="https://aft.page/mcp.md" title="MCP docs (Markdown)" />
@@ -19,7 +19,7 @@
     <meta property="og:title" content="MCP for agents — aft.page" />
     <meta
       property="og:description"
-      content="Publish small software to a live *.aft.page URL from any MCP host. Tools, schemas, API, limits."
+      content="Publish small software to a live URL from any MCP host. Tools, schemas, API, limits."
     />
     <meta property="og:url" content="https://aft.page/mcp" />
     <meta property="og:image" content="https://aft.page/og.png" />
@@ -96,7 +96,7 @@
         <h1>MCP for aft.page</h1>
         <p class="lede">
           Thin remote MCP — any capable agent can publish small software to a live
-          <code>*.aft.page</code> URL — no account, no repository setup.
+          URL — no account, no repository setup.
         </p>
         <div class="docs-machine">
           <a class="btn btn-primary" href="/mcp.md">Read as Markdown</a>
@@ -203,7 +203,7 @@ npm start</code></pre>
             <h3><code>deploy</code></h3>
             <p>
               One tool. Pass <code>html</code> <em>or</em> <code>files</code> —
-              not both. Live at <code>https://{slug}.aft.page</code>. One-file
+              not both. Goes live immediately. One-file
               pages use <code>html</code>; multi-file / SPA build output uses
               <code>files</code> (always include <code>index.html</code>).
             </p>
@@ -260,7 +260,7 @@ deploy: dep_…
 files: 1
 Unclaimed sites are deleted after 30 days idle. Visit, update, or claim to keep.</code></pre>
             <p>
-              Limits: 200 files · 10&nbsp;MB each · 50&nbsp;MB total. Paths: no
+              Limits: 500 files · 25&nbsp;MB each · 100&nbsp;MB total. Paths: no
               <code>..</code>, no leading <code>/</code>, no
               <code>\</code>.
             </p>
@@ -418,8 +418,7 @@ Content-Type: application/json
 
           <section id="preview">
             <h2>Claim / manage</h2>
-            <pre><code>https://aft.page/claim?slug=…&amp;token=…
-https://{slug}.aft.page</code></pre>
+            <pre><code>https://aft.page/claim?slug=…&amp;token=…</code></pre>
             <p>
               The live URL is the product. After deploy, open
               <code>claimUrl</code> to add email or Google. Unclaimed sites also
@@ -442,15 +441,15 @@ https://{slug}.aft.page</code></pre>
                 <tbody>
                   <tr>
                     <td>Files per deploy</td>
-                    <td>200</td>
+                    <td>500</td>
                   </tr>
                   <tr>
                     <td>Per-file size</td>
-                    <td>10 MB</td>
+                    <td>25 MB</td>
                   </tr>
                   <tr>
                     <td>Total payload</td>
-                    <td>50 MB</td>
+                    <td>100 MB</td>
                   </tr>
                   <tr>
                     <td>Auth</td>
@@ -482,7 +481,7 @@ https://{slug}.aft.page</code></pre>
             <h3>Agent rule of thumb</h3>
             <ol>
               <li>Prefer MCP <code>deploy</code> (<code>html</code> or <code>files</code>).</li>
-              <li>Return the live <code>https://{slug}.aft.page</code> URL.</li>
+              <li>Return the live URL.</li>
               <li>Optionally link the preview shell.</li>
               <li>Do not invent auth steps that do not exist yet.</li>
             </ol>
@@ -509,7 +508,7 @@ https://{slug}.aft.page</code></pre>
                   </tr>
                   <tr>
                     <td>Size errors</td>
-                    <td>Stay under 10 MB / file, 50 MB total</td>
+                    <td>Stay under 25 MB / file, 100 MB total</td>
                   </tr>
                   <tr>
                     <td>Unstyled CSS</td>

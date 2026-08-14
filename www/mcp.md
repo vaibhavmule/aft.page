@@ -1,6 +1,6 @@
 # aft.page — MCP for agents
 
-> Paste HTML or files. Get a live `https://{slug}.aft.page` URL.
+> Paste HTML or files. Get a live URL.
 > No account. No repository. Built for AI agents first.
 
 **Live docs (HTML):** https://aft.page/mcp  
@@ -115,7 +115,7 @@ Never upload `src/`, `node_modules`, or `.next/`.
 | `preferred_slug` | string | no | From `aft.json.slug`. First hit never overwrites — collision gets a suffix. Required with `edit_token`. |
 | `edit_token` | string | no | From first deploy / `.aft/state.json`. PATCH same slug. |
 
-**Limits:** 200 files · 10 MB per file · 50 MB total. Paths: no `..`, no leading `/`, no `\`.
+**Limits:** 500 files · 25 MB per file · 100 MB total. Paths: no `..`, no leading `/`, no `\`.
 
 **Returns (text + structuredContent):**
 
@@ -291,7 +291,7 @@ Valid slug: lowercase letters, digits, hyphens; 1–48 chars; cannot start/end w
 
 The live URL is the product. After deploy, open `claimUrl`
 (`https://aft.page/claim?slug=&token=`) to add email or Google. Unclaimed sites
-also show **Claim this site** on `https://{slug}.aft.page`. After claim,
+also show **Claim this site** on the live URL. After claim,
 **Manage** goes to the project page. Keep `editToken` to prove you shipped.
 
 ---
@@ -300,9 +300,9 @@ also show **Claim this site** on `https://{slug}.aft.page`. After claim,
 
 | Limit | Value |
 | --- | --- |
-| Files per deploy | 200 |
-| Per-file size | 10 MB |
-| Total payload | 50 MB |
+| Files per deploy | 500 |
+| Per-file size | 25 MB |
+| Total payload | 100 MB |
 | Auth | None (anonymous deploys) |
 | Unclaimed retention | Deleted after 30d idle. Visit, PATCH, or claim to keep. |
 | Overwrite | First POST never (unique slug). PATCH + editToken = same URL + history. |
@@ -395,6 +395,6 @@ If the user asks to deploy, publish, host, or share a page:
 1. Detect: plain HTML vs JS app (look at `package.json` / `vite.config.*` / `next.config.*`).
 2. Build locally if it is a bundler app; upload `dist/` / `out/` / `build/` only.
 3. Prefer MCP `deploy`. Persist `.aft/state.json`. Later ships pass `edit_token`.
-4. Return the live `https://{slug}.aft.page` URL.
+4. Return the live URL.
 5. Point humans at `claimUrl` (`https://aft.page/claim?slug=&token=`) to keep the site. Rollback via `aft_deploys` / `aft_rollback` or `PATCH` / `POST …/rollback` with the editToken.
 6. Do not invent auth steps that do not exist yet.

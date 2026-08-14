@@ -1,3 +1,12 @@
+import {
+  MAX_FILE_BYTES,
+  MAX_FILE_BYTES_RUNTIME,
+  MAX_FILES,
+  MAX_FILES_RUNTIME,
+  MAX_TOTAL_BYTES,
+  MAX_TOTAL_BYTES_RUNTIME,
+} from "./env";
+
 /** Plain-language why/fix for deploy failures. Used by ops + stored as hint. */
 
 export type FailureExplainIn = {
@@ -18,12 +27,36 @@ export function formatBytes(n: number): string {
   return `${(n / (1024 * 1024)).toFixed(2)} MB`;
 }
 
+function capMb(bytes: number) {
+  return `${Math.round(bytes / (1024 * 1024))} MB`;
+}
+
 export function explainDeployFailure(f: FailureExplainIn): FailureExplain {
   const path = f.path || "a file";
   const files = f.files != null ? String(f.files) : "n";
   const size = f.bytes != null ? ` Recorded ${formatBytes(f.bytes)}.` : "";
 
   switch (f.error) {
+    case "needs_build":
+      return {
+        why: "This project is a bundler app (Vite / CRA / Next static) with no dist/, out/, or build/ yet.",
+        fix: "Run the project's build script, then deploy that output folder — not the source tree.",
+      };
+    case "no_index":
+      return {
+        why: "The deploy root has no index.html, so the live URL would 404.",
+        fix: "Ship a static site with index.html at the root (after build: dist/, out/, or build/).",
+      };
+    case "not_static":
+      return {
+        why: "This looks like Next.js SSR or a Worker app — aft.page CLI uploads static files only.",
+        fix: "For Next: set output: 'export' in next.config, build, upload out/. Otherwise set runtime + upstream in aft.json.",
+      };
+    case "unknown_project":
+      return {
+        why: "No package.json frontend and no index.html — not a static site aft can host.",
+        fix: "Add a static index.html, or a Vite/Next/CRA app with a build that emits one.",
+      };
     case "no_files":
       return {
         why: "The request body was empty — no HTML paste, no multipart files, no JSON file list.",
@@ -31,17 +64,17 @@ export function explainDeployFailure(f: FailureExplainIn): FailureExplain {
       };
     case "file_too_large":
       return {
-        why: `${path} is over the per-file cap (static 10 MB, worker/next 10 MB).${size}`,
+        why: `${path} is over the per-file cap (static ${capMb(MAX_FILE_BYTES)}, worker/next ${capMb(MAX_FILE_BYTES_RUNTIME)}).${size}`,
         fix: "Shrink or split that file. Do not upload a Next.js + native SQLite tree to Drop.",
       };
     case "payload_too_large":
       return {
-        why: `Total upload is over the cap (static 50 MB, runtime 50 MB).${size} Files: ${files}.`,
+        why: `Total upload is over the cap (static ${capMb(MAX_TOTAL_BYTES)}, runtime ${capMb(MAX_TOTAL_BYTES_RUNTIME)}).${size} Files: ${files}.`,
         fix: "Ship a built static dist/ only — no node_modules, no .next, no SQLite DB.",
       };
     case "too_many_files":
       return {
-        why: `Upload had ${files} files. Static cap is 200; runtime cap is 200.`,
+        why: `Upload had ${files} files. Static cap is ${MAX_FILES}; runtime cap is ${MAX_FILES_RUNTIME}.`,
         fix: "Deploy the built site, not the repo. Agents often dump the whole project.",
       };
     case "bad_path":

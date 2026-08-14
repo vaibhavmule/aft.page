@@ -9,7 +9,7 @@ Last Updated: 2026-08-09
 aft.page is the publishing layer for small software created by AI agents. It operates these properties:
 
 - Website and app shell (https://aft.page): product site, Drop UI, docs, auth
-- Hosted sites (https://{slug}.aft.page): user-deployed static and runtime content
+- Hosted sites: user-deployed static and runtime content
 - Remote MCP (https://mcp.aft.page/mcp): agent deploy tools
 - API (https://api.aft.page): HTTP deploy, claim, site, and auth endpoints
 - Status (https://status.aft.page): service status
@@ -29,7 +29,7 @@ Agents should prefer MCP. Humans can use Drop. The API is the scripted fallback.
 - Drop UI (`/drop/`): public deploy without an account
 - Preview / claim shell: public entry; claim uses email magic link
 - Projects dashboard (`/projects`): authenticated owners and editors
-- User sites on `*.aft.page`: public or private per owner settings
+- User-deployed sites: public or private per owner settings
 
 ## API Information
 
@@ -56,7 +56,7 @@ Custom domains: owner requests access, then CNAME to cname.aft.page.
 ## Rate Limits
 
 Respect normal client behaviour. Aggressive automated abuse may be blocked.
-Deploy size limits: 200 files · 10 MB per file · 50 MB total.
+Deploy size limits: 500 files · 25 MB per file · 100 MB total.
 
 ## Technology Stack
 
@@ -81,7 +81,7 @@ Deploy size limits: 200 files · 10 MB per file · 50 MB total.
 
 - MCP is a thin deploy adapter, not a secrets or capabilities control plane
 - Prefer the remote MCP URL over local stdio for agents
-- Hosted user content at `*.aft.page` is owned by the deployer
+- Hosted user content is owned by the deployer
 - Capability approval and the secrets vault are owner-session or API concerns after claim
 - Do not invent tools beyond deploy, aft_deploys, aft_rollback, and aft_health
 

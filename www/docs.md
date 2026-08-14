@@ -6,7 +6,7 @@
 
 aft.page is a **file host + permission layer** for small software. It does not
 run `npm run build`. Detect the project, build locally if needed, upload ready
-files → durable `https://{slug}.aft.page`.
+files → a durable live URL.
 
 ## What we host
 
@@ -45,7 +45,7 @@ Then same as the project dashboard:
 | Custom domains | /docs/domains/ |
 | `aft.json` capabilities | /docs/capabilities/ |
 
-Unclaimed sites deleted after 30 days idle. Limits: 200 files · 10 MB/file · 50 MB.
+Unclaimed sites deleted after 30 days idle. Limits: 500 files · 25 MB/file · 100 MB.
 Claimed sites can be paused (reversible) or destroyed (irreversible) — see /docs/claim/.
 
 ## Links

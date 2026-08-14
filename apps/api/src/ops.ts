@@ -40,6 +40,7 @@ import {
   listFeedback,
   listSiteInvites,
   listSiteMembers,
+  listWaitlistSignups,
   scoreWindow,
   type DeployFailureRow,
   type FeedbackRow,
@@ -48,8 +49,10 @@ import {
   type OpsSnapshot,
   type OpsUserRow,
   type ScoreWindow,
+  type WaitlistSignupRow,
 } from "./db";
 import { setUserCustomDomains } from "./custom-domains";
+import { alertIfAuditFailed, alertIfSmokeFailed } from "./ops-alert";
 import {
   loadViewRollup,
   viewsForSlug,
@@ -240,6 +243,7 @@ export type OpsPayload = {
   failureCounts: { error: string; n: number }[];
   deploysByDay: { day: string; n: number }[];
   feedback: FeedbackRow[];
+  waitlist: WaitlistSignupRow[];
   snapshot: OpsSnapshot;
   sites: (OpsSiteListRow & { viewsToday: number; views7d: number })[];
   users: OpsUserRow[];
@@ -733,6 +737,7 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
     deploysByClient,
     failuresBySource,
     feedback,
+    waitlist,
     snapshot,
     sites,
     users,
@@ -760,6 +765,7 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
     countDeploysByClient(env, since7d),
     countFailuresBySource(env, since7d),
     listFeedback(env, 50),
+    listWaitlistSignups(env, 200),
     countOpsSnapshot(env, since7d, mtd, since24h),
     listAllSites(env, 200),
     listOpsUsers(env, 200),
@@ -806,6 +812,7 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
     failureCounts,
     deploysByDay,
     feedback,
+    waitlist,
     snapshot,
     sites: sites.map((s) => {
       const v = viewsForSlug(views, s.slug);
@@ -854,6 +861,7 @@ export async function handleOps(
     const allowed = await authorizeSmokeTrigger(request, env);
     if (!allowed) return json({ error: "unauthorized" }, 401);
     const result = await runAuditSuite(env, { trigger: "manual" });
+    ctx?.waitUntil(alertIfAuditFailed(env, result).catch(() => false));
     return json(result);
   }
 
@@ -861,6 +869,7 @@ export async function handleOps(
     const allowed = await authorizeSmokeTrigger(request, env);
     if (!allowed) return json({ error: "unauthorized" }, 401);
     const result = await runSmokeSuite(env, { trigger: "manual" });
+    ctx?.waitUntil(alertIfSmokeFailed(env, result).catch(() => false));
     const skipFlight = request.headers.get("x-aft-skip-flight") === "1";
     if (!skipFlight) {
       ctx?.waitUntil(
@@ -1508,6 +1517,10 @@ function renderSitesTable(
     .map((s) => {
       const claimed = s.ownerEmail ? "1" : "0";
       const active = s.active ? "1" : "0";
+      const served24 =
+        s.lastServedAt && Date.parse(s.lastServedAt) >= now - 24 * 60 * 60 * 1000
+          ? "1"
+          : "0";
       const gcWarn = isAnonGcWarn(s, now);
       const gcDays = anonGcDaysRemaining(s, now);
       const live = `https://${s.slug}.${root}`;
@@ -1524,7 +1537,7 @@ function renderSitesTable(
               gcDays <= 0 ? "GC now" : `GC ${gcDays}d`
             }</span>`
           : escapeHtml(s.lastServedAt || "—");
-      return `<tr data-claimed="${claimed}" data-active="${active}" data-gc="${gcWarn ? "1" : "0"}"${gcTitle}>
+      return `<tr data-claimed="${claimed}" data-active="${active}" data-served24="${served24}" data-gc="${gcWarn ? "1" : "0"}"${gcTitle}>
         <td><a href="/s/${escapeHtml(s.slug)}"><code>${escapeHtml(s.slug)}</code></a></td>
         <td>${escapeHtml(s.ownerEmail || "unclaimed")}</td>
         <td>${escapeHtml(s.visibility)}</td>
@@ -1544,6 +1557,7 @@ function renderSitesTable(
       <button type="button" data-filter="all" aria-current="true">All</button>
       <button type="button" data-filter="claimed">Claimed</button>
       <button type="button" data-filter="unclaimed">Unclaimed</button>
+      <button type="button" data-filter="served24h">Served 24h</button>
       <button type="button" data-filter="inactive">Inactive</button>
       <button type="button" data-filter="gc" title="Unclaimed idle ≥${ANON_IDLE_DELETE_DAYS - ANON_GC_WARN_DAYS}d — hard-delete at ${ANON_IDLE_DELETE_DAYS}d">Deleting ≤${ANON_GC_WARN_DAYS}d</button>
     </div>
@@ -1574,6 +1588,24 @@ function renderUsersTable(users: OpsUserRow[]): string {
   return `<table data-users><thead><tr>
     <th>Email</th><th>Sites</th><th>Domains</th><th>Joined</th><th></th>
   </tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function renderWaitlistTable(rows: WaitlistSignupRow[]): string {
+  if (rows.length === 0) {
+    return `<p class="empty">No waitlist signups.</p>`;
+  }
+  const body = rows
+    .map(
+      (r) => `<tr>
+        <td>${escapeHtml(r.email)}</td>
+        <td>${escapeHtml(r.source)}</td>
+        <td>${escapeHtml(r.createdAt)}</td>
+      </tr>`,
+    )
+    .join("");
+  return `<table data-waitlist><thead><tr>
+    <th>Email</th><th>Source</th><th>Signed up</th>
+  </tr></thead><tbody>${body}</tbody></table>`;
 }
 
 function renderDomainsTable(domains: OpsDomainRow[], root: string): string {
@@ -2073,7 +2105,7 @@ function renderOpsHtml(
     .todos.check .hint { font-size: 0.8rem; color: var(--faint); flex: 1 1 100%; padding-left: 1.5rem; }
     .todos .src { color: var(--faint); font-size: 0.75rem; }
     .card { border: 1px solid var(--line); border-radius: 0.4rem; background: var(--panel); padding: 0.9rem 1rem; }
-    a.card-link { text-decoration: none; color: inherit; display: block; }
+    a.card-link { text-decoration: none; color: inherit; display: block; cursor: pointer; }
     a.card-link:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
     .filters { display: flex; gap: 0.35rem; margin: 0 0 0.75rem; flex-wrap: wrap; }
     ol.top-views { margin: 0 0 1rem; padding-left: 1.2rem; color: var(--quiet); }
@@ -2217,13 +2249,13 @@ function renderOpsHtml(
           <h3>Product</h3>
           <div class="stat-grid">
             <a class="card card-link" href="/sites"><strong data-live="sites">${s.sites}</strong><span>sites</span></a>
-            <div class="card"><strong data-live="claimed">${s.claimed}</strong><span>claimed</span></div>
+            <a class="card card-link" href="/sites?filter=claimed"><strong data-live="claimed">${s.claimed}</strong><span>claimed</span></a>
             <a class="card card-link" href="/users"><strong data-live="users">${s.users}</strong><span>users</span></a>
             <a class="card card-link" href="/domains"><strong data-live="domains">${s.domains}</strong><span>domains</span></a>
-            <div class="card"><strong data-live="active24h">${s.active24h}</strong><span>served 24h</span></div>
+            <a class="card card-link" href="/sites?filter=served24h"><strong data-live="active24h">${s.active24h}</strong><span>served 24h</span></a>
             <a class="card card-link" href="/sites"><strong data-live="views7d">${payload.views.d7}</strong><span>views 7d</span></a>
-            <div class="card"><strong data-live="deploysMtd">${s.deploysMtd}</strong><span>deploys MTD</span></div>
-            <div class="card"><strong data-live="waitlist">${s.waitlist}</strong><span>waitlist</span></div>
+            <a class="card card-link" href="/sites"><strong data-live="deploysMtd">${s.deploysMtd}</strong><span>deploys MTD</span></a>
+            <a class="card card-link" href="/users#waitlist"><strong data-live="waitlist">${s.waitlist}</strong><span>waitlist</span></a>
           </div>
           <div class="score">
             <a class="card card-link" href="/cf">
@@ -2307,6 +2339,9 @@ function renderOpsHtml(
           <h2>Users</h2>
           <p class="empty">Requested custom domains sort first. Approve here.</p>
           ${renderUsersTable(payload.users)}
+          <h3 id="waitlist">Waitlist</h3>
+          <p class="empty">Homepage email capture. Not accounts.</p>
+          ${renderWaitlistTable(payload.waitlist)}
         </section>
         <section class="panel${activePanel === "domains" ? " is-active" : ""}" id="domains">
           <h2>Domains</h2>
@@ -2356,23 +2391,62 @@ function renderOpsHtml(
         if (seg === "visits") return "sites";
         return tabs.indexOf(seg) >= 0 ? seg : "overview";
       }
-      function show(name, push) {
+      function show(name, push, href) {
         if (name === "visits") name = "sites";
         if (tabs.indexOf(name) < 0) name = "overview";
         document.querySelectorAll(".hub-nav a").forEach(function (a) {
-          var href = a.getAttribute("href") || "";
-          if (href === pathFor(name) || (name === "overview" && (href === "/" || href === "/overview"))) {
+          var navHref = a.getAttribute("href") || "";
+          if (navHref === pathFor(name) || (name === "overview" && (navHref === "/" || navHref === "/overview"))) {
             a.setAttribute("aria-current", "page");
           } else a.removeAttribute("aria-current");
         });
         document.querySelectorAll(".hub-main .panel").forEach(function (p) {
           p.classList.toggle("is-active", p.id === name);
         });
-        var next = pathFor(name);
-        if (location.pathname !== next || location.hash) {
+        var search = "";
+        var hash = "";
+        if (href) {
+          var noHash = href.split("#")[0];
+          search = noHash.indexOf("?") >= 0 ? "?" + noHash.split("?")[1] : "";
+          hash = href.indexOf("#") >= 0 ? href.slice(href.indexOf("#")) : "";
+        } else if (!push) {
+          search = name === "sites" ? location.search : "";
+          hash = location.hash || "";
+        }
+        var next = pathFor(name) + search + hash;
+        var here = location.pathname + location.search + location.hash;
+        if (here !== next) {
           if (push) history.pushState(null, "", next);
           else history.replaceState(null, "", next);
         }
+        applySiteFilter(name === "sites" ? new URLSearchParams(search).get("filter") || "all" : "all");
+        if (hash.length > 1) {
+          var el = document.getElementById(hash.slice(1));
+          if (el) el.scrollIntoView({ block: "start" });
+        }
+      }
+      function applySiteFilter(f) {
+        var root = document.querySelector("[data-site-filters]");
+        if (!root) return;
+        if (!f || !root.querySelector('[data-filter="' + f + '"]')) f = "all";
+        root.querySelectorAll("[data-filter]").forEach(function (x) {
+          if (x.getAttribute("data-filter") === f) x.setAttribute("aria-current", "true");
+          else x.removeAttribute("aria-current");
+        });
+        document.querySelectorAll("[data-sites] tbody tr").forEach(function (tr) {
+          var claimed = tr.getAttribute("data-claimed") === "1";
+          var active = tr.getAttribute("data-active") === "1";
+          var gc = tr.getAttribute("data-gc") === "1";
+          var served24 = tr.getAttribute("data-served24") === "1";
+          var showRow =
+            f === "all" ||
+            (f === "claimed" && claimed) ||
+            (f === "unclaimed" && !claimed) ||
+            (f === "inactive" && !active) ||
+            (f === "gc" && gc) ||
+            (f === "served24h" && served24);
+          tr.style.display = showRow ? "" : "none";
+        });
       }
       document.querySelector(".wrap").addEventListener("click", function (e) {
         var a = e.target.closest("a[href]");
@@ -2383,25 +2457,26 @@ function renderOpsHtml(
         var path = href.split("?")[0].split("#")[0];
         if (path === "/visits") {
           e.preventDefault();
-          show("sites", true);
+          show("sites", true, "/sites");
           return;
         }
         var seg = path === "/" || path === "/overview" ? "overview" : path.replace(/^\\//, "");
         if (tabs.indexOf(seg) < 0) return;
         e.preventDefault();
-        show(seg, true);
+        show(seg, true, href);
       });
       window.addEventListener("popstate", function () {
         show(panelFromPath(), false);
       });
       if (location.hash === "#visits" || location.pathname === "/visits") {
-        show("sites", false);
+        show("sites", false, "/sites");
       } else if (location.hash && location.hash.length > 1) {
         var legacy = location.hash.slice(1);
-        if (legacy === "visits") legacy = "sites";
-        show(tabs.indexOf(legacy) >= 0 ? legacy : initial, false);
+        if (legacy === "visits") show("sites", false, "/sites");
+        else if (tabs.indexOf(legacy) >= 0) show(legacy, false);
+        else show(initial, false, location.pathname + location.search + location.hash);
       } else {
-        show(initial, false);
+        show(initial, false, location.pathname + location.search + location.hash);
       }
 
       var filters = document.querySelector("[data-site-filters]");
@@ -2409,23 +2484,10 @@ function renderOpsHtml(
         filters.addEventListener("click", function (e) {
           var b = e.target.closest("[data-filter]");
           if (!b) return;
-          var f = b.getAttribute("data-filter");
-          filters.querySelectorAll("[data-filter]").forEach(function (x) {
-            if (x === b) x.setAttribute("aria-current", "true");
-            else x.removeAttribute("aria-current");
-          });
-          document.querySelectorAll("[data-sites] tbody tr").forEach(function (tr) {
-            var claimed = tr.getAttribute("data-claimed") === "1";
-            var active = tr.getAttribute("data-active") === "1";
-            var gc = tr.getAttribute("data-gc") === "1";
-            var showRow =
-              f === "all" ||
-              (f === "claimed" && claimed) ||
-              (f === "unclaimed" && !claimed) ||
-              (f === "inactive" && !active) ||
-              (f === "gc" && gc);
-            tr.style.display = showRow ? "" : "none";
-          });
+          var f = b.getAttribute("data-filter") || "all";
+          applySiteFilter(f);
+          var next = "/sites" + (f !== "all" ? "?filter=" + encodeURIComponent(f) : "");
+          if (location.pathname + location.search !== next) history.pushState(null, "", next);
         });
       }
 

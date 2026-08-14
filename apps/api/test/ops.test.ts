@@ -293,9 +293,15 @@ describe("ops.aft.page host", () => {
     await call(
       uploadJson([
         { path: "index.html", content: "<h1>ok</h1>" },
-        { path: "big.bin", content: "y".repeat(10 * 1024 * 1024 + 1) },
+        { path: "big.bin", content: "y".repeat(25 * 1024 * 1024 + 1) },
       ]),
     );
+    await env.DB.prepare(
+      `INSERT INTO waitlist_signups (id, email, source, created_at)
+       VALUES (?, ?, ?, ?)`,
+    )
+      .bind("wl-ops", "early@example.com", "marketing", "2026-08-01T00:00:00.000Z")
+      .run();
     const cookie = await sessionCookie("ops@example.com");
     const htmlRes = await call(
       new Request("https://ops.aft.page/", { headers: { cookie } }),
@@ -371,6 +377,12 @@ describe("ops.aft.page host", () => {
     expect(html).toContain("CIL / smoke");
     expect(html).toContain('id="sites"');
     expect(html).toContain("href=\"/sites\"");
+    expect(html).toContain('href="/sites?filter=claimed"');
+    expect(html).toContain('href="/sites?filter=served24h"');
+    expect(html).toContain('href="/users#waitlist"');
+    expect(html).toContain('id="waitlist"');
+    expect(html).toContain("early@example.com");
+    expect(html).toContain("Homepage email capture");
     expect(html).toContain("data-visits-root");
     expect(html).toContain("data-visits-range");
     expect(html).toContain(">Traffic<");
@@ -494,7 +506,7 @@ describe("ops.aft.page host", () => {
       ),
     );
     expect(dl.status).toBe(200);
-    expect((await dl.arrayBuffer()).byteLength).toBe(10 * 1024 * 1024 + 1);
+    expect((await dl.arrayBuffer()).byteLength).toBe(25 * 1024 * 1024 + 1);
 
     const retry = await call(
       new Request(`https://ops.aft.page/f/${hit!.id}/retry`, {
@@ -608,6 +620,9 @@ describe("ops.aft.page host", () => {
     ).text();
     expect(listHtml).toContain('id="sites"');
     expect(listHtml).toContain('href="/sites"');
+    expect(listHtml).toContain('data-filter="claimed"');
+    expect(listHtml).toContain('data-filter="served24h"');
+    expect(listHtml).toContain('data-served24="1"');
     expect(listHtml).toContain("ops-listed");
     expect(listHtml).toContain("/s/ops-listed");
     expect(listHtml).toContain("Views today");

@@ -1,15 +1,15 @@
 # aft Drop
 
-> Deploy a static site to a durable `*.aft.page` URL instantly, with no account required to start.
+> Deploy a static site to a durable live URL instantly, with no account required to start.
 
 ## How it works
 
 1. Drop a folder or `.zip` containing your static site (HTML, CSS, JS). Include an `index.html`.
 2. aft Drop uploads it via `POST https://api.aft.page/v1/deploy`.
-3. You get a live `https://{slug}.aft.page` URL.
+3. You get a live URL.
 4. Open `claimUrl` (`https://aft.page/claim?slug=&token=`) to keep ownership.
 
-Limits: 200 files · 10 MB / file · 50 MB total.
+Limits: 500 files · 25 MB / file · 100 MB total.
 
 ## For AI agents
 
