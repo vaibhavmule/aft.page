@@ -51,7 +51,7 @@ aft stern mark: `aft.` below chrome only; no hover / neon on the watermark.
 
 ## What aft must show
 
-- agent → deploy → live *.aft.page URL (not a template gallery)
+- agent → deploy → live URL (not a template gallery)
 - Doc-simple share (invite / revoke / same URL)
 - Self-serve proof (hero mini drop + MCP) with visible Beta
 - Honest proof only: clickable live example, real metrics/quotes when they exist

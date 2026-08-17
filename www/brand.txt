@@ -70,7 +70,8 @@ aft page (aft as in the aft of a ship)
 - "small software" not "microsites" as the category
 - "deploy" / "Drop" for getting a URL
 - "claim" for attaching an anonymous deploy to an account
-- "live URL" / "*.aft.page" not "published site builder project"
+- "live URL" not "published site builder project"
+- Do not mention "*.aft.page" — it's the default hostname; users already know
 - "custom domain" after claim (invite-only / request access) — CNAME to cname.aft.page
 - "MCP" for the agent deploy surface (thin adapter, not a control plane)
 - Prefer "app" over "website" when describing what agents ship

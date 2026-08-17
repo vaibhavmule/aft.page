@@ -1,7 +1,7 @@
 # aft Drop for macOS
 
-Native macOS client for deploying a Codex workspace or dropped site folder to
-`*.aft.page`.
+Native macOS client for deploying a Codex workspace or dropped site folder
+to a live URL.
 
 ## Development
 

@@ -87,7 +87,7 @@ Early: design partners on team plans; not chasing enterprise procurement before 
 
 ## How far along are you?
 
-**Live product:** https://aft.page — paste/upload or MCP → `*.aft.page` URL. Chrome
+**Live product:** https://aft.page — paste/upload or MCP → live URL. Chrome
 extension. Magic-link claim, projects inventory, private invite, capabilities
 approve-on-deploy, connector v0. Per-site secrets vault. First full-stack dogfood:
 [next-hello.aft.page](https://next-hello.aft.page) (`runtime: next`). Sibling OSS
@@ -115,15 +115,80 @@ aft CLI + aft.page: concentrated build from mid/late July 2026 (nights/weekends 
 
 Shipped a real multi-cloud-adjacent deploy path (OSS CLI into customer AWS with destroy/safety hardening) and a hosted agent MCP path to production URLs in days — then *changed the company thesis* when Sites/Prized made hosting-alone obsolete, instead of clinging to the first wedge.
 
-## Video notes (1 min)
+## Video (1 min) — application field
 
-Show, don’t lecture:
+Sources: [YC video spec](https://www.ycombinator.com/video) · [PG howtoapply](https://www.ycombinator.com/howtoapply)
+· Geoff Ralston (clarity + talk about yourselves, not a marketing video)
+· DoorDash 2013 app video (YC still publishes it)
+· Gustaf Alströmer: say what you actually do; quiet room
 
-1. Agent builds a tiny expense/refund tool (or show existing).
-2. `aft deploy` / MCP → URL live.
-3. Update it, share it, and show the same stable application URL.
-4. Say one line: *A cloud for software used by one person or a small handful—your agent made it; aft makes it real.*
-5. End on aft.page wordmark + URL.
+**Hard rules:** founders talking only. 60s max. No demo, music, slides, b-roll.
+Unlisted YouTube, embedding on. Cue cards, not a recited paragraph.
+
+**PG test:** after the first sentence, could a partner reproduce what you make?
+If not, the sentence was noise. Narrow and concrete beats “cloud / platform / unlock.”
+
+### Winning structure (DoorDash shape, solo)
+
+| Time | Beat | Word pattern that worked |
+| --- | --- | --- |
+| 0:00–0:08 | Who | “I’m X. I [verb] at [company].” Not “CEO.” |
+| 0:08–0:28 | What + how it works | First sentence = the thing. Then “how it works is…” (DoorDash) |
+| 0:28–0:42 | Why / problem | Concrete nouns. A place or a scene. Not “the industry.” |
+| 0:42–0:52 | Why you | One specific thing you built. Not adjectives. |
+| 0:52–1:00 | Shipped | Live fact. No fake users. Stop. |
+
+PG’s shortcut for the “what”: *variant of something they already know.*
+For us: **“like a Google Doc, but for the app your agent just made.”**
+(That line is in YC’s own RFS — use it as description, do **not** say “we’re answering the RFS.”)
+
+### Words to use vs kill
+
+**Use (matter-of-fact, DoorDash-plain):**
+you, they, files, URL, coworker, invite, same link, GitHub, Vercel, cloud account,
+Claude / Cursor, tiny app, expense tracker, two seconds, live, I built, I ship
+
+**Kill (marketing / infra — PG calls this zero content):**
+opening with “we’re building a cloud for Small Software” · agent-native ·
+durable lifecycle · ceremony · MCP · Workers · capabilities · BYOC · platform ·
+unlock · transform · the future of deploy · “I didn’t pick this because of an RFS”
+
+Say “your coding agent can publish it” instead of MCP.
+Say “drop the files, get a link” instead of “activation.”
+Say “I write the product and I ship it” instead of “solo founder / CEO.”
+
+### Cue cards (look, don’t read)
+
+1. I’m Vaibhav. I write and ship aft.page.
+2. People get Claude to build a tiny app in minutes. Putting it on the internet still means GitHub, a cloud account, and Vercel.
+3. How it works: drop the files — or the agent publishes them — and you get a URL. Send it like a Google Doc. Same link when you update it. Invite someone if it’s private.
+4. In 2011 I could get WordPress live in five minutes. I later built a CLI that deploys into the customer’s own AWS. Same job: time to a URL.
+5. Product is live. Couple of seconds. That’s it.
+
+If long: drop the CLI sentence.
+
+### Practice take (hear the beats, then film from cards)
+
+> I’m Vaibhav. I write and ship aft.page.
+>
+> People can get Claude to build a tiny app in minutes — an expense tracker, a
+> dashboard for three people. Putting that app on the internet still means GitHub,
+> a cloud account, and Vercel.
+>
+> How it works is: you drop the files, or your coding agent publishes them, and
+> you get a URL. You send that URL like a Google Doc. Same link when you change
+> the app. Invite someone if it shouldn’t be public.
+>
+> In 2011 I could get WordPress live in five minutes. That’s still the job. The
+> product is live today. A couple of seconds to a URL. That’s aft.page.
+
+### Demo field (not this video)
+
+Screen recording, mute or one-line voiceover, 20–40s:
+
+Drop or MCP → live slug URL → same URL after update → private + invite (if you can show a real
+second person; otherwise stop at claim + projects). Put the public URL in the demo box:
+https://aft.page — plus one live example (e.g. https://next-hello.aft.page).
 
 ---
 

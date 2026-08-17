@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Runway</title>
+    <!--
+      YC demo (v1 of this file).
+      Take 2 — change these three lines, redeploy same slug:
+        body background → #161410
+        body color → #f3efe6
+        h1 text → Runway v2
+    -->
+    <style>
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        overflow-x: clip;
+        color: #f3efe6;
+        background: #161410;
+        font: 16px/1.4 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      }
+      main {
+        min-height: 100%;
+        max-width: 40rem;
+        margin: 0 auto;
+        padding: 2.5rem 1.5rem 3rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .kicker {
+        margin: 0 0 0.35rem;
+        font: 600 0.72rem/1 ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: #6b6458;
+      }
+      h1 {
+        margin: 0 0 1.25rem;
+        font-size: 1.15rem;
+        font-weight: 600;
+      }
+      .months {
+        margin: 0;
+        font-size: clamp(4.5rem, 18vw, 8.5rem);
+        font-weight: 700;
+        line-height: 0.9;
+        letter-spacing: -0.04em;
+        font-variant-numeric: tabular-nums;
+      }
+      .months small {
+        display: block;
+        margin-top: 0.35rem;
+        font-size: 1.05rem;
+        font-weight: 500;
+        letter-spacing: 0;
+        color: #6b6458;
+      }
+      .stamp {
+        display: inline-block;
+        margin: 1rem 0 1.75rem;
+        padding: 0.2rem 0.5rem;
+        border: 2px solid currentColor;
+        font: 700 0.75rem/1 ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .stamp.alive { color: #1f6b45; }
+      .stamp.tight { color: #9a5b12; }
+      .stamp.dead { color: #a32d1c; }
+      .fields {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.25rem 2rem;
+      }
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        min-width: 10rem;
+        flex: 1;
+        font: 600 0.72rem/1 ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #6b6458;
+      }
+      .field {
+        display: flex;
+        align-items: baseline;
+        gap: 0.2rem;
+        border-bottom: 2px solid #1c1914;
+      }
+      .sym {
+        font: 600 1.35rem/1.2 "Iowan Old Style", Palatino, Georgia, serif;
+        color: #1c1914;
+      }
+      input {
+        width: 100%;
+        min-width: 0;
+        border: 0;
+        border-radius: 0;
+        padding: 0.35rem 0;
+        background: transparent;
+        color: inherit;
+        font: 600 1.35rem/1.2 "Iowan Old Style", Palatino, Georgia, serif;
+        font-variant-numeric: tabular-nums;
+      }
+      input:focus {
+        outline: 2px solid #1c1914;
+        outline-offset: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="kicker">Cash in bank ÷ monthly burn</p>
+      <h1>Runway v2</h1>
+      <p class="months" id="months" aria-live="polite">—<small>months left</small></p>
+      <p class="stamp dead" id="stamp">Default dead</p>
+      <div class="fields">
+        <label>
+          Cash
+          <span class="field">
+            <span class="sym" aria-hidden="true">$</span>
+            <input id="cash" type="number" min="0" step="1000" value="180000" />
+          </span>
+        </label>
+        <label>
+          Monthly burn
+          <span class="field">
+            <span class="sym" aria-hidden="true">$</span>
+            <input id="burn" type="number" min="0" step="500" value="22000" />
+          </span>
+        </label>
+      </div>
+    </main>
+    <script>
+      const cash = document.getElementById("cash")
+      const burn = document.getElementById("burn")
+      const monthsEl = document.getElementById("months")
+      const stamp = document.getElementById("stamp")
+
+      const formatMonths = (n) => {
+        if (!Number.isFinite(n)) return "∞"
+        if (n >= 100) return "99+"
+        return n.toFixed(1)
+      }
+
+      const render = () => {
+        const c = Number(cash.value)
+        const b = Number(burn.value)
+        if (b <= 0) {
+          monthsEl.innerHTML = "∞<small>no burn</small>"
+          stamp.textContent = "Default alive"
+          stamp.className = "stamp alive"
+          return
+        }
+        const m = c / b
+        monthsEl.innerHTML = formatMonths(m) + "<small>months left</small>"
+        if (m >= 18) {
+          stamp.textContent = "Default alive"
+          stamp.className = "stamp alive"
+        } else if (m >= 6) {
+          stamp.textContent = "Tight"
+          stamp.className = "stamp tight"
+        } else {
+          stamp.textContent = "Default dead"
+          stamp.className = "stamp dead"
+        }
+      }
+
+      cash.addEventListener("input", render)
+      burn.addEventListener("input", render)
+      render()
+    </script>
+  </body>
+</html>

@@ -151,7 +151,7 @@ G12. Gallery of real agent-made apps deployed on aft (with permission)
 
 G20. Original vibe-sites that can travel like saloon.wtf
     Hypothesis : one-click, consumer, fun Small Software (nostalgia / place /
-                 music / “leave the tab open”) on *.aft.page + a short video
+                 music / “leave the tab open”) on aft.page + a short video
                  can pull X/IG/WhatsApp traffic the way saloon.wtf did
                  (~2.8M post views, 8 Aug 2026). We invent the next idea —
                  not a Deluxe Saloon copy. Growth for AFT, not a second co.

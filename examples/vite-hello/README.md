@@ -1,6 +1,6 @@
 # vite-hello
 
-Minimal React + Vite app for dogfooding hosted `*.aft.page` SPA deploys.
+Minimal React + Vite app for dogfooding hosted SPA deploys.
 
 aft.page does not run `vite build`. Ship the static `dist/` only.
 

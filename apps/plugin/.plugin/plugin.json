@@ -1,7 +1,7 @@
 {
   "name": "aft-page",
   "version": "0.1.0",
-  "description": "Deploy small software to a live, shareable *.aft.page URL.",
+  "description": "Deploy small software to a live, shareable URL.",
   "author": {
     "name": "aft.page",
     "email": "hello@aft.page",

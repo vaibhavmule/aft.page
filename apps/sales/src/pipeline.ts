@@ -43,7 +43,7 @@ const HOOK =
   "What did your agent build that never made it past localhost?";
 
 const PITCH =
-  "AFT is the publishing and permission layer for software created by AI agents — your agent made it; aft makes it live, persistent, and shareable (*.aft.page).";
+  "AFT is the publishing and permission layer for software created by AI agents — your agent made it; aft makes it live, persistent, and shareable.";
 
 export function draftOutreach(input: {
   name: string;
@@ -75,7 +75,7 @@ export function quotePricing(
     sku: "free",
     price: "$0",
     includes: [
-      "Hosted public deploys (*.aft.page)",
+      "Hosted public deploys",
       "MCP / agent deploy",
       "Claim + basic share",
     ],
@@ -260,7 +260,7 @@ export function createSqlDb(sql: SqlFn): LeadDb {
 
 export const SYSTEM_PROMPT = `You are aft's founder sales checker. Your job is to FIND and CHECK prospects on socials — not to wait for "draft me 3 DMs".
 
-Product: aft (aft.page) — publishing + permission layer for agent-built Small Software (durable shareable *.aft.page URLs).
+Product: aft (aft.page) — publishing + permission layer for agent-built Small Software (durable shareable URLs).
 
 Ideal prospect: someone who built with Cursor / Claude / Codex / Lovable / v0 and is stuck on localhost or asking how to share/deploy.
 

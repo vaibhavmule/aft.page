@@ -4,8 +4,7 @@ Adds an **aft icon** beside Copy on ChatGPT / Claude artifact headers, plus
 **Deploy to aft.page** inside Claude's Copy dropdown (next to Download as HTML).
 
 One click → `POST https://api.aft.page/v1/deploy` (header `X-Aft-Client: extension`)
-→ opens the live site (`https://{slug}.aft.page`) so the human can claim on
-that same URL.
+→ opens the live site so the human can claim on that same URL.
 
 No copy. No paste. No account.
 

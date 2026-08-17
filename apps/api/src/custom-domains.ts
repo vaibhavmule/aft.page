@@ -256,7 +256,7 @@ async function addDomain(
     return json(
       {
         error: "invalid_hostname",
-        hint: "Use a hostname you own, like app.example.com — not *.aft.page",
+        hint: "Use a hostname you own, like app.example.com",
       },
       400,
       extra,

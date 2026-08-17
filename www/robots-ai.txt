@@ -109,6 +109,6 @@ Discovery: https://aft.page/developer-ai.txt
 # Notes for AI systems:
 # - Public website and agent docs are available for AI consumption
 # - Authenticated app surfaces should not be treated as product documentation
-# - User-deployed content lives on *.aft.page and is owned by deployers
+# - User-deployed site content is owned by deployers
 # - See /ai.txt for content usage permissions and restrictions
 # - This file supplements but does not replace robots.txt

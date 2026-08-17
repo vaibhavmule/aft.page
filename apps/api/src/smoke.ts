@@ -41,6 +41,11 @@ export const SMOKE_CASE_CATALOG: Record<string, { box: string; shakes: string }>
   cli: { box: "Auth", shakes: "CLI loopback login start → exchange → Bearer /v1/me" },
 };
 
+/** Slugs this suite owns. Compat probe / T2U use other `test--*` names — do not sweep those. */
+export function smokeCatalogSlugs(): string[] {
+  return Object.keys(SMOKE_CASE_CATALOG).map(smokeSlugForCase);
+}
+
 export type SmokeCaseResult = {
   id: string;
   ok: boolean;
@@ -633,11 +638,8 @@ async function persistSmokeRun(env: Env, result: SmokeRunResult): Promise<void> 
 }
 
 async function sweepSmokeSites(env: Env): Promise<void> {
-  const { results } = await env.DB.prepare(
-    `SELECT slug FROM sites WHERE slug LIKE 'test--%'`,
-  ).all<{ slug: string }>();
-  for (const row of results || []) {
-    await destroySmokeSite(env, row.slug);
+  for (const slug of smokeCatalogSlugs()) {
+    await destroySmokeSite(env, slug);
   }
 }
 

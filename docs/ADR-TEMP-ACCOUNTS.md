@@ -12,7 +12,7 @@ Cloudflare Drop commoditizes static upload → URL → claim. Temporary Accounts
 | Account reuse + claim URL | Works (60-minute claim window) |
 | Redeploy on same temp account | Works |
 | `wrangler secret put` non-interactive | Fails without temp-session token plumbing |
-| Stable `*.aft.page` brand URL | Not native — workers.dev subdomain only |
+| Stable aft.page brand URL | Not native — workers.dev subdomain only |
 | Bot challenge on temp `workers.dev` | Observed intermittent 403 challenge before JSON |
 | Containers / Sandbox | Not validated; docs list limited product support on temp accounts |
 

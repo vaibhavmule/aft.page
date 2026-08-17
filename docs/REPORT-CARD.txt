@@ -18,7 +18,7 @@ SHIPPED AGENT PLUGIN.
 ----------------------------------------------------------------
 1. NAIL THE CORE LOOP — A-
 ----------------------------------------------------------------
-[x] Agent/human -> one call -> live stable URL (deploy_html / deploy_files -> *.aft.page)
+[x] Agent/human -> one call -> live stable URL (deploy_html / deploy_files)
 [x] Same URL on update + instant rollback (immutable versions + project list + rollback)
 [x] Share like a Google Doc (invite / list / revoke / members + ACL)
 [~] Default private/unguessable (link = credential)

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "aft.page — Deploy",
   "version": "0.4.5",
-  "description": "One-click deploy for HTML from ChatGPT or Claude to a live *.aft.page URL.",
+  "description": "One-click deploy for HTML from ChatGPT or Claude to a live URL.",
   "permissions": ["storage"],
   "host_permissions": [
     "https://api.aft.page/*",

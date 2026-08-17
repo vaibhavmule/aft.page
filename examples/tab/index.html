@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tab — Team offsite</title>
+    <!--
+      2–3 min demo app (v1).
+      Take 2 — three obvious edits, redeploy same slug:
+        body background → #1c1812
+        body color → #f3ead8
+        h1 text → Tab v2
+      Then rollback to this version if you still have time.
+    -->
+    <style>
+      * { box-sizing: border-box; }
+      html, body { margin: 0; }
+      body {
+        overflow-x: clip;
+        color: #1c1812;
+        background: #f3ead8;
+        font: 16px/1.4 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      }
+      main {
+        max-width: 40rem;
+        margin: 0 auto;
+        padding: 1.75rem 1.25rem 3rem;
+      }
+      .kicker {
+        margin: 0 0 0.25rem;
+        font: 600 0.7rem/1 ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: #6e6556;
+      }
+      h1 {
+        margin: 0 0 0.2rem;
+        font-size: 1.85rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .sub {
+        margin: 0 0 1.25rem;
+        color: #6e6556;
+        font-size: 0.95rem;
+      }
+      .people {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        margin: 0 0 1.5rem;
+      }
+      .person {
+        flex: 1 1 8.5rem;
+        min-width: 8.5rem;
+        padding: 0.7rem 0.8rem 0.8rem;
+        border: 1.5px solid #1c1812;
+        background: #fffaf0;
+      }
+      .person b {
+        display: block;
+        font: 600 0.68rem/1 ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #6e6556;
+        margin-bottom: 0.25rem;
+      }
+      .net {
+        font-size: 1.45rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.03em;
+      }
+      .net.owed { color: #1f6b45; }
+      .net.owes { color: #a32d1c; }
+      .net.even { color: #6e6556; }
+      .hint {
+        margin: 0.15rem 0 0;
+        font: 500 0.72rem/1.2 ui-sans-serif, system-ui, sans-serif;
+        color: #6e6556;
+      }
+      h2 {
+        margin: 0 0 0.6rem;
+        font-size: 0.95rem;
+      }
+      .rows { margin: 0 0 1.25rem; }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 0.5rem 0.85rem;
+        align-items: baseline;
+        padding: 0.55rem 0;
+        border-bottom: 1px solid #d4cbb8;
+      }
+      .row .who {
+        font: 500 0.78rem/1.2 ui-sans-serif, system-ui, sans-serif;
+        color: #6e6556;
+        text-align: right;
+      }
+      .row .amt {
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+        text-align: right;
+        min-width: 4.5rem;
+      }
+      form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        align-items: end;
+        padding: 0.9rem 0 0;
+        border-top: 2px solid #1c1812;
+      }
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        flex: 1 1 7rem;
+        min-width: 7rem;
+        font: 600 0.68rem/1 ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #6e6556;
+      }
+      label.grow { flex: 2 1 10rem; }
+      input, select, button {
+        font: 600 1rem/1.2 "Iowan Old Style", Palatino, Georgia, serif;
+        color: #1c1812;
+      }
+      input, select {
+        width: 100%;
+        min-width: 0;
+        border: 0;
+        border-bottom: 2px solid #1c1812;
+        border-radius: 0;
+        padding: 0.35rem 0;
+        background: transparent;
+      }
+      input:focus, select:focus, button:focus {
+        outline: 2px solid #1c1812;
+        outline-offset: 3px;
+      }
+      button {
+        border: 0;
+        background: #1c1812;
+        color: #f3ead8;
+        padding: 0.55rem 0.95rem;
+        cursor: pointer;
+        font: 600 0.78rem/1 ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      button:hover { background: #3a342c; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="kicker">Shared tab · 3 people</p>
+      <h1>Tab</h1>
+      <p class="sub">Team offsite — who paid, who owes.</p>
+      <div class="people" id="people" aria-live="polite"></div>
+      <h2>Receipts</h2>
+      <div class="rows" id="rows"></div>
+      <form id="add">
+        <label class="grow">
+          What
+          <input id="what" name="what" required value="Airport taxi" />
+        </label>
+        <label>
+          Amount
+          <input id="amount" name="amount" type="number" min="1" step="1" required value="180" />
+        </label>
+        <label>
+          Paid by
+          <select id="payer" name="payer"></select>
+        </label>
+        <button type="submit">Add to tab</button>
+      </form>
+    </main>
+    <script>
+      const PEOPLE = ["You", "Alex", "Sam"]
+      const money = (n) =>
+        "$" + Math.round(Math.abs(n)).toLocaleString("en-US")
+      const state = {
+        items: [
+          { what: "Airbnb, 2 nights", amount: 1260, payer: "You" },
+          { what: "Dinner", amount: 340, payer: "Alex" },
+          { what: "Rental cars", amount: 150, payer: "Sam" },
+        ],
+      }
+
+      const nets = () => {
+        const n = Object.fromEntries(PEOPLE.map((p) => [p, 0]))
+        for (const item of state.items) {
+          const share = item.amount / PEOPLE.length
+          for (const p of PEOPLE) n[p] -= share
+          n[item.payer] += item.amount
+        }
+        return n
+      }
+
+      const renderPeople = () => {
+        const n = nets()
+        document.getElementById("people").innerHTML = PEOPLE.map((p) => {
+          const v = n[p]
+          const cls = v > 20 ? "owed" : v < -20 ? "owes" : "even"
+          const hint =
+            v > 20 ? "is owed" : v < -20 ? "owes the tab" : "settled"
+          return (
+            '<div class="person"><b>' +
+            p +
+            '</b><div class="net ' +
+            cls +
+            '">' +
+            (v < -20 ? "−" : "") +
+            money(v) +
+            '</div><p class="hint">' +
+            hint +
+            "</p></div>"
+          )
+        }).join("")
+      }
+
+      const renderRows = () => {
+        document.getElementById("rows").innerHTML = state.items
+          .map(
+            (item) =>
+              '<div class="row"><span>' +
+              item.what +
+              '</span><span class="who">' +
+              item.payer +
+              '</span><span class="amt">' +
+              money(item.amount) +
+              "</span></div>",
+          )
+          .join("")
+      }
+
+      const payer = document.getElementById("payer")
+      payer.innerHTML = PEOPLE.map(
+        (p) => "<option>" + p + "</option>",
+      ).join("")
+
+      document.getElementById("add").addEventListener("submit", (e) => {
+        e.preventDefault()
+        const what = document.getElementById("what").value.trim()
+        const amount = Number(document.getElementById("amount").value)
+        if (!what || !(amount > 0)) return
+        state.items.push({ what, amount, payer: payer.value })
+        document.getElementById("what").value = ""
+        document.getElementById("amount").value = ""
+        renderPeople()
+        renderRows()
+      })
+
+      renderPeople()
+      renderRows()
+    </script>
+  </body>
+</html>

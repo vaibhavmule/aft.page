@@ -20,7 +20,7 @@ Pattern (saloon class — the shape, not the shop):
 M1. [example only] Nostalgia place + music
     Why travel : Indian street/road/salon feeling is proven. Ours must be a
                  *new* place/feeling — not Deluxe Saloon.
-    AFT hook   : *.aft.page + later allow clone so copies stay here.
+    AFT hook   : live URL + later allow clone so copies stay here.
     Status     : pattern — invent a specific idea below, don’t ship “saloon”
 
 M2. Remix websites just for fun
@@ -47,7 +47,7 @@ M5. Named tiny tool (daily job)
 
 M6. ________
     Why travel :
-    AFT hook   : *.aft.page + 20s clip
+    AFT hook   : live URL + 20s clip
     Status     : idea
 
 -------------------------------------------------------------------------------

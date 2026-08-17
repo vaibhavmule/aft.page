@@ -59,6 +59,49 @@ hackathon finders, “build a website by chatting”).
 | [Kitesurf](https://blog.cloudflare.com/kitesurf/) | Agent browser on Workers. Infra, not AFT. Useful only if apps need browser automation. Do not build around it yet. |
 | Dynamic Workers | Commoditizes “run generated code.” Edge stays identity, sharing, lifecycle — not the sandbox. |
 | [Perch](https://mandarwagh9.github.io/perch/#access) | Same category language after the YC RFS. Watch for ideas; not a market threat. |
+| [Surge.sh](https://surge.sh) | Historical analog, not a 2026 rival. See below. Not Peak XV Surge, not Surge AI. |
+
+## Historical analog: Surge.sh (Chloi)
+
+Human version of the AFT wedge: folder on disk → `*.surge.sh`, no git, no cloud
+account, six keystrokes. Agents were not in the picture; the CLI *was* the
+agent. Launched ~2014. Still live. Do not add a `/vs/` page.
+
+**Owner:** [Chloi Inc.](https://chloi.io/about) (Vancouver). Directors **Brock
+Whitten** (`sintaxi`, co-creator) and **Rob Ellis**. PhoneGap / Apache Cordova
+alumni; Mozilla WebFWD. Kenneth Ormandy designed/launched the site. Surge is a
+product of a small consulting shop, not a VC-backed cloud. Never acquired.
+Terms still say Chloi. CLI: [sintaxi/surge](https://github.com/sintaxi/surge).
+Companion SSG was [Harp](https://github.com/sintaxi/harp).
+
+`surge --add` adds people who can *publish*. That is not Doc invite (people who
+can *open*). Password protection sat on Professional ($30/mo). Static CDN only.
+
+**Why it never became the company:**
+
+1. **Company shape.** Client work + a CLI. Not “own the URL, then pull in
+   every next need of the app.” No capture of a winning framework — Harp lost
+   to Jekyll / Gatsby / Next. Vercel had Next; Surge had a preprocessor.
+2. **Static was the product.** Netlify (2015) and Zeit/now (2015) took git
+   deploys, preview URLs, then functions/SSR. Surge stayed `surge .` on a CDN.
+   The moment the site needed a backend, users left.
+3. **The wedge became the ceiling.** No-git was the 2014 win. By 2016 the
+   production workflow *was* git + PR previews. Skipping git stopped being a
+   feature for teams.
+4. **Pricing.** Free → $30/mo cliff for custom SSL, force HTTPS, redirects,
+   password. Competitors gave custom domain + SSL on free. Generous unlimited
+   free publishing, thin paid conversion.
+5. **Pace.** Indie utility: slow surface, thin dashboard, outage lore. Still
+   useful for throwaway static. Not a platform that compounded.
+
+**AFT lesson:** Surge proved no-git publish can win a generation of frontend
+people and still die as a *company* if runtime and permissioned share never
+show up. “AI native” is who hits the endpoint now. The trap is staying HTML
+hosting with a nicer CLI — that is Surge in 2026, and Drop / ShipStatic already
+commoditized it.
+
+Their GitHub README now gestures at “AI-driven workloads.” Watch; do not treat
+as Codex-shelf competition until agents actually call them.
 
 ## Vercel Deployment Protection = demand proof (small enterprise)
 

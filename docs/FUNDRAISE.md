@@ -4,6 +4,32 @@ Internal. Personal runway + quit rules: `../../../FOUNDER.md`. YC draft: [YC-APP
 
 **North star:** SF/US (South Park Commons, Vercel orbit, Naval-class angels). Bigger check, less dilution. Solo by design. Dubai optional later — not the raise city.
 
+## Surge (Peak XV) — fit, not a substitute
+
+Source: [How we partner](https://surge.peakxv.com/how-we-invest) (checked 14 Aug 2026).
+
+**Not bad for this raise.** Same shape as the north star: meaningful seed, stay-in follow-on, no exclusivity, no early board seat. It is Peak XV seed, not YC or SPC. Use it as an open-architecture check that can sit next to US programs — do not swap the SF path for it.
+
+| Their line | AFT read |
+| --- | --- |
+| **$500k–$5M** seed from Peak XV | Matches “bigger check, less dilution.” Floor is enough; do not take $5M to look serious. |
+| **No cohort windows** / apply year-round, rolling review | No calendar hostage. Apply when the two-person weekly-use gate is real ([STRATEGY.md](./STRATEGY.md)). |
+| **Co-investors welcome** / open architecture | Does not force exclusivity. YC, Launchpad partner VCs, SPC, angels can still be in the round. |
+| **We stay in** / Peak XV follow-on | Long-term capital without a demo-day cliff. |
+| **Dedicated partner from day one** / always-on platform | Not a 12–24 week accelerator that ends at demo day. Fits solo: one partner, not 30-company split attention. |
+| **No board seats at early stage** | Solo-by-design compatible. |
+| **Never too early** / idea-stage OK | Product is live; they still want founder-market fit + TAM, and traction if launched. |
+| **8-week Immersion**, next kickoff **Sep 2026**, wraps in **SF** (NVIDIA / OpenAI / Google / Notion visits) | The SF week is the useful part. Cohort sessions are optional calories. |
+| Offices: US, India, Singapore, UAE | India office is convenience, not the raise city. Pitch as a global Small Software cloud, not an India-only story. |
+
+**What they actually pick:** conviction + unique insight + enduring-company ambition. Then: team, market size, and if launched — engagement / retention / “customer love.” Founder-market fit over vanity metrics. They are **not AI-only** (Minimalist, Airalo, Horizon Quantum). Do not pitch “yet another AI wrapper.”
+
+**What this is not:** Cloudflare credits, Workers Launchpad, Google credits. Those stay below. Surge is equity seed.
+
+**Status:** not applied. Do not apply on a pretty page. Gate = one useful app used weekly by two people (invite accepted, both return). Then apply at [surge.peakxv.com](https://surge.peakxv.com) (rolling). Side door: `contactus@peakxv.com` or Surge people on LinkedIn. Media is `pr@peakxv.com` — not for this.
+
+**Time:** they say no fixed commitment; the 8 weeks + SF Immersion is the visible block. Sep 2026 cohort is the next named one — miss it and the always-on path still exists.
+
 ## Cloudflare — two programs (do not mix)
 
 **[Cloudflare for Startups](https://www.cloudflare.com/startups/)** = credits, not VCs.  
@@ -36,7 +62,7 @@ Up to **$200k USD over 2 years** (up to **$350k if they class you as AI startup*
 >
 > Hi Launchpad team,  
 > The apply form on cloudflare.com/startups/workers-launchpad isn't loading, so I'm writing here.  
-> aft.page is a cloud for small software: agent-made apps → durable \*.aft.page URL → share like a Google Doc. Built on Workers + R2 + KV (plus MCP deploy). Live product: https://aft.page  
+> aft.page is a cloud for small software: agent-made apps → durable live URL → share like a Google Doc. Built on Workers + R2 + KV (plus MCP deploy). Live product: https://aft.page
 > Solo founder (intentional). Applying for Workers Launchpad Cohort #7. Happy to fill whatever the form usually asks — or resend a link if the form is back.  
 > Thanks, Vaibhav / hello@aft.page
 
@@ -64,3 +90,4 @@ Up to **$200k USD over 2 years** (up to **$350k if they class you as AI startup*
 - Launchpad: wait for CF reply / cohort decision (applied 13 Aug)  
 - SPC next Fellowship cycle (Fall 2026 deadline was Aug 2)  
 - YC after repeat deploys — [YC-APPLICATION.md](./YC-APPLICATION.md)
+- **Surge:** after the two-person weekly-use gate — rolling apply. Sep 2026 Immersion is a date, not a reason to apply early.

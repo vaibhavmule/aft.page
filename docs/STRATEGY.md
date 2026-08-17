@@ -2,6 +2,7 @@
 
 Internal north star. Canonical mission: [`../rfs.txt`](../rfs.txt).
 Belief: [`../youtube-moment.txt`](../youtube-moment.txt).
+CN + EU are growth exceptions (paid primitives, local agents): [`REGIONS.md`](./REGIONS.md). After the freeze gate — not this month.
 
 Updated: 2026-08-14
 

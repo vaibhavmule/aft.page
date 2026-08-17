@@ -17,11 +17,14 @@ Cursor `mcp_auth` timeout is **C**. aft.page was up. See [USE-CASE-PARAKH.md](..
 | `https://status.aft.page` | public | Uptime probes (API process, MCP `/health`, website, hello) |
 | `https://ops.aft.page` | founder (`OPS_EMAILS`) | Scoreboard + users/sites/domains + CF cost + failed deploys + feedback + retry + smoke + hijack audit + domain access + **[/distribute](https://ops.aft.page/distribute)** (plugin/CLI marketplace pipeline) |
 | `https://test--{case}.aft.page` | public canary (`noindex`) | Last smoke artifacts — not tenant inventory |
+| `https://test--fw-N.aft.page` | founder | Compat probe canaries (random GitHub → AFT) |
 | CF Workers Logs | you | Stacks / MCP JSON-RPC |
 
 The status **API** probe means this Worker isolate is alive. It does **not** check D1 or R2.
 
 No Sentry. No Grafana. Ops is the scoreboard + product counts + CF cost estimate + replay + feedback.
+
+**Email** (`EMAIL` → `OPS_EMAILS`, today hello@ + gmail): platform **500** / unhandled throw (api/ops/status/mcp only — not tenant `*.aft.page`), **smoke/hijack fail**, **status major_outage** (30m debounce), and a **once-per-UTC-day Class B digest** of deploy rejects. Not per-request 400 — that is reserved_slug / no_files noise.
 
 Workers MTD request/CPU on the cost card comes from GraphQL (`CF_API_TOKEN`, Account Analytics Read) when set, otherwise STATUS KV `ops:cf-usage` written via Cloudflare MCP on API deploy. Overage is $0.30/M req and $0.02/M CPU-ms after 10M req / 30M CPU-ms included ($5 Workers Paid floor). Refresh the KV snapshot when deploying `aft-page-api` if the token is not set.
 
@@ -114,9 +117,20 @@ Already on:
 
 `CF_API_TOKEN` needs SSL and Certificates Write. Zone id is `CF_ZONE_ID`.
 
+## Compat probe (random GitHub → AFT)
+
+Internal QA mill, not smoke and not a product. Node script: search GitHub → clone → `npm run build` → hosted `aft deploy` → log URL or fail reason.
+
+| When | How |
+| --- | --- |
+| Daily | GH Action cron `0 12 * * *` UTC (`.github/workflows/compat-probe.yml`) |
+| Founder laptop | `node qa/compat-probe/run.mjs` |
+
+Canaries: `test--fw-1` … `test--fw-5` (`https://test--fw-N.aft.page`, noindex). Logs: `qa/compat-probe/logs/` (gitignored) + Action artifact. Failures are expected — read `reason`, do not page. Smoke sweep **does not** delete these slugs (only smoke catalog cases). Do not mark frameworks verified from random-repo luck; T2U fixtures still gate [FRAMEWORK-COMPATIBILITY.md](./FRAMEWORK-COMPATIBILITY.md).
+
 ## Prod smoke (`*.test.aft.page`)
 
-Not status. Status pings `/health`. Smoke **deploys**, hits MCP `tools/call`, claims the URL, then deletes `test--*` leftovers.
+Not status. Status pings `/health`. Smoke **deploys**, hits MCP `tools/call`, claims the URL, then deletes **smoke catalog** `test--{case}` leftovers (not `test--fw-*` / T2U).
 
 | When | How |
 | --- | --- |
@@ -130,7 +144,7 @@ Covers (Worker isolate): HTML paste, multi-file, missing index → 404, `no_file
 
 After the isolate suite, API asks **aft-page-mcp** `POST /flight` (other isolate) to GET public `test--*` + `/claim` + active custom domains. Cron and ops Run now get TLS without a laptop. `npm run smoke` still does MCP JSON-RPC as a real client. Same-isolate `tools/call` is API→MCP→API and deadlocks — do not add it back. Marketing landing is optional.
 
-Does **not** allocate a 10–50 MB payload or 201-file `too_many_files` in prod. Invite case skips email send. Last canaries stay up until the next run’s sweep.
+Does **not** allocate a 25–100 MB payload or 501-file `too_many_files` in prod. Invite case skips email send. Last canaries stay up until the next run’s sweep.
 
 ## Critical items — [NASA LLIS 803](https://llis.nasa.gov/lesson/803)
 

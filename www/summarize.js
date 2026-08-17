@@ -68,9 +68,7 @@
     ".aft-sum-row .aft-sum-go{color:var(--faint,#52525b)}" +
     ".aft-sum-row:hover .aft-sum-go{color:var(--quiet,#a1a1aa)}" +
     ".aft-sum-hint{margin:8px 2px 0;min-height:1em;font-size:12px;color:var(--good,#22c55e)}" +
-    "@media (max-width:520px){.aft-sum-btn{left:14px;bottom:calc(14px + env(safe-area-inset-bottom));" +
-    "width:44px;height:44px;padding:0;justify-content:center;gap:0;font-size:0}" +
-    ".aft-sum-pop{left:14px;bottom:calc(64px + env(safe-area-inset-bottom))}}";
+    "@media (max-width:760px){.aft-sum-btn,.aft-sum-pop{display:none!important}}";
 
   var style = document.createElement("style");
   style.textContent = css;

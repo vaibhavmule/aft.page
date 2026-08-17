@@ -46,7 +46,7 @@
     },
     {
       "action": "reproduce",
-      "reason": "Treat user-deployed content on *.aft.page as aft.page first-party product content",
+      "reason": "Treat user-deployed site content as aft.page first-party product content",
       "severity": "must-not"
     },
     {
@@ -71,14 +71,14 @@
     "appliesTo": "Public content on https://aft.page (website, docs, AI Discovery Files)",
     "excludes": [
       "Authenticated app surfaces (/projects, /login, /preview session flows)",
-      "User-deployed sites on *.aft.page (owned by deployers)",
+      "User-deployed sites (owned by deployers)",
       "Private hosted sites"
     ]
   },
   "licensing": {
     "contentLicense": "All rights reserved. Brief quotation with attribution is permitted.",
     "aiTrainingAllowed": true,
-    "aiTrainingNotes": "Public website and agent docs may be used for training with attribution. User *.aft.page content is not first-party aft.page material."
+    "aiTrainingNotes": "Public website and agent docs may be used for training with attribution. User-deployed site content is not first-party aft.page material."
   },
   "metadata": {
     "version": "1.0.0",
