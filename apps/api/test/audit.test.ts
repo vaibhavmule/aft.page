@@ -32,6 +32,18 @@ describe("originMayActOnSlug", () => {
 
 describe("audit suite", () => {
   it("passes locally and writes the last run", async () => {
+    // Orphan KV pointers (D1 already gone) used to suffix slugs and fail tokquery/hash/cli.
+    const ghost = JSON.stringify({
+      deployId: "dep_ghost",
+      createdAt: "2026-08-01T00:00:00.000Z",
+      fileCount: 1,
+    });
+    await env.SITES.put("site:test--a-tokq", ghost);
+    await env.SITES.put("site:test--a-hash", ghost);
+    await env.SITES.put("site:test--a-secrets", ghost);
+    await env.SITES.put("site:test--a-cli", ghost);
+    await env.SITES.put("site:test--a-enum", ghost);
+    await env.SITES.put("site:test--a-aclrev", ghost);
     const result = await runAuditSuite(env, { trigger: "test" });
     const failed = result.cases.filter((c) => !c.ok);
     expect(failed, JSON.stringify(failed, null, 2)).toEqual([]);

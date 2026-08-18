@@ -23,7 +23,7 @@ The product expands with what AI creates — not with website-builder features.
 
 Deploy HTML.
 
-Paste, upload, or MCP → live `*.aft.page` URL.
+Paste, upload, or MCP → live URL.
 No account. No website builder. Agent-first.
 
 ## Tomorrow

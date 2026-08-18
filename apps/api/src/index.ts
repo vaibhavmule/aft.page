@@ -39,6 +39,14 @@ import { refreshCfPracticesIfStale } from "./cf-practices";
 import { pruneAuditRuns, runAuditSuite } from "./audit";
 import { attachPublicFlight, pruneSmokeRuns, runSmokeSuite, SMOKE_CRON } from "./smoke";
 import { parseDeployPreviewLabel, smokeSlugForCase } from "./site-url";
+import {
+  alertIfAuditFailed,
+  alertIfSmokeFailed,
+  alertIfStatusMajor,
+  alertPlatform500,
+  alertUnhandled,
+  maybeSendDeployDigest,
+} from "./ops-alert";
 import { handleChangelog } from "./changelog";
 import {
   handleCustomDomainRoute,
@@ -52,10 +60,15 @@ export default {
     const bounced = redirectHttpToHttps(request);
     if (bounced) return bounced;
     try {
-      return withHsts(await routeRequest(request, env, ctx));
+      const res = withHsts(await routeRequest(request, env, ctx));
+      if (res.status >= 500) {
+        ctx.waitUntil(alertPlatform500(env, request, res).catch(() => false));
+      }
+      return res;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error(JSON.stringify({ level: "error", message }));
+      ctx.waitUntil(alertUnhandled(env, request, err).catch(() => false));
       return withHsts(json({ error: "internal" }, 500));
     }
   },
@@ -68,6 +81,7 @@ export default {
     if (controller.cron === SMOKE_CRON) {
       try {
         const result = await runSmokeSuite(env, { trigger: "cron" });
+        ctx.waitUntil(alertIfSmokeFailed(env, result).catch(() => false));
         ctx.waitUntil(
           attachPublicFlight(env, result.id).catch((err) => {
             const message = err instanceof Error ? err.message : String(err);
@@ -75,20 +89,31 @@ export default {
           }),
         );
         ctx.waitUntil(
-          runAuditSuite(env, { trigger: "cron" }).catch((err) => {
-            const message = err instanceof Error ? err.message : String(err);
-            console.error(JSON.stringify({ level: "error", event: "audit_cron", message }));
-          }),
+          runAuditSuite(env, { trigger: "cron" })
+            .then((audit) => alertIfAuditFailed(env, audit))
+            .catch((err) => {
+              const message = err instanceof Error ? err.message : String(err);
+              console.error(JSON.stringify({ level: "error", event: "audit_cron", message }));
+            }),
         );
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         console.error(JSON.stringify({ level: "error", event: "smoke_cron", message }));
+        ctx.waitUntil(
+          alertUnhandled(
+            env,
+            new Request("https://api.aft.page/health"),
+            err,
+          ).catch(() => false),
+        );
       }
       return;
     }
     ctx.waitUntil(
       (async () => {
-        await runStatusChecks(env);
+        const snap = await runStatusChecks(env);
+        await alertIfStatusMajor(env, snap);
+        await maybeSendDeployDigest(env);
         await refreshCfPracticesIfStale(env);
         await pruneDeployFailures(env);
         await pruneSiteLogs(env);

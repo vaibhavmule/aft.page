@@ -244,6 +244,10 @@ export async function moveSiteObjects(
  * metadata pointer. Safe to call repeatedly.
  */
 export async function deleteSiteObjects(env: Env, slug: string): Promise<void> {
+  // Free the slug pointer first. R2/file deletes can throw; allocateUniqueSlug
+  // only checks `site:{slug}`, so a leftover pointer makes audit/smoke suffix.
+  await env.SITES.delete(`site:${slug}`);
+
   if (env.BUCKET) {
     const prefix = `sites/${slug}/`;
     let cursor: string | undefined;
@@ -262,8 +266,6 @@ export async function deleteSiteObjects(env: Env, slug: string): Promise<void> {
     await Promise.all(listing.keys.map((k) => env.SITES.delete(k.name)));
     kvCursor = listing.list_complete ? undefined : listing.cursor;
   } while (kvCursor);
-
-  await env.SITES.delete(`site:${slug}`);
 }
 
 function guessMime(path: string): string {

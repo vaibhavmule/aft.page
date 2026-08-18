@@ -5,13 +5,13 @@
     "email": "hello@aft.page"
   },
   "metadata": {
-    "description": "Deploy small software to a live *.aft.page URL"
+    "description": "Deploy small software to a live URL"
   },
   "plugins": [
     {
       "name": "aft-page",
       "source": "./apps/plugin",
-      "description": "Deploy small software to a live, shareable *.aft.page URL.",
+      "description": "Deploy small software to a live, shareable URL.",
       "version": "0.1.0"
     }
   ]

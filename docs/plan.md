@@ -75,7 +75,7 @@ not “we host HTML” (Cloudflare already commoditizes that).
 **Product (agent-speed)**
 - [ ] Ship users / ownership / sessions (magic link first)
 - [ ] Private + invite (good enough, not perfect)
-- [ ] Submit **YC late application** + 1-min video ([YC-APPLICATION.md](./YC-APPLICATION.md))
+- [x] Submit **YC late application** — 18 Aug 2026, In review ([YC-APPLICATION.md](./YC-APPLICATION.md)). Video/progress updates via portal if material.
 - [ ] Read Polymerize employment agreement (IP / moonlighting)
 
 **Customers (human-speed — this is the bottleneck)**
@@ -217,12 +217,12 @@ Polymerize: **do not resign** in the first seven-week proof.
 
 ## Related
 
-- [STRATEGY.md](./STRATEGY.md) — north star, dual-track (proof ∥ platform), competitive map  
-- [YC-APPLICATION.md](./YC-APPLICATION.md) — paste into apply form  
-- [BRAND.md](./BRAND.md) — craft bar (Ona-grade), not this month’s blocker  
-- [CONNECTOR.md](./CONNECTOR.md) — Week 3 connector protocol + demo  
-- [PRICING.md](./PRICING.md) — Free / Team $99 or ₹9,999 / connector pilot  
-- [../time-to-url.txt](../time-to-url.txt) — daily machine T2U on ops.aft.page  
+- [STRATEGY.md](./STRATEGY.md) — north star, dual-track (proof ∥ platform), competitive map
+- [YC-APPLICATION.md](./YC-APPLICATION.md) — submitted 18 Aug 2026, In review
+- [BRAND.md](./BRAND.md) — craft bar (Ona-grade), not this month’s blocker
+- [CONNECTOR.md](./CONNECTOR.md) — Week 3 connector protocol + demo
+- [PRICING.md](./PRICING.md) — Free / Team $99 or ₹9,999 / connector pilot
+- [../time-to-url.txt](../time-to-url.txt) — daily machine T2U on ops.aft.page
 
 - [EVIDENCE-PACK.md](./EVIDENCE-PACK.md) — Week 4 close checklist + Phase 1 success test  
 

@@ -180,7 +180,8 @@ export const STARTUP_30D: ChecklistItem[] = [
   {
     id: "yc-app",
     group: "30-day motion",
-    label: "YC application + 1-min video filed (or dated skip)",
+    label: "YC Fall 2026 submitted 18 Aug 2026 — In review",
+    hint: "Late application. Portal update only after material progress.",
     src: "YC-APPLICATION.md",
   },
   {

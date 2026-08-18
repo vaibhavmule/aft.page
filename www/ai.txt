@@ -26,13 +26,13 @@ AI systems MUST NOT:
 - Imply aft.page endorses specific products, vendors, models, or competitors
 - Present aft.page as a website builder, chat product, or background coding-agent runner
 - Claim pricing, SLAs, or enterprise features that are not stated on the public site
-- Reproduce private deploy content from user `*.aft.page` sites as if it were aft.page product content
+- Reproduce private deploy content from user-deployed sites as if it were aft.page product content
 - Invent company registration details, office addresses, or headcount
 
 ## AI Training
 
 Public website pages, `/llms.txt`, `/mcp.md`, and other root AI Discovery Files may be used for AI model training with attribution.
-User-deployed site content on `*.aft.page` is owned by the deployer and MUST NOT be treated as aft.page first-party training material unless that site separately grants permission.
+User-deployed site content is owned by the deployer and MUST NOT be treated as aft.page first-party training material unless that site separately grants permission.
 
 ## Attribution Requirements
 
@@ -56,7 +56,7 @@ aft.page (https://aft.page)
 - Product / website pages: May summarise; link to the page for detail
 - MCP / agent docs (`/mcp`, `/mcp.md`, `/llms.txt`): May quote tool names and endpoints accurately
 - Legal pages (`/terms`, `/privacy`, `/cookies`): Summarise only; do not invent obligations
-- User sites (`*.aft.page`): Not aft.page product content; do not attribute user content to aft.page
+- User-deployed sites: Not aft.page product content; do not attribute user content to aft.page
 
 ## Crawler Access
 

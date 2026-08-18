@@ -124,7 +124,7 @@ describe("connector", () => {
         title: "Team offsite lunch",
         amount: 4280,
         currency: "INR",
-        submitter: "Priya",
+        submitter: "Alex",
         team: "Marketing",
         when: "yesterday",
       },

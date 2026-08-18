@@ -4,7 +4,7 @@
     "title": "Team offsite lunch",
     "amount": 4280,
     "currency": "INR",
-    "submitter": "Priya",
+    "submitter": "Alex",
     "team": "Marketing",
     "when": "yesterday"
   },
@@ -13,7 +13,7 @@
     "title": "AWS sandbox credits",
     "amount": 12000,
     "currency": "INR",
-    "submitter": "Arjun",
+    "submitter": "Sam",
     "team": "Eng",
     "when": "2 days ago"
   },
@@ -22,7 +22,7 @@
     "title": "Design tool seats",
     "amount": 8900,
     "currency": "INR",
-    "submitter": "Maya",
+    "submitter": "Jordan",
     "team": "Design",
     "when": "today"
   }

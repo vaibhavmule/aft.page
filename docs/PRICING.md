@@ -13,7 +13,7 @@ the $499 upsell.
 
 ## Free
 
-- Hosted public deploys (`*.aft.page`)
+- Hosted public deploys
 - MCP / agent deploy
 - Claim + basic share for dogfooding
 

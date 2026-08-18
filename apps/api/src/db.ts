@@ -727,6 +727,30 @@ export async function listFeedback(
   }));
 }
 
+export type WaitlistSignupRow = {
+  email: string;
+  source: string;
+  createdAt: string;
+};
+
+export async function listWaitlistSignups(
+  env: Env,
+  limit = 200,
+): Promise<WaitlistSignupRow[]> {
+  await ensureDb(env);
+  const { results } = await env.DB.prepare(
+    `SELECT email, source, created_at FROM waitlist_signups
+     ORDER BY created_at DESC LIMIT ?`,
+  )
+    .bind(limit)
+    .all<{ email: string; source: string; created_at: string }>();
+  return (results || []).map((r) => ({
+    email: r.email,
+    source: r.source,
+    createdAt: r.created_at,
+  }));
+}
+
 export type ConnectorRow = {
   id: string;
   slug: string;

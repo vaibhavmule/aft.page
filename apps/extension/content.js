@@ -204,7 +204,7 @@ function createMenuItem(getHtml) {
   btn.setAttribute(BTN_ATTR, "claude-menu");
   btn.className = "aft-deploy-menu-item";
   btn.textContent = "Deploy to aft.page";
-  btn.title = "Publish this HTML to a new *.aft.page URL";
+  btn.title = "Publish this HTML to a live URL";
   btn.setAttribute("role", "menuitem");
 
   btn.addEventListener("click", async (e) => {
@@ -235,7 +235,7 @@ function createMenuItem(getHtml) {
       btn.disabled = false;
       setTimeout(() => {
         btn.textContent = "Deploy to aft.page";
-        btn.title = "Publish this HTML to a new *.aft.page URL";
+        btn.title = "Publish this HTML to a live URL";
       }, 2200);
     }
   });

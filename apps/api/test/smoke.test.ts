@@ -2,8 +2,23 @@
 import { describe, it, expect } from "vitest";
 import { env } from "cloudflare:test";
 import { testHostCase } from "../src/http";
-import { attachPublicFlight, loadLatestSmokeRun, runSmokeSuite } from "../src/smoke";
+import {
+  attachPublicFlight,
+  loadLatestSmokeRun,
+  runSmokeSuite,
+  smokeCatalogSlugs,
+} from "../src/smoke";
 import { call, pasteHtml } from "./helpers";
+
+describe("smoke catalog slugs", () => {
+  it("owns html/files canaries and not compat probe slugs", () => {
+    const slugs = smokeCatalogSlugs();
+    expect(slugs).toContain("test--html");
+    expect(slugs).toContain("test--files");
+    expect(slugs).not.toContain("test--fw-1");
+    expect(slugs.some((s) => s.startsWith("test--fw-"))).toBe(false);
+  });
+});
 
 describe("test host routing", () => {
   it("parses case.test.aft.page and apex", () => {

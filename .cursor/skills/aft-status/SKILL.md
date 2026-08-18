@@ -10,7 +10,7 @@ Workspace root `Projects/aft` is **not** a git repo. Two products:
 
 | Path | Repo | Live |
 | --- | --- | --- |
-| `aft.page/` | github.com/vaibhavmule/aft.page | hosted `*.aft.page` |
+| `aft.page/` | github.com/vaibhavmule/aft.page | hosted product |
 | `cli/` | github.com/vaibhavmule/aft | OSS customer-cloud CLI |
 | `docs/` | unversioned workspace notes | — |
 

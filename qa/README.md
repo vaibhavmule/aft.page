@@ -13,6 +13,7 @@ Founder-facing umbrella. **Security ship gate is Hijack CIL**, not this folder a
 | 5. Page smoke | `node qa/pages/check.mjs` | Every public URL loads (fetch or CF Browser Rendering) |
 | 6. Browser-sec | `node qa/browser-sec/check.mjs` | Junk-path 404, private no-leak, ops login gate (HTTP checks of browser-visible gates) |
 | Live CLI T2U (opt-in) | `node qa/time-to-url/check.mjs` | Build/deploy HTML, Vite, and Next fixtures; measure URL readiness |
+| Compat probe (opt-in) | `node qa/compat-probe/check.mjs` then `run.mjs` | Random GitHub framework repos → `aft deploy`; log URL or fail |
 
 Passmark / Bug0 hire: **deferred**. Never the security gate.
 
@@ -42,5 +43,5 @@ cd apps/api && npm run audit
 ## Cadence
 
 - **API PR / deploy:** Vitest + `npm run audit` (when `SMOKE_SECRET` available)
-- **Daily:** `audit:security` + Ops Probes
+- **Daily:** `audit:security` + Ops Probes + compat probe GH Action (`qa/compat-probe/`)
 - **Weekly / pre-launch:** `node qa/check.mjs`

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Custom domains — Docs — aft.page</title>
-    <meta name="description" content="Point your hostname at aft.page after claim. Invite-only during beta. CNAME to cname.aft.page; *.aft.page URL stays." />
+    <meta name="description" content="Point your hostname at aft.page after claim. Invite-only during beta. CNAME to cname.aft.page; your default URL stays." />
     <link rel="canonical" href="https://aft.page/docs/domains/" />
     <link rel="alternate" type="text/markdown" href="https://aft.page/docs.md" title="Docs agent index (Markdown)" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -14,12 +14,12 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="aft.page" />
     <meta property="og:title" content="Custom domains — Docs — aft.page" />
-    <meta property="og:description" content="Point your hostname at aft.page after claim. Invite-only during beta. CNAME to cname.aft.page; *.aft.page URL stays." />
+    <meta property="og:description" content="Point your hostname at aft.page after claim. Invite-only during beta. CNAME to cname.aft.page; your default URL stays." />
     <meta property="og:url" content="https://aft.page/docs/domains/" />
     <meta property="og:image" content="https://aft.page/og.png" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Custom domains — Docs — aft.page" />
-    <meta name="twitter:description" content="Point your hostname at aft.page after claim. Invite-only during beta. CNAME to cname.aft.page; *.aft.page URL stays." />
+    <meta name="twitter:description" content="Point your hostname at aft.page after claim. Invite-only during beta. CNAME to cname.aft.page; your default URL stays." />
     <meta name="twitter:image" content="https://aft.page/og.png" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css" />
@@ -148,7 +148,7 @@
       <div class="docs-hero">
         <p class="docs-crumb"><a href="/docs">Docs</a> / Custom domains</p>
         <h1>Custom domains</h1>
-        <p class="lede">Point your hostname at aft.page after claim. Invite-only during beta. CNAME to cname.aft.page; *.aft.page URL stays.</p>
+        <p class="lede">Point your hostname at aft.page after claim. Invite-only during beta. CNAME to cname.aft.page; your default URL stays.</p>
         <div class="docs-machine">
           <a class="btn btn-ghost" href="/docs">All docs</a>
           <a class="btn btn-ghost" href="/docs.md">Agent index</a>
@@ -194,10 +194,9 @@
             <p>Add the hostname in the Domains tab, then at your DNS host:</p>
             <pre><code>CNAME  app.example.com  →  cname.aft.page</code></pre>
             <p>
-              A new domain starts in <code>pending</code>. The
-              <code>*.aft.page</code> URL keeps working the whole time —
-              private sign-in still uses that subdomain for cookies /
-              sessions, so don't remove it.
+              A new domain starts in <code>pending</code>. Your default URL
+              keeps working the whole time — private sign-in still uses that
+              hostname for cookies / sessions, so don't remove it.
             </p>
           </section>
 

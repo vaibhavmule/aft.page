@@ -173,12 +173,13 @@ export async function runAuditSuite(
     const slug = auditSlug("tokq");
     const d = await deployHtml(env, slug, "<p>tokq</p>");
     assert(d.status === 200, errOf(d.body));
+    const live = liveSlug(slug, d.body);
     const token = String(d.body.editToken || "");
-    const q = await patchHtml(env, slug, "<p>via-query</p>", { queryToken: token });
+    const q = await patchHtml(env, live, "<p>via-query</p>", { queryToken: token });
     assert(q.status >= 400, `query token accepted ${q.status}`);
-    const h = await patchHtml(env, slug, "<p>via-header</p>", { editToken: token });
+    const h = await patchHtml(env, live, "<p>via-header</p>", { editToken: token });
     assert(h.status === 200, `header ${errOf(h.body)}`);
-    return { detail: "query rejected, header ok", url: publicUrl(slug, root) };
+    return { detail: "query rejected, header ok", url: publicUrl(live, root) };
   });
 
   await run("claimed", async () => {
@@ -340,47 +341,49 @@ export async function runAuditSuite(
     const slug = auditSlug("aclrev");
     const d = await deployHtml(env, slug, "<p>acl-rev-secret</p>");
     assert(d.status === 200, errOf(d.body));
+    const live = liveSlug(slug, d.body);
     const owner = await findOrCreateUser(env, "audit-acl-rev-owner@aft.page");
-    await assignSiteOwner(env, slug, owner.id);
-    await setSiteVisibility(env, slug, "private");
+    assert(await assignSiteOwner(env, live, owner.id), "assign owner");
+    assert(await setSiteVisibility(env, live, "private"), "private");
     const member = await findOrCreateUser(env, "audit-acl-rev-mem@aft.page");
-    await upsertSiteMember(env, slug, member.id, member.email, "view");
+    await upsertSiteMember(env, live, member.id, member.email, "view");
     const session = await createSession(env, member.id);
     const cookie = `aft_session=${session.token}`;
     const before = await serveSite(
-      new Request(`https://${slug}.${root}/`, { headers: { cookie, accept: "text/html" } }),
+      new Request(`https://${live}.${root}/`, { headers: { cookie, accept: "text/html" } }),
       env,
-      slug,
+      live,
       "/",
     );
     assert(before.status === 200, `member before ${before.status}`);
     assert((await before.text()).includes("acl-rev-secret"), "member should see html");
-    assert(await removeSiteMember(env, slug, member.id), "remove member");
+    assert(await removeSiteMember(env, live, member.id), "remove member");
     const after = await serveSite(
-      new Request(`https://${slug}.${root}/`, { headers: { cookie, accept: "text/html" } }),
+      new Request(`https://${live}.${root}/`, { headers: { cookie, accept: "text/html" } }),
       env,
-      slug,
+      live,
       "/",
     );
     assert(after.status === 401, `revoked ${after.status}`);
     const body = await after.text();
     assert(!body.includes("acl-rev-secret"), "revoked body leak");
-    return { detail: "revoke → 401 deny", url: publicUrl(slug, root) };
+    return { detail: "revoke → 401 deny", url: publicUrl(live, root) };
   });
 
   await run("secrets", async () => {
     const slug = auditSlug("secrets");
     const d = await deployHtml(env, slug, "<p>sec</p>");
     assert(d.status === 200, errOf(d.body));
+    const live = liveSlug(slug, d.body);
     const unauth = await callLifecycle(
       env,
-      new Request(`https://api.${root}/v1/sites/${slug}/secrets`),
+      new Request(`https://api.${root}/v1/sites/${live}/secrets`),
     );
     assert(unauth.status === 401, `unauth ${unauth.status}`);
     const token = String(d.body.editToken || "");
     const listed = await callLifecycle(
       env,
-      new Request(`https://api.${root}/v1/sites/${slug}/secrets`, {
+      new Request(`https://api.${root}/v1/sites/${live}/secrets`, {
         headers: { "x-aft-edit-token": token },
       }),
     );
@@ -396,9 +399,10 @@ export async function runAuditSuite(
     const slug = auditSlug("hash");
     const d = await deployHtml(env, slug, "<p>hash</p>");
     assert(d.status === 200, errOf(d.body));
+    const live = liveSlug(slug, d.body);
     const token = String(d.body.editToken || "");
-    const stored = await getEditTokenHash(env, slug);
-    assert(stored && stored !== token, "plaintext in D1");
+    const stored = await getEditTokenHash(env, live);
+    assert(stored && stored !== token, stored ? "plaintext in D1" : "no edit hash");
     return { detail: "hash ≠ token" };
   });
 
@@ -488,7 +492,8 @@ export async function runAuditSuite(
       authorization: `Bearer ${session.token}`,
     });
     assert(owned.status === 200, errOf(owned.body));
-    assert((await getSiteOwnerId(env, slug)) === user.id, "not owned via Bearer");
+    const live = liveSlug(slug, owned.body);
+    assert((await getSiteOwnerId(env, live)) === user.id, "not owned via Bearer");
     return { detail: "bad port + single-use code + Bearer own" };
   });
 
@@ -496,11 +501,12 @@ export async function runAuditSuite(
     const slug = auditSlug("enum");
     const d = await deployHtml(env, slug, "<p>enum</p>");
     assert(d.status === 200, errOf(d.body));
+    const live = liveSlug(slug, d.body);
     const user = await findOrCreateUser(env, "audit-enum-owner@aft.page");
-    await assignSiteOwner(env, slug, user.id);
-    await setSiteVisibility(env, slug, "private");
-    const a = await accessReq(env, slug, "unknown-a@example.com");
-    const b = await accessReq(env, slug, "unknown-b@example.com");
+    assert(await assignSiteOwner(env, live, user.id), "assign owner");
+    assert(await setSiteVisibility(env, live, "private"), "private");
+    const a = await accessReq(env, live, "unknown-a@example.com");
+    const b = await accessReq(env, live, "unknown-b@example.com");
     assert(a.status === 200 && b.status === 200, `access ${a.status}/${b.status}`);
     assert(a.body.message === b.body.message, "shape differs");
     return { detail: "same ok message" };
@@ -675,13 +681,29 @@ async function persistAuditRun(env: Env, result: AuditRunResult): Promise<void> 
 }
 
 async function sweepAuditSites(env: Env): Promise<void> {
+  const slugs = new Set<string>();
   const { results } = await env.DB.prepare(
     `SELECT slug FROM sites WHERE slug LIKE ?`,
   )
     .bind(`${AUDIT_SLUG_PREFIX}%`)
     .all<{ slug: string }>();
-  for (const row of results || []) {
-    await destroyAuditSite(env, row.slug);
+  for (const row of results || []) slugs.add(row.slug);
+
+  let cursor: string | undefined;
+  do {
+    const listing = await env.SITES.list({
+      prefix: `site:${AUDIT_SLUG_PREFIX}`,
+      cursor,
+    });
+    for (const key of listing.keys) {
+      const slug = key.name.slice("site:".length);
+      if (slug.startsWith(AUDIT_SLUG_PREFIX)) slugs.add(slug);
+    }
+    cursor = listing.list_complete ? undefined : listing.cursor;
+  } while (cursor);
+
+  for (const slug of slugs) {
+    await destroyAuditSite(env, slug);
   }
 }
 
@@ -690,13 +712,24 @@ export async function destroyAuditSite(env: Env, slug: string): Promise<void> {
   try {
     await deleteSiteObjects(env, slug);
   } catch {
-    /* miss ok */
+    await env.SITES.delete(`site:${slug}`).catch(() => {});
   }
-  await deleteSite(env, slug);
+  try {
+    await deleteSite(env, slug);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(JSON.stringify({ level: "error", where: "audit_sweep", slug, message }));
+  }
 }
 
 function publicUrl(slug: string, root: string): string {
   return `https://${slug}.${root}`;
+}
+
+/** Deploy may suffix if an orphan `site:{slug}` KV pointer is still live. */
+function liveSlug(requested: string, body: Record<string, unknown>): string {
+  const got = typeof body.slug === "string" ? body.slug : "";
+  return got || requested;
 }
 
 async function callOps(env: Env, request: Request): Promise<Response> {

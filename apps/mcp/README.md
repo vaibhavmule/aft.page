@@ -1,7 +1,7 @@
 # aft.page MCP
 
-Thin MCP so **any agent** can deploy small software to a live `*.aft.page`
-URL — no account required. Not a control plane (see
+Thin MCP so **any agent** can deploy small software to a live URL —
+no account required. Not a control plane (see
 [`docs/ADR-MCP-THIN.md`](../../docs/ADR-MCP-THIN.md)).
 
 ## Prefer remote

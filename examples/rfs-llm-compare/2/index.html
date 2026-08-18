@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Round 2 — four LLMs on aft.page as it is</title>
+    <meta name="description" content="Gemini, Grok, ChatGPT, Claude advising live aft.page against the YC Small Software RFS." />
+    <meta name="robots" content="noindex" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css" />
+    <style>
+      :root {
+        --void: #000;
+        --panel: #0a0a0a;
+        --line: #27272a;
+        --ink: #fafafa;
+        --quiet: #a1a1aa;
+        --faint: #52525b;
+        --good: #22c55e;
+      }
+      html { background: var(--void) }
+      * { box-sizing: border-box }
+      html, body { margin: 0; color: var(--ink) }
+      body {
+        font: 15px/1.5 "Geist Variable", "Geist", "Segoe UI", system-ui, sans-serif;
+        min-height: 100vh;
+        overflow-x: clip;
+      }
+      a { color: var(--ink) }
+      .shell {
+        display: grid;
+        grid-template-columns: 12.5rem minmax(0, 1fr);
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+      nav.toc {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        padding: 1.5rem 1rem 2rem 1.25rem;
+        border-right: 1px solid var(--line);
+        min-height: 100vh;
+      }
+      nav.toc p {
+        font-family: "Geist Mono Variable", ui-monospace, Menlo, monospace;
+        font-size: 0.68rem;
+        color: var(--faint);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin: 0 0 0.85rem;
+      }
+      nav.toc a {
+        display: block;
+        color: var(--quiet);
+        text-decoration: none;
+        font-size: 0.82rem;
+        padding: 0.28rem 0;
+      }
+      nav.toc a:hover, nav.toc a:focus { color: var(--ink) }
+      main { padding: 2rem 1.25rem 5rem 1.5rem; min-width: 0 }
+      .kicker {
+        font-family: "Geist Mono Variable", ui-monospace, Menlo, monospace;
+        font-size: 0.75rem;
+        color: var(--faint);
+        margin: 0 0 0.5rem;
+      }
+      h1 {
+        font-size: 1.85rem;
+        letter-spacing: -0.03em;
+        margin: 0 0 0.4rem;
+        font-weight: 560;
+      }
+      h2 {
+        font-size: 1.05rem;
+        margin: 2.4rem 0 0.7rem;
+        letter-spacing: -0.02em;
+        font-weight: 560;
+      }
+      h3 { font-size: 0.92rem; margin: 0 0 0.35rem; font-weight: 560 }
+      p { margin: 0 0 0.75rem }
+      .quiet { color: var(--quiet) }
+      .lede { max-width: 44rem }
+      .quote {
+        border-left: 1px solid var(--line);
+        padding: 0.15rem 0 0.15rem 0.9rem;
+        color: var(--quiet);
+        margin: 0.4rem 0 0.9rem;
+        max-width: 42rem;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.75rem;
+        margin: 1.1rem 0;
+      }
+      .stat {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        padding: 0.75rem 0.85rem;
+      }
+      .stat b { display: block; font-size: 0.78rem; font-weight: 560; margin-bottom: 0.15rem }
+      .stat span { color: var(--quiet); font-size: 0.8rem }
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin: 0.9rem 0 1.2rem;
+      }
+      .card {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        padding: 0.9rem 1rem;
+        min-width: 0;
+      }
+      .card ul, .agree ul { margin: 0.35rem 0 0; padding-left: 1.1rem }
+      .card li, .agree li { margin: 0.28rem 0; color: var(--quiet) }
+      .tag {
+        font-family: "Geist Mono Variable", ui-monospace, Menlo, monospace;
+        font-size: 0.68rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--faint);
+        margin: 0 0 0.45rem;
+      }
+      .agree {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        padding: 1rem 1.1rem;
+        margin: 0.6rem 0 1.2rem;
+      }
+      table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 0.6rem 0 1.4rem }
+      th, td {
+        border: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+        padding: 0.55rem 0.6rem;
+      }
+      th { background: var(--panel); font-weight: 560; font-size: 0.75rem }
+      td { color: var(--quiet) }
+      th:first-child, td:first-child { color: var(--ink); width: 8.2rem; font-weight: 560 }
+      .wrap { overflow-x: auto }
+      .call {
+        border: 1px solid var(--line);
+        outline: 1px solid var(--good);
+        outline-offset: -1px;
+        padding: 0.95rem 1.05rem;
+        margin: 1.2rem 0 0;
+        max-width: 48rem;
+      }
+      .call b { display: block; margin-bottom: 0.3rem }
+      @media (max-width: 1024px) {
+        .shell { grid-template-columns: 1fr }
+        nav.toc {
+          position: static;
+          min-height: 0;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+          padding: 1rem 1.1rem;
+        }
+        nav.toc a { display: inline-block; padding: 0.2rem 0.7rem 0.2rem 0 }
+        .stats { grid-template-columns: 1fr 1fr }
+      }
+      @media (max-width: 640px) {
+        .grid2, .stats { grid-template-columns: 1fr }
+        main { padding: 1.25rem 1rem 4rem }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <nav class="toc" aria-label="Sections">
+        <p>Round 2</p>
+        <a href="/">Latest · 1.2</a>
+        <a href="/1/">Round 1</a>
+        <a href="#read">What changed</a>
+        <a href="#gemini">Gemini</a>
+        <a href="#grok">Grok</a>
+        <a href="#chatgpt">ChatGPT</a>
+        <a href="#claude">Claude</a>
+        <a href="#same">All four agree</a>
+        <a href="#beyond">Beyond overlap</a>
+        <a href="#matrix">Side by side</a>
+        <a href="#take">This month</a>
+      </nav>
+      <main>
+        <p class="kicker">Round 2 archive · <a href="/">latest (1.2)</a></p>
+        <h1>Round 2: they stopped inventing a company</h1>
+        <p class="lede quiet">
+          Same RFS, but this time they were handed the live product, the freeze, and five named voices.
+          They now argue about defaults, not whether to build MCP.
+        </p>
+
+        <div class="stats">
+          <div class="stat"><b>Gemini</b><span>Security layer. $15/builder. 50–500.</span></div>
+          <div class="stat"><b>Grok</b><span>Stay on the freeze. Tiny teams. Don’t invite backends yet.</span></div>
+          <div class="stat"><b>ChatGPT</b><span>Token-gate unclaimed now. Org subscription + meter.</span></div>
+          <div class="stat"><b>Claude</b><span>Invite is the product. $49 workspace. Design for the cofounder.</span></div>
+        </div>
+
+        <h2 id="read">What changed vs round 1</h2>
+        <p class="lede quiet">
+          Round 1 was four greenfield kits. Round 2 is four operating plans for a company that already has
+          Drop, CLI, MCP, claim, invite, vault, rollback. Nobody told you to build <code>aft deploy</code>.
+          The fight is: public-first, freeze vs safety, who you sell, how you charge, and whether a static page counts as Small Software.
+        </p>
+
+        <h2 id="gemini">Gemini</h2>
+        <p class="quote">“The permission and identity layer for agent-generated apps.”</p>
+        <div class="card">
+          <p>Sells <b>control, not hosting</b>. Cloudflare executes; AFT is the governance boundary between agent code and company data. Largest beachhead of the four.</p>
+          <ul>
+            <li><b>ICP:</b> eng managers at 50–500. Sarah, analytics lead at a 120-person fintech, gave up hosting a refund checker and Slack’d an HTML file.</li>
+            <li><b>Not first:</b> indie public apps — Vercel/CF already win.</li>
+            <li><b>Price:</b> $15/builder/month, viewers free. Defends it as the way to not tax tiny audiences.</li>
+            <li><b>Metric:</b> Weekly Active Consumers (people who open an app they did not create).</li>
+            <li><b>Post-gate:</b> egress-stripping proxy, auto domain wall (invite alex@company.com implies team), invitee capability prompt, fork-to-inspect, plugin installer, audit, domain directory.</li>
+            <li><b>This month:</b> keep freeze, but hand-onboard 10 eng managers. Private-by-default. No SAML — email-domain isolation. No native DB/queues.</li>
+          </ul>
+        </div>
+
+        <h2 id="grok">Grok</h2>
+        <p class="quote">“aft.page makes agent-built small software live, claimable, and shareable like a Google Doc.”</p>
+        <div class="card">
+          <p>Most faithful to what you already wrote. Least invention. Treats the freeze as law, not a vibe.</p>
+          <ul>
+            <li><b>ICP:</b> 2–8 person teams already on agents. Senior engineer at a 12-person SaaS who invited two finance people to an expense tool — that <i>is</i> the proof gate.</li>
+            <li><b>Not first:</b> anyone who needs Workspace/Entra/SCIM/app store.</li>
+            <li><b>Price:</b> pay when a claimed project is private with &gt;1 member, or when secrets/capabilities are used. Not per seat, not per deploy.</li>
+            <li><b>Metric:</b> claimed + accepted invite that returns in 7 days; second-person sessions.</li>
+            <li><b>Post-gate:</b> company env inherited by every deploy, capabilities that actually gate, isolation for worker/Next invitees, org discovery, thin audit, tiny persistent data, untrusted-by-default mode.</li>
+            <li><b>This month:</b> close stranger → claim → invite → return. Treat non-static as “do not invite yet” until isolation is real. Death = URL is free everywhere and nobody bothers to claim.</li>
+          </ul>
+        </div>
+
+        <h2 id="chatgpt">ChatGPT</h2>
+        <p class="quote">“AFT is the permissioned cloud where agent-made small software gets a durable URL and shares like a Google Doc.”</p>
+        <div class="card">
+          <p>Most precise on <b>trust architecture</b>. One freeze exception: unclaimed apps must not be public URLs.</p>
+          <ul>
+            <li><b>ICP:</b> eng managers at 20–100. Friday release-readiness dashboard that currently dies as Slack screenshots.</li>
+            <li><b>Not first:</b> nontechnical teams in regulated enterprises — you cannot invite them safely yet.</li>
+            <li><b>Price:</b> one org control-plane subscription, unlimited apps/viewers, meter execution/storage/egress.</li>
+            <li><b>Metric:</b> weekly co-used apps (invite accepted + two people, separate days).</li>
+            <li><b>Do not build (12 mo):</b> AI builder, Firebase-like BaaS, fork/marketplace/app store.</li>
+            <li><b>After proof, in order:</b> split control-plane cookies from user code → sandbox isolation → capability broker deny-by-default → recipient trust screen → company env profiles → domain OIDC (not SCIM) → audit/provenance.</li>
+            <li><b>This week:</b> 40 messages to eng managers who already have a localhost tool and can name the second user. Token-gate unclaimed now; nothing else before Sep 10.</li>
+          </ul>
+        </div>
+
+        <h2 id="claude">Claude</h2>
+        <p class="quote">“Agent-built software, shared like a Google Doc.” Lead with claim → invite → revoke, not deploy.</p>
+        <div class="card">
+          <p>Sharpest operating plan. <b>The invite is the product.</b> Sell to Alex; design for her cofounder. Most willing to pick defaults.</p>
+          <ul>
+            <li><b>ICP:</b> “agent person” at 5–50. Alex, ops lead at a 14-person logistics shop. Not the nontechnical creator yet — they arrive as invitees. Never-first: IT buying an internal app platform.</li>
+            <li><b>Price:</b> $49/month workspace when a second app appears on the same email domain. Unlimited apps, ≤25 members, viewers free forever. Individuals free forever.</li>
+            <li><b>Metric:</b> second-person week-2 return. A thousand deploys with no accepted invites is a failing company.</li>
+            <li><b>Post-gate:</b> private-by-default for signed-in deploys; viewer consent card; wrap CF sandbox + finish egress stub; <b>one KV/SQLite per app</b>; email-domain workspace as the SKU; audit; ownership transfer; worker GA for strangers; bury <code>next</code>.</li>
+            <li><b>Do not build:</b> SSO/SCIM, any generation surface, fork/remix/public gallery.</li>
+            <li><b>This week:</b> instrument the full invite funnel daily; walk the invitee path (email, mobile magic link); DM agent users and ask “who’s the second person?” If none, they are not ICP.</li>
+          </ul>
+        </div>
+
+        <h2 id="same">What all four are saying</h2>
+        <div class="agree">
+          <ul>
+            <li>Stop selling deploy. Agent → URL is Drop / Vercel / ChatGPT Sites / every plugin. The company is <b>what happens after claim</b>.</li>
+            <li>Moat is identity, permissions, secrets, capabilities, revocation, audit — not compute. Wrap Cloudflare.</li>
+            <li>Do not become a builder. Neutrality across agents is the distribution (MCP). Generation makes Cursor/Anthropic competitors.</li>
+            <li>North star is a <b>second person who returns</b>, not deployment count. Solo deploys are a failure mode.</li>
+            <li>Do not tax viewers or apps. Charge builders, workspace, or governance + usage.</li>
+            <li>This month is hand-to-hand: find people with an existing localhost tool and a named coworker. Freeze is only legitimate if it forces that loop.</li>
+            <li>Public unclaimed URLs are a trust hole. Three of four want it fixed now; Grok treats it as a later default decision.</li>
+            <li>No SAML/SCIM this year. Domain + email invites cover 1–8 users. Nontechnical people need a consent/safety guarantee, not a settings page.</li>
+            <li>Death: Vercel/CF/chat vendors add “share with email”; or an unsafe-code scandal; or 10,000 MCP deploys and zero second users.</li>
+          </ul>
+        </div>
+
+        <h2 id="beyond">What they say beyond the overlap</h2>
+        <div class="grid2">
+          <div class="card">
+            <p class="tag">Gemini only</p>
+            <ul>
+              <li>Largest ICP (50–500) and named WAC metric.</li>
+              <li>$15 per <b>builder</b> seat (not workspace).</li>
+              <li>Fork-to-inspect in a network-gated temp context.</li>
+              <li>Invitee sees a Stripe/vault permission banner before first use.</li>
+              <li>No native DB — wrap CF, 100% on secrets/egress/prompts.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <p class="tag">Grok only</p>
+            <ul>
+              <li>Smallest ICP (2–8 people, 12-person company).</li>
+              <li>Until isolation exists, <b>do not invite anyone to worker/Next apps</b>.</li>
+              <li>Pay trigger: private + second member, or secrets/capabilities used.</li>
+              <li>Least eager to break freeze for safety architecture.</li>
+              <li>Success definition fight: opened URL vs used and came back.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <p class="tag">ChatGPT only</p>
+            <ul>
+              <li>User code must never see AFT session cookies (origin split).</li>
+              <li>Ordered post-gate stack: isolation → broker → trust screen → env → OIDC → audit.</li>
+              <li>Org subscription + metered resources, not a seat or $49 flat.</li>
+              <li>Freeze exception is <b>only</b> token-gating unclaimed deploys.</li>
+              <li>Qualify users: they must already have the tool <i>and</i> name the second person.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <p class="tag">Claude only</p>
+            <ul>
+              <li>Pete’s objection: without state, Small Software is a brochure. One KV, one MCP tool, no SDK.</li>
+              <li>$49 workspace when a <b>second same-domain app</b> appears. Charge that, this year.</li>
+              <li>Bury <code>next</code> from docs; static + worker through mid-2027.</li>
+              <li>30-day idle delete as a feature (“compost”). Ownership transfer when people leave.</li>
+              <li>Design effort → invitee, not deployer DX. Demo ends on the second person’s screen.</li>
+            </ul>
+          </div>
+        </div>
+
+        <h2 id="matrix">Side by side</h2>
+        <div class="wrap">
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th>Gemini</th>
+                <th>Grok</th>
+                <th>ChatGPT</th>
+                <th>Claude</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>One-liner</td>
+                <td>Permission + identity layer</td>
+                <td>Live, claimable, shareable like a Doc</td>
+                <td>Permissioned cloud for agent-made software</td>
+                <td>Shared like a Doc — invites, updates, rollback</td>
+              </tr>
+              <tr>
+                <td>Beachhead</td>
+                <td>50–500 eng leads</td>
+                <td>2–8 person agent teams</td>
+                <td>20–100 eng managers</td>
+                <td>5–50 “agent person” (Alex)</td>
+              </tr>
+              <tr>
+                <td>Charge</td>
+                <td>$15/builder, viewers $0</td>
+                <td>Private multi-member / isolation surface</td>
+                <td>Org control plane + usage</td>
+                <td>$49 workspace, viewers $0</td>
+              </tr>
+              <tr>
+                <td>North star</td>
+                <td>Weekly Active Consumers</td>
+                <td>Invite accepted + 7-day return</td>
+                <td>Weekly co-used apps</td>
+                <td>Second-person week-2 return</td>
+              </tr>
+              <tr>
+                <td>Public-first</td>
+                <td>Kill it. Private default.</td>
+                <td>Decide this month; current design is public</td>
+                <td>Token-gate unclaimed now</td>
+                <td>Signed-in = private; Drop = unguessable</td>
+              </tr>
+              <tr>
+                <td>Storage</td>
+                <td>Don’t build DB</td>
+                <td>Thin persistent data after gate</td>
+                <td>Don’t build Firebase</td>
+                <td>One KV after gate — Pete’s condition</td>
+              </tr>
+              <tr>
+                <td>Next.js</td>
+                <td>Don’t build framework runtimes</td>
+                <td>Don’t invite until isolated</td>
+                <td>Use CF underneath, don’t compete on breadth</td>
+                <td>Bury. Dogfood flag only.</td>
+              </tr>
+              <tr>
+                <td>Freeze</td>
+                <td>Hold + manual 10 managers</td>
+                <td>Hold strictly; proof is the only goal</td>
+                <td>Hold except public-unclaimed fix</td>
+                <td>Hold features; legal to fix invite path</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="take">If you combine them, this month</h2>
+        <p class="lede quiet">
+          Consensus is already your freeze. The useful extras are five defaults they forced because the voices disagree.
+        </p>
+        <div class="grid2">
+          <div class="card">
+            <h3>Do (all four)</h3>
+            <ul>
+              <li>Recruit by hand. Qualifying question: “who is the second person?”</li>
+              <li>Watch invitee open, not deployer succeed.</li>
+              <li>Instrument claim → invite accept → week-2 return.</li>
+              <li>Talk permissioned share, never hosting.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Decide (they split)</h3>
+            <ul>
+              <li><b>Unclaimed visibility</b> — ChatGPT/Claude/Gemini: fix now. Grok: later.</li>
+              <li><b>Price object</b> — builder seat vs $49 workspace vs org + meter.</li>
+              <li><b>Storage</b> — Gemini no; Claude yes after gate; Grok thin; ChatGPT not Firebase.</li>
+              <li><b>Who you hunt</b> — 5–50 Alex vs 50–500 Sarah. Smaller is closer to proof.</li>
+              <li><b>Worker/Next invites</b> — Grok/Claude: not until isolation/consent. Don’t demo backends to nontechnical people yet.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="call">
+          <b>The actual split this round</b>
+          <span class="quiet">
+            They agree you already built the front door (URL, claim, Doc invites) and have not yet built the RFS hard part (safe arbitrary backends + company environment).
+            Claude is the one that turns that into a week’s calendar. ChatGPT is the one that names the security exception you should ship during the freeze.
+            Gemini still aims a size up. Grok is the freeze fundamentalist.
+            If you only take one line: <i>the second person came back</i> — and stop counting deploys.
+          </span>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

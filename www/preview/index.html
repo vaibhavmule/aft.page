@@ -511,7 +511,7 @@
       <div class="empty-card">
         <h1>Preview a site</h1>
         <p class="lead">
-          Paste a live <code>*.aft.page</code> URL to manage visibility, invites, and claim.
+          Paste a live site URL to manage visibility, invites, and claim.
         </p>
         <form id="hub-form">
           <label for="hub-url">Site URL</label>
@@ -1524,7 +1524,7 @@
             /^https:\/\/([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\.aft\.page\/?$/i,
           );
           if (!match) {
-            showToast("Use a https://{slug}.aft.page URL");
+            showToast("Paste the live site URL from deploy");
             return;
           }
           const next = new URL("/preview", location.origin);

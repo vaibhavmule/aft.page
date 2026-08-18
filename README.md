@@ -1,7 +1,7 @@
 # aft.page
 
 **Your agent made the app. aft makes it real.** Give aft.page what an agent made
-→ get a durable `*.aft.page` URL → share it like a Google Doc.
+→ get a durable live URL → share it like a Google Doc.
 
 Hosted path: HTML/files via MCP, paste, upload, or API — plus runtimes
 (upstream `worker` / `next`) with claim, share, and per-site secrets. See

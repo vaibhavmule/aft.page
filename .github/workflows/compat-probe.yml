@@ -1,0 +1,40 @@
+name: compat probe
+
+on:
+  schedule:
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: compat-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Self-check
+        run: node qa/compat-probe/check.mjs
+
+      - name: Probe 5 random GitHub repos
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AFT_PROBE_TOKEN: ${{ secrets.AFT_PROBE_TOKEN }}
+        run: node qa/compat-probe/run.mjs --count 5
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compat-probe-log
+          path: qa/compat-probe/logs/
+          if-no-files-found: ignore

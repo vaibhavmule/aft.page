@@ -68,9 +68,8 @@
     'border-radius:0.5rem;padding:9px 16px;font:inherit;font-weight:650;cursor:pointer}' +
     '.aft-fb-send:hover{background:var(--cta-hover,#e4e4e7)}' +
     '.aft-fb-send[disabled]{opacity:.6;cursor:default}' +
-    '@media (max-width:520px){.aft-fb-dock,.aft-fb-btn.aft-fb-solo{right:14px;' +
-    'bottom:calc(14px + env(safe-area-inset-bottom))}' +
-    '.aft-fb-btn.aft-fb-solo{width:44px;height:44px;padding:0;justify-content:center;gap:0;font-size:0}' +
+    '@media (max-width:760px){.aft-fb-btn.aft-fb-solo{display:none!important}' +
+    '.aft-fb-dock{right:14px;bottom:calc(14px + env(safe-area-inset-bottom))}' +
     '.aft-fb-brand{padding:9px 12px 9px 14px}.aft-fb-btn{padding:9px 14px}}';
 
   var style = document.createElement("style");

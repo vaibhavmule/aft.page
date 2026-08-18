@@ -41,8 +41,8 @@ only — see [ADR-MCP-THIN.md](./ADR-MCP-THIN.md):
 
 | Tool | Job |
 | --- | --- |
-| `deploy_html` | HTML → `*.aft.page` |
-| `deploy_files` | Static files → `*.aft.page` |
+| `deploy_html` | HTML → live URL |
+| `deploy_files` | Static files → live URL |
 | `aft_health` | API ping |
 
 Remote: `https://mcp.aft.page/mcp`. Capability approve + secrets vault stay on

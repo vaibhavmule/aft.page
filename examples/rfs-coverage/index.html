@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RFS map — aft.page</title>
+    <meta
+      name="description"
+      content="YC RFS line-by-line gap analysis, then 1/3/5/10 year expansion, then company timeline. rfs.aft.page — not the product."
+    />
+    <meta name="robots" content="noindex" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css" />
+    <style>
+      :root {
+        --void: #000;
+        --panel: #0a0a0a;
+        --line: #27272a;
+        --ink: #fafafa;
+        --quiet: #a1a1aa;
+        --faint: #767680;
+        --good: #22c55e;
+        --warn: #eab308;
+        --bad: #ff6b6b;
+      }
+      html { background: var(--void); }
+      html.fonts-wait body { opacity: 0 }
+      html.fonts-ok body { opacity: 1; transition: opacity 0.2s ease }
+      * { box-sizing: border-box }
+      html, body { margin: 0; color: var(--ink) }
+      body {
+        font: 15px/1.5 "Geist Variable", "Geist", "Segoe UI", system-ui, sans-serif;
+        min-height: 100vh;
+        overflow-x: clip;
+      }
+      a { color: var(--ink) }
+      .skip {
+        position: absolute;
+        left: -999px;
+        top: 0;
+      }
+      .skip:focus {
+        left: 1rem;
+        top: 1rem;
+        z-index: 20;
+        background: #fff;
+        color: #000;
+        padding: 0.4rem 0.7rem;
+      }
+      .shell {
+        display: grid;
+        grid-template-columns: 13rem minmax(0, 1fr);
+        max-width: 1120px;
+        margin: 0 auto;
+      }
+      nav.toc {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        padding: 1.5rem 1rem 2rem 1.25rem;
+        border-right: 1px solid var(--line);
+        min-height: 100vh;
+      }
+      nav.toc p {
+        font-family: "Geist Mono Variable", ui-monospace, Menlo, monospace;
+        font-size: 0.68rem;
+        color: var(--faint);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin: 0 0 0.85rem;
+      }
+      nav.toc a {
+        display: block;
+        color: var(--quiet);
+        text-decoration: none;
+        font-size: 0.82rem;
+        padding: 0.28rem 0;
+      }
+      nav.toc a:hover, nav.toc a:focus { color: var(--ink) }
+      main { padding: 2rem 1.25rem 5rem 1.5rem; min-width: 0 }
+      .kicker {
+        font-family: "Geist Mono Variable", ui-monospace, Menlo, monospace;
+        font-size: 0.75rem;
+        color: var(--faint);
+        margin: 0 0 0.5rem;
+      }
+      h1 {
+        font-size: 1.85rem;
+        letter-spacing: -0.03em;
+        margin: 0 0 0.4rem;
+        font-weight: 560;
+      }
+      h2 {
+        font-size: 1.05rem;
+        margin: 2.4rem 0 0.7rem;
+        letter-spacing: -0.02em;
+        font-weight: 560;
+      }
+      h3 { font-size: 0.92rem; margin: 0 0 0.35rem; font-weight: 560 }
+      p { margin: 0 0 0.75rem }
+      .quiet { color: var(--quiet) }
+      .faint { color: var(--faint); font-size: 0.82rem }
+      .lede { max-width: 42rem }
+      .which {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        padding: 0.9rem 1rem;
+        margin: 1rem 0 1.25rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.85rem;
+      }
+      .which b { display: block; margin-bottom: 0.2rem }
+      .which .pick { outline: 1px solid var(--good); outline-offset: -1px }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.75rem;
+        margin: 1.1rem 0;
+      }
+      .stat {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        padding: 0.85rem 0.95rem;
+      }
+      .stat b { display: block; font-size: 1.5rem; letter-spacing: -0.03em }
+      .stat span { display: block; font-size: 0.75rem; color: var(--faint); margin-top: 0.15rem }
+      .stat.good b { color: var(--good) }
+      .stat.warn b { color: var(--warn) }
+      .stat.bad b { color: var(--bad) }
+      .bar { height: 8px; background: #18181b; border: 1px solid var(--line); margin: 0.35rem 0 0 }
+      .bar i { display: block; height: 100%; background: var(--good); width: 0 }
+      .callout {
+        border: 1px solid var(--line);
+        padding: 0.9rem 1rem;
+        color: var(--quiet);
+        font-size: 0.92rem;
+        margin: 0 0 1rem;
+      }
+      .callout strong { color: var(--ink); display: block; margin-bottom: 0.25rem }
+      .pills { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.6rem 0 1rem }
+      .pill {
+        border: 1px solid var(--line);
+        padding: 0.2rem 0.5rem;
+        font-size: 0.75rem;
+        color: var(--quiet);
+        font-family: "Geist Mono Variable", ui-monospace, Menlo, monospace;
+      }
+      .pill.on { border-color: var(--good); color: var(--good) }
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin: 0 0 0.75rem;
+      }
+      button {
+        font: inherit;
+        background: transparent;
+        color: var(--ink);
+        border: 1px solid var(--line);
+        padding: 0.35rem 0.65rem;
+        cursor: pointer;
+      }
+      button:hover, button:focus { background: #111 }
+      button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
+      details.line {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        margin-bottom: -1px;
+      }
+      details.line > summary {
+        cursor: pointer;
+        list-style: none;
+        padding: 0.85rem 0.95rem;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 0.7rem;
+        align-items: start;
+      }
+      details.line > summary::-webkit-details-marker { display: none }
+      .tone {
+        width: 0.55rem;
+        height: 0.55rem;
+        border-radius: 99px;
+        margin-top: 0.35rem;
+        background: var(--faint);
+      }
+      .tone.success { background: var(--good) }
+      .tone.warning { background: var(--warn) }
+      .tone.danger { background: var(--bad) }
+      .n {
+        font-family: "Geist Mono Variable", ui-monospace, Menlo, monospace;
+        font-size: 0.7rem;
+        color: var(--faint);
+        margin-top: 0.15rem;
+      }
+      .body { min-width: 0 }
+      .exp {
+        padding: 0 0.95rem 1rem 2.2rem;
+        border-top: 1px solid var(--line);
+      }
+      .grid4 {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.65rem;
+        margin-top: 0.75rem;
+      }
+      .yr {
+        border: 1px solid var(--line);
+        padding: 0.65rem 0.7rem;
+      }
+      .yr em {
+        display: block;
+        font-style: normal;
+        font-family: "Geist Mono Variable", ui-monospace, Menlo, monospace;
+        font-size: 0.68rem;
+        color: var(--faint);
+        margin-bottom: 0.3rem;
+      }
+      .yr p { margin: 0; font-size: 0.86rem; color: var(--quiet) }
+      .gapbox { margin: 0.7rem 0 0; color: var(--quiet); font-size: 0.9rem }
+      .gapbox b { color: var(--ink) }
+      .todos { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line) }
+      .todos li { border-bottom: 1px solid var(--line) }
+      .todos li:last-child { border-bottom: 0 }
+      .todos label {
+        display: flex;
+        gap: 0.7rem;
+        align-items: flex-start;
+        padding: 0.7rem 0.9rem;
+        cursor: pointer;
+      }
+      .todos label:hover { background: #111 }
+      .todos small { display: block; color: var(--faint); font-size: 0.78rem; margin-top: 0.15rem }
+      .tag {
+        font-family: "Geist Mono Variable", ui-monospace, Menlo, monospace;
+        font-size: 0.68rem;
+        color: var(--faint);
+        white-space: nowrap;
+        margin-top: 0.2rem;
+      }
+      input[type="checkbox"] { margin-top: 0.25rem; accent-color: var(--good) }
+      .rail { border-left: 1px solid var(--line); margin: 0.5rem 0 0 0.4rem; padding: 0 }
+      .stop {
+        position: relative;
+        padding: 0 0 1.25rem 1.25rem;
+      }
+      .stop:last-child { padding-bottom: 0 }
+      .stop::before {
+        content: "";
+        position: absolute;
+        left: -0.28rem;
+        top: 0.35rem;
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 99px;
+        background: var(--ink);
+      }
+      .stop.may::before { background: var(--warn) }
+      .stop.later::before { background: var(--faint) }
+      .when {
+        font-family: "Geist Mono Variable", ui-monospace, Menlo, monospace;
+        font-size: 0.75rem;
+        color: var(--faint);
+      }
+      .stop h3 { margin-top: 0.15rem }
+      .recap {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        padding: 1rem 1.1rem;
+      }
+      .recap ul { margin: 0.4rem 0 0; padding-left: 1.1rem; color: var(--quiet) }
+      .recap li { margin: 0.25rem 0 }
+      @media (max-width: 860px) {
+        .shell { grid-template-columns: 1fr }
+        nav.toc {
+          position: relative;
+          min-height: 0;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+          padding: 1rem 1.25rem;
+        }
+        nav.toc .links { display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem }
+        .which, .stats, .grid4 { grid-template-columns: 1fr 1fr }
+      }
+      @media (max-width: 520px) {
+        .stats, .which, .grid4 { grid-template-columns: 1fr }
+        details.line > summary { grid-template-columns: auto 1fr }
+        .n { display: none }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip" href="#summary">Skip to summary</a>
+    <div class="shell">
+      <nav class="toc" aria-label="On this page">
+        <p>rfs.aft.page</p>
+        <div class="links">
+          <a href="#which">Which URL</a>
+          <a href="#summary">Summary</a>
+          <a href="#gap">Line-by-line gap</a>
+          <a href="#decade">1 / 3 / 5 / 10 years</a>
+          <a href="#score">Built · proof · hard</a>
+          <a href="#timeline">3m → 10y</a>
+          <a href="#recap">Recap</a>
+        </div>
+      </nav>
+      <main>
+        <p class="kicker">YC RFS · Pete Koomen · Fall 2026 · internal · noindex</p>
+        <h1>A Cloud for Small Software</h1>
+        <p class="lede">
+          AFT is the cloud for Small Software: deploy what your agent builds and
+          share it as easily as a Google Doc.
+        </p>
+        <p class="quiet lede">
+          Gap first. Then 1 / 3 / 5 / 10 years per RFS line. Then the company clock.
+          Demand sets order after the freeze. Agents create the software; aft does not ship agents as a product line.
+        </p>
+
+        <p class="callout" id="host-note" hidden></p>
+        <div class="which" id="which">
+          <div class="pick">
+            <b>Keep — rfs.aft.page</b>
+            <span class="quiet">The RFS map: gap, then 1/3/5/10 per line, then company timeline. Internal. Not for customers.</span>
+          </div>
+          <div>
+            <b>Drop — product.aft.page</b>
+            <span class="quiet">A second deploy of the same old checklist. Sounds like the public product. People deploy to <a href="https://aft.page">aft.page</a>.</span>
+          </div>
+        </div>
+
+        <h2 id="summary">Summary</h2>
+        <div class="callout">
+          <strong>Thesis is covered. Proof is not.</strong>
+          You can tell YC you are building this cloud. You cannot yet show a stranger using it.
+          Year 1 is the Google-Doc loop (plugin → URL → claim → invite → return). Years 3–10 grow the
+          runtime only when a real user is blocked — APIs, data, automations, extra runtimes are in-scope,
+          not a menu to build now. Cron stays parked. Remix is an RFS hole, frozen until proof.
+        </div>
+        <div class="pills" aria-label="Rules">
+          <span class="pill on">rfs.aft.page = map</span>
+          <span class="pill">aft.page = product</span>
+          <span class="pill">demand sets order</span>
+          <span class="pill">agents create, aft hosts</span>
+        </div>
+        <div class="stats" id="stats"></div>
+
+        <h2 id="gap">Line-by-line gap</h2>
+        <p class="quiet">Each RFS sentence vs aft today. Open a row for the decade. Checkboxes under Built / Proof / Hard save in this browser.</p>
+        <div class="toolbar">
+          <button type="button" id="open-all">Open all decades</button>
+          <button type="button" id="close-all">Close all</button>
+        </div>
+        <div id="lines"></div>
+
+        <h2 id="decade">How to read the years</h2>
+        <div class="grid4">
+          <div class="yr"><em>Year 1 · 2027</em><p>Prove the RFS job. No new product lines until strangers return and share.</p></div>
+          <div class="yr"><em>Year 3 · 2029</em><p>Grow with the app: data, APIs, more runtimes, automations plumbing — only if users hit a wall.</p></div>
+          <div class="yr"><em>Year 5 · 2031</em><p>Default cloud for small software. Env, team, remix, customer-cloud for trust. Still small-by-design.</p></div>
+          <div class="yr"><em>Year 10 · 2036</em><p>Google-Doc-simple for a generation of purpose-built tools. Not Azure for three million users.</p></div>
+        </div>
+
+        <h2 id="score">Built · proof · hard</h2>
+        <h3>Built</h3>
+        <ul class="todos" id="built"></ul>
+        <h3>Proof (freeze through 10 Sep 2026)</h3>
+        <ul class="todos" id="proof"></ul>
+        <h3>Hard problems still open</h3>
+        <ul class="todos" id="hard"></ul>
+
+        <h2 id="timeline">Where we sit</h2>
+        <p class="quiet">Clock starts 14 Aug 2026. Must = freeze / proof. May = only if demand. Later = not this decade’s default.</p>
+        <div class="rail" id="rail"></div>
+
+        <h2 id="recap">Recap</h2>
+        <div class="recap">
+          <p><strong>Company line.</strong> AFT is the cloud for Small Software: deploy what your agent builds and share it as easily as a Google Doc.</p>
+          <p><strong>One URL split.</strong> <code>rfs.aft.page</code> is this map. <code>aft.page</code> is the product. Skip <code>product.aft.page</code>.</p>
+          <ul>
+            <li>RFS defines Small Software by audience (one person or a handful), not by artifact type.</li>
+            <li>Applications, APIs, background work, automations, and extra runtimes are how an app grows — demand decides which AFT builds and when.</li>
+            <li>The actual gap is evidence: stranger deploys, invite accept, 7-day return, plugin listing, and a material YC progress update.</li>
+            <li>Secure arbitrary code (egress) and remix/fork are the product holes. Remix after proof. Automations after the Doc loop. Cron is not a product.</li>
+            <li>If the 10-year picture still needs Big Software scale, we missed the category.</li>
+          </ul>
+        </div>
+        <p class="faint" id="updated">Updated 18 Aug 2026 · rfs.aft.page · source yc/rfs</p>
+      </main>
+    </div>
+    <script>
+      document.documentElement.classList.add("fonts-wait")
+      const showFonts = () => document.documentElement.classList.replace("fonts-wait", "fonts-ok")
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(showFonts)
+      else showFonts()
+      setTimeout(showFonts, 700)
+
+      const KEY = "aft-rfs-coverage-v2"
+      const LINES = [
+        {
+          id: "rfs-cat",
+          tone: "success",
+          line: "A Cloud for Small Software",
+          aft: "Category line is verbatim. Landing, YC app, brand all use it.",
+          gap: "None on naming. Traction does not yet prove the category.",
+          y1: "Keep the line. Prove it with strangers, not more copy.",
+          y3: "The phrase means aft in the same way Docs means Google — still earned, not assumed.",
+          y5: "Category owner for purpose-built tools with a handful of users.",
+          y10: "Still the name. If we need a new category, the original job failed."
+        },
+        {
+          id: "rfs-fun",
+          tone: "warning",
+          line: "Using agents to build personal software… is a lot of fun.",
+          aft: "ICP is agent users (Claude / Cursor / ChatGPT). MCP + CLI + Drop accept that output.",
+          gap: "No stranger who built personal software on aft and kept using it.",
+          y1: "≥1 solo app used again after 7 days (not founder dogfood). Plugin is how fun reaches a URL.",
+          y3: "Personal tools are a habit: deploy from the agent they already use, return next week.",
+          y5: "The fun path is boring infrastructure — any capable agent, one plugin.",
+          y10: "People forget they ‘deployed.’ They just have a tool that stayed."
+        },
+        {
+          id: "rfs-small",
+          tone: "success",
+          line: "This is Small Software… one or a small handful of users.",
+          aft: "Invite ACL, tiny limits, no Big Software console. 200 files / 50 MB.",
+          gap: "Anonymous drop still defaults public. Playbook wants small + often private.",
+          y1: "Conscious call: public-first activation, or default-private after claim. Do not grow limits for scale theatre.",
+          y3: "Limits follow real apps, not Vercel-class projects. Handful-of-users remains the design center.",
+          y5: "Team of 12 is a stretch case, not the ICP. Pricing still for retained small apps.",
+          y10: "Refuse the console for three million users. Small is the product, not a starter tier."
+        },
+        {
+          id: "rfs-teams",
+          tone: "warning",
+          line: "Useful for teams too… workflows, sprints, prototypes.",
+          aft: "Private invite/revoke shipped. Internal-tools use case written. Dogfood examples exist.",
+          gap: "No team besides the founder has run a real workflow on aft.",
+          y1: "≥1 invite-accepted share. One real team app, not another example folder.",
+          y3: "Workflows / trackers / prototypes are workloads on the same URL+ACL, not a second product.",
+          y5: "Domain allowlist + Microsoft for the internal-tools gate — after Doc-simple is proven.",
+          y10: "Every small team can have bespoke tools without an IT cloud project."
+        },
+        {
+          id: "rfs-hard",
+          tone: "warning",
+          line: "Easy to build, still hard to deploy and share.",
+          aft: "Deploy is easy (MCP / CLI / Drop / cURL). Share is built (claim → private → invite).",
+          gap: "Share unproven. Plugin marketplace pending, so agent deploy still has a setup step.",
+          y1: "Ship plugin listing. Close one outsider deploy → claim → invite on video.",
+          y3: "Time-to-URL stays seconds. Share is as default as deploy. No repo ceremony on the happy path.",
+          y5: "Deploy+share is fully invisible inside the agents people already use.",
+          y10: "The hard problem is gone for this class of software. New hard problems are lifetime cost and trust."
+        },
+        {
+          id: "rfs-aws",
+          tone: "success",
+          line: "Azure and AWS… Big Software… complexity.",
+          aft: "Hosted path deletes cloud ceremony. Compare pages vs typical hosts. No AWS console in the default path.",
+          gap: "OSS CLI still talks customer-cloud AWS — easy to confuse with the hosted product.",
+          y1: "Keep hosted path dumb-simple. Don’t mix OSS CLI into landing “ways in.”",
+          y3: "Customer-cloud exists for trust and apps that outgrow hosted — never as the onboarding tax.",
+          y5: "Portable when needed; hosted by default. Users never see Cloudflare/AWS knobs.",
+          y10: "Incumbent clouds still exist for Big Software. We never become them."
+        },
+        {
+          id: "rfs-unlock",
+          tone: "warning",
+          line: "Delete complexity and unlock new agent use cases.",
+          aft: "Deleted: repo, cloud account, build ceremony for static. Unlocked: agent → URL in ~2s.",
+          gap: "Team workflows, internal ops UIs, full-stack personal tools are not unlocked in the wild — only dogfood.",
+          y1: "Evidence pack: strangers + repeat use. Use cases don’t count until someone else lives in them.",
+          y3: "If users need APIs, data, scheduled work, or another runtime, build that one — not a catalog.",
+          y5: "The unlocked set is whatever Small Software grew into, chosen by demand, still Doc-simple.",
+          y10: "A generation of purpose-built tools exists because deploy/share stopped being the blocker."
+        },
+        {
+          id: "rfs-env",
+          tone: "warning",
+          line: "Customize the environment this software runs in.",
+          aft: "Secrets + aft.json (static | worker | next) + OpenNext dogfood (next-hello.aft.page).",
+          gap: "Not a product surface. No per-team env UI. D1 is plumbing. Custom domains HTTPS still needs CF for SaaS.",
+          y1: "Don’t build a PaaS console. If a stranger is blocked, expose secrets + runtime in /project. Next runtime from that failure.",
+          y3: "Data that just works, more runtimes on demand, env without AWS-lite. Automations clock only if apps need a schedule.",
+          y5: "Companies customize isolation, region, and data gravity without a cloud team.",
+          y10: "Environment is a few honest choices. Never an Azure portal."
+        },
+        {
+          id: "rfs-auth",
+          tone: "warning",
+          line: "Auth & permissions are hard.",
+          aft: "Magic link + Google + invite ACL. Exact playbook: nontechnical auth first, SSO later.",
+          gap: "No Microsoft, no @company allowlist, no org IdP. Default public until claim.",
+          y1: "Prove invite accept. Then domain allowlist + Microsoft — the RFS internal-tools gate, not Passport-for-every-deploy.",
+          y3: "Roles stay owner/member. Audit of who opened/changed. Still Doc-simple, not Okta theatre.",
+          y5: "Workspace SSO for teams that already have it. Personal apps stay magic-link.",
+          y10: "Permissions feel like a document. If it feels like IAM, we lost."
+        },
+        {
+          id: "rfs-secure",
+          tone: "danger",
+          line: "Share arbitrary code… securely.",
+          aft: "CF isolate + capability approve-on-deploy. Abuse acknowledged.",
+          gap: "Egress proxy still a stub. Resource limits / billing for bad actors thin. Remix/fork is zero.",
+          y1: "Harden egress if agent code hits the network. Freeze remix unless a stranger is blocked. Do not sell ‘agents’ as a hosted runtime.",
+          y3: "Safe enough that nontechnical people can invite a colleague to running agent-made code. Remix/clone on after proof.",
+          y5: "Isolation, capability, teardown, and cost ceilings are boring and complete.",
+          y10: "Whoever owns secure, multi-user, remixable small software pulled ahead — that is the bet we kept."
+        },
+        {
+          id: "rfs-doc",
+          tone: "warning",
+          line: "As easy to share with your colleagues as a Google Doc.",
+          aft: "North-star sentence. Shipped: public/private, invite, revoke, same URL.",
+          gap: "No invite accept in the evidence pack. No everyone-@company open.",
+          y1: "Record invite accept with a real second human. Same URL on update. Revoke without redeploy.",
+          y3: "Sharing is the default motion, not a settings page. Remix = Make a copy, off by default.",
+          y5: "Org-wide discovery of team Small Software. Still invite-first, not ACL spreadsheets.",
+          y10: "People say ‘just aft it’ the way they say ‘just Doc it.’"
+        },
+        {
+          id: "rfs-hear",
+          tone: "danger",
+          line: "If you're working on something like this, we'd love to hear from you.",
+          aft: "YC Fall 2026 late application submitted 18 Aug; portal is In review. Launchpad form is also in. Category fit is the strongest part of the company.",
+          gap: "Application filed. Evidence is still empty: 0 stranger deploys, 0 repeat, 0 invite accept, 0 paid.",
+          y1: "Use Submit an update only after real evidence. Don’t wait for Passport-class SSO. Five strangers who would notice if aft disappeared.",
+          y3: "A real company: paid teams, weekly-used apps, not a platform with no habit.",
+          y5: "The RFS is historical. The business is retained Small Software.",
+          y10: "Heard from, then outgrown as a fundraising story. The product remains the cloud."
+        }
+      ]
+
+      const TODOS = [
+        { id: "cat", group: "built", done: true, title: "Category line matches RFS", note: "A cloud for small software" },
+        { id: "agent", group: "built", done: true, title: "Agent-neutral deploy", note: "MCP · CLI · Drop · cURL" },
+        { id: "url", group: "built", done: true, title: "URL first, no account", note: "Live URL in seconds" },
+        { id: "small", group: "built", done: true, title: "Small by design", note: "Invite ACL, not Big Software console" },
+        { id: "share", group: "built", done: true, title: "Doc-simple sharing built", note: "Public / private / invite / revoke / same URL" },
+        { id: "auth", group: "built", done: true, title: "Nontechnical auth", note: "Magic link + Google. SSO later." },
+        { id: "rollback", group: "built", done: true, title: "Same URL + rollback", note: "Immutable deploys" },
+        { id: "secrets", group: "built", done: true, title: "Secrets vault", note: "Per-site GET/PUT/DELETE" },
+        { id: "next", group: "built", done: true, title: "Full-stack dogfood", note: "next-hello.aft.page OpenNext" },
+        { id: "strangers", group: "proof", done: false, title: "≥5 stranger deploys, no founder help", note: "Evidence pack Actual column" },
+        { id: "invite", group: "proof", done: false, title: "≥1 invite-accepted share", note: "Second human opens private URL" },
+        { id: "return7", group: "proof", done: false, title: "Solo app used again after 7 days", note: "Not founder dogfood" },
+        { id: "plugin", group: "proof", done: false, title: "Plugin marketplace + 30s demo", note: "aft plugins add / Cursor listing" },
+        { id: "yc", group: "proof", done: true, title: "YC late app + 1-min video submitted", note: "18 Aug 2026 · In review" },
+        { id: "allowlist", group: "hard", done: false, title: "Domain allowlist + Microsoft login", note: "Internal-tools gate. Not Passport/Okta." },
+        { id: "egress", group: "hard", done: false, title: "Egress proxy not a stub", note: "Arbitrary agent code, securely" },
+        { id: "remix", group: "hard", done: false, title: "Remix / fork", note: "Frozen unless a stranger is blocked" }
+      ]
+
+      const STOPS = [
+        { cls: "", when: "Now → 10 Sep 2026 · freeze", title: "Prove the loop", body: "Plugin listing, ≥5 stranger deploys, ≥1 invite accept, 7-day return, then a material YC update. No new runtimes, no automations, no remix, no Cron." },
+        { cls: "", when: "3 months · Nov 2026", title: "Outsider habit or it isn’t a company yet", body: "Freeze over only if the loop is real. YC batch window. Next runtime only from a failed outsider deploy." },
+        { cls: "may", when: "6 months · Feb 2027", title: "First paid or LOI", body: "Weekly-used app for two people. Team $99 if someone needs private + keep. Still not a framework zoo." },
+        { cls: "may", when: "9 months · May 2027", title: "Grow only where blocked", body: "Data-just-works, Microsoft/allowlist, or remix — whichever a real team hits. Automations still not a SKU." },
+        { cls: "", when: "12 months · Aug 2027", title: "Default agent → permissioned URL", body: "Paid team SKU exists because apps stayed. Full-stack without cloud setup is normal for the apps people actually bring." },
+        { cls: "may", when: "2 years · 2028", title: "Environment without AWS", body: "Secrets, data, extra runtimes, schedule-as-plumbing if apps need a clock. Customer-cloud for trust, not onboarding." },
+        { cls: "", when: "3 years · 2029", title: "The cloud small teams expect", body: "Remix flywheel on. Org discovery. Still handful-of-users. Automations are the app’s job, hosted here, not a second product named Cron." },
+        { cls: "", when: "5 years · 2031", title: "Category owner, still small", body: "Doc-simple share + safe arbitrary code + customized env. Not Big Software. Not an agent factory." },
+        { cls: "later", when: "7 years · 2033", title: "Default rails agents publish onto", body: "Isolation, teardown, cost ceilings are boring. Lifetime of tiny apps is understood and cheap." },
+        { cls: "later", when: "10 years · 2036", title: "‘Just aft it’", body: "Purpose-built software for one person or a handful is as easy to keep and share as a document. If we look like Azure, we lost." }
+      ]
+
+      function score(todos) {
+        const total = todos.length
+        const done = todos.filter((t) => t.done).length
+        const pct = total ? Math.round((100 * done) / total) : 0
+        const group = (g) => {
+          const xs = todos.filter((t) => t.group === g)
+          const d = xs.filter((t) => t.done).length
+          return { done: d, total: xs.length, pct: xs.length ? Math.round((100 * d) / xs.length) : 0 }
+        }
+        const rfsDone = LINES.filter((l) => l.tone === "success").length
+        return {
+          done,
+          total,
+          pct,
+          built: group("built"),
+          proof: group("proof"),
+          hard: group("hard"),
+          rfs: { done: rfsDone, total: LINES.length, pct: Math.round((100 * rfsDone) / LINES.length) }
+        }
+      }
+
+      ;(function check() {
+        const s = score([{ done: true, group: "built" }, { done: true, group: "built" }, { done: false, group: "proof" }, { done: false, group: "proof" }])
+        if (s.pct !== 50 || s.done !== 2 || s.built.pct !== 100 || s.proof.pct !== 0) throw new Error("coverage math")
+        if (LINES.length !== 12) throw new Error("rfs lines")
+        if (STOPS.length !== 10) throw new Error("timeline stops")
+      })()
+
+      function load() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(KEY) || "{}")
+          for (const t of TODOS) if (typeof saved[t.id] === "boolean") t.done = saved[t.id]
+        } catch (_) { /* ignore */ }
+      }
+      function persist() {
+        localStorage.setItem(KEY, JSON.stringify(Object.fromEntries(TODOS.map((t) => [t.id, t.done]))))
+      }
+
+      function renderTodos(group, el) {
+        el.innerHTML = TODOS.filter((t) => t.group === group)
+          .map(
+            (t) =>
+              `<li><label><input type="checkbox" data-id="${t.id}" ${t.done ? "checked" : ""} /><span class="body"><strong>${t.title}</strong><small>${t.note}</small></span><span class="tag">${t.group}</span></label></li>`
+          )
+          .join("")
+      }
+
+      function renderLines() {
+        document.getElementById("lines").innerHTML = LINES.map(
+          (l, i) => `
+          <details class="line" id="${l.id}">
+            <summary>
+              <span class="tone ${l.tone}" aria-hidden="true"></span>
+              <span class="body"><strong>${l.line}</strong><small class="faint" style="display:block;margin-top:.15rem">${l.gap}</small></span>
+              <span class="n">${String(i + 1).padStart(2, "0")}</span>
+            </summary>
+            <div class="exp">
+              <p class="gapbox"><b>Aft today.</b> ${l.aft}</p>
+              <p class="gapbox"><b>Gap.</b> ${l.gap}</p>
+              <div class="grid4">
+                <div class="yr"><em>1 year</em><p>${l.y1}</p></div>
+                <div class="yr"><em>3 years</em><p>${l.y3}</p></div>
+                <div class="yr"><em>5 years</em><p>${l.y5}</p></div>
+                <div class="yr"><em>10 years</em><p>${l.y10}</p></div>
+              </div>
+            </div>
+          </details>`
+        ).join("")
+      }
+
+      function renderRail() {
+        document.getElementById("rail").innerHTML = STOPS.map(
+          (s) => `<div class="stop ${s.cls}"><div class="when">${s.when}</div><h3>${s.title}</h3><p class="quiet">${s.body}</p></div>`
+        ).join("")
+      }
+
+      function renderStats() {
+        const s = score(TODOS)
+        const tone = s.pct >= 70 ? "good" : s.pct >= 40 ? "warn" : "bad"
+        const rfsTone = s.rfs.pct >= 70 ? "good" : s.rfs.pct >= 40 ? "warn" : "bad"
+        document.getElementById("stats").innerHTML = `
+          <div class="stat ${tone}"><b>${s.pct}%</b><span>Checklist coverage</span><div class="bar"><i style="width:${s.pct}%"></i></div></div>
+          <div class="stat ${rfsTone}"><b>${s.rfs.done}/${s.rfs.total}</b><span>RFS lines covered (not proven)</span><div class="bar"><i style="width:${s.rfs.pct}%"></i></div></div>
+          <div class="stat ${s.proof.pct ? "warn" : "bad"}"><b>${s.proof.done}/${s.proof.total}</b><span>Proof · freeze</span><div class="bar"><i style="width:${s.proof.pct}%"></i></div></div>
+          <div class="stat ${s.hard.pct ? "warn" : "bad"}"><b>${s.hard.done}/${s.hard.total}</b><span>Hard problems</span><div class="bar"><i style="width:${s.hard.pct}%"></i></div></div>
+        `
+      }
+
+      function render() {
+        renderStats()
+        renderTodos("built", document.getElementById("built"))
+        renderTodos("proof", document.getElementById("proof"))
+        renderTodos("hard", document.getElementById("hard"))
+      }
+
+      const host = location.hostname
+      const noteEl = document.getElementById("host-note")
+      if (host.startsWith("product.")) {
+        noteEl.hidden = false
+        noteEl.innerHTML = "<strong>You are on product.aft.page.</strong> Same map we want at <a href=\"https://rfs.aft.page\">rfs.aft.page</a>. Keep one name: rfs. The public product stays aft.page."
+      } else if (host.startsWith("rfs.")) {
+        noteEl.hidden = false
+        noteEl.innerHTML = "<strong>You are on rfs.aft.page.</strong> This is the map. Ignore product.aft.page. Customers use aft.page."
+      }
+
+      load()
+      renderLines()
+      renderRail()
+      render()
+
+      document.body.addEventListener("change", (e) => {
+        const id = e.target?.dataset?.id
+        if (!id) return
+        const t = TODOS.find((x) => x.id === id)
+        if (!t) return
+        t.done = e.target.checked
+        persist()
+        renderStats()
+      })
+      document.getElementById("open-all").addEventListener("click", () => {
+        document.querySelectorAll("details.line").forEach((d) => { d.open = true })
+      })
+      document.getElementById("close-all").addEventListener("click", () => {
+        document.querySelectorAll("details.line").forEach((d) => { d.open = false })
+      })
+    </script>
+  </body>
+</html>

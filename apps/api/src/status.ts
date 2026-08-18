@@ -95,7 +95,7 @@ export const STATUS_PROBES: ProbeDef[] = [
   {
     id: "sites",
     name: "Site serve",
-    description: "Hosted *.aft.page applications",
+    description: "Hosted applications",
     url: "https://hello.aft.page/",
     expect: "http_ok",
     mode: "internal_site",
