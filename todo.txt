@@ -38,7 +38,7 @@
 - [ ] ≥5 strangers deploy without founder help
 - [ ] ≥5 repeat deployers + evidence pack
 - [ ] ≥1 app shared with another person (invite accept)
-- [ ] YC late application + 1-min video
+- [x] YC Fall 2026 submitted 18 Aug 2026 — In review (late). Progress / video updates via portal if material. docs/YC-APPLICATION.md
 - [x] Launchpad Cohort #7 — form submitted 13 Aug 2026. Email ack same day: under review, notify if selected. Wait. Startups $10k still open (they linked it). docs/FUNDRAISE.md
 - [ ] Google for Startups Cloud Program — step 1 done; **finish credits apply** + checklist (docs/FUNDRAISE.md)
 - [ ] Cloudflare for Startups Tier 3 $10k — submit with hello@aft.page + CF account

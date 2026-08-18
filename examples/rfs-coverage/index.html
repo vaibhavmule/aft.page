@@ -380,12 +380,12 @@
           <ul>
             <li>RFS defines Small Software by audience (one person or a handful), not by artifact type.</li>
             <li>Applications, APIs, background work, automations, and extra runtimes are how an app grows — demand decides which AFT builds and when.</li>
-            <li>The actual gap is evidence: stranger deploys, invite accept, 7-day return, plugin listing, YC video.</li>
+            <li>The actual gap is evidence: stranger deploys, invite accept, 7-day return, plugin listing, and a material YC progress update.</li>
             <li>Secure arbitrary code (egress) and remix/fork are the product holes. Remix after proof. Automations after the Doc loop. Cron is not a product.</li>
             <li>If the 10-year picture still needs Big Software scale, we missed the category.</li>
           </ul>
         </div>
-        <p class="faint" id="updated">Updated 14 Aug 2026 · rfs.aft.page · source yc/rfs</p>
+        <p class="faint" id="updated">Updated 18 Aug 2026 · rfs.aft.page · source yc/rfs</p>
       </main>
     </div>
     <script>
@@ -522,9 +522,9 @@
           id: "rfs-hear",
           tone: "danger",
           line: "If you're working on something like this, we'd love to hear from you.",
-          aft: "YC draft + Launchpad form in. Category fit is the strongest part of the company.",
-          gap: "YC late app + 1-min video unchecked. 0 stranger deploys, 0 repeat, 0 invite accept, 0 paid.",
-          y1: "Video + one outsider loop on camera. Apply. Don’t wait for Passport-class SSO. Five strangers who would notice if aft disappeared.",
+          aft: "YC Fall 2026 late application submitted 18 Aug; portal is In review. Launchpad form is also in. Category fit is the strongest part of the company.",
+          gap: "Application filed. Evidence is still empty: 0 stranger deploys, 0 repeat, 0 invite accept, 0 paid.",
+          y1: "Use Submit an update only after real evidence. Don’t wait for Passport-class SSO. Five strangers who would notice if aft disappeared.",
           y3: "A real company: paid teams, weekly-used apps, not a platform with no habit.",
           y5: "The RFS is historical. The business is retained Small Software.",
           y10: "Heard from, then outgrown as a fundraising story. The product remains the cloud."
@@ -545,14 +545,14 @@
         { id: "invite", group: "proof", done: false, title: "≥1 invite-accepted share", note: "Second human opens private URL" },
         { id: "return7", group: "proof", done: false, title: "Solo app used again after 7 days", note: "Not founder dogfood" },
         { id: "plugin", group: "proof", done: false, title: "Plugin marketplace + 30s demo", note: "aft plugins add / Cursor listing" },
-        { id: "yc", group: "proof", done: false, title: "YC late app + 1-min video", note: "They want to hear from you" },
+        { id: "yc", group: "proof", done: true, title: "YC late app + 1-min video submitted", note: "18 Aug 2026 · In review" },
         { id: "allowlist", group: "hard", done: false, title: "Domain allowlist + Microsoft login", note: "Internal-tools gate. Not Passport/Okta." },
         { id: "egress", group: "hard", done: false, title: "Egress proxy not a stub", note: "Arbitrary agent code, securely" },
         { id: "remix", group: "hard", done: false, title: "Remix / fork", note: "Frozen unless a stranger is blocked" }
       ]
 
       const STOPS = [
-        { cls: "", when: "Now → 10 Sep 2026 · freeze", title: "Prove the loop", body: "Plugin listing, ≥5 stranger deploys, ≥1 invite accept, 7-day return, YC video. No new runtimes, no automations, no remix, no Cron." },
+        { cls: "", when: "Now → 10 Sep 2026 · freeze", title: "Prove the loop", body: "Plugin listing, ≥5 stranger deploys, ≥1 invite accept, 7-day return, then a material YC update. No new runtimes, no automations, no remix, no Cron." },
         { cls: "", when: "3 months · Nov 2026", title: "Outsider habit or it isn’t a company yet", body: "Freeze over only if the loop is real. YC batch window. Next runtime only from a failed outsider deploy." },
         { cls: "may", when: "6 months · Feb 2027", title: "First paid or LOI", body: "Weekly-used app for two people. Team $99 if someone needs private + keep. Still not a framework zoo." },
         { cls: "may", when: "9 months · May 2027", title: "Grow only where blocked", body: "Data-just-works, Microsoft/allowlist, or remix — whichever a real team hits. Automations still not a SKU." },

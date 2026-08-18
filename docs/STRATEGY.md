@@ -4,7 +4,7 @@ Internal north star. Canonical mission: [`../rfs.txt`](../rfs.txt).
 Belief: [`../youtube-moment.txt`](../youtube-moment.txt).
 CN + EU are growth exceptions (paid primitives, local agents): [`REGIONS.md`](./REGIONS.md). After the freeze gate — not this month.
 
-Updated: 2026-08-14
+Updated: 2026-08-18
 
 ## 30-day freeze (2026-08-11 → 2026-09-10)
 
@@ -19,7 +19,7 @@ marketplace expansion.
 | Hosted CLI outsider: install → deploy → claim → update → private invite → second person | AI automations / Cron / briefs |
 | Record human T2U and every unhelped failure | Remix, CLI, extension, marketplace (unless blocked) |
 | ≥1 invite-accepted share used the next week | Matching Hatchable/AppDeploy feature dump |
-| YC video + credits paperwork | Browser automation / Kitesurf / OpenNext auto / containers |
+| YC in review (progress update on retained users) + credits paperwork | Browser automation / Kitesurf / OpenNext auto / containers |
 
 Bugfixes that unblock deploy → claim → invite → return are in. New surfaces are out.
 Canonical checklist: [`../todo.txt`](../todo.txt).
@@ -184,7 +184,7 @@ Claude / Codex / Cursor / ChatGPT / Git / human
 | Strangers deploy without founder help | Agent → URL dependable (static + worker/next) |
 | Repeat use after 7 / 30 days | **Agent Plugin install path (Cursor first)** |
 | Share: owner + another person | Secrets, invite, rollback across runtimes |
-| Design partners, evidence pack, YC | Temp Accounts for demos; aft-owned Workers for brand URL |
+| Design partners, evidence pack, material YC updates | Temp Accounts for demos; aft-owned Workers for brand URL |
 | Deploy / open / share / redeploy analytics | OpenNext via `@opennextjs/cloudflare` (no custom adapter) |
 
 ## Evidence scoreboard

@@ -1,6 +1,6 @@
 # aft.page — raise / programs
 
-Internal. Personal runway + quit rules: `../../../FOUNDER.md`. YC draft: [YC-APPLICATION.md](./YC-APPLICATION.md).
+Internal. Personal runway + quit rules: `../../../FOUNDER.md`. YC: [YC-APPLICATION.md](./YC-APPLICATION.md) (submitted 18 Aug 2026, In review).
 
 **North star:** SF/US (South Park Commons, Vercel orbit, Naval-class angels). Bigger check, less dilution. Solo by design. Dubai optional later — not the raise city.
 
@@ -53,6 +53,7 @@ Up to **$200k USD over 2 years** (up to **$350k if they class you as AI startup*
 - **8 Aug 2026 13:08** — Launchpad Cohort #7 apply emailed from `hello@aft.page` → `Workers-Launchpad@cloudflare.com` (web form `#form_workerslaunchpad` was broken). Superseded by form submit 13 Aug.
 - **8 Aug 2026** — Cloudflare Startups credits form started (company aft.page · https://aft.page · founded 2026 · India/Pune). Finish: connect Cloudflare account + submit.
 - **13 Aug 2026** — **Workers Launchpad form submitted** (hello@aft.page · account `44255ec64e0080b678670b53bf810d27` · https://aft.page · Pune). Immediate page ack, then email ack (below). Not accepted yet — quarterly review.
+- **18 Aug 2026** — **YC Fall 2026 submitted** (late). Portal: Aft · In review. On-time deadline was 27 Jul; on-time decisions by 28 Aug. No promised date for late. Do not bump. Progress update only on retained users / invite accept / video recut. [YC-APPLICATION.md](./YC-APPLICATION.md)
 
 ## Email sent (archive)
 
@@ -89,5 +90,5 @@ Up to **$200k USD over 2 years** (up to **$350k if they class you as AI startup*
 - Cloudflare Startups $10k submit  
 - Launchpad: wait for CF reply / cohort decision (applied 13 Aug)  
 - SPC next Fellowship cycle (Fall 2026 deadline was Aug 2)  
-- YC after repeat deploys — [YC-APPLICATION.md](./YC-APPLICATION.md)
+- YC Fall 2026: submitted 18 Aug, **In review**. There is no official fast-track. Do not bump or chase introductions; use a portal update only after material progress. [YC-APPLICATION.md](./YC-APPLICATION.md)
 - **Surge:** after the two-person weekly-use gate — rolling apply. Sep 2026 Immersion is a date, not a reason to apply early.

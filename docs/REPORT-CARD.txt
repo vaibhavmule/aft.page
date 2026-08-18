@@ -92,7 +92,7 @@ but not wrongly so.
 [x] Reliability/speed > features once you have users (CF edge) — "once you have users" is the catch
 [~] Security/abuse as constant work — acknowledged; egress stub + abuse story thin
 [x] Watch incumbents + agent tools — sharp competitive map; treats CF as commoditizing static
-[~] Apply to YC — YC-APPLICATION.md drafted; submission unconfirmed in scoreboard
+[x] Apply to YC — submitted 18 Aug 2026, In review (Fall 2026, late)
 
 THE EVIDENCE PACK IS EMPTY. Every "Actual" column is blank. Your own plan:
 "weekly usage cannot wait" and "agents cannot send your 30 messages."
