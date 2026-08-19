@@ -18,6 +18,14 @@ import { proxyUpstream } from "./runtimes/proxy";
 import { canAccessSite, privateDeniedHtml } from "./sharing";
 import { getObject } from "./storage";
 import { deployPreviewHost, isSmokeSlug, liveSiteHost } from "./site-url";
+import { resolveSessionUser } from "./auth";
+import {
+  ME_PATH,
+  SIGN_IN_PATH,
+  SIGN_OUT_PATH,
+  applyAftIdentityHeaders,
+  handleAftIdentityRequest,
+} from "./aft-identity";
 
 function pageTitleFromHtml(html: string, fallback: string): string {
   const match = html.match(/<title[^>]*>([^<]*)<\/title>/i);
@@ -72,6 +80,13 @@ export async function serveSite(
   }
 
   const root = env.ROOT_DOMAIN || "aft.page";
+  const url = new URL(request.url);
+  const identityPath = url.pathname.replace(/\/+$/, "") || "/";
+  if (identityPath === SIGN_IN_PATH || identityPath === SIGN_OUT_PATH) {
+    const viewer = await resolveSessionUser(env, request);
+    const identity = handleAftIdentityRequest(request, env, slug, viewer);
+    if (identity) return identity;
+  }
 
   const access = await canAccessSite(env, request, slug);
   if (!access.allowed) {
@@ -106,6 +121,11 @@ export async function serveSite(
       status: 401,
       headers,
     });
+  }
+
+  if (identityPath === ME_PATH) {
+    const identity = handleAftIdentityRequest(request, env, slug, access.user);
+    if (identity) return identity;
   }
 
   const raw = await env.SITES.get(`site:${slug}`);
@@ -197,7 +217,7 @@ export async function serveSite(
         httpStatus: 200,
       });
     }
-    return proxyUpstream(request, upstreamUrl);
+    return proxyUpstream(request, upstreamUrl, access.user);
   }
 
   if (pathname.startsWith("/api/")) {
@@ -259,11 +279,12 @@ export async function serveSite(
   headers.set("content-type", obj.contentType);
   headers.set(
     "cache-control",
-    access.role ? "private, max-age=60" : "public, max-age=60",
+    access.user || access.role ? "private, no-store" : "public, max-age=60",
   );
   headers.set("x-aft-slug", slug);
   headers.set("x-aft-deploy", deployId);
   headers.set("x-aft-runtime", runtime);
+  applyAftIdentityHeaders(headers, access.user);
   if (pinDeployId) headers.set("x-aft-preview", "1");
   for (const [name, value] of corsHeaders(null, false)) {
     headers.set(name, value);

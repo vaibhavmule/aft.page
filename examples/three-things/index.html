@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Three things</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body { margin: 0; }
+      body {
+        overflow-x: clip;
+        color: #1c1914;
+        background: #f3efe6;
+        font: 18px/1.45 ui-sans-serif, system-ui, sans-serif;
+      }
+      main { max-width: 36rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+      .kicker {
+        margin: 0 0 0.35rem;
+        font: 700 0.72rem/1 ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: #6b6458;
+      }
+      h1 {
+        margin: 0 0 0.4rem;
+        font: 700 clamp(2rem, 6vw, 2.6rem)/1.05 "Iowan Old Style", Palatino, Georgia, serif;
+      }
+      .who { margin: 0 0 1.25rem; color: #3a342c; }
+      .who a { color: inherit; font-weight: 700; }
+      form, ul { margin: 0; padding: 0; }
+      ul { list-style: none; }
+      li {
+        display: flex;
+        gap: 0.7rem;
+        align-items: flex-start;
+        margin: 0 0 0.65rem;
+        padding: 0.85rem 0.95rem;
+        border: 2px solid #1c1914;
+        background: #fffaf0;
+      }
+      li label { flex: 1; cursor: pointer; }
+      input[type="checkbox"] { width: 1.15rem; height: 1.15rem; margin-top: 0.2rem; }
+      input[type="text"] {
+        width: 100%;
+        padding: 0.75rem 0.85rem;
+        border: 2px solid #1c1914;
+        background: #fffaf0;
+        font: inherit;
+      }
+      .row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+      button, .btn {
+        border: 0;
+        background: #1c1914;
+        color: #f3efe6;
+        padding: 0.7rem 1rem;
+        cursor: pointer;
+        font: 700 0.8rem/1 ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        text-decoration: none;
+      }
+      button:disabled { opacity: 0.4; cursor: not-allowed; }
+      .ghost { background: transparent; color: #1c1914; border: 2px solid #1c1914; }
+      .err { color: #8a1f1f; font-weight: 700; min-height: 1.2em; }
+      .done { text-decoration: line-through; color: #6b6458; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="kicker">Sign in with AFT</p>
+      <h1>Three things today</h1>
+      <p class="who" id="who">Loading…</p>
+      <p class="err" id="err" aria-live="polite"></p>
+      <form id="form" hidden>
+        <label for="title">Add a thing</label>
+        <input id="title" type="text" maxlength="120" autocomplete="off" />
+        <div class="row">
+          <button type="submit" id="add">Add</button>
+          <span id="left"></span>
+        </div>
+      </form>
+      <ul id="list"></ul>
+    </main>
+    <script>
+      const who = document.getElementById("who")
+      const err = document.getElementById("err")
+      const form = document.getElementById("form")
+      const list = document.getElementById("list")
+      const title = document.getElementById("title")
+      const add = document.getElementById("add")
+      const left = document.getElementById("left")
+      const dateKey = () => new Date().toISOString().slice(0, 10)
+      const storeKey = (id) => `three-things:${id}:${dateKey()}`
+
+      const load = (id) => {
+        try { return JSON.parse(localStorage.getItem(storeKey(id)) || "[]") }
+        catch { return [] }
+      }
+      const save = (id, tasks) => localStorage.setItem(storeKey(id), JSON.stringify(tasks))
+
+      const render = (user) => {
+        const tasks = load(user.id)
+        list.replaceChildren()
+        tasks.forEach((task, i) => {
+          const li = document.createElement("li")
+          const box = document.createElement("input")
+          box.type = "checkbox"
+          box.id = `t-${i}`
+          box.checked = task.done
+          box.addEventListener("change", () => {
+            tasks[i].done = box.checked
+            save(user.id, tasks)
+            render(user)
+          })
+          const label = document.createElement("label")
+          label.htmlFor = box.id
+          label.className = task.done ? "done" : ""
+          label.textContent = task.title
+          li.append(box, label)
+          list.append(li)
+        })
+        const remain = 3 - tasks.length
+        left.textContent = remain ? `${remain} left` : "That’s three."
+        add.disabled = remain === 0
+        form.hidden = false
+      }
+
+      fetch("/_aft/me", { credentials: "same-origin" })
+        .then((res) => res.json())
+        .then((body) => {
+          const user = body && body.user
+          if (!user) {
+            who.innerHTML = 'Sign in so this list is yours. <a class="btn" href="/signin-with-aft?return_to=/">Sign in with AFT</a>'
+            return
+          }
+          who.innerHTML = `Signed in as <strong>${user.email}</strong> · <a href="/signout-with-aft?return_to=/">Sign out</a>`
+          render(user)
+          form.addEventListener("submit", (event) => {
+            event.preventDefault()
+            const text = title.value.trim()
+            if (!text) return
+            const tasks = load(user.id)
+            if (tasks.length >= 3) return
+            tasks.push({ title: text, done: false })
+            save(user.id, tasks)
+            title.value = ""
+            render(user)
+          })
+        })
+        .catch(() => {
+          err.textContent = "Could not read /_aft/me."
+        })
+    </script>
+  </body>
+</html>

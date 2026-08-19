@@ -26,4 +26,51 @@ describe("proxyUpstream", () => {
       globalThis.fetch = orig;
     }
   });
+
+  it("overwrites spoofed identity headers before reaching upstream", async () => {
+    const orig = globalThis.fetch;
+    let sent: Headers | undefined;
+    globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+      sent = new Headers(init?.headers);
+      return new Response("ok");
+    }) as typeof fetch;
+    try {
+      await proxyUpstream(
+        new Request("https://app.aft.page/", {
+          headers: { "aft-authenticated-user-email": "attacker@evil.test" },
+        }),
+        "https://upstream.example/",
+        { id: "usr_1", email: "owner@example.com" },
+      );
+      expect(sent?.get("aft-authenticated-user-email")).toBe("owner@example.com");
+      expect(sent?.get("aft-authenticated-user-id")).toBe("usr_1");
+    } finally {
+      globalThis.fetch = orig;
+    }
+  });
+
+  it("strips spoofed identity headers when the viewer is anonymous", async () => {
+    const orig = globalThis.fetch;
+    let sent: Headers | undefined;
+    globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+      sent = new Headers(init?.headers);
+      return new Response("ok");
+    }) as typeof fetch;
+    try {
+      await proxyUpstream(
+        new Request("https://app.aft.page/", {
+          headers: {
+            "aft-authenticated-user-email": "attacker@evil.test",
+            "aft-authenticated-user-id": "usr_attacker",
+          },
+        }),
+        "https://upstream.example/",
+        null,
+      );
+      expect(sent?.has("aft-authenticated-user-email")).toBe(false);
+      expect(sent?.has("aft-authenticated-user-id")).toBe(false);
+    } finally {
+      globalThis.fetch = orig;
+    }
+  });
 });

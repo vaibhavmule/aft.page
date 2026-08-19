@@ -143,6 +143,14 @@ There is no official fast-track. On-time files get a decision by 28 Aug; this on
 
 Do not: email YC partners, resubmit, wait for a reply before talking to users.
 
+**Competitor line if asked (19 Aug 2026):** ChatGPT Sites is the most direct
+competitor: it creates, previews, publishes, versions, and shares from ChatGPT
+Work/Codex (builder + cloud + auth + permissions). Prized (S26) is Lovable for
+internal tools with governed connectors. Aft is any agent → URL → invite →
+connector; we do not generate the app and we do not copy Sites’ database. Do
+not file a Progress Update for this competitive read alone. Send one only
+after a stranger deploys, shares, and returns.
+
 Portal update types: Progress · Fundraising · Team · Founder Video · Demo Video.
 
 ---

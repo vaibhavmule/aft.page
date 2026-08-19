@@ -8,7 +8,7 @@
   ],
   "url": "https://aft.page",
   "type": "Organization",
-  "description": "A cloud for small software. aft.page turns software an AI agent builds into a live, shareable HTTPS URL — deploy by Drop, paste, or MCP, then claim, share, update, and attach a custom domain without repository or cloud-account ceremony.",
+  "description": "The independent cloud for software made by any agent. aft.page turns that software into a live, shareable HTTPS URL — deploy by Drop, CLI, or MCP, then claim, invite, update, and attach a custom domain without repository or cloud-account ceremony.",
   "contactPoints": [
     {
       "type": "General Enquiries",
@@ -28,7 +28,7 @@
   ],
   "metadata": {
     "version": "1.0.0",
-    "lastUpdated": "2026-08-09"
+    "lastUpdated": "2026-08-19"
   },
   "relatedFiles": {
     "llms": "https://aft.page/llms.txt",

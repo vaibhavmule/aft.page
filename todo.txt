@@ -1,12 +1,13 @@
 # aft.page — todo
-# Updated: 2026-08-13
+# Updated: 2026-08-19
 #
 # ═══════════════════════════════════════════════════════════════
 # 30-DAY FREEZE (2026-08-11 → 2026-09-10): NO NEW PRODUCT LINES
-# Allowed: Plugin distribution, stranger proof, invite share, bugfixes
-#          that unblock deploy/claim/share, YC/credits paperwork.
-# Frozen:  AI automations, Cron, remix, extension/npm publish polish unless a
-#          stranger is blocked without them, BaaS dump features.
+# Allowed: Plugin distribution, stranger proof, invite share, Sign in with AFT
+#          (app identity), connector demo, bugfixes that unblock
+#          deploy/claim/share, YC/credits paperwork.
+# Frozen:  AI automations, Cron, remix, per-app D1/R2, extension/npm publish
+#          polish unless a stranger is blocked without them, BaaS dump features.
 # Shipped: Hosted CLI (`curl -fsSL https://aft.page/install | sh`)
 # ═══════════════════════════════════════════════════════════════
 
@@ -28,6 +29,8 @@
 - [x] **OSS CLI parked** (`cli/` / github.com/vaibhavmule/aft) — customer-cloud AWS path; different product. Don’t mix with `npx` for aft.page.
 - [x] **Remote MCP ready** — agents: MCP or CLI today
 - [x] **Drop + CLI for humans** — Drop or `curl …/install | sh`
+- [x] **Sign in with AFT** — `/_aft/me`, identity headers on Worker/Next proxy, `/signin-with-aft` `/signout-with-aft` (Sites analog; not ChatGPT IdP). Tests: redirect, cookie flags, header spoof, public/private `/_aft/me`.
+- [x] ChatGPT Sites export probe (founder) — CLI `not_static` / no D1. Notes: `qa/chatgpt-sites/NOTES.md`. Do not build vinext/D1 until a stranger fails.
 - [ ] Per-IDE Agent Plugin / marketplace listings
 
 ### Proof — ONLY focus through 2026-09-10

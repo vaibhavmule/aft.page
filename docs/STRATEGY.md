@@ -4,7 +4,7 @@ Internal north star. Canonical mission: [`../rfs.txt`](../rfs.txt).
 Belief: [`../youtube-moment.txt`](../youtube-moment.txt).
 CN + EU are growth exceptions (paid primitives, local agents): [`REGIONS.md`](./REGIONS.md). After the freeze gate — not this month.
 
-Updated: 2026-08-18
+Updated: 2026-08-19
 
 ## 30-day freeze (2026-08-11 → 2026-09-10)
 
@@ -17,11 +17,14 @@ marketplace expansion.
 | Do | Don't |
 | --- | --- |
 | Hosted CLI outsider: install → deploy → claim → update → private invite → second person | AI automations / Cron / briefs |
+| Sign in with AFT (app-readable identity) + connector demo as the sales script | Per-app D1/R2 / vinext clone / Lovable builder |
 | Record human T2U and every unhelped failure | Remix, CLI, extension, marketplace (unless blocked) |
-| ≥1 invite-accepted share used the next week | Matching Hatchable/AppDeploy feature dump |
+| ≥1 invite-accepted share used the next week | Matching Hatchable/AppDeploy/Sites BaaS dump |
 | YC in review (progress update on retained users) + credits paperwork | Browser automation / Kitesurf / OpenNext auto / containers |
 
-Bugfixes that unblock deploy → claim → invite → return are in. New surfaces are out.
+Bugfixes that unblock deploy → claim → invite → return are in. Sign in with AFT
+(app identity) is in: Sites parity for the share job, not a new product line.
+New runtimes and BaaS dumps are out.
 Canonical checklist: [`../todo.txt`](../todo.txt).
 Next runtime (likely automatic Next/OpenNext or a containerized backend) is chosen
 from what that outsider + compat-probe actually failed to deploy — not from
@@ -31,7 +34,9 @@ from what that outsider + compat-probe actually failed to deploy — not from
 
 > **A cloud for small software.**
 >
-> Any agent → a working application → a durable URL → share it like a Google Doc.
+> **AFT is the independent cloud for software made by any agent** — not a
+> ChatGPT-only host, not a builder. Any agent → a working application → a
+> durable URL → share it like a Google Doc.
 
 North-star experience:
 
@@ -132,9 +137,12 @@ Ship bar:
 
 ### Track vs ignore
 
-Full map: [COMPETITION.md](./COMPETITION.md). Codex deploy-shelf (9 Aug 2026) is
-crowded on agent → URL; empty slot is permissioned sharing. Watch AppDeploy,
-Hatchable, MiniUp. Do not match their BaaS dump.
+Full map: [COMPETITION.md](./COMPETITION.md). **19 Aug 2026:** ChatGPT Sites is
+the most direct competitor — builder + cloud + auth + permissions + share from
+Work/Codex, not an upstream generator. Prized (YC S26) is the
+Retool/Superblocks competitor. Codex deploy-shelf is still crowded on agent →
+URL. Watch Sites + Prized weekly; AppDeploy, Hatchable, MiniUp monthly. Copy
+app identity (Sign in with AFT), not per-app D1/R2.
 
 | Signal | Read |
 | --- | --- |
@@ -170,6 +178,8 @@ Claude / Codex / Cursor / ChatGPT / Git / human
 | Secrets | Per-site vault + capability approve | Shipped |
 | **Distribution** | **Agent Plugin → Cursor “Deploy with AFT”** | **Highest-priority next ship** |
 | Full stack | worker/next via upstream proxy | OpenNext dogfood live (`next-hello.aft.page`) |
+| Arbitrary host | Detect artifact → thinnest runtime (incl. Sites/vinext + D1, then containers) | **Cloud job.** After two-person gate. Not a builder. |
+| Small builder | Prompt → AFT-native app (Sign in with AFT + invite baked in). v0 analog. | **On the cloud, not the company.** Template/remix first. Frozen until invite loop is proven. |
 | Anything Drop | More generous static upload (any folder) | Limits raised; deepen on demand |
 | Plugins | Agent Plugin install across coding agents | P0 this month |
 | **Remix / clone** | Owner allows “Make a copy” → new slug, new owner | **In scope** — allow clone off by default. RFS hole. Build order ≠ “not the product” |
@@ -202,10 +212,69 @@ Reliability: [NASA LLIS 803](https://llis.nasa.gov/lesson/803) Critical Items Li
 
 ## Near-term mission
 
-> Get useful Small Software from an agent to a durable, permissioned URL — via a
-> one-command Agent Plugin — while proving people return to it and share it.
-> Compete on the Doc-simple experience (publish, permission, keep alive)—not on
-> rebuilding Cloudflare for its own sake.
+> Get useful Small Software from any agent to a durable, permissioned URL —
+> identity the app can read (Sign in with AFT), invite like a Doc, connector to
+> company data. Instant deploy stays the hook. Do not sell hosting against
+> ChatGPT Sites. Do not become Prized’s builder.
+
+## Cloud, not builder (19 Aug 2026)
+
+AFT is the **cloud**. ChatGPT, Cursor, Claude, Lovable, Prized — those are
+**builders**. A builder may sit in front of us (and someday we could ship one).
+That does not change the company: we do not generate the app. We run whatever
+the agent already made, then own URL, identity, invite, data, and lifecycle.
+
+“Entire cloud” means the **runtime ladder**, not a prompt-to-UI product:
+
+```text
+agent / builder output
+        │
+        ▼
+   detect shape  →  pick the thinnest runtime that can serve it
+        │
+        ├── static     HTML / SPA dist          (Drop — shipped)
+        ├── worker     JS Worker + /api         (proxy + aft-owned Worker)
+        ├── next       Next SSR                 (OpenNext dogfood, not one-click)
+        ├── data       app DB / files           (not yet — Sites D1/R2)
+        ├── connect    company systems          (connector v0)
+        └── container  Python / Go / anything else (later, from real fail reasons)
+        │
+        ▼
+  {slug}.aft.page  + Sign in with AFT + invite + secrets
+```
+
+Do not start a builder to compete with Sites, Prized, or [v0](https://v0.app/) as the
+**company**. A thin first-party generator is allowed later as **v0 is to
+Vercel**: a smaller app factory that only knows this cloud.
+
+### Vercel : v0 :: AFT : small builder
+
+[v0.app](https://v0.app/) is Vercel-only. Prompt → build → **Deploy to Vercel**.
+GitHub sync, templates, design mode, DB/API — all on their cloud. It is not a
+neutral builder. Same shape we want later, smaller:
+
+| | Cloud | Captive builder |
+| --- | --- | --- |
+| Them | Vercel | v0 — publish only to Vercel |
+| Us | aft.page | Small generator — publish only to aft.page, with Sign in with AFT + invite already wired |
+
+v0 is not Vercel’s company; Vercel is. Same split here. Do not copy v0’s
+gallery (landing pages, SaaS marketing, shadcn kits). Ceiling: prompt →
+small app that already calls `/_aft/me`, deploys to `*.aft.page`, owner
+invites a second person.
+
+First rung (not this freeze): one signed-in shell template, then remix /
+“Make a copy.” Chat-to-app after the two-person weekly-use gate. Output is
+always AFT-native (login + share). If it cannot invite, it is not this
+product.
+
+Do host the zip other builders emit. First arbitrary shape we cannot take
+today: ChatGPT Sites export (vinext + `.openai/hosting.json` + D1) —
+recorded in [`qa/chatgpt-sites/NOTES.md`](../qa/chatgpt-sites/NOTES.md).
+Closest existing runtime is `worker`, missing a per-site D1 binding. Do not
+build that until a stranger hits it. Next runtime is chosen from that class
+of fail after the two-person weekly-use gate — not from
+[FRAMEWORK-COMPATIBILITY.md](./FRAMEWORK-COMPATIBILITY.md).
 
 ## AFT Cloud (all-in) · 10 Aug 2026
 

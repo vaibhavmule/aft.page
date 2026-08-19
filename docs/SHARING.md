@@ -14,6 +14,7 @@ Sites can be **public** or **private**. Private sites use Google Doc–style **i
 - `serveSite` ACL for private (owner or member session)
 - Live slug: claim dialog; `/project` for visibility + invites
 - `/projects` inventory includes owned sites and member sites (Shared with me)
+- Sign in with AFT: `/_aft/me`, identity headers on Worker/Next, `/signin-with-aft` / `/signout-with-aft`
 
 **Requires**
 - `AUTH_SECRET` wrangler secret
@@ -22,5 +23,30 @@ Sites can be **public** or **private**. Private sites use Google Doc–style **i
 **Not yet**
 - Google Workspace / Entra org SSO (domain allowlist on private sites)
 - Company-wide IdP (invite-by-email is still the ACL)
+
+## Sign in with AFT (Sites analog, 19 Aug 2026)
+
+ChatGPT Sites injects `oai-authenticated-user-email` so the **app** knows who
+is signed in. AFT now does the same with the existing `aft_session` (magic
+link or Google) — not a ChatGPT account.
+
+Reserved on every live slug (not uploaded files):
+
+| Path | Job |
+| --- | --- |
+| `GET /_aft/me` | `{ user: { id, email } \| null }` |
+| `GET /signin-with-aft?return_to=/` | Redirect to `/login?next=` (same-origin return only) |
+| `GET /signout-with-aft?return_to=/` | Clear session cookie, return to the site |
+
+Worker / Next upstreams also receive request headers
+`aft-authenticated-user-email` and `aft-authenticated-user-id`. Spoofed
+incoming values are overwritten. Static HTML should call `/_aft/me` (document
+response headers are not readable from page JS). Signed-in HTML responses
+use `Cache-Control: private, no-store` so identity headers cannot be cached
+publicly.
+
+`/_aft/me` on a **public** site is always 200 (`user` may be null). On a
+**private** site it follows the same ACL as the app: anonymous → login
+redirect; signed-in stranger → 401; owner or invitee → the viewer.
 
 Why: polymerize/ops pain was “add this colleague” without rotating a shared secret. Aligns with rfs.txt: *Small software should be as easy to share with your colleagues as a Google Doc.*

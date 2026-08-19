@@ -24,6 +24,8 @@ Instrument before more features. These numbers beat another feature:
 | Edge serves | `serve` — all statuses; country in `blob4`, bytes in `double2` |
 | MCP vs Web | `blob1` source on `deploy` |
 | **Time-to-URL** | `deploys.ms` on ops + AE `double1` (ms) on ok deploys. Daily number. [time-to-url.txt](../time-to-url.txt) |
+| **Human T2U** | Stopwatch, not AE. Install/Drop/MCP → they can open the URL. Log in [EVIDENCE-PACK.md](./EVIDENCE-PACK.md). Founder runs do not count. |
+| **Seven-day return** | Same app opened or redeployed by the same person a week later. Gate for freeze + YC progress update. |
 | Failed deploys | `deploy` where status ≠ `ok` |
 | Waitlist conversions | `waitlist` where status = `new` (duplicates are separate) |
 | Feedback | `feedback` (already shipped) |
