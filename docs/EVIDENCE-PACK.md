@@ -55,6 +55,26 @@ new runtime surface.
 - [ ] Both can open the private URL while invited
 - [ ] Redeploy or rollback done by owner without founder help
 
+### Sign in with AFT — two-person run (2026-08-22)
+
+Demo app: **https://three-things.aft.page** (`examples/three-things/`). Shipped on
+`agent/release-hardening` (commits `c154d8a`–`c9dad63` + migration `0cf6a11`).
+
+| Step | Owner | Second person | Status |
+| --- | --- | --- | --- |
+| 1 | Open demo → **Sign in with AFT** → magic link | — | Prod OK: `/_aft/me` → `user:null`; `/signin-with-aft` → `/login?next=` |
+| 2 | Claim slug (if unclaimed) or use `/projects` | — | `three-things` deployed; claim not verified live |
+| 3 | `/project` → **private** → invite colleague email | — | Not run live |
+| 4 | — | Accept invite email → sign in → open app | Not run live |
+| 5 | Both call `/_aft/me` on private slug → see own email | Both see app content | **Blocked — needs two humans + inbox** |
+| 6 | Owner redeploys; both still reach app | — | Loop test passes in CI; not live on demo |
+
+Automated substitute (founder session only): `apps/api/test/loop.test.ts` +
+`serve.test.ts` identity cases — **324/324 API tests green** (2026-08-22).
+
+**Decisive gap unchanged:** another person deploys (or is invited), signs in via
+Sign in with AFT, and uses the app without founder help.
+
 ## Product proof links
 
 | Item | URL / note |
@@ -81,13 +101,29 @@ Live (founder, counts as dogfood not stranger evidence):
 | Claim + private + invite | claim mail sent to hello@aft.page — finish from inbox, then private + invite a second human |
 | Status MCP probe | https://status.aft.page/ — MCP operational via Worker binding |
 
-Time-to-URL (agent MCP call → live HTTPS): **~2 seconds**. Seven-day return: not yet due.
+Time-to-URL (agent MCP call → live HTTPS): **~2 seconds**.
+
+**Seven-day return (due 2026-08-15):** **No.** No recorded revisit, redeploy, or
+private+invite completion on enterprise-license. Anonymous probe 2026-08-22 still
+shows public site only (`/_aft/me` → `user: null`). Claim inbox step was never
+finished in the evidence log.
+
+## Release sync (2026-08-22)
+
+| Item | State |
+| --- | --- |
+| API tests | 324/324 green (migration `0027` + changelog test aligned) |
+| Git | `origin/agent/release-hardening` @ `0cf6a11` — identity + login fixes + `0027` pushed |
+| Main | Still at pre-identity merge (`fdc115d`); prod is ahead of `main` |
+| WIP split | `agent/www-reprise` — homepage/auth-nav polish, not in release |
+| Sign in with AFT demo | https://three-things.aft.page live |
 
 ## Customer evidence (fill weekly)
 
 | Date | Who | Agent they use | App | Next step | Paid? |
 | --- | --- | --- | --- | --- | --- |
-| 2026-08-08 | founder (hello@aft.page) | remote MCP | [enterprise-license](https://enterprise-license.aft.page) | claim → private → invite one teammate; check return 2026-08-15 | no |
+| 2026-08-08 | founder (hello@aft.page) | remote MCP | [enterprise-license](https://enterprise-license.aft.page) | claim never finished; **no 7-day return** (checked 2026-08-22) | no |
+| 2026-08-19 | founder | — | [three-things](https://three-things.aft.page) | Sign in with AFT demo live; **two-person invite not run** | no |
 
 Ask every call:
 
