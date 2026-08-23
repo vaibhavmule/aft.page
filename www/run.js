@@ -79,12 +79,20 @@ function setStatus(text, kind = "pending") {
   el.className = `msg ${kind}`
 }
 
-function showRepo(ref) {
+function showRepo(ref, { running = false } = {}) {
   const chip = document.getElementById("repo-chip")
   chip.hidden = false
   chip.textContent = `${ref.owner}/${ref.repo}`
   document.getElementById("git-url").value = githubUrl(ref)
-  document.getElementById("run-title").textContent = `Running ${ref.owner}/${ref.repo}`
+  document.getElementById("run-title").textContent = running
+    ? `Running ${ref.owner}/${ref.repo}`
+    : `Run ${ref.owner}/${ref.repo}`
+}
+
+function prepareRepo(ref) {
+  showRepo(ref)
+  history.replaceState(null, "", runPageUrl(ref))
+  setStatus("Click Run when ready.", "pending")
 }
 
 async function watchJob(data) {
@@ -163,7 +171,7 @@ async function watchJob(data) {
 async function runRepo(ref, { pushState = false } = {}) {
   const go = document.getElementById("git-go")
   go.disabled = true
-  showRepo(ref)
+  showRepo(ref, { running: true })
   if (pushState) history.replaceState(null, "", runPageUrl(ref))
 
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -211,4 +219,4 @@ document.getElementById("git-form").addEventListener("submit", (e) => {
 })
 
 const fromPath = parseRunPath()
-if (fromPath) runRepo(fromPath)
+if (fromPath) prepareRepo(fromPath)
