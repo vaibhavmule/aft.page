@@ -504,6 +504,7 @@
 
       async function claimSession() {
         if (!slug || !token) return "skip";
+        if (window.AftProgress) window.AftProgress.start();
         const res = await fetch(`${API}/v1/claim/session`, {
           method: "POST",
           credentials: "include",
@@ -512,13 +513,16 @@
         });
         const data = await res.json().catch(() => ({}));
         if (res.ok) {
+          if (window.AftProgress) window.AftProgress.done();
           location.replace(projectUrl());
           return "ok";
         }
         if (data.error === "already_claimed") {
+          if (window.AftProgress) window.AftProgress.done();
           show("err", "Someone else already claimed this site.");
           return "taken";
         }
+        if (window.AftProgress) window.AftProgress.done();
         return "fail";
       }
 
@@ -556,6 +560,7 @@
         label.innerHTML = `<span class="spinner" aria-hidden="true"></span> Sending…`;
         const email = document.getElementById("email").value.trim();
         try {
+          if (window.AftProgress) window.AftProgress.start();
           const res = await fetch(`${API}/v1/claim/start`, {
             method: "POST",
             credentials: "include",
@@ -579,11 +584,13 @@
         } catch (err) {
           show("err", String(err));
         } finally {
+          if (window.AftProgress) window.AftProgress.done();
           submit.disabled = false;
           label.textContent = "Send claim link";
         }
       });
     </script>
+    <script src="/progress.js" defer></script>
     <script src="/feedback.js?v=20260809-pill" defer></script>
   </body>
 </html>

@@ -7,6 +7,16 @@ type SecretBindings = {
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
   CF_API_TOKEN?: string;
+  AFT_RUN_GITHUB_TOKEN?: string;
+  AFT_RUN_GITHUB_REPO?: string;
+  AFT_AI_GATEWAY?: string;
+  AI?: {
+    run: (
+      model: string,
+      inputs: unknown,
+      options?: { gateway?: { id: string } },
+    ) => Promise<unknown>;
+  };
 };
 
 declare global {

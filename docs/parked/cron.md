@@ -4,6 +4,8 @@
 
 Schedule under the hood may return later as the **clock** for [AI automations](../STRATEGY.md) (prompt + schedule, e.g. 9am project brief). Sell the automation, not Cron.
 
+**Logged 2026-08-23:** [Grok Bot](https://x.ai/news/introducing-grok-bot) shipped this category while we had it parked. Routines = recurring prompt on a clock, laptop closed. They occupy **digital labor** (own computer, sign into Gmail/Slack/CRM). Our wedge when unparked is still **automation on the URL** — a brief *from* a claimed site, Slack/mobile as sinks — not another coworker. See [COMPETITION.md](../COMPETITION.md). Do not unpark for this.
+
 ## Intent (when unparked)
 
 | | |

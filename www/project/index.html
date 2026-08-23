@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Project — aft.page</title>
+    <title>Site — aft.page</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="theme-color" content="#000000" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
@@ -18,47 +18,10 @@
     <link rel="stylesheet" href="/app.css" />
     <style>
       main { max-width: 72rem; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
-      .hub-shell {
-        display: grid;
-        grid-template-columns: 11.5rem minmax(0, 1fr);
-        gap: 1.25rem 1.5rem;
-        align-items: start;
-      }
-      .hub-nav {
-        display: flex;
-        flex-direction: column;
-        gap: 0.15rem;
-        position: sticky;
-        top: 4.5rem;
-      }
-      .hub-nav button {
-        appearance: none;
-        margin: 0;
-        padding: 0.45rem 0.65rem;
-        border: 0;
-        border-radius: 0.5rem;
-        background: transparent;
-        color: var(--quiet);
-        font: inherit;
-        font-size: 0.88rem;
-        font-weight: 550;
-        text-align: left;
-        cursor: pointer;
-      }
-      .hub-nav button:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 6%, transparent); }
-      .hub-nav button[aria-current="page"] {
-        color: var(--ink);
-        background: color-mix(in srgb, var(--ink) 10%, transparent);
-      }
-      .hub-nav button.nav-danger { color: var(--danger); }
-      .hub-nav button.nav-danger[aria-current="page"],
-      .hub-nav button.nav-danger:hover { background: color-mix(in srgb, var(--danger) 14%, transparent); }
-      .hub-main .panel { display: none; margin-bottom: 0; }
-      .hub-main .panel.is-active { display: block; }
-      @media (max-width: 700px) {
-        .hub-shell { grid-template-columns: 1fr; }
-        .hub-nav { flex-direction: row; flex-wrap: wrap; position: static; }
-      }
+      .hub-shell { display: block; }
+      .hub-main .panel { margin-bottom: 1rem; }
+      .hub-main .panel.hub-panel-hidden { display: none !important; }
+      .hub-main .panel.hub-panel-active { display: block; }
       .title-row {
         display: flex;
         flex-wrap: wrap;
@@ -502,9 +465,34 @@
       </div>
     </header>
     <main>
-      <div class="loading" id="loading" aria-busy="true">
-        <span class="spinner" aria-hidden="true"></span>
-        <div>Loading project…</div>
+      <div class="loading-skeleton" id="loading" aria-busy="true" aria-live="polite">
+        <p class="loading-status">Loading project…</p>
+        <div class="skeleton-detail" aria-hidden="true">
+          <div class="skeleton-crumb skeleton-shimmer"></div>
+          <div class="skeleton-title-row">
+            <div class="skeleton-line title-lg skeleton-shimmer"></div>
+            <div class="skeleton-pill skeleton-shimmer"></div>
+          </div>
+          <div class="skeleton-tabbar">
+            <div class="skeleton-tab skeleton-shimmer"></div>
+            <div class="skeleton-tab skeleton-shimmer"></div>
+            <div class="skeleton-tab skeleton-shimmer"></div>
+            <div class="skeleton-tab skeleton-shimmer"></div>
+          </div>
+          <div class="skeleton-panel">
+            <div class="skeleton-panel-head skeleton-shimmer"></div>
+            <div class="skeleton-meta">
+              <div class="skeleton-line label skeleton-shimmer"></div>
+              <div class="skeleton-line val wide skeleton-shimmer"></div>
+              <div class="skeleton-line label skeleton-shimmer"></div>
+              <div class="skeleton-line val skeleton-shimmer"></div>
+              <div class="skeleton-line label skeleton-shimmer"></div>
+              <div class="skeleton-line val skeleton-shimmer"></div>
+              <div class="skeleton-line label skeleton-shimmer"></div>
+              <div class="skeleton-line val wide skeleton-shimmer"></div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="missing" id="missing" hidden>
         <p>No project at this URL.</p>
@@ -521,22 +509,17 @@
           <span class="pill" id="vis-pill">public</span>
         </div>
 
-        <div class="hub-shell">
-        <nav class="hub-nav" aria-label="Project sections">
-          <button type="button" data-tab="overview" aria-current="page">Overview</button>
-          <button type="button" data-tab="deploys">Deploys</button>
-          <button type="button" data-tab="source">Source</button>
-          <button type="button" data-tab="observability" hidden>Observability</button>
-          <button type="button" data-tab="logs" hidden>Logs</button>
-          <button type="button" data-tab="domains" hidden>Domains</button>
-          <button type="button" data-tab="secrets" hidden>Secrets</button>
-          <button type="button" data-tab="capabilities" hidden>Capabilities</button>
-          <button type="button" data-tab="access" id="access-btn" hidden>Access</button>
-          <button type="button" data-tab="danger" class="nav-danger" hidden>Danger</button>
+        <nav class="hub-top-tabs" aria-label="Site sections">
+          <button type="button" data-primary-tab="settings" aria-current="page">Settings</button>
+          <button type="button" data-primary-tab="analytics" id="analytics-tab-btn">Analytics</button>
+          <button type="button" data-primary-tab="access" id="access-btn">Access</button>
+          <button type="button" data-primary-tab="more" id="more-tab-btn">More</button>
         </nav>
+
+        <div class="hub-shell hub-shell-top">
         <div class="hub-main">
 
-        <section class="panel is-active" id="panel-links" data-tab="overview">
+        <section class="panel hub-panel-active" id="panel-links" data-primary-tab="settings">
           <h2>Overview</h2>
           <div class="row" id="link-actions"></div>
           <dl class="meta-grid">
@@ -562,7 +545,7 @@
           </dl>
         </section>
 
-        <section class="panel" id="panel-deploys" data-tab="deploys">
+        <section class="panel hub-panel-hidden" id="panel-deploys" data-primary-tab="more">
           <h2>Production</h2>
           <p class="deploy-domains" id="prod-domains"></p>
           <table class="deploys">
@@ -595,7 +578,7 @@
           <div class="msg" id="deploys-msg" role="status"></div>
         </section>
 
-        <section class="panel" id="panel-source" data-tab="source">
+        <section class="panel hub-panel-hidden" id="panel-source" data-primary-tab="more">
           <h2>Source</h2>
           <div class="row source-toolbar">
             <label for="source-deploy">Deploy</label>
@@ -611,12 +594,12 @@
           <div class="msg" id="source-msg" role="status"></div>
         </section>
 
-        <section class="panel" id="panel-observability" data-tab="observability" hidden>
-          <h2>Observability</h2>
+        <section class="panel hub-panel-hidden" id="panel-observability" data-primary-tab="analytics">
+          <h2>Analytics</h2>
           <p class="danger-desc" id="obs-summary">Edge requests for this site. 4xx/5xx are complete; successful CSS/JS are not counted. No IP addresses.</p>
           <div class="obs-toolbar">
-            <button type="button" class="btn ghost" data-obs-window="12h" aria-pressed="true">Last 12 hours</button>
-            <button type="button" class="btn ghost" data-obs-window="7d" aria-pressed="false">Last 7 days</button>
+            <button type="button" class="btn ghost" data-obs-window="12h" aria-pressed="false">Last 12 hours</button>
+            <button type="button" class="btn ghost" data-obs-window="7d" aria-pressed="true">Last 7 days</button>
             <button type="button" class="btn ghost" id="obs-refresh">Refresh</button>
           </div>
           <div class="obs-cards" id="obs-cards"></div>
@@ -636,7 +619,7 @@
           <div class="msg" id="obs-msg" role="status"></div>
         </section>
 
-        <section class="panel" id="panel-logs" data-tab="logs" hidden>
+        <section class="panel hub-panel-hidden" id="panel-logs" data-primary-tab="more">
           <h2>Logs</h2>
           <p class="danger-desc" id="logs-summary">Document hits, errors, and failed deploys. No IP addresses. Last 7 days.</p>
           <div class="row" style="margin-bottom:0.75rem">
@@ -667,14 +650,14 @@
           <div class="msg" id="logs-msg" role="status"></div>
         </section>
 
-        <section class="panel" id="panel-caps" data-tab="capabilities" hidden>
+        <section class="panel hub-panel-hidden" id="panel-caps" data-primary-tab="more">
           <h2>Capabilities</h2>
           <div id="caps-body" class="msg"></div>
           <div class="row" id="caps-actions"></div>
           <div class="msg" id="caps-msg" role="status"></div>
         </section>
 
-        <section class="panel" id="panel-domains" data-tab="domains" hidden>
+        <section class="panel hub-panel-hidden" id="panel-domains" data-primary-tab="settings">
           <div class="domain-head">
             <h2>Domains</h2>
             <button type="button" class="btn" id="add-domain-btn" hidden>Add domain</button>
@@ -701,7 +684,7 @@
           <div class="msg" id="domain-msg" role="status"></div>
         </section>
 
-        <section class="panel" id="panel-secrets" data-tab="secrets" hidden>
+        <section class="panel hub-panel-hidden" id="panel-secrets" data-primary-tab="settings">
           <h2>Secrets</h2>
           <p class="danger-desc">
             Values are encrypted at rest and injected into the runtime. Only the
@@ -731,7 +714,7 @@
           <div class="msg" id="secrets-msg" role="status"></div>
         </section>
 
-        <section class="panel" id="panel-access" data-tab="access">
+        <section class="panel hub-panel-hidden" id="panel-access" data-primary-tab="access">
           <h2>Access</h2>
           <div class="modal-section-label">Visibility</div>
           <div class="vis-card">
@@ -760,7 +743,7 @@
           <div class="msg" id="access-msg" role="status"></div>
         </section>
 
-        <section class="panel" id="panel-danger" data-tab="danger" hidden>
+        <section class="panel hub-panel-hidden" id="panel-danger" data-primary-tab="settings">
           <h2>Danger zone</h2>
           <p class="danger-desc">
             Change the public URL. The old URL stops
@@ -899,6 +882,7 @@
         }
         document.title = `${slug} — aft.page`;
 
+        if (window.AftProgress) window.AftProgress.start();
         try {
           const aftAuth = window.aftAuth;
           const me = aftAuth
@@ -937,40 +921,61 @@
           render();
         } catch (_) {
           goLogin();
+        } finally {
+          if (window.AftProgress) window.AftProgress.done();
         }
       }
 
-      const TAB_IDS = ["overview", "deploys", "source", "observability", "logs", "domains", "secrets", "capabilities", "access", "danger"];
+      const PRIMARY_TABS = ["settings", "analytics", "access", "more"];
+      const LEGACY_TAB_MAP = {
+        overview: "settings",
+        domains: "settings",
+        secrets: "settings",
+        danger: "settings",
+        observability: "analytics",
+        deploys: "more",
+        source: "more",
+        logs: "more",
+        capabilities: "more",
+        access: "access",
+      };
       let logsLoaded = false;
-      let obsWindow = "12h";
+      let obsWindow = "7d";
       let sourceLoadedFor = "";
       let openMenu = null;
       let openPanel = null;
 
+      function resolvePrimaryTab(name) {
+        if (PRIMARY_TABS.includes(name)) return name;
+        if (LEGACY_TAB_MAP[name]) return LEGACY_TAB_MAP[name];
+        return "settings";
+      }
+
       function showTab(name) {
-        if (!TAB_IDS.includes(name)) name = "overview";
-        const navBtn = document.querySelector(`.hub-nav [data-tab="${name}"]`);
-        if (navBtn && navBtn.hidden) name = "overview";
+        let tab = resolvePrimaryTab(name);
+        const analyticsBtn = document.getElementById("analytics-tab-btn");
+        if (tab === "analytics" && analyticsBtn.hidden) tab = "settings";
         for (const panel of document.querySelectorAll(".hub-main .panel")) {
-          panel.classList.toggle("is-active", panel.dataset.tab === name);
+          const match = panel.dataset.primaryTab === tab;
+          const hidden = panel.hidden;
+          panel.classList.toggle("hub-panel-active", match && !hidden);
+          panel.classList.toggle("hub-panel-hidden", !match || hidden);
         }
-        for (const btn of document.querySelectorAll(".hub-nav [data-tab]")) {
-          btn.setAttribute(
-            "aria-current",
-            btn.dataset.tab === name ? "page" : "false",
-          );
+        for (const btn of document.querySelectorAll(".hub-top-tabs [data-primary-tab]")) {
+          btn.setAttribute("aria-current", btn.dataset.primaryTab === tab ? "page" : "false");
         }
-        const next = "#" + name;
-        if (location.hash !== next) history.replaceState(null, "", next);
-        if (name === "logs" || name === "observability") void loadLogs(false);
-        if (name === "source") void loadSource(false);
+        const url = new URL(location.href);
+        url.searchParams.set("tab", tab);
+        history.replaceState(null, "", url.pathname + url.search);
+        if (tab === "analytics") void loadLogs(false);
+        if (tab === "more") void loadSource(false);
       }
 
       async function render() {
         hub.hidden = false;
         document.getElementById("crumb-slug").textContent = slug;
         document.getElementById("title").textContent = slug;
-        accessBtn.hidden = false;
+        document.title = `${slug} — Projects — aft.page`;
 
         const live = info.url || `https://${slug}.aft.page`;
         const liveA = document.getElementById("live-url");
@@ -1019,14 +1024,15 @@
         await renderDomains();
         renderDanger();
         renderAccess();
-        const hash = (location.hash || "#overview").replace(/^#/, "");
-        showTab(TAB_IDS.includes(hash) ? hash : "overview");
+        const tabParam = new URLSearchParams(location.search).get("tab");
+        const hash = (location.hash || "").replace(/^#/, "");
+        const initial = tabParam || hash || "settings";
+        showTab(initial);
       }
 
       function renderDanger() {
         const allow = canManageAccess();
         document.getElementById("panel-danger").hidden = !allow;
-        document.querySelector('.hub-nav [data-tab="danger"]').hidden = !allow;
         document.getElementById("destroy-slug").textContent = slug;
         document.getElementById("rename-input").value = slug;
       }
@@ -1279,9 +1285,7 @@
       function renderLogsNav() {
         const allow = canRollback();
         document.getElementById("panel-logs").hidden = !allow;
-        document.getElementById("panel-observability").hidden = !allow;
-        document.querySelector('.hub-nav [data-tab="logs"]').hidden = !allow;
-        document.querySelector('.hub-nav [data-tab="observability"]').hidden = !allow;
+        document.getElementById("analytics-tab-btn").hidden = !allow;
       }
 
       function fmtBytes(n) {
@@ -1517,7 +1521,7 @@
       function openSourceDeploy(deployId) {
         const sel = document.getElementById("source-deploy");
         if (sel && deployId) sel.value = deployId;
-        showTab("source");
+        showTab("more");
         void loadSource(true);
       }
 
@@ -1671,15 +1675,12 @@
 
       function renderCaps() {
         const panel = document.getElementById("panel-caps");
-        const nav = document.querySelector('.hub-nav [data-tab="capabilities"]');
         const caps = info.capabilities;
         if (!caps) {
           panel.hidden = true;
-          nav.hidden = true;
           return;
         }
         panel.hidden = false;
-        nav.hidden = false;
         const el = document.getElementById("caps-body");
         const req = caps.requested || {};
         const lines = [];
@@ -1798,10 +1799,8 @@
 
       async function renderDomains() {
         const panel = document.getElementById("panel-domains");
-        const nav = document.querySelector('.hub-nav [data-tab="domains"]');
         const allow = canManageAccess();
         panel.hidden = !allow;
-        nav.hidden = !allow;
         if (!allow) {
           paintCustomOverview([]);
           return;
@@ -1910,7 +1909,7 @@
         if (pending) {
           domainPoll = setTimeout(() => {
             const p = document.getElementById("panel-domains");
-            if (p && p.classList.contains("is-active")) renderDomains();
+            if (p && p.classList.contains("hub-panel-active")) renderDomains();
           }, 5000);
         }
       }
@@ -1999,16 +1998,13 @@
 
       async function renderSecrets() {
         const panel = document.getElementById("panel-secrets");
-        const nav = document.querySelector('.hub-nav [data-tab="secrets"]');
         const caps = info.capabilities;
         const declared = (caps && caps.requested && caps.requested.secrets) || [];
         if (!canRollback()) {
           panel.hidden = true;
-          nav.hidden = true;
           return;
         }
         panel.hidden = false;
-        nav.hidden = false;
 
         let existing = [];
         try {
@@ -2209,14 +2205,10 @@
         logsLoaded = false;
         void loadLogs(true);
       });
-      document.querySelector(".hub-nav").addEventListener("click", (e) => {
-        const btn = e.target.closest("[data-tab]");
-        if (!btn) return;
-        showTab(btn.dataset.tab);
-      });
-      window.addEventListener("hashchange", () => {
-        const hash = (location.hash || "#overview").replace(/^#/, "");
-        showTab(TAB_IDS.includes(hash) ? hash : "overview");
+      document.querySelector(".hub-top-tabs").addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-primary-tab]");
+        if (!btn || btn.hidden) return;
+        showTab(btn.dataset.primaryTab);
       });
 
       document.getElementById("vis-public").addEventListener("click", () => {
@@ -2427,7 +2419,8 @@
         const msg = document.getElementById("rename-msg");
         const overviewBtn = document.getElementById("overview-rename");
         overviewBtn.addEventListener("click", () => {
-          showTab("danger");
+          showTab("settings");
+          document.getElementById("panel-danger").scrollIntoView({ behavior: "smooth", block: "start" });
           input.value = slug;
           input.focus();
           input.select();
@@ -2544,6 +2537,7 @@
 
       load();
     </script>
+    <script src="/progress.js" defer></script>
     <script src="/auth-nav.js" defer></script>
     <script src="/feedback.js" defer></script>
   </body>

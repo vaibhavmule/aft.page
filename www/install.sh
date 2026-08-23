@@ -32,7 +32,7 @@ fi
 
 mkdir -p "$ROOT/bin" "$ROOT/src" "$BIN_DIR"
 
-FILES="VERSION bin/aft.js src/analytics.js src/api.js src/auth.js src/creds.js src/deploy.js src/detect.js src/env.js src/index.js src/init.js src/open.js src/plugins.js src/prefs.js src/preflight.js src/project.js src/prompt.js src/rename.js src/resolve.js src/rollback.js src/sites.js src/slug.js src/state.js src/ui.js src/update.js src/version.js src/visibility.js"
+FILES="VERSION bin/aft.js src/analytics.js src/api.js src/auth.js src/creds.js src/deploy.js src/detect.js src/env.js src/index.js src/init.js src/next-deploy.js src/open.js src/plugins.js src/prefs.js src/preflight.js src/project.js src/prompt.js src/rename.js src/resolve.js src/rollback.js src/sites.js src/slug.js src/state.js src/ui.js src/update.js src/version.js src/visibility.js"
 
 # shellcheck disable=SC2086
 TOTAL=$(set -- $FILES; echo $#)

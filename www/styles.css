@@ -2017,7 +2017,7 @@ a.band-stage-url:hover {
 
 .price-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-top: 2rem;
   border: 1px solid var(--line);
   border-radius: 0.5rem;
@@ -2049,6 +2049,7 @@ a.band-stage-url:hover {
 .price-head {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 0.4rem;
 }

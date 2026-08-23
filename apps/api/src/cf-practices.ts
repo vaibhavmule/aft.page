@@ -66,6 +66,14 @@ export async function runCfPracticeChecks(
     caseOf("metrics", "Analytics Engine", Boolean(env.METRICS), env.METRICS ? "aft_page_metrics" : "missing"),
   );
   cases.push(caseOf("email", "Email binding", Boolean(env.EMAIL), env.EMAIL ? "bound" : "missing"));
+  cases.push(
+    caseOf(
+      "ai",
+      "AI Gateway binding",
+      typeof env.AI?.run === "function",
+      typeof env.AI?.run === "function" ? "AI.run" : "missing",
+    ),
+  );
 
   if (!env.MCP) {
     cases.push(caseOf("mcp_bind", "MCP service binding", false, "missing"));

@@ -1,51 +1,49 @@
 # Pricing (ugly offer)
 
 Internal sales sheet. List prices for the conversation; first deals close
-whatever the buyer will pay. Team / Enterprise are real SKUs — do not invent a
-fourth product. Discount or pilot down, do not invent custom feature packs mid-call.
+whatever the buyer will pay. **Personal / Team / Enterprise** are the SKUs —
+do not invent a fourth. Discount or pilot down, do not invent custom feature
+packs mid-call.
 
-Quote **INR for India / SEA** calls; **USD for US / YC** calls. Same SKUs.
+Quote **USD for US / YC** calls. Hide INR until India checkout exists.
 
 **Close rule:** any non-friend paid money or signed LOI counts as Phase 4 proof.
-Prefer list ($99 / $499). Accept less for a dated pilot if they deploy this week
-and share with a teammate. Never give perimeter (IP whitelist) on Team — that is
-the $499 upsell.
+Public site: Free / Personal (30 days then $19) / one Team & Enterprise Contact.
+Billing is not live yet — no Creem checkout on the homepage.
+
+Never give perimeter (IP whitelist) on Personal or Team — that is Enterprise.
 
 ## Free
 
 - Hosted public deploys
 - MCP / agent deploy
 - Claim + basic share for dogfooding
+- Per-site secrets after claim ([docs/env](https://aft.page/docs/env/))
 
-The free tier proves the Small Software activation loop. The company grows from
-retained applications that need persistence, private sharing, state, full-stack
-runtime, higher limits, and customization.
+The free tier proves the Small Software activation loop.
 
-## Team
+Private **containers** are not a SKU. Hosted runtime today is Workers.
 
-| | USD | INR |
-| --- | --- | --- |
-| Monthly | **$99** | **₹5,000 – ₹15,000** (default **₹9,999**) |
+## Personal — **30 days free, then $19 / mo**
 
-Includes:
+One person. Private apps, higher limits than Free. Viewers still don't pay.
+The only self-serve paid SKU. Creem product when billing starts (`1900` cents,
+recurring, 30-day trial, tax exclusive, `saas`).
 
-- Private apps + invite ACL
-- Durable projects (owner, version, last-used)
-- Updates and rollback
-- Stateful/full-stack runtime allowance as it ships
-- Email support (founder)
+## Team — **Talk** (`hello@aft.page`)
 
-## Enterprise / Connector — **$499**
+No public price. Design-partner close. On the call: **$99 / mo**.
 
-Small-enterprise SKU. Same number for perimeter buyers (the Vercel Deployment
-Protection screen) and connector design partners — pick **one** offer per deal.
+Private apps + invite ACL (view/edit/revoke). Durable projects, updates and
+rollback, secrets, founder email support. Stateful / full-stack **as it ships**.
 
-| | USD | INR |
-| --- | --- | --- |
-| Monthly | **$499** | — |
-| 30-day pilot | **$2,000** | **₹25,000 – ₹75,000** setup + support |
+Creem: `prod_KRqO1PPmVnPbXQ9X40vZa` ($99). Use after they say yes — not on
+the homepage.
 
-Includes Team, plus whichever the deal is about:
+## Enterprise — **Talk** (`hello@aft.page`)
+
+No public price. On the call: **$499 / mo** or **$2,000 / 30-day pilot**.
+Pick **one** offer per deal — perimeter **or** connector.
 
 **Perimeter** (vs Vercel Advanced $150 + Enterprise IPs):
 
@@ -64,14 +62,13 @@ Friend-money does not count.
 
 ## BYOC / large enterprise
 
-Listed as “available” — build when a customer documents **~$15K+/yr** or
-**₹12–40L/yr** willingness (run-in-their-cloud). Not the $499 small-enterprise
-SKU above.
+Listed as “available” — build when a customer documents **~$15K+/yr**
+willingness (run-in-their-cloud). Not the Talk SKU above.
 
 ## What to say
 
-> Free to make Small Software live. Pay $99 when you need private invite sharing.
-> Pay $499 when you need IP whitelist / enterprise perimeter, or live internal
-> data via connector.
+> Free to go live. Personal is 30 days free, then $19. Team and Enterprise
+> — one conversation.
 
-Do not invent custom pricing mid-call. Discount only for a written pilot / LOI and a public quote.
+Do not invent custom pricing mid-call. Discount only for a written pilot / LOI
+and a public quote.

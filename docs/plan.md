@@ -4,9 +4,8 @@ Internal. Goal: prove **A Cloud for Small Software** with real users in 30 days.
 
 Updated: 2026-08-11
 
-**Freeze in force (2026-08-11 → 2026-09-10):** no new product lines. See
-[STRATEGY.md](./STRATEGY.md) § 30-day freeze and [`../todo.txt`](../todo.txt).
-This window is distribution + proof only.
+**Freeze lifted 23 Aug 2026.** See [STRATEGY.md](./STRATEGY.md) § Focus and
+[`../todo.txt`](../todo.txt). Host / Ship / Run may ship.
 
 Sam frame:
 
@@ -221,7 +220,7 @@ Polymerize: **do not resign** in the first seven-week proof.
 - [YC-APPLICATION.md](./YC-APPLICATION.md) — submitted 18 Aug 2026, In review
 - [BRAND.md](./BRAND.md) — craft bar (Ona-grade), not this month’s blocker
 - [CONNECTOR.md](./CONNECTOR.md) — Week 3 connector protocol + demo
-- [PRICING.md](./PRICING.md) — Free / Team $99 or ₹9,999 / connector pilot
+- [PRICING.md](./PRICING.md) — Free / Personal 30 days then $19 / Team & Enterprise Contact
 - [../time-to-url.txt](../time-to-url.txt) — daily machine T2U on ops.aft.page
 
 - [EVIDENCE-PACK.md](./EVIDENCE-PACK.md) — Week 4 close checklist + Phase 1 success test  

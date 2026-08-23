@@ -67,10 +67,11 @@ Source of truth: `STRATEGY.md` progression + `todo.txt`. As of skill authoring:
 | **Hosted CLI** | **Live** — agents or humans (`curl -fsSL https://aft.page/install \| sh` → `aft deploy`) |
 | **Drop** | **Live** — humans (folder/zip → URL) |
 | **Agent Plugin** | **Pending** — per-IDE / marketplace listings |
-| AI automations | **Frozen** through 2026-09-10 — not started; do not open. |
+| **Run** | In scope — paste repo → URL (`docs/RUN.md`) |
+| AI automations | Parked (`docs/parked/cron.md`) — not a SKU |
 | Browser automation / Kitesurf | Explicitly deferred |
 
-**30-day freeze (2026-08-11 → 2026-09-10):** no new product lines. Only Plugin distribution, stranger proof, invite share, unblocker bugfixes, YC/credits. See `todo.txt` + STRATEGY § freeze.
+**Freeze lifted 23 Aug 2026.** Host / Ship / Run may ship. See `todo.txt` + STRATEGY § Focus.
 
 OSS CLI (`cli/`, customer-cloud AWS) is **parked** — different product from hosted aft.page. Agents today: **MCP or CLI**. Humans: **Drop or CLI**. Plugin marketplace pending. Cron-as-product is **parked** (`docs/parked/cron.md`); API status/smoke crons are unrelated ops.
 
@@ -92,8 +93,8 @@ Proof gaps (todo, not ops): ≥5 repeat deployers, ≥1 invite-accepted share, Y
 
 ## Product
 - Now: Drop + claim/share/secrets + OpenNext
-- This month: Agent Plugin + stranger proof (30-day freeze — no new product lines)
-- Not yet: AI automations (frozen through 2026-09-10)
+- This month: Agent Plugin, stranger proof, Run
+- Parked: AI automations / Cron SKU
 ```
 
 Be blunt. "Working smooth" only if Class A is green **and** you did not skip ops. Uncommitted shipped work → say **not sync**, prod likely fine, GitHub is the hole.

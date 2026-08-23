@@ -9,9 +9,9 @@ Internal. One product (agent → URL → claim → share). No country forks, no
 The bet: they will **pay for the primitive** (mainland reach / EU residency),
 not for a translated homepage.
 
-Two-person weekly-use gate still wins this freeze ([STRATEGY.md](./STRATEGY.md)).
-China/EU work is the **first growth queue after that gate** — not a parallel
-company this month, not “wait until a Shanghai VP mails.”
+Two-person weekly use still matters for GTM ([STRATEGY.md](./STRATEGY.md)).
+China/EU work is the **first growth queue** — not a parallel company this week,
+not “wait until a Shanghai VP mails.”
 
 ## Ambition
 
@@ -49,7 +49,7 @@ the **shape**: same AFT, they fund the primitive.
 | **5 China Network** | JD PoPs, same Workers | **China: the paid primitive.** Enterprise add-on + [ICP](https://developers.cloudflare.com/china-network/) + JD vet. Price so a team is *willing to pay* for reach, not a free VPN workaround | N/A |
 
 Rung 1–3 (CN tool + zh copy; EU DPA/region) = growth builds you do **without**
-waiting for a buyer, once the freeze gate is hit.
+waiting for a buyer, once selling starts.
 
 Rung 4–5 = still money + entity. You can **price and sell** rung 5 before it
 is live (“mainland primitive, enterprise, we turn it on when ICP + CF China
@@ -97,7 +97,6 @@ Not exceptions. CF works. Build rung 1–2 when they ask. No `aft.jp` / `aft.kr`
 
 ## What this is not
 
-Not Aliyun. Not five ccTLDs. Not breaking the freeze for ICP this month.
-After the two-person gate, China agent matrix + EU paid region are the
-growth builds — so when selling starts you are not shrugging at Shanghai or
-Berlin.
+Not Aliyun. Not five ccTLDs. Not ICP this week.
+China agent matrix + EU paid region are the growth builds — so when selling
+starts you are not shrugging at Shanghai or Berlin.

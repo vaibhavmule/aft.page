@@ -1,6 +1,8 @@
 /**
  * Public smoke flight from this isolate (not aft-page-api).
- * Same-isolate API→MCP→API deadlocks; HTTPS to *.aft.page from here does not.
+ * Same-isolate API→MCP→API deadlocks — don't tools/call from API.
+ * HTTPS to *.aft.page / SSL-for-SaaS needs global_fetch_strictly_public
+ * or fetch hits originless 100:: (522 / timeout) instead of the Worker.
  */
 type DomainRow = { hostname: string; status: string; sslStatus: string | null };
 

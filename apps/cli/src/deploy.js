@@ -12,6 +12,7 @@ import {
 } from "./resolve.js";
 import { adviseDeploy, collectSnapshot } from "./preflight.js";
 import { loadState, readAftJsonSlug, saveState } from "./state.js";
+import { deployNextSsr } from "./next-deploy.js";
 import { note, ok, say } from "./ui.js";
 
 export { shouldSkip };
@@ -80,6 +81,10 @@ export async function ensureDeployable(cwd, dirArg, { checkOnly = false } = {}) 
 
   if (advice.ok) return snapshot._target;
 
+  if (advice.action === "run_next") {
+    return { ...snapshot._target, kind: "next" };
+  }
+
   if (advice.action === "run_build") {
     const script = snapshot.buildScript || "build";
     if (isInteractive()) {
@@ -112,10 +117,34 @@ export async function cmdDeploy(args) {
     return;
   }
 
-  const { deployRoot, projectRoot } = await ensureDeployable(
-    process.cwd(),
-    dirArg,
-  );
+  const target = await ensureDeployable(process.cwd(), dirArg);
+
+  if (target.kind === "next") {
+    const initSlug = await ensureAftJson(target.projectRoot);
+    if (initSlug) note(`Wrote aft.json → ${initSlug}`);
+    const state = await loadState(target.projectRoot);
+    const slug =
+      slugFlag ||
+      state?.slug ||
+      (await readAftJsonSlug(target.projectRoot)) ||
+      (await readSlugHint(target.projectRoot));
+    if (!slug) throw new Error("No slug. Pass --slug or add name to package.json.");
+    const body = await deployNextSsr(target.projectRoot, slug, {
+      editToken: state?.editToken,
+    });
+    if (body.editToken) {
+      await saveState(target.projectRoot, { slug: body.slug, editToken: body.editToken });
+    } else if (body.slug && state?.editToken) {
+      await saveState(target.projectRoot, { slug: body.slug, editToken: state.editToken });
+    }
+    ok(body.url);
+    console.log(body.url);
+    if (body.claimUrl) note(`Claim: ${body.claimUrl}`);
+    if (body.notice) note(body.notice);
+    return;
+  }
+
+  const { deployRoot, projectRoot } = target;
 
   if (deployRoot !== projectRoot) {
     say(`Using ${deployRoot.replace(projectRoot + "/", "")}/`);

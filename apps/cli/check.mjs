@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { ensureDeployable, shouldSkip } from "./src/deploy.js";
 import { DEFAULT_API, apiBase } from "./src/api.js";
 import { adviseLocal } from "./src/preflight.js";
-import { detectProject } from "./src/detect.js";
+import { detectProject, detectFromSignals } from "./src/detect.js";
 import { readAftJsonSlug } from "./src/state.js";
 import { resolveDeployTarget, readSlugHint } from "./src/resolve.js";
 import { sanitizeSlug } from "./src/slug.js";
@@ -29,7 +29,20 @@ assert.equal(DEFAULT_API, "https://api.aft.page");
 
 assert.equal(
   adviseLocal({ runtime: "next", staticDeployable: false }).error,
-  "not_static",
+  "needs_next_build",
+);
+assert.equal(
+  adviseLocal({ runtime: "next", staticDeployable: false }).action,
+  "run_next",
+);
+assert.equal(
+  adviseLocal({ runtime: "container", framework: "django" }).error,
+  "needs_container",
+);
+assert.equal(
+  adviseLocal({ runtime: "not_a_site", framework: "not-a-site", label: "Celery" })
+    .error,
+  "not_a_site",
 );
 assert.equal(
   adviseLocal({ needsBuild: true, buildScript: "build" }).action,
@@ -178,7 +191,41 @@ await writeFile(join(nextDir, "next.config.mjs"), "export default {}\n");
 const nextDet = await detectProject(nextDir);
 assert.equal(nextDet.framework, "next-ssr");
 assert.equal(nextDet.runtime, "next");
-await assert.rejects(() => ensureDeployable(nextDir, "."), /upstream/);
+const nextCheck = await ensureDeployable(nextDir, ".", { checkOnly: true });
+assert.equal(nextCheck.advice.action, "run_next");
+assert.equal(nextCheck.advice.error, "needs_next_build");
+
+assert.equal(
+  detectFromSignals({ pkg: { dependencies: { express: "4" } }, hasIndexHtml: true })
+    .kind,
+  "container",
+);
+assert.equal(
+  detectFromSignals({ requirementsTxt: "flask>=3\n" }).stack,
+  "Flask",
+);
+assert.equal(
+  detectFromSignals({ requirementsTxt: "celery==5\n" }).kind,
+  "not_a_site",
+);
+assert.equal(
+  detectFromSignals({ gemfile: "gem 'rails'\n" }).stack,
+  "Rails",
+);
+assert.equal(
+  detectFromSignals({ cargoToml: "axum = \"0.7\"\n" }).stack,
+  "Axum",
+);
+assert.equal(
+  detectFromSignals({
+    goMod: "require github.com/gin-gonic/gin v1\n",
+  }).stack,
+  "Gin",
+);
+assert.equal(
+  detectFromSignals({ pkg: { dependencies: { ioredis: "5" } } }).kind,
+  "not_a_site",
+);
 
 const install = await import("node:fs").then((fs) =>
   fs.readFileSync(join(root, "../../www/install.sh"), "utf8"),
@@ -193,6 +240,7 @@ assert.match(install, /src\/prompt\.js/);
 assert.match(install, /src\/update\.js/);
 assert.match(install, /src\/version\.js/);
 assert.match(install, /src\/analytics\.js/);
+assert.match(install, /src\/next-deploy\.js/);
 assert.match(install, /VERSION/);
 
 console.log("ok");

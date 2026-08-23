@@ -1,5 +1,14 @@
+import {
+  githubRepoHref,
+  isGithubRepoPage,
+  parseGithubRepoUrl,
+} from "./github-url.js";
+
 const API = "https://api.aft.page/v1/deploy";
+const REPO_API = "https://api.aft.page/v1/repo/deploy";
+const JOB_API = "https://api.aft.page/v1/jobs";
 const BTN_ATTR = "data-aft-deploy";
+const RUN_ATTR = "data-aft-run";
 const ICON_MARK = "data-aft-icon";
 
 function slugFromHtml(html) {
@@ -196,6 +205,130 @@ function createIconButton(getHtml) {
   });
 
   return btn;
+}
+
+async function waitForRepoJob(jobId, onPhase) {
+  const deadline = Date.now() + 180_000;
+  while (Date.now() < deadline) {
+    const res = await fetch(`${JOB_API}/${encodeURIComponent(jobId)}`, {
+      headers: { "x-aft-client": "extension" },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (data.status === "live" && data.url) return data;
+    if (data.status === "failed") {
+      throw new Error(data.reason || data.error || "Build failed");
+    }
+    onPhase?.(data.phase || data.status || "building");
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+  throw new Error("Timed out waiting for the build");
+}
+
+async function runGithubRepo(ref, btn) {
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Checking…";
+  const opened = window.open("about:blank", "_blank");
+  try {
+    const res = await fetch(REPO_API, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-aft-client": "extension",
+      },
+      body: JSON.stringify({ url: githubRepoHref(ref) }),
+    });
+    const data = await res.json().catch(() => ({}));
+    let live = data;
+    if (res.status === 202 && data.jobId) {
+      btn.textContent = "Building…";
+      live = await waitForRepoJob(data.jobId, (phase) => {
+        btn.textContent = String(phase || "Building…");
+      });
+    } else if (!res.ok || !data.url) {
+      throw new Error(
+        data.reason || data.message || data.error || `Run failed (${res.status})`,
+      );
+    }
+    const dest = liveOpenUrl(live.url, live.editToken, live.claimUrl);
+    if (opened) opened.location.replace(dest);
+    else window.open(dest, "_blank", "noopener,noreferrer");
+    btn.textContent = "Live";
+  } catch (err) {
+    console.error("[aft.page]", err);
+    opened?.close();
+    btn.textContent = "Failed";
+    btn.title = err instanceof Error ? err.message : "Failed";
+  } finally {
+    btn.disabled = false;
+    setTimeout(() => {
+      btn.textContent = label;
+      btn.title = "Open this repo as a live URL on aft.page";
+    }, 2200);
+  }
+}
+
+function createRunButton(ref, kind) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.setAttribute(RUN_ATTR, kind);
+  btn.className =
+    kind === "github" ? "aft-run-btn aft-run-btn--github" : "aft-run-chip";
+  btn.textContent = "Run on AFT";
+  btn.title = "Open this repo as a live URL on aft.page";
+  btn.setAttribute("aria-label", "Run on AFT");
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    runGithubRepo(ref, btn);
+  });
+  return btn;
+}
+
+function injectGithubRepoButton() {
+  if (!isGithubRepoPage(location.href)) {
+    document.querySelector(`[${RUN_ATTR}="github"]`)?.remove();
+    return;
+  }
+  const ref = parseGithubRepoUrl(location.href);
+  if (!ref) return;
+  const key = `${ref.owner}/${ref.repo}`;
+  const existing = document.querySelector(`[${RUN_ATTR}="github"]`);
+  if (existing) {
+    if (existing.dataset.aftRepo === key) return;
+    existing.remove();
+  }
+  const btn = createRunButton(ref, "github");
+  btn.dataset.aftRepo = key;
+  const fork = document.querySelector('a[href$="/fork"]');
+  if (fork?.parentElement) {
+    fork.parentElement.insertBefore(btn, fork);
+    return;
+  }
+  const actions = document.querySelector(
+    ".pagehead-actions, #repository-details-container, [data-testid='unrepo-header']",
+  );
+  if (actions) {
+    actions.appendChild(btn);
+    return;
+  }
+  btn.classList.add("aft-run-btn--float-gh");
+  document.documentElement.appendChild(btn);
+}
+
+function injectGithubLinkChips(root = document) {
+  const existing = root.querySelectorAll(`[${RUN_ATTR}="chip"]`).length;
+  if (existing >= 8) return;
+  let added = existing;
+  for (const a of root.querySelectorAll('a[href*="github.com/"]')) {
+    if (added >= 8) break;
+    if (a.closest("nav, header, [role='navigation']")) continue;
+    if (a.nextElementSibling?.getAttribute?.(RUN_ATTR) === "chip") continue;
+    const ref = parseGithubRepoUrl(a.href);
+    if (!ref) continue;
+    a.insertAdjacentElement("afterend", createRunButton(ref, "chip"));
+    added += 1;
+  }
 }
 
 function createMenuItem(getHtml) {
@@ -601,7 +734,12 @@ function injectClaudeArtifactMenu() {
 
 function scan() {
   const host = location.hostname;
+  if (host === "github.com" || host === "www.github.com") {
+    injectGithubRepoButton();
+    return;
+  }
   injectBesideCopyButtons();
+  injectGithubLinkChips();
   if (host.includes("claude.ai")) injectClaudeArtifactMenu();
   // ChatGPT: inject via Code/Preview(/Copy) toolbar paths only (above).
   // Extra pre-scanning duplicates buttons outside that cluster.
@@ -624,6 +762,8 @@ obs.observe(document.documentElement, {
 });
 
 // Fullscreen / minimize remounts Claude's artifact chrome — force a rescan.
+document.addEventListener("turbo:load", () => scheduleScan(50));
+document.addEventListener("pjax:end", () => scheduleScan(50));
 document.addEventListener("fullscreenchange", () => scheduleScan(100));
 document.addEventListener("webkitfullscreenchange", () => scheduleScan(100));
 window.addEventListener("resize", () => scheduleScan(400));

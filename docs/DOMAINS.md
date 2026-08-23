@@ -35,6 +35,7 @@ True two-TLD clone would be `aft.com` (taken) + `*.aft.page`, or later `aft.app`
 | Domain | Why |
 | --- | --- |
 | `aft.software` | Category keyword only. Canonical is already `aft.page`. Cheap (~$12–32/yr) but no product job until you want a category landing or defensive registration. Optional later. |
+| **`aft.run`** | **Taken** (registered ~2021, parked). Run lives at `aft.page/run/` + `tryaft.com/owner/repo`. Do not wait on a `.run` you don’t own. |
 
 ## Future buy list (post-funding / real traction)
 

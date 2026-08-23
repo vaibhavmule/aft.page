@@ -17,52 +17,7 @@
     />
     <link rel="stylesheet" href="/app.css" />
     <style>
-      main { max-width: 48rem; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
-      .toolbar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        margin-bottom: 1.25rem;
-        align-items: center;
-        justify-content: space-between;
-      }
-      .toolbar .meta {
-        margin-left: 0;
-        order: -1;
-        flex: 1 1 auto;
-      }
-      .head-row {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 1.25rem;
-      }
-      .head-row h1 { margin: 0; flex: 1 1 auto; }
-      .head-row .btn { margin-left: auto; }
-      th.actions-col, td.actions { width: 2.5rem; text-align: right; }
-      .meta {
-        margin-left: auto;
-        font-size: 0.82rem;
-        color: var(--quiet);
-      }
-      .actions { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-      tbody tr {
-        opacity: 0;
-        animation: app-fade-up 0.32s ease forwards;
-      }
-      tbody tr:nth-child(1) { animation-delay: 0.02s; }
-      tbody tr:nth-child(2) { animation-delay: 0.05s; }
-      tbody tr:nth-child(3) { animation-delay: 0.08s; }
-      tbody tr:nth-child(4) { animation-delay: 0.11s; }
-      tbody tr:nth-child(5) { animation-delay: 0.14s; }
-      tbody tr:nth-child(n + 6) { animation-delay: 0.17s; }
-      .who {
-        font-size: 0.85rem;
-        color: var(--quiet);
-        margin-bottom: 0.75rem;
-        animation: app-fade-up 0.28s ease both;
-      }
+      main { max-width: 56rem; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
       .pager {
         display: flex;
         flex-wrap: wrap;
@@ -78,7 +33,6 @@
         margin-right: auto;
       }
       .pager-btns { display: flex; gap: 0.4rem; }
-      a.btn, button.btn { font-size: 0.78rem; padding: 0.3rem 0.55rem; }
       .menu-panel button.menuitem {
         display: block;
         width: 100%;
@@ -102,12 +56,6 @@
       }
       .menu-panel button.danger { color: var(--danger); }
       .pill.inactive { border-color: var(--warn); color: var(--warn); }
-      .name-row {
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-        flex-wrap: wrap;
-      }
       .empty-lead { margin: 0 0 0.85rem; color: var(--ink); font-weight: 600; }
       .empty .primary { margin-top: 0; }
       .empty-curl {
@@ -123,23 +71,15 @@
         color: var(--ink);
       }
       .empty-curl code { font-size: inherit; }
-      .empty-more {
-        margin: 0.9rem 0 0;
-        font-size: 0.85rem;
-      }
+      .empty-more { margin: 0.9rem 0 0; font-size: 0.85rem; }
       .empty-more a { color: var(--ink); }
-      .section-label {
-        font-size: 0.78rem;
-        font-weight: 650;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
+      .projects-no-match {
+        margin: 1.5rem 0;
         color: var(--quiet);
-        margin: 0 0 0.5rem;
+        font-size: 0.9rem;
+        text-align: center;
       }
-      #shared { scroll-margin-top: 1.25rem; }
-      #shared[hidden] + #list { margin-top: 0; }
-      #list { margin-top: 1.75rem; }
-      #meta a { color: inherit; }
+      #meta { font-size: 0.82rem; color: var(--quiet); }
     </style>
   </head>
   <body>
@@ -158,24 +98,88 @@
       </div>
     </header>
     <main>
-      <div class="head-row">
+      <div class="projects-hub-head">
         <h1>Projects</h1>
-        <a class="btn" id="new-project" href="/projects/new/" hidden>New project</a>
+        <p class="projects-hub-sub">Deploy small software — use, share, claim.</p>
       </div>
-      <div class="toolbar" id="toolbar" hidden>
-        <span class="meta" id="meta"></span>
+
+      <div class="projects-toolbar" id="toolbar" hidden>
+        <input
+          type="search"
+          class="projects-search"
+          id="search"
+          placeholder="Search projects"
+          autocomplete="off"
+          aria-label="Search projects"
+        />
+        <a class="btn" id="new-project" href="/projects/new/" hidden>Deploy</a>
       </div>
-      <div class="loading" id="loading" aria-busy="true" aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
-        <div>
-          <div>Loading projects…</div>
-          <div class="skeleton-list" aria-hidden="true">
-            <div class="skeleton-row"></div>
-            <div class="skeleton-row"></div>
-            <div class="skeleton-row"></div>
-          </div>
+
+      <div class="projects-tabs" id="projects-tabs" hidden role="tablist" aria-label="Project collections">
+        <button type="button" role="tab" id="tab-owned" aria-selected="true" aria-controls="projects-grid">
+          Owned by you
+        </button>
+        <button type="button" role="tab" id="tab-shared" aria-selected="false" aria-controls="projects-grid">
+          Shared with you
+        </button>
+      </div>
+
+      <p class="who" id="meta" hidden></p>
+
+      <div class="loading-skeleton" id="loading" aria-busy="true" aria-live="polite">
+        <p class="loading-status">Loading projects…</p>
+        <div class="skeleton-grid" aria-hidden="true">
+          <article class="skeleton-card">
+            <div class="skeleton-thumb skeleton-shimmer"></div>
+            <div class="skeleton-card-body">
+              <div class="skeleton-line title skeleton-shimmer"></div>
+              <div class="skeleton-line sm skeleton-shimmer"></div>
+              <div class="skeleton-line url skeleton-shimmer"></div>
+            </div>
+          </article>
+          <article class="skeleton-card">
+            <div class="skeleton-thumb skeleton-shimmer"></div>
+            <div class="skeleton-card-body">
+              <div class="skeleton-line title skeleton-shimmer"></div>
+              <div class="skeleton-line sm skeleton-shimmer"></div>
+              <div class="skeleton-line url skeleton-shimmer"></div>
+            </div>
+          </article>
+          <article class="skeleton-card">
+            <div class="skeleton-thumb skeleton-shimmer"></div>
+            <div class="skeleton-card-body">
+              <div class="skeleton-line title skeleton-shimmer"></div>
+              <div class="skeleton-line sm skeleton-shimmer"></div>
+              <div class="skeleton-line url skeleton-shimmer"></div>
+            </div>
+          </article>
+          <article class="skeleton-card">
+            <div class="skeleton-thumb skeleton-shimmer"></div>
+            <div class="skeleton-card-body">
+              <div class="skeleton-line title skeleton-shimmer"></div>
+              <div class="skeleton-line sm skeleton-shimmer"></div>
+              <div class="skeleton-line url skeleton-shimmer"></div>
+            </div>
+          </article>
+          <article class="skeleton-card">
+            <div class="skeleton-thumb skeleton-shimmer"></div>
+            <div class="skeleton-card-body">
+              <div class="skeleton-line title skeleton-shimmer"></div>
+              <div class="skeleton-line sm skeleton-shimmer"></div>
+              <div class="skeleton-line url skeleton-shimmer"></div>
+            </div>
+          </article>
+          <article class="skeleton-card">
+            <div class="skeleton-thumb skeleton-shimmer"></div>
+            <div class="skeleton-card-body">
+              <div class="skeleton-line title skeleton-shimmer"></div>
+              <div class="skeleton-line sm skeleton-shimmer"></div>
+              <div class="skeleton-line url skeleton-shimmer"></div>
+            </div>
+          </article>
         </div>
       </div>
+
       <div class="login" id="login" hidden>
         <p>Sign in to see your projects.</p>
         <a class="primary" href="/login">Log in</a>
@@ -183,9 +187,10 @@
           Or claim on the live URL after deploy.
         </p>
       </div>
+
       <div class="empty" id="empty" hidden>
         <p class="empty-lead">No projects yet.</p>
-        <a class="primary" href="/projects/new/">Drop files</a>
+        <a class="primary" href="/projects/new/">Deploy an app</a>
         <pre class="empty-curl"><code>curl -X POST https://api.aft.page/v1/deploy \
   -H 'Content-Type: text/html' \
   --data '&lt;h1&gt;hello&lt;/h1&gt;'</code></pre>
@@ -196,34 +201,10 @@
           · after curl, claim on the live URL
         </p>
       </div>
-      <div id="shared" hidden>
-        <h2 class="section-label">Shared with me</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Project</th>
-              <th>Visibility</th>
-              <th>Owner</th>
-              <th>Access</th>
-              <th class="actions-col"></th>
-            </tr>
-          </thead>
-          <tbody id="shared-tbody"></tbody>
-        </table>
-      </div>
+
       <div id="list" hidden>
-        <h2 class="section-label" id="owned-heading" hidden>Your projects</h2>
-        <table id="table">
-          <thead>
-            <tr>
-              <th>Project</th>
-              <th>Visibility</th>
-              <th>Last used</th>
-              <th class="actions-col"></th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
+        <div class="projects-grid" id="projects-grid" role="tabpanel"></div>
+        <p class="projects-no-match" id="no-match" hidden>No projects match your search.</p>
         <div class="pager" id="pager" hidden>
           <span class="pager-status" id="pager-status"></span>
           <div class="pager-btns">
@@ -233,40 +214,44 @@
         </div>
       </div>
     </main>
+    <script src="/projects-ui.js"></script>
     <script>
       const API = "https://api.aft.page";
+      const UI = window.AftProjectsUI;
       const PAGE_SIZE = 20;
-      /** Soft TTL for client cache — revalidate in background after this. */
       const CACHE_TTL_MS = 60_000;
-      const CACHE_KEY = "aft.projects.sites.v2";
+      const CACHE_KEY = "aft.projects.sites.v3";
+
       const login = document.getElementById("login");
       const empty = document.getElementById("empty");
       const list = document.getElementById("list");
-      const tbody = document.getElementById("tbody");
-      const sharedEl = document.getElementById("shared");
-      const sharedTbody = document.getElementById("shared-tbody");
-      const ownedHeading = document.getElementById("owned-heading");
+      const grid = document.getElementById("projects-grid");
+      const noMatch = document.getElementById("no-match");
       const toolbar = document.getElementById("toolbar");
+      const projectsTabs = document.getElementById("projects-tabs");
+      const tabOwned = document.getElementById("tab-owned");
+      const tabShared = document.getElementById("tab-shared");
       const loading = document.getElementById("loading");
       const meta = document.getElementById("meta");
+      const searchInput = document.getElementById("search");
       const newProject = document.getElementById("new-project");
       const pager = document.getElementById("pager");
       const pagerStatus = document.getElementById("pager-status");
       const prevBtn = document.getElementById("prev");
       const nextBtn = document.getElementById("next");
 
-      /** @type {Map<number, { data: object, at: number }>} */
       const memoryCache = new Map();
       let page = Math.max(
         1,
         Number(new URLSearchParams(location.search).get("page") || "1") || 1,
       );
       let loadGen = 0;
-      /** @type {Set<number>} */
       const inflightPrefetch = new Set();
       let openMenu = null;
-      /** @type {HTMLElement | null} */
       let openPanel = null;
+      let activeTab = "owned";
+      let lastData = null;
+      let searchQuery = "";
 
       function closeMenus() {
         if (openMenu) {
@@ -281,18 +266,16 @@
         }
       }
 
-      function openActionsMenu(btn, links) {
+      function openActionsMenu(btn, links, onPanel) {
         closeMenus();
         const panel = document.createElement("div");
         panel.className = "menu-panel open";
         panel.setAttribute("role", "menu");
         panel.innerHTML = links;
         document.body.appendChild(panel);
-
         const r = btn.getBoundingClientRect();
         const gap = 6;
         const pad = 8;
-        // Measure after paint so width/height are real
         const pr = panel.getBoundingClientRect();
         let top = r.bottom + gap;
         let left = r.right - pr.width;
@@ -305,11 +288,11 @@
         }
         panel.style.top = `${top}px`;
         panel.style.left = `${left}px`;
-
         btn.setAttribute("aria-expanded", "true");
         openMenu = btn.closest(".menu");
         openPanel = panel;
         panel.addEventListener("click", (e) => e.stopPropagation());
+        if (onPanel) onPanel(panel);
       }
 
       document.addEventListener("click", closeMenus);
@@ -339,9 +322,7 @@
             if (!Number.isFinite(p) || !v?.data || !v?.at) continue;
             memoryCache.set(p, v);
           }
-        } catch (_) {
-          /* ignore quota / parse */
-        }
+        } catch (_) {}
       }
 
       function writeSessionCache() {
@@ -351,9 +332,7 @@
             out[String(p)] = entry;
           }
           sessionStorage.setItem(CACHE_KEY, JSON.stringify(out));
-        } catch (_) {
-          /* ignore quota */
-        }
+        } catch (_) {}
       }
 
       function getCached(p) {
@@ -369,199 +348,216 @@
         memoryCache.clear();
         try {
           sessionStorage.removeItem(CACHE_KEY);
-        } catch (_) {
-          /* ignore */
-        }
+        } catch (_) {}
       }
 
       function isFresh(entry) {
         return entry && Date.now() - entry.at < CACHE_TTL_MS;
       }
 
-      function renderRows(sites) {
-        tbody.replaceChildren();
-        closeMenus();
-        for (const s of sites) {
-          const tr = document.createElement("tr");
-          const last = s.lastServedAt
-            ? new Date(s.lastServedAt).toLocaleString()
-            : "—";
-          const live = s.url || `https://${s.slug}.aft.page`;
-          const manage = `/project/?slug=${encodeURIComponent(s.slug)}`;
-          const isActive = s.active !== false;
-
-          const nameTd = document.createElement("td");
-          nameTd.innerHTML = `
-            <div class="name-row">
-              <a href="${manage}" style="color:inherit;text-decoration:none">
-                <strong>${s.slug}</strong>
-              </a>
-              ${isActive ? "" : '<span class="pill inactive">Inactive</span>'}
-            </div>
-            <div style="font-size:0.78rem;color:var(--quiet);margin-top:0.2rem">
-              <code>${(s.deployId || "").slice(0, 12)}</code>
-            </div>`;
-
-          const visTd = document.createElement("td");
-          visTd.innerHTML = `<span class="pill ${s.visibility === "private" ? "private" : ""}">${s.visibility}</span>`;
-
-          const lastTd = document.createElement("td");
-          lastTd.textContent = last;
-
-          const actTd = document.createElement("td");
-          actTd.className = "actions";
-          const menu = document.createElement("div");
-          menu.className = "menu";
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "menu-btn";
-          btn.setAttribute("aria-label", `Actions for ${s.slug}`);
-          btn.setAttribute("aria-haspopup", "menu");
-          btn.setAttribute("aria-expanded", "false");
-          btn.textContent = "⋯";
-          const links = `
-            <a role="menuitem" href="${manage}">Manage</a>
-            <a role="menuitem" href="${live}" target="_blank" rel="noopener">Open</a>
-            <div class="menu-sep" role="separator"></div>
-            <button type="button" role="menuitem" class="menuitem" data-action="toggle">${isActive ? "Deactivate" : "Reactivate"}</button>
-            <button type="button" role="menuitem" class="menuitem danger" data-action="delete">Destroy…</button>`;
-          btn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const expanded = btn.getAttribute("aria-expanded") === "true";
-            if (expanded) {
-              closeMenus();
-              return;
-            }
-            openActionsMenu(btn, links);
-            if (openPanel) {
-              const tog = openPanel.querySelector('[data-action="toggle"]');
-              if (tog) {
-                tog.addEventListener("click", () => {
-                  closeMenus();
-                  setSiteActive(s.slug, !isActive);
-                });
-              }
-              const del = openPanel.querySelector('[data-action="delete"]');
-              if (del) {
-                del.addEventListener("click", () => {
-                  closeMenus();
-                  destroyProject(s.slug);
-                });
-              }
-            }
-          });
-          menu.append(btn);
-          actTd.appendChild(menu);
-
-          tr.append(nameTd, visTd, lastTd, actTd);
-          tbody.appendChild(tr);
-        }
+      function matchesSearch(s) {
+        if (!searchQuery) return true;
+        const q = searchQuery.toLowerCase();
+        const live = (s.url || `https://${s.slug}.aft.page`).toLowerCase();
+        return s.slug.toLowerCase().includes(q) || live.includes(q);
       }
 
-      function renderSharedRows(shared) {
-        sharedTbody.replaceChildren();
-        for (const s of shared) {
-          const tr = document.createElement("tr");
-          const live = s.url || `https://${s.slug}.aft.page`;
-          const manage = `/project/?slug=${encodeURIComponent(s.slug)}`;
-          const isActive = s.active !== false;
-          const role = s.role === "edit" ? "edit" : "view";
+      function setActiveTab(tab) {
+        activeTab = tab;
+        tabOwned.setAttribute("aria-selected", String(tab === "owned"));
+        tabShared.setAttribute("aria-selected", String(tab === "shared"));
+        renderGrid();
+        if (lastData) renderPager(lastData);
+      }
 
-          const nameTd = document.createElement("td");
-          const nameRow = document.createElement("div");
-          nameRow.className = "name-row";
-          const nameA = document.createElement("a");
-          nameA.href = manage;
-          nameA.style.cssText = "color:inherit;text-decoration:none";
-          const strong = document.createElement("strong");
-          strong.textContent = s.slug;
-          nameA.appendChild(strong);
-          nameRow.appendChild(nameA);
-          if (!isActive) {
-            const pill = document.createElement("span");
-            pill.className = "pill inactive";
-            pill.textContent = "Inactive";
-            nameRow.appendChild(pill);
+      function renderSiteCard(s, opts) {
+        const isOwner = opts.isOwner !== false;
+        const live = s.url || `https://${s.slug}.aft.page`;
+        const manage = `/project/?slug=${encodeURIComponent(s.slug)}`;
+        const settings = `/project/?slug=${encodeURIComponent(s.slug)}&tab=settings`;
+        const analytics = `/project/?slug=${encodeURIComponent(s.slug)}&tab=analytics`;
+        const isActive = s.active !== false;
+        const when = UI.formatRelativeTime(s.updatedAt || s.lastServedAt);
+        const vis = UI.visibilityMeta({ ...s, role: isOwner ? "owner" : s.role });
+
+        const card = document.createElement("article");
+        card.className = "project-card" + (isActive ? "" : " is-inactive");
+
+        const link = document.createElement("a");
+        link.className = "project-card-link";
+        link.href = manage;
+        link.appendChild(UI.renderThumb({ slug: s.slug, thumbUrl: s.thumbUrl, url: live }));
+
+        const body = document.createElement("div");
+        body.className = "project-card-body";
+        const title = document.createElement("h2");
+        title.className = "project-card-title";
+        title.textContent = s.slug;
+        const metaRow = document.createElement("div");
+        metaRow.className = "project-card-meta";
+        metaRow.innerHTML = `<span>${when}</span><span class="project-card-vis">${UI.iconSvg(vis.icon)} ${vis.label}</span>`;
+        if (!isActive) {
+          metaRow.innerHTML += '<span class="pill inactive">Inactive</span>';
+        }
+        const urlLine = document.createElement("div");
+        urlLine.className = "project-card-url";
+        urlLine.textContent = live.replace(/^https:\/\//, "");
+        body.append(title, metaRow, urlLine);
+        link.appendChild(body);
+        card.appendChild(link);
+
+        const actions = document.createElement("div");
+        actions.className = "project-card-actions";
+        const shareBtn = document.createElement("button");
+        shareBtn.type = "button";
+        shareBtn.className = "btn ghost";
+        shareBtn.textContent = "Share";
+        shareBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          UI.openShareModal({
+            slug: s.slug,
+            url: live,
+            visibility: s.visibility,
+            role: isOwner ? "owner" : s.role,
+            ownerEmail: s.ownerEmail,
+            onChange: () => load(page, { force: true }),
+          });
+        });
+        actions.appendChild(shareBtn);
+
+        const menu = document.createElement("div");
+        menu.className = "menu";
+        const menuBtn = document.createElement("button");
+        menuBtn.type = "button";
+        menuBtn.className = "menu-btn";
+        menuBtn.setAttribute("aria-label", `Actions for ${s.slug}`);
+        menuBtn.setAttribute("aria-haspopup", "menu");
+        menuBtn.setAttribute("aria-expanded", "false");
+        menuBtn.textContent = "⋯";
+        let links = `
+          <a role="menuitem" href="${live}" target="_blank" rel="noopener">Visit</a>
+          <a role="menuitem" href="${settings}">Settings</a>
+          <a role="menuitem" href="${analytics}">Analytics</a>`;
+        if (isOwner) {
+          links += `
+          <div class="menu-sep" role="separator"></div>
+          <button type="button" role="menuitem" class="menuitem" data-action="toggle">${isActive ? "Deactivate" : "Reactivate"}</button>
+          <button type="button" role="menuitem" class="menuitem danger" data-action="delete">Delete project…</button>`;
+        }
+        menuBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (menuBtn.getAttribute("aria-expanded") === "true") {
+            closeMenus();
+            return;
           }
-          nameTd.appendChild(nameRow);
-
-          const visTd = document.createElement("td");
-          visTd.innerHTML = `<span class="pill ${s.visibility === "private" ? "private" : ""}">${s.visibility === "private" ? "private" : "public"}</span>`;
-
-          const ownerTd = document.createElement("td");
-          ownerTd.textContent = s.ownerEmail || "—";
-
-          const roleTd = document.createElement("td");
-          roleTd.innerHTML = `<span class="pill">${role}</span>`;
-
-          const actTd = document.createElement("td");
-          actTd.className = "actions";
-          const menu = document.createElement("div");
-          menu.className = "menu";
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "menu-btn";
-          btn.setAttribute("aria-label", `Actions for ${s.slug}`);
-          btn.setAttribute("aria-haspopup", "menu");
-          btn.setAttribute("aria-expanded", "false");
-          btn.textContent = "⋯";
-          const links = `
-            <a role="menuitem" href="${manage}">Manage</a>
-            <a role="menuitem" href="${live}" target="_blank" rel="noopener">Open</a>`;
-          btn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const expanded = btn.getAttribute("aria-expanded") === "true";
-            if (expanded) {
-              closeMenus();
-              return;
+          openActionsMenu(menuBtn, links, (panel) => {
+            const tog = panel.querySelector('[data-action="toggle"]');
+            if (tog) {
+              tog.addEventListener("click", () => {
+                closeMenus();
+                setSiteActive(s.slug, !isActive);
+              });
             }
-            openActionsMenu(btn, links);
+            const del = panel.querySelector('[data-action="delete"]');
+            if (del) {
+              del.addEventListener("click", () => {
+                closeMenus();
+                destroyProject(s.slug);
+              });
+            }
           });
-          menu.append(btn);
-          actTd.appendChild(menu);
+        });
+        menu.appendChild(menuBtn);
+        actions.appendChild(menu);
+        card.appendChild(actions);
+        return card;
+      }
 
-          tr.append(nameTd, visTd, ownerTd, roleTd, actTd);
-          sharedTbody.appendChild(tr);
+      function renderGrid() {
+        if (!lastData) return;
+        grid.replaceChildren();
+        closeMenus();
+        const sites =
+          activeTab === "shared"
+            ? (lastData.shared || []).filter(matchesSearch)
+            : (lastData.sites || []).filter(matchesSearch);
+        if (!sites.length) {
+          noMatch.hidden = !searchQuery;
+          return;
+        }
+        noMatch.hidden = true;
+        for (const s of sites) {
+          grid.appendChild(
+            renderSiteCard(s, { isOwner: activeTab === "owned" }),
+          );
         }
       }
 
-      function renderPager(data, sharedCount) {
+      function renderPager(data) {
+        if (activeTab !== "owned") {
+          pager.hidden = true;
+          const sharedCount = (data.shared || []).length;
+          if (!sharedCount) {
+            meta.hidden = true;
+          } else {
+            meta.hidden = false;
+            meta.textContent =
+              sharedCount === 1
+                ? "1 shared project"
+                : `${sharedCount} shared projects`;
+          }
+          return;
+        }
         const total = data.total || 0;
         const totalPages = data.totalPages || 1;
         const current = data.page || 1;
         const limit = data.limit || PAGE_SIZE;
-        const sharedLink = sharedCount
-          ? `<a href="#shared">${sharedCount === 1 ? "1 shared" : `${sharedCount} shared`}</a>`
-          : "";
+        const sharedCount = (data.shared || []).length;
         if (total <= limit) {
           pager.hidden = true;
           const ownedLabel = total === 1 ? "1 project" : `${total} projects`;
-          if (!total && sharedLink) meta.innerHTML = sharedLink;
-          else if (sharedLink) meta.innerHTML = `${ownedLabel} · ${sharedLink}`;
-          else meta.textContent = ownedLabel;
+          if (sharedCount) {
+            meta.textContent = `${ownedLabel} · ${sharedCount} shared`;
+            meta.hidden = false;
+          } else {
+            meta.hidden = true;
+          }
           return;
         }
         pager.hidden = false;
+        meta.hidden = false;
         const from = (current - 1) * limit + 1;
         const to = Math.min(current * limit, total);
         pagerStatus.textContent = `${from}–${to} of ${total}`;
-        meta.innerHTML = sharedLink
-          ? `${total} projects · page ${current}/${totalPages} · ${sharedLink}`
+        meta.textContent = sharedCount
+          ? `${total} projects · page ${current}/${totalPages} · ${sharedCount} shared`
           : `${total} projects · page ${current}/${totalPages}`;
         prevBtn.disabled = current <= 1;
         nextBtn.disabled = !data.hasMore && current >= totalPages;
       }
 
+      function updateTabs(data) {
+        const hasOwned = (data.total || 0) > 0;
+        const hasShared = (data.shared || []).length > 0;
+        tabOwned.hidden = !hasOwned;
+        tabShared.hidden = !hasShared;
+        if (!hasOwned && hasShared) activeTab = "shared";
+        else if (hasOwned && !hasShared) activeTab = "owned";
+        tabOwned.setAttribute("aria-selected", String(activeTab === "owned"));
+        tabShared.setAttribute("aria-selected", String(activeTab === "shared"));
+        projectsTabs.hidden = !hasOwned && !hasShared ? true : !(hasOwned && hasShared);
+      }
+
       function applyData(data, p) {
-        const sites = data.sites || [];
-        const shared = data.shared || [];
+        lastData = data;
         const hasOwned = data.total > 0;
-        const hasShared = shared.length > 0;
+        const hasShared = (data.shared || []).length > 0;
         reveal(toolbar);
         newProject.hidden = false;
         if (!hasOwned && !hasShared) {
           list.hidden = true;
-          sharedEl.hidden = true;
+          projectsTabs.hidden = true;
           reveal(empty);
           return false;
         }
@@ -569,20 +565,10 @@
         if (hasOwned && p > (data.totalPages || 1) && data.totalPages >= 1) {
           return "redirect";
         }
-        if (hasOwned) {
-          ownedHeading.hidden = !hasShared;
-          reveal(list);
-          renderRows(sites);
-        } else {
-          list.hidden = true;
-        }
-        if (hasShared) {
-          reveal(sharedEl);
-          renderSharedRows(shared);
-        } else {
-          sharedEl.hidden = true;
-        }
-        renderPager(data, shared.length);
+        updateTabs(data);
+        reveal(list);
+        renderGrid();
+        renderPager(data);
         return true;
       }
 
@@ -613,11 +599,19 @@
         if (window.aftAuth) window.aftAuth.clearMe();
         loading.hidden = true;
         list.hidden = true;
-        sharedEl.hidden = true;
         toolbar.hidden = true;
+        projectsTabs.hidden = true;
         newProject.hidden = true;
         empty.hidden = true;
         reveal(login);
+      }
+
+      function progressStart() {
+        if (window.AftProgress) window.AftProgress.start();
+      }
+
+      function progressDone() {
+        if (window.AftProgress) window.AftProgress.done();
       }
 
       async function load(p = page, opts = {}) {
@@ -644,10 +638,11 @@
           loading.hidden = false;
           empty.hidden = true;
           list.hidden = true;
-          sharedEl.hidden = true;
           toolbar.hidden = true;
+          projectsTabs.hidden = true;
         }
 
+        progressStart();
         try {
           const result = await fetchPage(page);
           if (gen !== loadGen) return;
@@ -660,7 +655,7 @@
             if (!haveCache) {
               showAuthError();
               login.innerHTML =
-                "<p>Couldn’t load projects.</p><a class=\"primary\" href=\"/login\">Log in</a>";
+                '<p>Couldn’t load projects.</p><a class="primary" href="/login">Log in</a>';
             }
             return;
           }
@@ -676,8 +671,10 @@
           if (!haveCache) {
             showAuthError();
             login.innerHTML =
-              "<p>Couldn’t load projects.</p><a class=\"primary\" href=\"/login\">Log in</a>";
+              '<p>Couldn’t load sites.</p><a class="primary" href="/login">Log in</a>';
           }
+        } finally {
+          if (gen === loadGen) progressDone();
         }
       }
 
@@ -685,21 +682,18 @@
         if (
           !active &&
           !window.confirm(
-            `Deactivate "${slug}"?\n\nVisitors will see a paused page and the site stops serving. Your files and history are kept — you can reactivate any time.`,
+            `Deactivate "${slug}"?\n\nVisitors will see a paused page. You can reactivate any time.`,
           )
         ) {
           return;
         }
         try {
-          const res = await fetch(
-            `${API}/v1/sites/${encodeURIComponent(slug)}`,
-            {
-              method: "PATCH",
-              credentials: "include",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ active }),
-            },
-          );
+          const res = await fetch(`${API}/v1/sites/${encodeURIComponent(slug)}`, {
+            method: "PATCH",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ active }),
+          });
           if (!res.ok) {
             const body = await res.json().catch(() => ({}));
             window.alert(body.hint || body.error || "Couldn’t update the site.");
@@ -714,7 +708,7 @@
 
       async function destroyProject(slug) {
         const typed = window.prompt(
-          `Destroy "${slug}"?\n\nThis permanently deletes the site, its files, and all deploy history. This cannot be undone.\n\nType the project name to confirm:`,
+          `Delete "${slug}"?\n\nThis permanently deletes the project and all history.\n\nType the project name to confirm:`,
         );
         if (typed === null) return;
         if (typed.trim() !== slug) {
@@ -728,7 +722,7 @@
           });
           if (!res.ok) {
             const body = await res.json().catch(() => ({}));
-            window.alert(body.hint || body.error || "Couldn’t destroy project.");
+            window.alert(body.hint || body.error || "Couldn’t delete project.");
             return;
           }
           clearCache();
@@ -738,6 +732,12 @@
         }
       }
 
+      tabOwned.addEventListener("click", () => setActiveTab("owned"));
+      tabShared.addEventListener("click", () => setActiveTab("shared"));
+      searchInput.addEventListener("input", () => {
+        searchQuery = searchInput.value.trim();
+        renderGrid();
+      });
       prevBtn.addEventListener("click", () => {
         if (page > 1) load(page - 1);
       });
@@ -746,6 +746,7 @@
       load(page);
     </script>
     <script src="/auth-me.js" defer></script>
+    <script src="/progress.js" defer></script>
     <script src="/auth-nav.js" defer></script>
     <script src="/feedback.js" defer></script>
   </body>

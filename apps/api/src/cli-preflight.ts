@@ -13,7 +13,7 @@ const MAX_DEPS = 40;
 const MAX_SNIPPETS = 3;
 const MAX_SNIPPET = 2048;
 
-export type PreflightAction = "none" | "run_build" | "refuse";
+export type PreflightAction = "none" | "run_build" | "run_next" | "refuse";
 
 export type PreflightSnapshot = {
   framework?: string;
@@ -55,6 +55,15 @@ const ADVICE_SCHEMA = {
 };
 
 export function adviseFromSnapshot(s: PreflightSnapshot): PreflightAdvice {
+  if (s.runtime === "not_a_site" || s.framework === "not-a-site") {
+    return boxed("not_a_site", "refuse");
+  }
+  if (s.runtime === "container" || s.framework === "django") {
+    return boxed("needs_container", "refuse");
+  }
+  if (s.runtime === "next" && s.staticDeployable === false) {
+    return boxed("needs_next_build", "run_next");
+  }
   if (s.runtime && s.runtime !== "static" && s.staticDeployable === false) {
     return boxed("not_static", "refuse");
   }
@@ -185,7 +194,7 @@ export async function enrichWithModel(
   rules: PreflightAdvice,
 ): Promise<PreflightAdvice> {
   if (!snapshot.infer) return rules;
-  if (rules.ok || rules.action === "run_build") return rules;
+  if (rules.ok || rules.action === "run_build" || rules.action === "run_next") return rules;
   const parsed = await runAdviceModel(env, snapshot, rules.error);
   if (!parsed) return rules;
   return { ...rules, why: parsed.why, fix: parsed.fix, source: "model" };
@@ -214,7 +223,7 @@ async function runAdviceModel(
             {
               role: "system",
               content:
-                "You advise the aft.page CLI. Hosting is static files only. Caps: 500 files, 25MB/file, 100MB total. Need index.html at the deploy root. Vite→dist, CRA→build, Next static export→out. Never upload node_modules, .next, or source. Reply with JSON only: {why, fix}. why: one sentence. fix: concrete steps for an agent. No markdown.",
+                "You advise the aft.page CLI. Detect then build: static HTML, Vite npm run build→dist, Next OpenNext, Django refuses until containers. Caps: 500 files, 25MB/file, 100MB total. Need index.html at the deploy root for static. Never upload node_modules or .next. Reply with JSON only: {why, fix}. why: one sentence. fix: concrete steps for an agent. No markdown.",
             },
             {
               role: "user",

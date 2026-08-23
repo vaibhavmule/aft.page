@@ -8,6 +8,9 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-07-26",
   "compatibility_flags": ["nodejs_compat"],
+  "browser": {
+    "binding": "BROWSER"
+  },
   "workers_dev": true,
   "observability": {
     "enabled": true,
@@ -24,13 +27,19 @@
       "head_sampling_rate": 1
     }
   },
+  "ai": {
+    "binding": "AI",
+    "remote": true
+  },
   "vars": {
     "ROOT_DOMAIN": "aft.page",
+    "AFT_AI_GATEWAY": "default",
     "OPS_EMAILS": "hello@aft.page,vaibhavmule135@gmail.com",
     "UNLIMITED_SLUGS": "parakh",
     "CF_ZONE_ID": "c9c40ca61385a6346d90abfc954b44c9",
     "CF_ACCOUNT_ID": "44255ec64e0080b678670b53bf810d27",
-    "CUSTOM_DOMAIN_CNAME": "cname.aft.page"
+    "CUSTOM_DOMAIN_CNAME": "cname.aft.page",
+    "AFT_RUN_GITHUB_REPO": "vaibhavmule/aft.page"
   },
   "kv_namespaces": [
     {

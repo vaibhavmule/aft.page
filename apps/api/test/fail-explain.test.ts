@@ -13,9 +13,19 @@ describe("explainDeployFailure", () => {
     expect(ex.fix.toLowerCase()).toContain("shrink");
   });
 
-  it("tells Next SSR to export static", () => {
+  it("tells Next SSR to OpenNext", () => {
+    const ex = explainDeployFailure({ error: "needs_next_build" });
+    expect(ex.fix).toMatch(/OpenNext|wrangler/);
+  });
+
+  it("tells Worker apps to set upstream", () => {
     const ex = explainDeployFailure({ error: "not_static" });
-    expect(ex.fix).toMatch(/output: 'export'/);
+    expect(ex.fix).toMatch(/aft\.json/);
+  });
+
+  it("says db/queue is not a site", () => {
+    const ex = explainDeployFailure({ error: "not_a_site" });
+    expect(ex.why.toLowerCase()).toMatch(/database|queue|cache/);
   });
 
   it("surfaces internal hint", () => {

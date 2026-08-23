@@ -51,6 +51,10 @@ Switch when either:
 1. aft-owned site Workers approach ~400 (leave headroom under 500), or
 2. worker/next traffic is large enough that paying twice per hit > the extra $20 floor.
 
+**Runnable OSS caveat (2026-08-23):** if GitHub “Run on AFT” ships (extension, `@aft`,
+probe-at-scale), script count may become product-critical before organic site growth —
+revisit WfP trigger early. See [RUN.md](./RUN.md).
+
 ops.aft.page cost row shows this as **WfP trigger** (`stay` / `watch` / `switch`). Look there, not the dashboard template.
 
 Until then $5 Workers Paid (or free) wins. WfP is a second product (dispatch namespace + user Workers), not a dashboard toggle — see 9 Aug 2026: do not start from `workers-for-platforms-template`.

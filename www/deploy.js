@@ -395,7 +395,7 @@ async function publish() {
       const msg =
         data.error === "reserved_slug"
           ? "That name is reserved — try again or change the <title>."
-          : data.message || data.error || `Deploy failed (${res.status})`;
+          : data.reason || data.hint || data.message || data.error || `Deploy failed (${res.status})`;
       setStatus(msg, "error");
       return;
     }

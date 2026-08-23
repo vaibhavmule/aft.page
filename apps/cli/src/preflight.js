@@ -12,14 +12,44 @@ const MAX_WALK = 501;
 
 /** Same codes as api/src/cli-preflight.ts adviseFromSnapshot. */
 export function adviseLocal(s) {
+  if (s.runtime === "not_a_site" || s.framework === "not-a-site") {
+    return {
+      ok: false,
+      error: "not_a_site",
+      action: "refuse",
+      source: "rules",
+      why: `${s.label || "This"} is not a website (database, cache, or queue).`,
+      fix: "Nothing to host. Point aft at a web app (static, Vite, or Next.js).",
+    };
+  }
+  if (s.runtime === "container" || s.framework === "django") {
+    return {
+      ok: false,
+      error: "needs_container",
+      action: "refuse",
+      source: "rules",
+      why: `${s.label || "This server"} needs a container runner that is not shipped.`,
+      fix: "Detect ok; build failed. Static, Vite, or Next.js OpenNext only until containers ship.",
+    };
+  }
+  if (s.runtime === "next" && s.staticDeployable === false) {
+    return {
+      ok: false,
+      error: "needs_next_build",
+      action: "run_next",
+      source: "rules",
+      why: "Next.js SSR — OpenNext build, then a live URL.",
+      fix: "aft deploy will run OpenNext + wrangler (CLOUDFLARE_API_TOKEN or wrangler login).",
+    };
+  }
   if (s.runtime && s.runtime !== "static" && s.staticDeployable === false) {
     return {
       ok: false,
       error: "not_static",
       action: "refuse",
       source: "rules",
-      why: "This looks like Next.js SSR or a Worker app — aft.page CLI uploads static files only.",
-      fix: "For Next: set output: 'export' in next.config, build, upload out/. Otherwise set runtime + upstream in aft.json.",
+      why: "This looks like a Worker app — set runtime + upstream in aft.json after wrangler deploy.",
+      fix: "Deploy the Worker, put its URL in aft.json, then aft deploy the mapping site.",
     };
   }
   if (s.needsBuild && s.buildScript) {
@@ -193,7 +223,7 @@ export async function fetchAdvice(snapshot) {
 /** Rules locally; API inference when blocked (refuse). */
 export async function adviseDeploy(snapshot) {
   const local = adviseLocal(snapshot);
-  if (local.ok || local.action === "run_build") return local;
+  if (local.ok || local.action === "run_build" || local.action === "run_next") return local;
   const remote = await fetchAdvice(snapshot);
   return remote || local;
 }

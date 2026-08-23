@@ -6,7 +6,7 @@ import {
 import { API_ORIGIN, call } from "./helpers";
 
 describe("adviseFromSnapshot", () => {
-  it("refuses Next SSR before upload", () => {
+  it("tells CLI Next to run OpenNext", () => {
     const a = adviseFromSnapshot({
       framework: "next-ssr",
       runtime: "next",
@@ -14,9 +14,9 @@ describe("adviseFromSnapshot", () => {
       hasIndexHtml: false,
     });
     expect(a.ok).toBe(false);
-    expect(a.error).toBe("not_static");
-    expect(a.action).toBe("refuse");
-    expect(a.fix).toMatch(/export/);
+    expect(a.error).toBe("needs_next_build");
+    expect(a.action).toBe("run_next");
+    expect(a.fix).toMatch(/OpenNext|wrangler/i);
   });
 
   it("asks for a build when output is missing", () => {
@@ -69,8 +69,8 @@ describe("POST /v1/cli/preflight", () => {
     };
     expect(body).toMatchObject({
       ok: false,
-      error: "not_static",
-      action: "refuse",
+      error: "needs_next_build",
+      action: "run_next",
       source: "rules",
     });
   });

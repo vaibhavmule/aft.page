@@ -70,10 +70,12 @@
             "operatingSystem": "Web",
             "description": "Deploy as easily as you build. Drop your files or let your agent send them. Live link. No account.",
             "offers": {
-              "@type": "Offer",
-              "price": "0",
+              "@type": "AggregateOffer",
               "priceCurrency": "USD",
-              "description": "Free during beta"
+              "lowPrice": "0",
+              "highPrice": "19",
+              "offerCount": "3",
+              "description": "Free to go live. Personal 30 days free then $19/mo. Team and Enterprise by email."
             },
             "publisher": { "@id": "https://aft.page/#org" }
           },
@@ -102,7 +104,7 @@
                 "name": "Is aft.page free?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Yes — free during beta, including private invite after you claim. Paid plans are not priced yet; waitlist members hear before anything is charged."
+                  "text": "Yes — free to go live during beta, including claim, private invite, and per-site secrets. Personal is 30 days free, then $19/month. Team and Enterprise are one conversation at hello@aft.page. Billing has not started; waitlist members hear before anything is charged."
                 }
               },
               {
@@ -446,8 +448,8 @@
                       Drop a folder or ZIP → get a live URL
                     </h2>
                     <p class="drop-zone-lede">
-                      HTML, CSS, JS → a live URL instantly. No
-                      account or credit card required.
+                      Static HTML, CSS, JS — or a built dist/. Next and Vite
+                      source: GitHub or aft deploy. No account required.
                     </p>
                     <div class="drop-zone-actions">
                       <button
@@ -879,50 +881,72 @@ deploy({
         <p class="section-tag">Pricing</p>
         <h2 class="section-title" id="pricing-title">Free to go live.</h2>
         <p class="section-lede">
-          Building a site is simple. Deploying on aft is too — free during beta.
+          Personal is 30 days free, then $19. Team and Enterprise — one
+          conversation.
         </p>
         <div class="price-grid">
-          <article class="price-card price-card-hot">
+          <article class="price-card">
             <div class="price-head">
               <h3>Free</h3>
               <span class="price-badge">Now</span>
             </div>
             <p class="price-desc">
-              Get a public link. No account. Claim it to keep or invite people.
+              Get a public link. No account. Claim it to keep, invite, or add
+              secrets.
             </p>
             <div class="price-figure">
               <span class="price-amt">$0</span>
               <span class="price-per">during<br />beta</span>
             </div>
-            <a class="btn btn-primary" href="#hero-drop">Deploy an app</a>
+            <a class="btn btn-ghost" href="#hero-drop">Deploy an app</a>
             <p class="price-includes">Free includes</p>
             <ul class="price-list">
               <li>A public link you can share</li>
               <li>Drop files or deploy from your agent</li>
-              <li>Keep it, invite people, or make it private</li>
+              <li>Claim, invite, private, secrets</li>
               <li>500 files · 25 MB each · 100 MB total</li>
+            </ul>
+          </article>
+          <article class="price-card price-card-hot">
+            <div class="price-head">
+              <h3>Personal</h3>
+              <span class="price-badge">Soon</span>
+            </div>
+            <p class="price-desc">
+              Just you. 30 days free, then $19 a month. Viewers never pay.
+            </p>
+            <div class="price-figure">
+              <span class="price-amt">$19</span>
+              <span class="price-per">after 30<br />days free</span>
+            </div>
+            <a class="btn btn-primary" href="#early-access">Join waitlist</a>
+            <p class="price-includes">When billing starts</p>
+            <ul class="price-list">
+              <li>30 days free, then $19/month</li>
+              <li>Private apps for one person</li>
+              <li>Higher limits, secrets, rollback</li>
+              <li>Viewers don’t need an account</li>
             </ul>
           </article>
           <article class="price-card">
             <div class="price-head">
-              <h3>Paid plans</h3>
-              <span class="price-badge">Later</span>
+              <h3>Team &amp; Enterprise</h3>
+              <span class="price-badge">Design partners</span>
             </div>
             <p class="price-desc">
-              Private apps and teams after beta. We’ll say the price when we
-              know it.
+              Invite ACL, IP allowlist, SSO, or the connector. We quote you.
             </p>
             <div class="price-figure">
-              <span class="price-amt">TBD</span>
-              <span class="price-per">after<br />beta</span>
+              <span class="price-amt">Talk</span>
+              <span class="price-per">to<br />us</span>
             </div>
-            <a class="btn btn-ghost" href="#early-access">Join waitlist</a>
-            <p class="price-includes">On the roadmap</p>
+            <a class="btn btn-ghost" href="mailto:hello@aft.page?subject=aft%20Team%20or%20Enterprise">Contact</a>
+            <p class="price-includes">On the call</p>
             <ul class="price-list">
-              <li>Paid permanence after beta</li>
-              <li>Team / company seats</li>
-              <li>SSO and higher limits</li>
-              <li>Announced to waitlist first</li>
+              <li>Private apps + invite ACL</li>
+              <li>Per-site secrets, updates, rollback</li>
+              <li>IP allowlist / SSO as they ship</li>
+              <li>Connector or pilot if you deploy this week</li>
             </ul>
           </article>
         </div>
@@ -953,9 +977,10 @@ deploy({
           <details class="faq-item">
             <summary>Is aft.page free?</summary>
             <p>
-              Yes — free during beta, including private invite after you claim.
-              Paid plans are not priced yet. Waitlist members hear before
-              anything is charged.
+              Yes — free to go live during beta, including claim, private
+              invite, and per-site secrets. Personal is 30 days free, then
+              $19/month. Team and Enterprise are one conversation. We will
+              email the waitlist before charging anyone.
             </p>
           </details>
           <details class="faq-item">
@@ -1014,11 +1039,11 @@ deploy({
 
       <section class="waitlist" id="early-access" aria-labelledby="waitlist-title">
         <div class="waitlist-copy">
-          <p class="eyebrow">BETA · FREE FOR NOW</p>
-          <h2 id="waitlist-title">Free during beta.</h2>
+          <p class="eyebrow">PRICING · BILLING NOT LIVE</p>
+          <h2 id="waitlist-title">Prices are listed. Charging isn’t.</h2>
           <p>
-            Paid plans will be announced before billing begins. Join the
-            waitlist for pricing and product updates—including company SSO.
+            Free now. Personal is 30 days free, then $19. Team and Enterprise
+            — one email. Join the waitlist before billing starts.
           </p>
         </div>
         <form class="waitlist-form" id="waitlist-form" novalidate>
@@ -1126,7 +1151,7 @@ deploy({
     <script src="./agents-nav.js" defer></script>
     <script src="./auth-nav.js" defer></script>
     <script src="/summarize.js?v=20260808-mobile4" defer></script>
-    <script src="/footer.js?v=20260810-pricing" defer></script>
+    <script src="/footer.js?v=20260823-pricing-talk" defer></script>
     <script src="/feedback.js?v=20260809-pill" defer></script>
   </body>
 </html>
