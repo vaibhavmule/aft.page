@@ -522,18 +522,14 @@
         </div>
 
         <div class="hub-shell">
-        <nav class="hub-nav" aria-label="Project sections">
-          <button type="button" data-tab="overview" aria-current="page">Overview</button>
-          <button type="button" data-tab="deploys">Deploys</button>
-          <button type="button" data-tab="source">Source</button>
-          <button type="button" data-tab="observability" hidden>Observability</button>
-          <button type="button" data-tab="logs" hidden>Logs</button>
-          <button type="button" data-tab="domains" hidden>Domains</button>
-          <button type="button" data-tab="secrets" hidden>Secrets</button>
-          <button type="button" data-tab="capabilities" hidden>Capabilities</button>
-          <button type="button" data-tab="access" id="access-btn" hidden>Access</button>
-          <button type="button" data-tab="danger" class="nav-danger" hidden>Danger</button>
-        </nav>
+        <div class="hub-shell-top">
+          <div class="hub-top-tabs">
+            <button type="button" data-primary-tab="settings" aria-current="page">Settings</button>
+            <button type="button" data-primary-tab="analytics">Analytics</button>
+            <button type="button" data-primary-tab="access">Access</button>
+            <button type="button" data-primary-tab="more">More</button>
+          </div>
+        </div>
         <div class="hub-main">
 
         <section class="panel is-active" id="panel-links" data-tab="overview">
@@ -818,7 +814,6 @@
       const missing = document.getElementById("missing");
       const denied = document.getElementById("denied");
       const hub = document.getElementById("hub");
-      const accessBtn = document.getElementById("access-btn");
 
       /** @type {any} */
       let info = null;
@@ -940,7 +935,25 @@
         }
       }
 
-      const TAB_IDS = ["overview", "deploys", "source", "observability", "logs", "domains", "secrets", "capabilities", "access", "danger"];
+      const TAB_IDS = ["settings", "analytics", "access", "more"];
+      const TAB_PANEL_MAP = {
+        settings: ["overview", "domains", "secrets", "danger"],
+        analytics: ["observability"],
+        access: ["access"],
+        more: ["deploys", "source", "logs", "capabilities"],
+      };
+      const LEGACY_HASH_MAP = {
+        overview: "settings",
+        deploys: "more",
+        source: "more",
+        observability: "analytics",
+        logs: "more",
+        domains: "settings",
+        secrets: "settings",
+        capabilities: "more",
+        access: "access",
+        danger: "settings",
+      };
       let logsLoaded = false;
       let obsWindow = "12h";
       let sourceLoadedFor = "";
@@ -948,29 +961,41 @@
       let openPanel = null;
 
       function showTab(name) {
-        if (!TAB_IDS.includes(name)) name = "overview";
-        const navBtn = document.querySelector(`.hub-nav [data-tab="${name}"]`);
-        if (navBtn && navBtn.hidden) name = "overview";
+        let primaryTab = name;
+        if (LEGACY_HASH_MAP[name]) {
+          primaryTab = LEGACY_HASH_MAP[name];
+        }
+        if (!TAB_IDS.includes(primaryTab)) primaryTab = "settings";
+        
+        for (const btn of document.querySelectorAll("[data-primary-tab]")) {
+          btn.setAttribute("aria-current", btn.dataset.primaryTab === primaryTab ? "page" : "false");
+        }
+        
+        const panelsToShow = TAB_PANEL_MAP[primaryTab] || [];
         for (const panel of document.querySelectorAll(".hub-main .panel")) {
-          panel.classList.toggle("is-active", panel.dataset.tab === name);
+          const panelTab = panel.dataset.tab;
+          if (panelsToShow.includes(panelTab)) {
+            panel.classList.remove("hub-panel-hidden");
+            panel.classList.add("hub-panel-active");
+          } else {
+            panel.classList.remove("hub-panel-active");
+            panel.classList.add("hub-panel-hidden");
+          }
         }
-        for (const btn of document.querySelectorAll(".hub-nav [data-tab]")) {
-          btn.setAttribute(
-            "aria-current",
-            btn.dataset.tab === name ? "page" : "false",
-          );
+        
+        const urlHash = primaryTab === "settings" ? "" : `#${primaryTab}`;
+        if (location.hash !== urlHash) {
+          history.replaceState(null, "", location.pathname + location.search + urlHash);
         }
-        const next = "#" + name;
-        if (location.hash !== next) history.replaceState(null, "", next);
-        if (name === "logs" || name === "observability") void loadLogs(false);
-        if (name === "source") void loadSource(false);
+        
+        if (primaryTab === "analytics") void loadLogs(false);
+        if (primaryTab === "more") void loadSource(false);
       }
 
       async function render() {
         hub.hidden = false;
         document.getElementById("crumb-slug").textContent = slug;
         document.getElementById("title").textContent = slug;
-        accessBtn.hidden = false;
 
         const live = info.url || `https://${slug}.aft.page`;
         const liveA = document.getElementById("live-url");
@@ -1019,14 +1044,14 @@
         await renderDomains();
         renderDanger();
         renderAccess();
-        const hash = (location.hash || "#overview").replace(/^#/, "");
-        showTab(TAB_IDS.includes(hash) ? hash : "overview");
+        const hash = (location.hash || "").replace(/^#/, "");
+        const legacyTab = LEGACY_HASH_MAP[hash];
+        showTab(legacyTab || hash || "settings");
       }
 
       function renderDanger() {
         const allow = canManageAccess();
         document.getElementById("panel-danger").hidden = !allow;
-        document.querySelector('.hub-nav [data-tab="danger"]').hidden = !allow;
         document.getElementById("destroy-slug").textContent = slug;
         document.getElementById("rename-input").value = slug;
       }
@@ -1280,8 +1305,6 @@
         const allow = canRollback();
         document.getElementById("panel-logs").hidden = !allow;
         document.getElementById("panel-observability").hidden = !allow;
-        document.querySelector('.hub-nav [data-tab="logs"]').hidden = !allow;
-        document.querySelector('.hub-nav [data-tab="observability"]').hidden = !allow;
       }
 
       function fmtBytes(n) {
@@ -1671,15 +1694,12 @@
 
       function renderCaps() {
         const panel = document.getElementById("panel-caps");
-        const nav = document.querySelector('.hub-nav [data-tab="capabilities"]');
         const caps = info.capabilities;
         if (!caps) {
           panel.hidden = true;
-          nav.hidden = true;
           return;
         }
         panel.hidden = false;
-        nav.hidden = false;
         const el = document.getElementById("caps-body");
         const req = caps.requested || {};
         const lines = [];
@@ -1798,10 +1818,8 @@
 
       async function renderDomains() {
         const panel = document.getElementById("panel-domains");
-        const nav = document.querySelector('.hub-nav [data-tab="domains"]');
         const allow = canManageAccess();
         panel.hidden = !allow;
-        nav.hidden = !allow;
         if (!allow) {
           paintCustomOverview([]);
           return;
@@ -1999,16 +2017,13 @@
 
       async function renderSecrets() {
         const panel = document.getElementById("panel-secrets");
-        const nav = document.querySelector('.hub-nav [data-tab="secrets"]');
         const caps = info.capabilities;
         const declared = (caps && caps.requested && caps.requested.secrets) || [];
         if (!canRollback()) {
           panel.hidden = true;
-          nav.hidden = true;
           return;
         }
         panel.hidden = false;
-        nav.hidden = false;
 
         let existing = [];
         try {
@@ -2209,14 +2224,15 @@
         logsLoaded = false;
         void loadLogs(true);
       });
-      document.querySelector(".hub-nav").addEventListener("click", (e) => {
-        const btn = e.target.closest("[data-tab]");
+      document.querySelector(".hub-top-tabs").addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-primary-tab]");
         if (!btn) return;
-        showTab(btn.dataset.tab);
+        showTab(btn.dataset.primaryTab);
       });
       window.addEventListener("hashchange", () => {
-        const hash = (location.hash || "#overview").replace(/^#/, "");
-        showTab(TAB_IDS.includes(hash) ? hash : "overview");
+        const hash = (location.hash || "").replace(/^#/, "");
+        const legacyTab = LEGACY_HASH_MAP[hash];
+        showTab(legacyTab || hash || "settings");
       });
 
       document.getElementById("vis-public").addEventListener("click", () => {
