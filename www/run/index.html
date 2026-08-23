@@ -134,7 +134,30 @@
       .msg.ok { color: var(--good); }
       .msg.pending { color: var(--quiet); }
       .live-row { margin-top: 1rem; }
-      .live-row a { word-break: break-all; }
+      .live-card {
+        margin-top: 1.25rem;
+        padding: 1.25rem 1.1rem;
+        border: 1px solid var(--line-bright);
+        border-radius: 0.65rem;
+        background: var(--panel);
+        text-align: center;
+      }
+      .live-eyebrow {
+        margin: 0 0 0.75rem;
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--good);
+      }
+      .live-card .btn { min-width: 10rem; }
+      .live-url {
+        margin: 0.75rem 0 0;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        color: var(--quiet);
+        word-break: break-all;
+      }
       .visually-hidden {
         position: absolute;
         width: 1px;
@@ -176,9 +199,11 @@
           <pre class="build-log" id="build-log" aria-live="polite"></pre>
         </div>
         <p class="msg pending" id="status" role="status" aria-live="polite"></p>
-        <p class="live-row" id="live-row" hidden>
-          <a id="live-link" href="#" target="_blank" rel="noopener noreferrer"></a>
-        </p>
+        <div class="live-card" id="live-card" hidden>
+          <p class="live-eyebrow">Live</p>
+          <a class="btn" id="live-open" href="#">Open now</a>
+          <p class="live-url" id="live-url-text"></p>
+        </div>
       </main>
     </div>
     <script src="/run.js" defer></script>

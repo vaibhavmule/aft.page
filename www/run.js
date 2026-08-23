@@ -66,7 +66,8 @@ function runPageUrl(ref) {
   return `/run/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}`
 }
 
-function liveOpenUrl(liveUrl, editToken) {
+function liveOpenUrl(liveUrl, editToken, claimUrl) {
+  if (claimUrl) return claimUrl
   if (!liveUrl) return null
   const u = new URL(liveUrl)
   if (editToken) u.searchParams.set("token", editToken)
@@ -79,31 +80,34 @@ function setStatus(text, kind = "pending") {
   el.className = `msg ${kind}`
 }
 
-function showRepo(ref, { running = false } = {}) {
+function showRepo(ref) {
   const chip = document.getElementById("repo-chip")
   chip.hidden = false
   chip.textContent = `${ref.owner}/${ref.repo}`
   document.getElementById("git-url").value = githubUrl(ref)
-  document.getElementById("run-title").textContent = running
-    ? `Running ${ref.owner}/${ref.repo}`
-    : `Run ${ref.owner}/${ref.repo}`
+  document.getElementById("run-title").textContent = `Running ${ref.owner}/${ref.repo}`
 }
 
-function prepareRepo(ref) {
-  showRepo(ref)
-  history.replaceState(null, "", runPageUrl(ref))
-  setStatus("Click Run when ready.", "pending")
+function showLive(dest) {
+  const card = document.getElementById("live-card")
+  const open = document.getElementById("live-open")
+  const urlText = document.getElementById("live-url-text")
+  document.getElementById("git-form").hidden = true
+  open.href = dest
+  urlText.textContent = dest
+  card.hidden = false
+  setStatus("Your app is live.", "ok")
+  window.setTimeout(() => {
+    location.replace(dest)
+  }, 2000)
 }
 
 async function watchJob(data) {
   const panel = document.getElementById("build-panel")
   const phaseEl = document.getElementById("build-phase")
   const logEl = document.getElementById("build-log")
-  const liveRow = document.getElementById("live-row")
-  const liveLink = document.getElementById("live-link")
   panel.hidden = false
   logEl.textContent = ""
-  liveRow.hidden = true
 
   const kindLabel = data.kind === "vite" ? "Vite" : data.kind === "next" ? "Next.js" : "Static"
   const repoLabel = data.owner && data.repo ? `${data.owner}/${data.repo}` : "repo"
@@ -114,16 +118,9 @@ async function watchJob(data) {
   const finishLive = (snap) => {
     settled = true
     phaseEl.textContent = PHASE_LABEL.live
-    setStatus("Live.", "ok")
-    const dest = liveOpenUrl(snap.url, snap.editToken)
-    if (dest) {
-      liveLink.href = dest
-      liveLink.textContent = dest
-      liveRow.hidden = false
-      window.setTimeout(() => {
-        location.replace(dest)
-      }, 600)
-    }
+    const dest = liveOpenUrl(snap.url, snap.editToken, snap.claimUrl)
+    if (dest) showLive(dest)
+    else setStatus("Live, but no URL returned.", "err")
   }
 
   const applySnap = async (snap) => {
@@ -171,7 +168,7 @@ async function watchJob(data) {
 async function runRepo(ref, { pushState = false } = {}) {
   const go = document.getElementById("git-go")
   go.disabled = true
-  showRepo(ref, { running: true })
+  showRepo(ref)
   if (pushState) history.replaceState(null, "", runPageUrl(ref))
 
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -188,9 +185,9 @@ async function runRepo(ref, { pushState = false } = {}) {
         return
       }
       if (res.ok && data.url) {
-        setStatus("Live.", "ok")
-        const dest = liveOpenUrl(data.url, data.editToken)
-        if (dest) location.replace(dest)
+        const dest = liveOpenUrl(data.url, data.editToken, data.claimUrl)
+        if (dest) showLive(dest)
+        else setStatus("Live, but no URL returned.", "err")
         return
       }
       const rateLimited =
@@ -219,4 +216,4 @@ document.getElementById("git-form").addEventListener("submit", (e) => {
 })
 
 const fromPath = parseRunPath()
-if (fromPath) prepareRepo(fromPath)
+if (fromPath) runRepo(fromPath, { pushState: true })
