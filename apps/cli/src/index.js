@@ -16,7 +16,7 @@ import { localVersion } from "./version.js";
 const HELP = `${ui.bold("aft")} — ship a live URL ${ui.dim(`(v${localVersion()})`)}
 
 ${ui.bold("No login")}
-  aft deploy [dir]              Detect, fix if needed, upload
+  aft deploy [dir]              Detect → build (pass/fail) → URL
   aft deploy --check [dir]      Preflight JSON (no upload)
   aft init                      Write aft.json (detect + confirm; also on first deploy)
   aft update                    Reinstall latest CLI from aft.page
