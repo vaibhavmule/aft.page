@@ -1,0 +1,85 @@
+name: run vite
+
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        required: true
+        type: string
+      job_token:
+        required: true
+        type: string
+      owner:
+        required: true
+        type: string
+      repo:
+        required: true
+        type: string
+      slug:
+        required: true
+        type: string
+      branch:
+        required: false
+        type: string
+        default: main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts/run-vite-job.sh
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Clone, build, complete
+        env:
+          JOB_ID: ${{ inputs.job_id }}
+          JOB_TOKEN: ${{ inputs.job_token }}
+          OWNER: ${{ inputs.owner }}
+          REPO: ${{ inputs.repo }}
+          SLUG: ${{ inputs.slug }}
+          BRANCH: ${{ inputs.branch }}
+          AFT_API: https://api.aft.page
+        run: |
+          chmod +x scripts/run-vite-job.sh
+          scripts/run-vite-job.sh
+
+      - name: Mark job failed
+        if: failure() || cancelled()
+        env:
+          AFT_API: https://api.aft.page
+          JOB_ID: ${{ inputs.job_id }}
+          JOB_TOKEN: ${{ inputs.job_token }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request
+          api, job_id, token = os.environ["AFT_API"], os.environ["JOB_ID"], os.environ["JOB_TOKEN"]
+          body = {
+              "phase": "failed",
+              "reason": "GitHub Actions failed or timed out (12 min).",
+              "line": "runner failed or cancelled",
+          }
+          req = urllib.request.Request(
+              f"{api}/v1/jobs/{job_id}",
+              data=json.dumps(body).encode(),
+              method="PATCH",
+              headers={
+                  "authorization": f"Bearer {token}",
+                  "content-type": "application/json",
+                  "user-agent": "aft.page-run-vite",
+              },
+          )
+          try:
+              urllib.request.urlopen(req, timeout=30).read()
+          except Exception as e:
+              print(e)
+          PY
