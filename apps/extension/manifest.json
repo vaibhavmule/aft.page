@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
   "name": "aft.page — Deploy",
-  "version": "0.4.5",
-  "description": "One-click deploy for HTML from ChatGPT or Claude to a live URL.",
+  "version": "0.5.0",
+  "description": "Run a GitHub repo or ChatGPT/Claude HTML on a live aft.page URL.",
   "permissions": ["storage"],
   "host_permissions": [
     "https://api.aft.page/*",
+    "https://github.com/*",
     "https://chatgpt.com/*",
     "https://chat.openai.com/*",
     "https://claude.ai/*"
@@ -17,13 +18,15 @@
   "content_scripts": [
     {
       "matches": [
+        "https://github.com/*",
         "https://chatgpt.com/*",
         "https://chat.openai.com/*",
         "https://claude.ai/*"
       ],
       "js": ["content.js"],
       "css": ["content.css"],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "type": "module"
     }
   ],
   "icons": {
