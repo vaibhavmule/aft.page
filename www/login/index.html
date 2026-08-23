@@ -603,6 +603,7 @@
         try {
           const payload = { email };
           if (nextParam) payload.next = nextParam;
+          if (window.AftProgress) window.AftProgress.start();
           const res = await fetch(`${API}/v1/auth/start`, {
             method: "POST",
             credentials: "include",
@@ -623,11 +624,13 @@
           msg.className = "msg err";
           msg.textContent = String(err);
         } finally {
+          if (window.AftProgress) window.AftProgress.done();
           submit.disabled = false;
           label.textContent = ctaLabel;
         }
       });
     </script>
+    <script src="/progress.js" defer></script>
     <script src="/feedback.js?v=20260809-pill" defer></script>
   </body>
 </html>

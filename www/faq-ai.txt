@@ -32,8 +32,10 @@ A: No. Anonymous deploy gives you a live URL immediately. You only
 URL: [Drop files](https://aft.page/drop/)
 
 Q: Is aft.page free?
-A: Yes — free during beta. Paid plans will be announced before any billing begins.
-URL: [Early access](https://aft.page/#early-access)
+A: Yes — free to go live during beta (claim, private invite, secrets).
+   Personal is 30 days free, then $19/month. Team and Enterprise are one contact.
+   Billing has not started; waitlist members hear before anything is charged.
+URL: [Pricing](https://aft.page/#pricing)
 
 Q: What can I deploy, and what are the limits?
 A: Single HTML documents or multi-file static sites and SPAs (include index.html).

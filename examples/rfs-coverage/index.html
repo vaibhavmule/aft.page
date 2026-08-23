@@ -314,7 +314,7 @@
         </p>
         <p class="quiet lede">
           Gap first. Then 1 / 3 / 5 / 10 years per RFS line. Then the company clock.
-          Demand sets order after the freeze. Agents create the software; aft does not ship agents as a product line.
+          Demand sets order. Agents create the software; aft does not ship agents as a product line.
         </p>
 
         <p class="callout" id="host-note" hidden></p>
@@ -355,7 +355,7 @@
 
         <h2 id="decade">How to read the years</h2>
         <div class="grid4">
-          <div class="yr"><em>Year 1 · 2027</em><p>Prove the RFS job. No new product lines until strangers return and share.</p></div>
+          <div class="yr"><em>Year 1 · 2027</em><p>Prove the RFS job. Strangers return, share, and Run is a URL not a README.</p></div>
           <div class="yr"><em>Year 3 · 2029</em><p>Grow with the app: data, APIs, more runtimes, automations plumbing — only if users hit a wall.</p></div>
           <div class="yr"><em>Year 5 · 2031</em><p>Default cloud for small software. Env, team, remix, customer-cloud for trust. Still small-by-design.</p></div>
           <div class="yr"><em>Year 10 · 2036</em><p>Google-Doc-simple for a generation of purpose-built tools. Not Azure for three million users.</p></div>
@@ -364,13 +364,13 @@
         <h2 id="score">Built · proof · hard</h2>
         <h3>Built</h3>
         <ul class="todos" id="built"></ul>
-        <h3>Proof (freeze through 10 Sep 2026)</h3>
+        <h3>Proof</h3>
         <ul class="todos" id="proof"></ul>
         <h3>Hard problems still open</h3>
         <ul class="todos" id="hard"></ul>
 
         <h2 id="timeline">Where we sit</h2>
-        <p class="quiet">Clock starts 14 Aug 2026. Must = freeze / proof. May = only if demand. Later = not this decade’s default.</p>
+        <p class="quiet">Clock starts 14 Aug 2026. Must = proof. May = only if demand. Later = not this decade’s default.</p>
         <div class="rail" id="rail"></div>
 
         <h2 id="recap">Recap</h2>
@@ -548,12 +548,12 @@
         { id: "yc", group: "proof", done: true, title: "YC late app + 1-min video submitted", note: "18 Aug 2026 · In review" },
         { id: "allowlist", group: "hard", done: false, title: "Domain allowlist + Microsoft login", note: "Internal-tools gate. Not Passport/Okta." },
         { id: "egress", group: "hard", done: false, title: "Egress proxy not a stub", note: "Arbitrary agent code, securely" },
-        { id: "remix", group: "hard", done: false, title: "Remix / fork", note: "Frozen unless a stranger is blocked" }
+        { id: "remix", group: "hard", done: false, title: "Remix / fork", note: "In scope — allow clone off by default" }
       ]
 
       const STOPS = [
-        { cls: "", when: "Now → 10 Sep 2026 · freeze", title: "Prove the loop", body: "Plugin listing, ≥5 stranger deploys, ≥1 invite accept, 7-day return, then a material YC update. No new runtimes, no automations, no remix, no Cron." },
-        { cls: "", when: "3 months · Nov 2026", title: "Outsider habit or it isn’t a company yet", body: "Freeze over only if the loop is real. YC batch window. Next runtime only from a failed outsider deploy." },
+        { cls: "", when: "Now · Aug 2026", title: "Prove the loop + Run", body: "Plugin listing, ≥5 stranger deploys, ≥1 invite accept, 7-day return, Show HN on Drop/Deploy. Run: paste a public repo → URL. Cron stays parked." },
+        { cls: "", when: "3 months · Nov 2026", title: "Outsider habit or it isn’t a company yet", body: "YC batch window. Next runtime from a failed outsider deploy. Run ships if three repo types always work." },
         { cls: "may", when: "6 months · Feb 2027", title: "First paid or LOI", body: "Weekly-used app for two people. Team $99 if someone needs private + keep. Still not a framework zoo." },
         { cls: "may", when: "9 months · May 2027", title: "Grow only where blocked", body: "Data-just-works, Microsoft/allowlist, or remix — whichever a real team hits. Automations still not a SKU." },
         { cls: "", when: "12 months · Aug 2027", title: "Default agent → permissioned URL", body: "Paid team SKU exists because apps stayed. Full-stack without cloud setup is normal for the apps people actually bring." },
@@ -647,7 +647,7 @@
         document.getElementById("stats").innerHTML = `
           <div class="stat ${tone}"><b>${s.pct}%</b><span>Checklist coverage</span><div class="bar"><i style="width:${s.pct}%"></i></div></div>
           <div class="stat ${rfsTone}"><b>${s.rfs.done}/${s.rfs.total}</b><span>RFS lines covered (not proven)</span><div class="bar"><i style="width:${s.rfs.pct}%"></i></div></div>
-          <div class="stat ${s.proof.pct ? "warn" : "bad"}"><b>${s.proof.done}/${s.proof.total}</b><span>Proof · freeze</span><div class="bar"><i style="width:${s.proof.pct}%"></i></div></div>
+          <div class="stat ${s.proof.pct ? "warn" : "bad"}"><b>${s.proof.done}/${s.proof.total}</b><span>Proof</span><div class="bar"><i style="width:${s.proof.pct}%"></i></div></div>
           <div class="stat ${s.hard.pct ? "warn" : "bad"}"><b>${s.hard.done}/${s.hard.total}</b><span>Hard problems</span><div class="bar"><i style="width:${s.hard.pct}%"></i></div></div>
         `
       }

@@ -76,7 +76,7 @@ Thin deploy adapter only (not a control plane):
 
 ## Limits
 
-500 files · 25 MB / file · 100 MB total · anonymous deploy · editToken on each deploy · claim at /claim · unclaimed sites deleted after 30 days unused · custom domains after claim (request access) · free during beta
+500 files · 25 MB / file · 100 MB total · anonymous deploy · editToken on each deploy · claim at /claim · unclaimed sites deleted after 30 days unused · custom domains after claim (request access) · free during beta · Personal 30 days free then $19/mo · Team and Enterprise one contact — billing not live
 
 ## AI Discovery Files
 

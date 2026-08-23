@@ -3,6 +3,14 @@
  * Mounts on [data-aft-auth="login"] (Log in links) → profile chip + logout.
  */
 (function () {
+  // Ensure top progress bar exists on every page that loads auth-nav.
+  if (!window.AftProgress) {
+    const s = document.createElement("script");
+    s.src = "/progress.js";
+    s.async = false;
+    document.head.appendChild(s);
+  }
+
   const API = "https://api.aft.page";
 
   function ensureStyles() {

@@ -22,6 +22,8 @@
 /with/http/ /with/api/ 301
 /api /with/api/ 301
 /api/ /with/api/ 301
-/paste-html /drop 301
-/paste-html/ /drop/ 301
+/code /projects/new/ 301
+/code/ /projects/new/ 301
+/run /projects/new/ 301
+/run/ /projects/new/ 301
 /changelog.md https://api.aft.page/v1/changelog.md 302

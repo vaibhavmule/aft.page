@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- deploy-bump -->
+<!-- deploy-bump: run-next -->
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -18,7 +18,118 @@
     />
     <link rel="stylesheet" href="/app.css" />
     <style>
-      main { max-width: 44rem; margin: 0 auto; padding: 2.25rem 1.25rem 3.5rem; width: 100%; }
+      html { overflow-x: clip; }
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      main { max-width: 56rem; margin: 0 auto; padding: 2.25rem 1.25rem 3.5rem; width: 100%; }
+      .new-title {
+        margin: 0;
+        font-size: clamp(1.75rem, 4vw, 2.35rem);
+        letter-spacing: -0.04em;
+        font-weight: 650;
+      }
+      .prompt-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: stretch;
+        border: 1px solid var(--line-bright);
+        border-radius: 0.65rem;
+        background: var(--panel);
+        padding: 0.45rem;
+      }
+      .prompt-row input {
+        flex: 1 1 12rem;
+        min-width: 0;
+        border: 0;
+        background: transparent;
+        color: var(--ink);
+        font: inherit;
+        font-size: 0.95rem;
+        padding: 0.7rem 0.75rem;
+      }
+      .prompt-row input:focus { outline: none; }
+      .prompt-row .btn { flex: 0 0 auto; }
+      .pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        justify-content: center;
+      }
+      .pill {
+        appearance: none;
+        border: 1px solid var(--line-bright);
+        background: var(--void);
+        color: var(--ink);
+        font: inherit;
+        font-size: 0.82rem;
+        padding: 0.4rem 0.75rem;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+      .pill:hover, .pill:focus-visible { border-color: var(--ink); }
+      .door {
+        border: 1px solid var(--line);
+        border-radius: 0.5rem;
+        padding: 1rem 1.1rem;
+        background: var(--panel);
+        min-width: 0;
+      }
+      .door h2 {
+        margin: 0 0 0.65rem;
+        font-size: 0.95rem;
+        letter-spacing: -0.02em;
+      }
+      .door p { margin: 0 0 0.75rem; font-size: 0.82rem; color: var(--quiet); }
+      .build-panel {
+        margin-top: 0.85rem;
+        border-top: 1px solid var(--line);
+        padding-top: 0.85rem;
+      }
+      .build-phase {
+        margin: 0 0 0.5rem;
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+        color: var(--ink);
+      }
+      .build-log {
+        margin: 0;
+        max-height: 12rem;
+        overflow: auto;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        line-height: 1.45;
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: var(--bg-inset);
+        border-radius: 0.4rem;
+        padding: 0.65rem 0.75rem;
+        color: var(--ink);
+      }
+      .git-row { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+      .git-row input {
+        flex: 1 1 8rem;
+        min-width: 0;
+        padding: 0.5rem 0.65rem;
+        border-radius: 0.4rem;
+        border: 1px solid var(--line-bright);
+        background: var(--bg-inset);
+        color: var(--ink);
+        font: inherit;
+        font-size: 0.85rem;
+      }
+      @media (max-width: 720px) {
+        .git-row { flex-wrap: wrap; }
+      }
       .stage { display: flex; flex-direction: column; gap: 1.25rem; }
       .stage-head {
         display: flex;
@@ -105,10 +216,6 @@
         font-size: 0.92rem;
         color: var(--quiet);
         max-width: 26rem;
-      }
-      .drop-hint code {
-        font-family: var(--font-mono);
-        color: var(--ink);
       }
       .drop-actions {
         display: flex;
@@ -200,11 +307,43 @@
       <div id="form-wrap" class="stage" hidden>
         <div class="stage-head">
           <p class="crumb"><a href="/projects">Projects</a> / New</p>
+          <h1 class="new-title">Put it on a URL</h1>
           <p class="flow" aria-hidden="true">
-            <span>agent</span><span class="flow-arrow">→</span
-            ><span>deploy</span><span class="flow-arrow">→</span
+            <span>prompt</span><span class="flow-arrow">→</span
+            ><span>files</span><span class="flow-arrow">→</span
             ><span class="flow-live">live URL</span>
           </p>
+        </div>
+        <form id="prompt-form">
+          <div class="prompt-row">
+            <label class="visually-hidden" for="prompt">Describe the app or paste a GitHub URL</label>
+            <input
+              id="prompt"
+              name="prompt"
+              type="text"
+              autocomplete="off"
+              placeholder="Describe the app, or paste a GitHub URL…"
+            />
+            <button type="submit" class="btn" id="prompt-go">Go</button>
+          </div>
+        </form>
+        <div class="pills" role="group" aria-label="Templates">
+          <button type="button" class="pill" data-template="todo">Todo</button>
+          <button type="button" class="pill" data-template="contact">Contact form</button>
+          <button type="button" class="pill" data-template="tracker">Tracker</button>
+        </div>
+        <div class="door">
+          <h2>Run a GitHub repo</h2>
+          <p>Public repo. Static <code>index.html</code>, or Next.js (build, ~a few minutes).</p>
+          <form class="git-row" id="git-form">
+            <label class="visually-hidden" for="git-url">GitHub URL</label>
+            <input id="git-url" type="url" placeholder="https://github.com/owner/repo" />
+            <button type="submit" class="btn ghost" id="git-go">Import</button>
+          </form>
+          <div class="build-panel" id="build-panel" hidden>
+            <p class="build-phase" id="build-phase">queued</p>
+            <pre class="build-log" id="build-log" aria-live="polite"></pre>
+          </div>
         </div>
         <form id="create-form" novalidate>
           <div
@@ -213,17 +352,19 @@
             role="region"
             aria-label="Drop a folder or zip"
           >
-            <input id="folder-input" type="file" webkitdirectory directory multiple />
+            <input id="folder-input" type="file" webkitdirectory directory multiple hidden />
             <input
               id="file-input"
               type="file"
               accept=".zip,application/zip,application/x-zip-compressed"
+              hidden
             />
 
             <div class="stage-idle" id="stage-idle">
               <h1 class="drop-title" id="drop-title">Drop a folder. Or a zip.</h1>
               <p class="drop-hint">
-                HTML, CSS, JS → a live URL. Include an index.html.
+                Static only: HTML or a built dist/ with index.html.
+                Next/Vite source → GitHub import or aft deploy.
                 Max 500 files, 100 MB total.
               </p>
               <div class="drop-actions">
@@ -254,6 +395,42 @@
     </main>
     <script src="/auth-me.js"></script>
     <script>
+      (function () {
+        const loading = document.getElementById("loading")
+        const loginEl = document.getElementById("login")
+        const formWrap = document.getElementById("form-wrap")
+        const showForm = () => {
+          loading.hidden = true
+          loginEl.hidden = true
+          formWrap.hidden = false
+        }
+        const showLogin = () => {
+          loading.hidden = true
+          formWrap.hidden = true
+          loginEl.hidden = false
+        }
+        const aftAuth = window.aftAuth
+        if (!aftAuth) {
+          showLogin()
+          return
+        }
+        const cached = aftAuth.peekMe()
+        if (cached) showForm()
+        const timeout = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error("me-timeout")), 8000)
+        })
+        Promise.race([aftAuth.fetchMe(), timeout])
+          .then((user) => {
+            if (!user) showLogin()
+            else showForm()
+          })
+          .catch(() => {
+            if (!cached) showLogin()
+            else showForm()
+          })
+      })()
+    </script>
+    <script>
       const API = "https://api.aft.page";
       const MAX_FILES = 500;
       const MAX_FILE_BYTES = 25 * 1024 * 1024;
@@ -267,9 +444,6 @@
         "support",
       ]);
 
-      const loading = document.getElementById("loading");
-      const loginEl = document.getElementById("login");
-      const formWrap = document.getElementById("form-wrap");
       const form = document.getElementById("create-form");
       const submit = document.getElementById("submit");
       const statusEl = document.getElementById("status");
@@ -459,27 +633,237 @@
       }
 
       async function deployFiles(preferredSlug) {
-        const body = new FormData();
-        let indexHtml = "";
+        const body = new FormData()
+        let indexHtml = ""
         staged.forEach((entry, i) => {
-          const field = `file${i}`;
-          body.append(field, entry.file, entry.file.name);
-          body.append(`${field}_path`, entry.path);
-        });
-        const index = staged.find((e) => /^index\.html?$/i.test(e.path));
-        if (index) indexHtml = await index.file.text();
+          const field = `file${i}`
+          body.append(field, entry.file, entry.file.name)
+          body.append(`${field}_path`, entry.path)
+        })
+        const index = staged.find((e) => /^index\.html?$/i.test(e.path))
+        if (index) indexHtml = await index.file.text()
 
-        const slug = preferredSlug || slugFromHtml(indexHtml);
+        const slug = preferredSlug || slugFromHtml(indexHtml)
         const endpoint = slug
           ? `${API}/v1/deploy?slug=${encodeURIComponent(slug)}`
-          : `${API}/v1/deploy`;
+          : `${API}/v1/deploy`
         return fetch(endpoint, {
           method: "POST",
           credentials: "include",
           headers: { "X-Aft-Client": "web" },
           body,
-        });
+        })
       }
+
+      async function deployHtml(html, preferredSlug) {
+        const slug = preferredSlug || slugFromHtml(html)
+        const endpoint = slug
+          ? `${API}/v1/deploy?slug=${encodeURIComponent(slug)}`
+          : `${API}/v1/deploy`
+        return fetch(endpoint, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "content-type": "text/html; charset=utf-8",
+            "X-Aft-Client": "web",
+          },
+          body: html,
+        })
+      }
+
+      async function finishCreated(data) {
+        if (data.editToken) {
+          try {
+            const map = JSON.parse(localStorage.getItem("aft.editTokens") || "{}")
+            map[data.slug] = data.editToken
+            localStorage.setItem("aft.editTokens", JSON.stringify(map))
+          } catch (_) {}
+        }
+        setStatus("Setting visibility…", "pending")
+        const visRes = await fetch(`${API}/v1/sites/${encodeURIComponent(data.slug)}`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ visibility: "private" }),
+        })
+        if (!visRes.ok) {
+          setStatus(
+            "Project created, but couldn’t set private — you can change it on the next page.",
+            "err",
+          )
+          await new Promise((r) => setTimeout(r, 1200))
+        }
+        setStatus("Created. Opening…", "ok")
+        window.location.href = `/project/?slug=${encodeURIComponent(data.slug)}`
+      }
+
+      function looksLikeGithub(s) {
+        return /github\.com\//i.test(s) || /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(s.trim())
+      }
+
+      const promptGo = document.getElementById("prompt-go")
+      const gitGo = document.getElementById("git-go")
+
+      async function runBusy(btn, fn) {
+        const buttons = [submit, promptGo, gitGo]
+        buttons.forEach((b) => { if (b) b.disabled = true })
+        if (window.AftProgress) window.AftProgress.start()
+        try {
+          await fn()
+        } finally {
+          if (window.AftProgress) window.AftProgress.done()
+          buttons.forEach((b) => { if (b) b.disabled = false })
+        }
+      }
+
+      async function generateAndDeploy({ prompt, template }) {
+        setStatus(template ? "Loading template…" : "Generating…", "pending")
+        const res = await fetch(`${API}/v1/code/generate`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "content-type": "application/json", "X-Aft-Client": "web" },
+          body: JSON.stringify(template ? { template } : { prompt }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok || !data.html) {
+          const msg =
+            data.error === "unauthorized"
+              ? "Log in to generate."
+              : data.error === "ai_unavailable"
+                ? "Generator isn’t on this Worker yet — try a template."
+                : data.message || data.error || `Generate failed (${res.status})`
+          setStatus(msg, "err")
+          return
+        }
+        setStatus("Publishing…", "pending")
+        const up = await deployHtml(data.html)
+        const out = await up.json().catch(() => ({}))
+        if (!up.ok || !out.slug) {
+          setStatus(out.message || out.error || `Deploy failed (${up.status})`, "err")
+          return
+        }
+        await finishCreated(out)
+      }
+
+      async function importRepo(url) {
+        setStatus("Checking repo…", "pending")
+        const res = await fetch(`${API}/v1/repo/deploy`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "content-type": "application/json", "X-Aft-Client": "web" },
+          body: JSON.stringify({ url }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (res.status === 202 && data.jobId) {
+          await watchNextJob(data)
+          return
+        }
+        if (!res.ok || !data.slug) {
+          setStatus(data.reason || data.message || data.error || `Import failed (${res.status})`, "err")
+          return
+        }
+        await finishCreated(data)
+      }
+
+      const PHASE_LABEL = {
+        queued: "Queued",
+        cloning: "Cloning repo",
+        installing: "Installing packages",
+        building: "Building",
+        deploying: "Deploying",
+        live: "Live",
+        failed: "Failed",
+      }
+
+      async function watchNextJob(data) {
+        const panel = document.getElementById("build-panel")
+        const phaseEl = document.getElementById("build-phase")
+        const logEl = document.getElementById("build-log")
+        panel.hidden = false
+        logEl.textContent = ""
+        const repoLabel = data.owner && data.repo ? `${data.owner}/${data.repo}` : "repo"
+        const kindLabel = data.kind === "vite" ? "Vite" : "Next.js"
+        setStatus(`Building ${kindLabel} for ${repoLabel}…`, "pending")
+        phaseEl.textContent = PHASE_LABEL.queued
+        let settled = false
+
+        const applySnap = async (snap) => {
+          if (settled || !snap || snap.error === "not_found") return
+          if (snap.phase) phaseEl.textContent = PHASE_LABEL[snap.phase] || snap.phase
+          if (typeof snap.logTail === "string" && snap.logTail) logEl.textContent = snap.logTail
+          else if (snap.line) {
+            logEl.textContent = logEl.textContent
+              ? `${logEl.textContent}\n${snap.line}`
+              : snap.line
+          }
+          logEl.scrollTop = logEl.scrollHeight
+          if (snap.status === "live" && snap.slug) {
+            settled = true
+            setStatus("Build finished. Opening…", "ok")
+            await finishCreated({ slug: snap.slug, url: snap.url })
+            return
+          }
+          if (snap.status === "failed") {
+            settled = true
+            const why = snap.reason || snap.error || "Build failed."
+            setStatus(why, "err")
+            if (snap.logTail) logEl.textContent = snap.logTail
+          }
+        }
+
+        const es = new EventSource(`${API}/v1/jobs/${encodeURIComponent(data.jobId)}/events`, {
+          withCredentials: true,
+        })
+        es.onmessage = (ev) => {
+          try {
+            applySnap(JSON.parse(ev.data))
+          } catch (_) {}
+        }
+        const deadline = Date.now() + 12 * 60 * 1000
+        while (!settled && Date.now() < deadline) {
+          try {
+            const r = await fetch(`${API}/v1/jobs/${encodeURIComponent(data.jobId)}`, {
+              credentials: "include",
+            })
+            const snap = await r.json().catch(() => ({}))
+            await applySnap(snap)
+          } catch (_) {}
+          if (settled) break
+          await new Promise((resolve) => setTimeout(resolve, 2000))
+        }
+        es.close()
+        if (!settled) {
+          setStatus("Build timed out. Try again, or check a smaller Next.js repo.", "err")
+        }
+      }
+
+      document.getElementById("prompt-form").addEventListener("submit", (e) => {
+        e.preventDefault()
+        const value = document.getElementById("prompt").value.trim()
+        if (!value) {
+          setStatus("Describe an app, pick a template, or paste a GitHub URL.", "err")
+          return
+        }
+        runBusy(promptGo, () =>
+          looksLikeGithub(value) ? importRepo(value) : generateAndDeploy({ prompt: value }),
+        )
+      })
+
+      document.getElementById("git-form").addEventListener("submit", (e) => {
+        e.preventDefault()
+        const value = document.getElementById("git-url").value.trim()
+        if (!value) {
+          setStatus("Paste a public GitHub URL.", "err")
+          return
+        }
+        runBusy(gitGo, () => importRepo(value))
+      })
+
+      document.querySelector(".pills").addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-template]")
+        if (!btn) return
+        runBusy(promptGo, () => generateAndDeploy({ template: btn.dataset.template }))
+      })
 
       fileInput.addEventListener("change", () => {
         stageFiles(fileInput.files);
@@ -533,90 +917,32 @@
 
         submit.disabled = true;
         setStatus("Publishing…", "pending");
+        if (window.AftProgress) window.AftProgress.start();
 
         try {
-          const res = await deployFiles();
-          const data = await res.json().catch(() => ({}));
+          const res = await deployFiles()
+          const data = await res.json().catch(() => ({}))
           if (!res.ok || !data.slug) {
             const msg =
               data.error === "reserved_slug"
                 ? "That slug is reserved — try another."
-                : data.message || data.error || `Deploy failed (${res.status})`;
-            setStatus(msg, "err");
-            return;
+                : data.reason || data.hint || data.message || data.error || `Deploy failed (${res.status})`
+            setStatus(msg, "err")
+            return
           }
-
-          if (data.editToken) {
-            try {
-              const map = JSON.parse(localStorage.getItem("aft.editTokens") || "{}");
-              map[data.slug] = data.editToken;
-              localStorage.setItem("aft.editTokens", JSON.stringify(map));
-            } catch (_) {}
-          }
-
-          // New projects are private by default; change later on the project page.
-          setStatus("Setting visibility…", "pending");
-          const visRes = await fetch(`${API}/v1/sites/${encodeURIComponent(data.slug)}`, {
-            method: "PATCH",
-            credentials: "include",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ visibility: "private" }),
-          });
-          if (!visRes.ok) {
-            setStatus(
-              "Project created, but couldn’t set private — you can change it on the next page.",
-              "err",
-            );
-            await new Promise((r) => setTimeout(r, 1200));
-          }
-
-          setStatus("Created. Opening…", "ok");
-          window.location.href =
-            `/project/?slug=${encodeURIComponent(data.slug)}`;
+          await finishCreated(data)
         } catch (err) {
           setStatus(
             err instanceof Error ? err.message : "Network error — try again.",
             "err",
           );
         } finally {
+          if (window.AftProgress) window.AftProgress.done();
           submit.disabled = false;
         }
       });
-
-      function showForm() {
-        loading.hidden = true;
-        loginEl.hidden = true;
-        formWrap.hidden = false;
-      }
-
-      function showLogin() {
-        loading.hidden = true;
-        formWrap.hidden = true;
-        loginEl.hidden = false;
-      }
-
-      (async () => {
-        const aftAuth = window.aftAuth;
-        if (!aftAuth) {
-          showLogin();
-          return;
-        }
-
-        const cached = aftAuth.peekMe();
-        if (cached) showForm();
-
-        try {
-          const user = await aftAuth.fetchMe();
-          if (!user) {
-            showLogin();
-            return;
-          }
-          showForm();
-        } catch {
-          if (!cached) showLogin();
-        }
-      })();
     </script>
+    <script src="/progress.js" defer></script>
     <script src="/auth-nav.js" defer></script>
     <script src="/feedback.js" defer></script>
   </body>
