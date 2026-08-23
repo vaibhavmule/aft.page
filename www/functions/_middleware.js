@@ -22,6 +22,10 @@ function withHsts(res) {
   });
 }
 
+function isRunPath(pathname) {
+  return pathname === "/run" || pathname.startsWith("/run/");
+}
+
 export async function onRequest(context) {
   const url = new URL(context.request.url);
   if (url.pathname === "/security.txt") {
@@ -39,6 +43,20 @@ export async function onRequest(context) {
         },
       }),
     );
+  }
+  if (isRunPath(url.pathname)) {
+    if (url.pathname === "/run") {
+      return withHsts(Response.redirect(new URL("/run/", url.origin), 301));
+    }
+    const asset = await context.env.ASSETS.fetch(
+      new Request(new URL("/run/index.html", url.origin).toString(), { method: "GET" }),
+    );
+    if (asset.ok) {
+      const headers = new Headers(asset.headers);
+      headers.set("Content-Type", "text/html; charset=utf-8");
+      headers.set("Cache-Control", "public, max-age=0, must-revalidate");
+      return withHsts(new Response(await asset.arrayBuffer(), { status: 200, headers }));
+    }
   }
   const response = await context.next();
 
