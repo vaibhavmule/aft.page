@@ -88,7 +88,12 @@ function showRepo(ref) {
   document.getElementById("run-title").textContent = `Running ${ref.owner}/${ref.repo}`
 }
 
-function showLive(dest) {
+function showLive(liveUrl, editToken) {
+  const dest = liveOpenUrl(liveUrl, editToken, null)
+  if (!dest) {
+    setStatus("Live, but no URL returned.", "err")
+    return
+  }
   const card = document.getElementById("live-card")
   const open = document.getElementById("live-open")
   const urlText = document.getElementById("live-url-text")
@@ -96,10 +101,7 @@ function showLive(dest) {
   open.href = dest
   urlText.textContent = dest
   card.hidden = false
-  setStatus("Your app is live.", "ok")
-  window.setTimeout(() => {
-    location.replace(dest)
-  }, 2000)
+  setStatus("Your app is live. Open it when you’re ready.", "ok")
 }
 
 async function watchJob(data) {
@@ -118,9 +120,7 @@ async function watchJob(data) {
   const finishLive = (snap) => {
     settled = true
     phaseEl.textContent = PHASE_LABEL.live
-    const dest = liveOpenUrl(snap.url, snap.editToken, snap.claimUrl)
-    if (dest) showLive(dest)
-    else setStatus("Live, but no URL returned.", "err")
+    showLive(snap.url, snap.editToken)
   }
 
   const applySnap = async (snap) => {
@@ -185,9 +185,7 @@ async function runRepo(ref, { pushState = false } = {}) {
         return
       }
       if (res.ok && data.url) {
-        const dest = liveOpenUrl(data.url, data.editToken, data.claimUrl)
-        if (dest) showLive(dest)
-        else setStatus("Live, but no URL returned.", "err")
+        showLive(data.url, data.editToken)
         return
       }
       const rateLimited =
