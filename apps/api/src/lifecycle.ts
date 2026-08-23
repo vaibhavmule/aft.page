@@ -139,11 +139,13 @@ async function meSites(
   ]);
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const root = env.ROOT_DOMAIN || "aft.page";
-  const withUrls = <T extends { slug: string }>(s: T) => ({
+  const { siteThumbUrl } = await import("./thumb");
+  const withUrls = <T extends { slug: string; deployId?: string }>(s: T) => ({
     ...s,
     views7d: viewsForSlug(views, s.slug).d7,
     url: `https://${s.slug}.${root}`,
     preview: `https://${s.slug}.${root}`,
+    thumbUrl: siteThumbUrl(s.slug, root, s.deployId ?? null),
   });
   return privateJson(
     {

@@ -40,7 +40,26 @@ export function explainDeployFailure(f: FailureExplainIn): FailureExplain {
     case "needs_build":
       return {
         why: "This project is a bundler app (Vite / CRA / Next static) with no dist/, out/, or build/ yet.",
-        fix: "Run the project's build script, then deploy that output folder — not the source tree.",
+        fix: "Run the project's build script, then deploy that output folder — not the source tree. Or paste the public GitHub repo.",
+      };
+    case "needs_next_build":
+      return {
+        why: "Next.js SSR — OpenNext build, then a live URL.",
+        fix: "aft deploy runs OpenNext + wrangler (CLOUDFLARE_API_TOKEN or wrangler login). Or paste the public GitHub repo.",
+      };
+    case "needs_container":
+      return {
+        why: f.hint
+          ? f.hint
+          : "This is a process server (Python, Node, Go, Rust, Ruby) — container runner not shipped.",
+        fix: "Detect ok; build failed. Static, Vite/CSR, or Next.js OpenNext only until containers ship.",
+      };
+    case "not_a_site":
+      return {
+        why: f.hint
+          ? f.hint
+          : "This is a database, cache, or queue — not a website.",
+        fix: "Nothing to host. Point aft at a web app (static, Vite, or Next.js).",
       };
     case "no_index":
       return {
@@ -49,8 +68,8 @@ export function explainDeployFailure(f: FailureExplainIn): FailureExplain {
       };
     case "not_static":
       return {
-        why: "This looks like Next.js SSR or a Worker app — aft.page CLI uploads static files only.",
-        fix: "For Next: set output: 'export' in next.config, build, upload out/. Otherwise set runtime + upstream in aft.json.",
+        why: "This looks like a Worker app — aft.page needs runtime + upstream after wrangler deploy.",
+        fix: "Deploy the Worker, put its URL in aft.json, then aft deploy the mapping site.",
       };
     case "unknown_project":
       return {

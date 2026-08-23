@@ -41,6 +41,8 @@ import {
   slugFromHint,
 } from "./slug";
 import { putFailurePayload, putObject } from "./storage";
+import { scheduleSiteThumb } from "./thumb";
+import { sourceTreeRefuse } from "./engine-kind";
 
 export { sanitizeHtmlDocument } from "./upload";
 
@@ -104,6 +106,42 @@ function listingFrom(files: UploadFile[]) {
     bytes: f.bytes.byteLength,
     type: f.contentType,
   }));
+}
+
+function utf8NamedFile(files: UploadFile[], name: string): string | null {
+  const f = files.find((x) => x.path.replace(/^\.\//, "") === name);
+  if (!f) return null;
+  try {
+    const t = new TextDecoder().decode(f.bytes);
+    return t.trim() ? t : null;
+  } catch {
+    return null;
+  }
+}
+
+function refuseSourceTree(files: UploadFile[], door: "drop" | "engine") {
+  return sourceTreeRefuse(
+    {
+      paths: files.map((f) => f.path),
+      pkgRaw: utf8NamedFile(files, "package.json"),
+      requirementsTxt: utf8NamedFile(files, "requirements.txt"),
+      pyprojectToml: utf8NamedFile(files, "pyproject.toml"),
+      cargoToml: utf8NamedFile(files, "Cargo.toml"),
+      gemfile: utf8NamedFile(files, "Gemfile"),
+      goMod: utf8NamedFile(files, "go.mod"),
+      goMainText: utf8NamedFile(files, "main.go"),
+      aftRaw: utf8NamedFile(files, "aft.json"),
+    },
+    door,
+  );
+}
+
+function refuseForClient(request: Request, files: UploadFile[]) {
+  const client = resolveClient(request);
+  const header = (request.headers.get("x-aft-client") || "").toLowerCase();
+  if (header === "run-next" || header === "run-vite") return null;
+  const door = client === "web" ? "drop" : "engine";
+  return refuseSourceTree(files, door);
 }
 
 export async function deploy(request: Request, env: Env): Promise<Response> {
@@ -219,6 +257,19 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
           error: "no_files",
           hint: "multipart field 'files' or raw text/html body",
         },
+      );
+    }
+
+    // Web Drop is static-only. CLI/MCP hit the same detect as Run.
+    const sourceRefuse = refuseForClient(request, files);
+    if (sourceRefuse) {
+      return done(
+        deployJson(
+          request,
+          { error: sourceRefuse.error, reason: sourceRefuse.reason, hint: sourceRefuse.reason },
+          422,
+        ),
+        { error: sourceRefuse.error, hint: sourceRefuse.reason, files: files.length },
       );
     }
 
@@ -340,6 +391,7 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
       client: resolveClient(request),
       ms: Math.max(0, Date.now() - started),
     });
+    scheduleSiteThumb(env, { slug, deployId });
 
     const capsPayload = await maybeCapabilities(env, slug, deployId, files);
 
@@ -392,6 +444,23 @@ async function redeployToSlug(
     const res = deployJson(request, { error: "no_files" }, 400);
     trackRedeploy(env, request, started, res, { slug, error: "no_files", requestId });
     return done(res, { error: "no_files", slug, uploadListing: listing });
+  }
+
+  const sourceRefuse = refuseForClient(request, files);
+  if (sourceRefuse) {
+    const res = deployJson(
+      request,
+      { error: sourceRefuse.error, reason: sourceRefuse.reason, hint: sourceRefuse.reason },
+      422,
+    );
+    trackRedeploy(env, request, started, res, { slug, error: sourceRefuse.error, requestId });
+    return done(res, {
+      error: sourceRefuse.error,
+      hint: sourceRefuse.reason,
+      slug,
+      files: files.length,
+      uploadListing: listing,
+    });
   }
 
   const sessionUser = await resolveSessionUser(env, request);
@@ -460,6 +529,7 @@ async function redeployToSlug(
     client: resolveClient(request),
     ms: Math.max(0, Date.now() - started),
   });
+  scheduleSiteThumb(env, { slug, deployId });
 
   const capsPayload = await maybeCapabilities(env, slug, deployId, files);
 

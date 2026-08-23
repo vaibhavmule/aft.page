@@ -18,6 +18,7 @@ import { proxyUpstream } from "./runtimes/proxy";
 import { canAccessSite, privateDeniedHtml } from "./sharing";
 import { getObject } from "./storage";
 import { deployPreviewHost, isSmokeSlug, liveSiteHost } from "./site-url";
+import { siteThumbPath } from "./thumb";
 
 function pageTitleFromHtml(html: string, fallback: string): string {
   const match = html.match(/<title[^>]*>([^<]*)<\/title>/i);
@@ -236,6 +237,32 @@ export async function serveSite(
       path: servePath(pathname),
     });
     return img;
+  }
+
+  if (path === siteThumbPath()) {
+    const thumb = await getObject(env, slug, deployId, siteThumbPath());
+    if (!thumb) {
+      noteServe(env, request, slug, {
+        httpStatus: 404,
+        path: servePath(pathname),
+      });
+      return new Response("Not found", { status: 404 });
+    }
+    const headers = new Headers({
+      "content-type": thumb.contentType || "image/jpeg",
+      "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+      "x-aft-slug": slug,
+      "x-aft-deploy": deployId,
+    });
+    for (const [name, value] of corsHeaders(null, false)) {
+      headers.set(name, value);
+    }
+    noteServe(env, request, slug, {
+      httpStatus: 200,
+      path: servePath(pathname),
+      bytes: bodyBytes(thumb.body),
+    });
+    return new Response(thumb.body, { status: 200, headers });
   }
 
   let obj = await getObject(env, slug, deployId, path);

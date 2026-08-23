@@ -16,6 +16,7 @@ import {
   loadOrRunCfPractices,
   type CfPracticesResult,
 } from "./cf-practices";
+import { backfillSiteThumbs } from "./thumb";
 import {
   countDeploysByClient,
   countDeploysByDay,
@@ -41,6 +42,8 @@ import {
   listSiteInvites,
   listSiteMembers,
   listWaitlistSignups,
+  listRunJobs,
+  countRunJobsByStatus,
   scoreWindow,
   type DeployFailureRow,
   type FeedbackRow,
@@ -48,6 +51,7 @@ import {
   type OpsSiteListRow,
   type OpsSnapshot,
   type OpsUserRow,
+  type RunJobRow,
   type ScoreWindow,
   type WaitlistSignupRow,
 } from "./db";
@@ -70,6 +74,7 @@ import {
 } from "./visits";
 import { listSiteSecretNames } from "./secrets";
 import { deploy } from "./deploy";
+import { SAMPLE_REPOS, runSampleRepos } from "./repo";
 import { explainDeployFailure, formatBytes } from "./fail-explain";
 import { json } from "./http";
 import {
@@ -127,6 +132,7 @@ export const OPS_HUB_PANELS = [
   "smoke",
   "failures",
   "logs",
+  "run",
   "sites",
   "users",
   "domains",
@@ -254,6 +260,8 @@ export type OpsPayload = {
   wfp: WfpTrigger;
   logs: { api: string; mcp: string };
   probes: ProbeHitRow[];
+  runJobs: RunJobRow[];
+  runCounts: { live: number; failed: number; queued: number };
   smoke: SmokeRunResult | null;
   smokeHistory: SmokeRunSummary[];
   audit: AuditRunResult | null;
@@ -752,6 +760,8 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
     auditHistory,
     cfPractices,
     visits,
+    runJobs,
+    runCounts,
   ] = await Promise.all([
     buildPayload(env),
     listDeployFailures(env, 50),
@@ -784,6 +794,8 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
     loadAuditHistory(env, 7).catch(() => [] as AuditRunSummary[]),
     loadOrRunCfPractices(env),
     loadVisitsPayload(env, { range: "7d", scope: "all" }),
+    listRunJobs(env, 50).catch(() => [] as RunJobRow[]),
+    countRunJobsByStatus(env).catch(() => ({ live: 0, failed: 0, queued: 0 })),
   ]);
   const last24h = scoreWindow(successes24h, failures24h);
   const last7d = scoreWindow(successes7d, failures7d);
@@ -836,6 +848,8 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
     wfp: decideWfpTrigger(snapshot.siteWorkers, priced.requestsUsd + priced.cpuUsd),
     logs: { api: CF_LOGS_API, mcp: CF_LOGS_MCP },
     probes,
+    runJobs,
+    runCounts,
     smoke,
     smokeHistory,
     audit,
@@ -884,6 +898,50 @@ export async function handleOps(
         }),
       );
     }
+    return json(result);
+  }
+
+  if (url.pathname === "/api/run/sample" && request.method === "POST") {
+    const allowed = await authorizeSmokeTrigger(request, env);
+    if (!allowed) return json({ error: "unauthorized" }, 401);
+    const run = runSampleRepos(env);
+    ctx?.waitUntil(run);
+    const jobs = await run;
+    return json({
+      ok: jobs.every((j) => j.status === "live"),
+      n: jobs.length,
+      live: jobs.filter((j) => j.status === "live").length,
+      failed: jobs.filter((j) => j.status === "failed").length,
+      jobs: jobs.map((j) => ({
+        id: j.id,
+        owner: j.owner,
+        repo: j.repo,
+        status: j.status,
+        error: j.error,
+        reason: j.reason,
+        slug: j.slug,
+        siteUrl: j.siteUrl,
+        ms: j.ms,
+      })),
+    });
+  }
+
+  if (url.pathname === "/api/thumbs/backfill" && request.method === "POST") {
+    const allowed = await authorizeSmokeTrigger(request, env);
+    if (!allowed) return json({ error: "unauthorized" }, 401);
+    let body: { force?: boolean; limit?: number; offset?: number } = {};
+    try {
+      if ((request.headers.get("content-type") || "").includes("json")) {
+        body = (await request.json()) as typeof body;
+      }
+    } catch {
+      /* empty body ok */
+    }
+    const result = await backfillSiteThumbs(env, {
+      force: Boolean(body.force),
+      limit: body.limit,
+      offset: body.offset,
+    });
     return json(result);
   }
 
@@ -1268,11 +1326,11 @@ function renderNetworkDiagram(): string {
         <path d="M0 0L7 3.5L0 7Z" fill="#52525b"/>
       </marker>
     </defs>
-    ${box(30, 16, 210, 52, "Agents", "Claude · Cursor · Codex")}
-    ${box(275, 16, 210, 52, "Drop / cURL", "files → URL")}
-    ${box(520, 16, 210, 52, "Humans", "browser")}
+    ${box(30, 16, 210, 52, "MCP / CLI", "detect → build → URL")}
+    ${box(275, 16, 210, 52, "Drop", "static HTML / dist")}
+    ${box(520, 16, 210, 52, "Run", "GitHub → same engine")}
     ${box(30, 118, 210, 58, "mcp.aft.page", "API host → bind MCP", CF_LOGS_MCP)}
-    ${box(275, 118, 210, 58, "api + *.aft.page", "aft-page-api", CF_LOGS_API)}
+    ${box(275, 118, 210, 58, "api + *.aft.page", "engine → URL", CF_LOGS_API)}
     ${box(520, 118, 210, 58, "aft.page", "Cloudflare Pages", `${dash}/pages/view/aft-page`)}
     ${box(55, 228, 130, 50, "D1", "sites · deploys", `${dash}/workers/d1/databases/49430d21-12f7-44dd-bd74-fb649148b34c`)}
     ${box(215, 228, 130, 50, "R2", "file bytes", `${dash}/r2/default/buckets/aft-page-sites`)}
@@ -1282,10 +1340,9 @@ function renderNetworkDiagram(): string {
     <g fill="none" stroke="#52525b" stroke-width="1.25" marker-end="url(#net-arr)">
       <path d="M135 68V118"/>
       <path d="M380 68V118"/>
-      <path d="M625 68V118"/>
+      <path d="M625 68C560 90 430 105 380 118"/>
       <path d="M240 147H275"/>
       <path d="M520 147H485"/>
-      <path d="M590 68C520 90 430 100 380 118"/>
       <path d="M330 176L120 228"/>
       <path d="M360 176L280 228"/>
       <path d="M400 176L440 228"/>
@@ -1294,7 +1351,7 @@ function renderNetworkDiagram(): string {
     </g>
     ${edge(145, 98, "/mcp")}
     ${edge(288, 98, "POST /v1/deploy")}
-    ${edge(635, 98, "apex")}
+    ${edge(635, 98, "/v1/repo")}
     ${edge(248, 142, "bind")}
     ${edge(500, 85, "drop · login")}
     ${edge(200, 202, "meta")}
@@ -1314,8 +1371,15 @@ function renderList(title: string, lines: string[]): string {
 }
 
 function renderStories(): string {
-  return `${renderList("Workflow", [
-    "Agent or human ships files → live https://{slug}.aft.page (no account).",
+  return `${renderList("Engine", [
+    "MCP, CLI, and Run share one path: detect → build (pass/fail) → URL.",
+    "Runners shipped: static (no-op), Vite (npm run build → dist/), Next (OpenNext).",
+    "Servers (Python, Node, Go, Rust, Ruby) detect, then fail needs_container.",
+    "DB / Redis / queue-only (Celery, Bull, Prisma with no web) fail not_a_site.",
+    "Do not host a fake index.html for those stacks.",
+  ])}
+  ${renderList("Workflow", [
+    "Agent or human ships through a door → live https://{slug}.aft.page (no account).",
     "Anyone opens that URL now.",
     "Owner claims it (email or Google) → slug stays, they own it.",
     "After claim, further ships need owner/editor login (edit token dies).",
@@ -1324,15 +1388,17 @@ function renderStories(): string {
     "Owner rolls back, secrets, logs, pause, destroy from /project.",
     "Optional: custom domain (ops approves) or connector (expenses:read).",
   ])}
-  ${renderList("Agent", [
-    "Deploy HTML or a built folder to a live URL.",
+  ${renderList("Agent (MCP / CLI)", [
+    "Same engine as Run. Detect the repo, then build or refuse honestly.",
+    "Vite/CSR: npm run build, then deploy dist/.",
+    "Next SSR: OpenNext + wrangler, then mapping site.",
     "Redeploy the same slug (before claim: edit token; after: owner session).",
-    "List deploys and roll back.",
-    "Ping health.",
+    "List deploys and roll back. Ping health.",
   ])}
   ${renderList("Human", [
-    "Drop a folder or zip on aft.page → same live URL.",
-    "curl the same POST /v1/deploy.",
+    "Drop is static only: HTML or a built dist/ with index.html.",
+    "Next/Vite source → GitHub import or aft deploy, not Drop.",
+    "curl POST /v1/deploy is the same upload as Drop when the client is web.",
     "Sign in (magic link or Google).",
     "Join waitlist / send feedback.",
     "Read docs, MCP setup, changelog.",
@@ -1372,7 +1438,8 @@ function renderStories(): string {
     "Billing checkout, company SSO, public plugin store UI.",
     "MCP does not do secrets / invites / billing.",
     "Connector is expenses:read only.",
-    "Host does not run npm run build.",
+    "No Docker / Cloudflare Containers — Python, Rails, Go, Rust, Express fail honestly.",
+    "Drop does not build. Vite/Next builds are CLI, MCP (agent-side), or GitHub Run.",
   ])}`;
 }
 
@@ -1857,6 +1924,53 @@ function renderSmokeSection(
     ${hist}`;
 }
 
+function renderRunSection(
+  jobs: RunJobRow[],
+  counts: { live: number; failed: number; queued: number },
+): string {
+  const intro = `<p class="empty">Same engine as MCP/CLI. Static <code>index.html</code> sync · Vite <code>npm run build</code> · Next OpenNext. Servers and db/redis/queue fail honestly. Ops sample skips Vite/Next runners. <button type="button" class="smoke-go" data-run-sample>Try ${SAMPLE_REPOS.length} public repos</button></p>
+    <p class="smoke-run">
+      <span class="pill ok">${counts.live} live</span>
+      · <span class="pill fail">${counts.failed} failed</span>
+      · ${counts.queued} queued
+    </p>`;
+  if (jobs.length === 0) return intro;
+  const rows = jobs
+    .map((j) => {
+      const repo =
+        j.owner !== "-"
+          ? `<a href="${escapeHtml(j.url)}">${escapeHtml(j.owner)}/${escapeHtml(j.repo)}</a>`
+          : escapeHtml(j.url);
+      const live = j.siteUrl
+        ? `<a href="${escapeHtml(j.siteUrl)}">${escapeHtml(j.slug || j.siteUrl)}</a>`
+        : j.slug
+          ? `<code>${escapeHtml(j.slug)}</code>`
+          : "—";
+      const pill =
+        j.status === "live"
+          ? `<span class="pill ok">live</span>`
+          : j.status === "queued"
+            ? `<span class="pill warn">${escapeHtml(j.phase || "queued")}</span>`
+            : `<span class="pill fail">${escapeHtml(j.error || "failed")}</span>`;
+      const logLine = (j.logTail || "").trim().split("\n").pop() || "";
+      return `<tr>
+        <td>${escapeHtml(j.finishedAt || j.createdAt)}</td>
+        <td>${repo}</td>
+        <td>${escapeHtml(j.kind)}</td>
+        <td>${pill}</td>
+        <td>${escapeHtml(j.reason || "—")}</td>
+        <td>${escapeHtml(logLine.slice(0, 120) || "—")}</td>
+        <td>${live}</td>
+        <td>${j.ms ?? "—"}</td>
+        <td>${escapeHtml(j.trigger)}</td>
+      </tr>`;
+    })
+    .join("");
+  return `${intro}
+    <table><thead><tr><th>When</th><th>Repo</th><th>Kind</th><th>Phase</th><th>Why</th><th>Log</th><th>Site</th><th>ms</th><th>Trigger</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+
 function renderAuditSection(
   audit: AuditRunResult | null,
   history: AuditRunSummary[] = [],
@@ -2151,7 +2265,7 @@ function renderOpsHtml(
       </nav>
     </header>
     <h1>Ops</h1>
-    <p class="lede">Is it up. Can they ship. What’s broken.</p>
+    <p class="lede">Is it up. Can they ship. What’s broken. Drop is static. MCP, CLI, and Run share one engine.</p>
     <p class="who">${escapeHtml(email)} · <span class="live"><i data-live-dot></i>D1 · 8s</span></p>
 
     <div class="hub-shell">
@@ -2160,6 +2274,7 @@ function renderOpsHtml(
         <a href="/overview"${activePanel === "overview" ? ' aria-current="page"' : ""}>Overview</a>
         <a href="/audit"${activePanel === "audit" ? ' aria-current="page"' : ""}>Audit <span class="n" data-live="auditN">${payload.audit?.cases.length ?? 0}</span></a>
         <a href="/smoke"${activePanel === "smoke" ? ' aria-current="page"' : ""}>Smoke <span class="n" data-live="smokeN">${payload.smoke?.cases.length ?? 0}</span></a>
+        <a href="/run"${activePanel === "run" ? ' aria-current="page"' : ""}>Run <span class="n">${payload.runJobs.length}</span></a>
         <a href="/failures"${activePanel === "failures" ? ' aria-current="page"' : ""}>Failures <span class="n">${payload.failures.length}</span></a>
         <a href="/logs"${activePanel === "logs" ? ' aria-current="page"' : ""}>Logs <span class="n">${payload.probes.length}</span></a>
         <span class="nav-g">Inventory</span>
@@ -2195,6 +2310,14 @@ function renderOpsHtml(
               <h3>CIL / smoke</h3>
               <div class="nums">
                 <div><strong><span class="pill ${payload.smoke?.ok ? "ok" : "fail"}" data-live="smokeOk">${payload.smoke ? (payload.smoke.ok ? "pass" : "fail") : "—"}</span></strong><span data-live="smokeN">${payload.smoke?.cases.length ?? 0}</span><span>cases</span></div>
+              </div>
+            </a>
+            <a class="card card-link" href="/run">
+              <h3>Run (GitHub)</h3>
+              <div class="nums">
+                <div><strong>${payload.runCounts.live}</strong><span>live</span></div>
+                <div><strong>${payload.runCounts.failed}</strong><span>failed</span></div>
+                <div><strong>${payload.runCounts.queued}</strong><span>queued</span></div>
               </div>
             </a>
             <a class="card card-link" href="/failures">
@@ -2313,9 +2436,13 @@ function renderOpsHtml(
           <h2>Smoke</h2>
           ${renderSmokeSection(payload.smoke, payload.smokeHistory)}
         </section>
+        <section class="panel${activePanel === "run" ? " is-active" : ""}" id="run">
+          <h2>Run</h2>
+          ${renderRunSection(payload.runJobs, payload.runCounts)}
+        </section>
         <section class="panel${activePanel === "failures" ? " is-active" : ""}" id="failures">
           <h2>Failures</h2>
-          <p class="empty">Click the error code → why / files / retry.</p>
+          <p class="empty">Click the error code → why / files / retry. <code>needs_container</code> and <code>not_a_site</code> are detect (honest fail), not platform bugs.</p>
           ${rows}
         </section>
         <section class="panel${activePanel === "logs" ? " is-active" : ""}" id="logs">
@@ -2715,6 +2842,21 @@ function renderOpsHtml(
           } catch (e) {
             go.disabled = false;
             go.textContent = "Run now";
+          }
+        });
+      }
+      var rgo = document.querySelector("[data-run-sample]");
+      if (rgo) {
+        rgo.addEventListener("click", async function () {
+          rgo.disabled = true;
+          rgo.textContent = "Trying 10…";
+          try {
+            var rr = await fetch("/api/run/sample", { method: "POST", credentials: "same-origin" });
+            if (!rr.ok) throw new Error("http " + rr.status);
+            location.assign("/run");
+          } catch (e) {
+            rgo.disabled = false;
+            rgo.textContent = "Try 10 public repos";
           }
         });
       }

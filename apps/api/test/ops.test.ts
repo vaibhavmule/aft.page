@@ -61,6 +61,7 @@ describe("ops hub paths", () => {
     expect(parseOpsHubPanel("/sites/")).toBe("sites");
     expect(parseOpsHubPanel("/visits")).toBe(null);
     expect(parseOpsHubPanel("/distribute")).toBe("distribute");
+    expect(parseOpsHubPanel("/run")).toBe("run");
     expect(parseOpsHubPanel("/nope")).toBe(null);
   });
 });
@@ -336,6 +337,13 @@ describe("ops.aft.page host", () => {
     expect(html).toContain("D1 binding");
     expect(html).toContain("id=\"network\"");
     expect(html).toContain('id="stories"');
+    expect(html).toContain("MCP, CLI, and Run share one path");
+    expect(html).toContain("Drop is static only");
+    expect(html).toContain("needs_container");
+    expect(html).toContain("not_a_site");
+    expect(html).toContain("MCP / CLI");
+    expect(html).toContain("engine → URL");
+    expect(html).toContain("Same engine as MCP/CLI");
     expect(html).toContain('id="distribute"');
     expect(html).toContain('id="todos"');
     expect(html).toContain("30-day checklist");

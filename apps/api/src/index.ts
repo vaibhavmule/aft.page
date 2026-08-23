@@ -26,6 +26,9 @@ import { handleWaitlistSignup } from "./waitlist";
 import { handleFeedback } from "./feedback";
 import { handleCliEvent } from "./cli-event";
 import { handleCliPreflight } from "./cli-preflight";
+import { handleCodeGenerate } from "./code";
+import { handleRepoRoute } from "./repo";
+import { handleJobCompleteRoute, handleJobRoute } from "./jobs";
 import { handleOps, isOpsHost } from "./ops";
 import {
   handleStatus,
@@ -256,6 +259,9 @@ async function handleApi(
     url.pathname === "/v1/me" ||
     url.pathname.startsWith("/v1/me/") ||
     url.pathname === "/v1/deploy" ||
+    url.pathname === "/v1/code/generate" ||
+    url.pathname.startsWith("/v1/repo/") ||
+    url.pathname.startsWith("/v1/jobs/") ||
     url.pathname.includes("/deploys") ||
     url.pathname.includes("/logs") ||
     url.pathname.includes("/files") ||
@@ -281,6 +287,19 @@ async function handleApi(
   ) {
     return deploy(request, env);
   }
+
+  if (url.pathname === "/v1/code/generate") {
+    return handleCodeGenerate(request, env);
+  }
+
+  const repo = await handleRepoRoute(request, env, url);
+  if (repo) return repo;
+
+  const jobComplete = await handleJobCompleteRoute(request, env, url);
+  if (jobComplete) return jobComplete;
+
+  const jobs = await handleJobRoute(request, env, url);
+  if (jobs) return jobs;
 
   if (
     url.pathname === "/v1/claim/start" ||
@@ -326,6 +345,8 @@ async function handleApi(
       auth: "POST /v1/auth/start, GET /v1/auth/verify, GET /v1/auth/google, GET /v1/auth/google/callback, GET /v1/auth/cli, GET /v1/auth/cli/complete, POST /v1/auth/cli/exchange, POST /v1/auth/logout, GET /v1/me",
       waitlist: "POST /v1/waitlist",
       cli: "POST /v1/cli/event, POST /v1/cli/preflight",
+      code: "POST /v1/code/generate (session; prompt or template → HTML)",
+      run: "POST /v1/repo/check, POST /v1/repo/deploy (detect → static | vite | next | fail). GET /v1/jobs/{id}, GET /v1/jobs/{id}/events",
       changelog: "GET /v1/changelog · GET /v1/changelog.md",
       sharing:
         "PATCH /v1/sites/{slug}, POST /v1/sites/{slug}/rename, POST /v1/sites/{slug}/access, POST/GET/DELETE /v1/sites/{slug}/invites, PATCH|DELETE /v1/sites/{slug}/members/{id}, GET /v1/invites/accept",

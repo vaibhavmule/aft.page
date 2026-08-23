@@ -220,3 +220,56 @@ describe("unlimited dogfood caps", () => {
     expect(res.status).toBe(200);
   });
 });
+
+describe("web Drop is static-only; MCP/CLI use the engine", () => {
+  const viteSource = [
+    {
+      path: "package.json",
+      content: JSON.stringify({
+        name: "vite-src",
+        devDependencies: { vite: "5.0.0" },
+      }),
+    },
+    { path: "index.html", content: "<div id=app></div>" },
+  ];
+  const expressSource = [
+    {
+      path: "package.json",
+      content: JSON.stringify({ name: "api", dependencies: { express: "4.0.0" } }),
+    },
+    { path: "index.html", content: "<p>not a site</p>" },
+  ];
+
+  it("refuses Vite source from web Drop", async () => {
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/deploy`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-aft-client": "web",
+        },
+        body: JSON.stringify({ files: viteSource }),
+      }),
+    );
+    expect(res.status).toBe(422);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toBe("needs_build");
+  });
+
+  it("refuses Express source from MCP (engine, not a fake URL)", async () => {
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/deploy`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-aft-client": "mcp",
+        },
+        body: JSON.stringify({ files: expressSource }),
+      }),
+    );
+    expect(res.status).toBe(422);
+    const body = (await res.json()) as { error: string; reason: string };
+    expect(body.error).toBe("needs_container");
+    expect(body.reason).toMatch(/Express/);
+  });
+});
