@@ -95,6 +95,46 @@ async function githubJson(
   return res.json();
 }
 
+async function githubRepoMeta(
+  ref: GithubRepoRef,
+  token?: string,
+): Promise<
+  | { ok: true; meta: { default_branch?: string; private?: boolean } }
+  | { ok: false; error: string; reason: string }
+> {
+  const headers: Record<string, string> = {
+    accept: "application/vnd.github+json",
+    "user-agent": "aft.page-run",
+  };
+  if (token) headers.authorization = `Bearer ${token}`;
+  const res = await fetch(`https://api.github.com/repos/${ref.owner}/${ref.repo}`, {
+    headers,
+    signal: AbortSignal.timeout(12_000),
+  });
+  if (res.status === 403 || res.status === 429) {
+    return {
+      ok: false,
+      error: "rate_limited",
+      reason: "GitHub rate-limited. Wait a minute and try again.",
+    };
+  }
+  if (res.status === 404) {
+    return {
+      ok: false,
+      error: "repo_not_found",
+      reason: "Repo not found or private.",
+    };
+  }
+  if (!res.ok) {
+    return {
+      ok: false,
+      error: "repo_not_found",
+      reason: "Could not read repo from GitHub.",
+    };
+  }
+  return { ok: true, meta: (await res.json()) as { default_branch?: string; private?: boolean } };
+}
+
 async function githubFile(
   ref: GithubRepoRef,
   path: string,
@@ -131,13 +171,11 @@ export async function inspectGithubRepo(
   ref: GithubRepoRef,
   token?: string,
 ): Promise<RepoInspect> {
-  const meta = (await githubJson(`/repos/${ref.owner}/${ref.repo}`, token)) as {
-    default_branch?: string;
-    private?: boolean;
-  } | null;
-  if (!meta) {
-    return { error: "repo_not_found", reason: "Repo missing or GitHub rate-limited." };
+  const metaGot = await githubRepoMeta(ref, token);
+  if (!metaGot.ok) {
+    return { error: metaGot.error, reason: metaGot.reason };
   }
+  const meta = metaGot.meta;
   if (meta.private) {
     return { error: "private_repo", reason: "Run is public repos only." };
   }

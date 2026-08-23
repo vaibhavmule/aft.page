@@ -166,27 +166,37 @@ async function runRepo(ref, { pushState = false } = {}) {
   showRepo(ref)
   if (pushState) history.replaceState(null, "", runPageUrl(ref))
 
-  setStatus("Checking repo…", "pending")
-  try {
-    const res = await fetch(`${API}/v1/repo/deploy`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "X-Aft-Client": "web" },
-      body: JSON.stringify({ url: githubUrl(ref) }),
-    })
-    const data = await res.json().catch(() => ({}))
-    if (res.status === 202 && data.jobId) {
-      await watchJob(data)
-      return
-    }
-    if (!res.ok || !data.url) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    setStatus(attempt ? "Retrying…" : "Checking repo…", "pending")
+    try {
+      const res = await fetch(`${API}/v1/repo/deploy`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "X-Aft-Client": "web" },
+        body: JSON.stringify({ url: githubUrl(ref) }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.status === 202 && data.jobId) {
+        await watchJob(data)
+        return
+      }
+      if (res.ok && data.url) {
+        setStatus("Live.", "ok")
+        const dest = liveOpenUrl(data.url, data.editToken)
+        if (dest) location.replace(dest)
+        return
+      }
+      const rateLimited =
+        data.error === "rate_limited" ||
+        /rate-limited/i.test(String(data.reason || ""))
+      if (rateLimited && attempt === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 3000))
+        continue
+      }
       setStatus(data.reason || data.message || data.error || `Run failed (${res.status})`, "err")
       return
+    } finally {
+      go.disabled = false
     }
-    setStatus("Live.", "ok")
-    const dest = liveOpenUrl(data.url, data.editToken)
-    if (dest) location.replace(dest)
-  } finally {
-    go.disabled = false
   }
 }
 
