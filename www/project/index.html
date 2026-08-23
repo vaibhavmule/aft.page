@@ -869,8 +869,9 @@
       }
 
       function goLogin() {
-        const next = `/project/?slug=${encodeURIComponent(slug)}`;
-        location.replace(`/login?next=${encodeURIComponent(next)}`);
+        const next = `${location.pathname}${location.search}`;
+        if (window.aftAuth?.goLogin) window.aftAuth.goLogin(next);
+        else location.replace(`/login?next=${encodeURIComponent(next)}`);
       }
 
       async function load() {

@@ -214,6 +214,7 @@
         </div>
       </div>
     </main>
+    <script src="/auth-me.js"></script>
     <script src="/projects-ui.js"></script>
     <script>
       const API = "https://api.aft.page";
@@ -594,15 +595,21 @@
           .finally(() => inflightPrefetch.delete(p));
       }
 
-      function showAuthError() {
+      function redirectToLogin() {
         clearCache();
         if (window.aftAuth) window.aftAuth.clearMe();
+        if (window.aftAuth?.goLogin) window.aftAuth.goLogin();
+        else location.replace("/login?next=" + encodeURIComponent(location.pathname + location.search));
+      }
+
+      function showLoadError(message) {
         loading.hidden = true;
         list.hidden = true;
         toolbar.hidden = true;
         projectsTabs.hidden = true;
         newProject.hidden = true;
         empty.hidden = true;
+        login.innerHTML = `<p>${message}</p><a class="primary" href="/login">Log in</a>`;
         reveal(login);
       }
 
@@ -648,15 +655,11 @@
           if (gen !== loadGen) return;
           loading.hidden = true;
           if (result.status === 401) {
-            showAuthError();
+            redirectToLogin();
             return;
           }
           if (result.status !== 200) {
-            if (!haveCache) {
-              showAuthError();
-              login.innerHTML =
-                '<p>Couldn’t load projects.</p><a class="primary" href="/login">Log in</a>';
-            }
+            if (!haveCache) showLoadError("Couldn’t load projects.");
             return;
           }
           const data = result.data;
@@ -668,11 +671,7 @@
         } catch (_) {
           if (gen !== loadGen) return;
           loading.hidden = true;
-          if (!haveCache) {
-            showAuthError();
-            login.innerHTML =
-              '<p>Couldn’t load sites.</p><a class="primary" href="/login">Log in</a>';
-          }
+          if (!haveCache) showLoadError("Couldn’t load sites.");
         } finally {
           if (gen === loadGen) progressDone();
         }
@@ -742,10 +741,19 @@
         if (page > 1) load(page - 1);
       });
       nextBtn.addEventListener("click", () => load(page + 1));
-      readSessionCache();
-      load(page);
+      async function boot() {
+        const auth = window.aftAuth;
+        if (!auth?.requireLogin) {
+          location.replace("/login?next=" + encodeURIComponent(location.pathname + location.search));
+          return;
+        }
+        const user = await auth.requireLogin();
+        if (!user) return;
+        readSessionCache();
+        load(page);
+      }
+      boot();
     </script>
-    <script src="/auth-me.js" defer></script>
     <script src="/progress.js" defer></script>
     <script src="/auth-nav.js" defer></script>
     <script src="/feedback.js" defer></script>

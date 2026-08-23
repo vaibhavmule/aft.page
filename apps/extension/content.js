@@ -5,8 +5,6 @@ import {
 } from "./github-url.js";
 
 const API = "https://api.aft.page/v1/deploy";
-const REPO_API = "https://api.aft.page/v1/repo/deploy";
-const JOB_API = "https://api.aft.page/v1/jobs";
 const BTN_ATTR = "data-aft-deploy";
 const RUN_ATTR = "data-aft-run";
 const ICON_MARK = "data-aft-icon";
@@ -207,65 +205,17 @@ function createIconButton(getHtml) {
   return btn;
 }
 
-async function waitForRepoJob(jobId, onPhase) {
-  const deadline = Date.now() + 180_000;
-  while (Date.now() < deadline) {
-    const res = await fetch(`${JOB_API}/${encodeURIComponent(jobId)}`, {
-      headers: { "x-aft-client": "extension" },
-    });
-    const data = await res.json().catch(() => ({}));
-    if (data.status === "live" && data.url) return data;
-    if (data.status === "failed") {
-      throw new Error(data.reason || data.error || "Build failed");
-    }
-    onPhase?.(data.phase || data.status || "building");
-    await new Promise((r) => setTimeout(r, 2000));
-  }
-  throw new Error("Timed out waiting for the build");
+function runPageUrl(ref) {
+  return `https://aft.page/run/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}`;
 }
 
-async function runGithubRepo(ref, btn) {
+function runGithubRepo(ref, btn) {
   const label = btn.textContent;
+  btn.textContent = "Opening…";
   btn.disabled = true;
-  btn.textContent = "Checking…";
-  const opened = window.open("about:blank", "_blank");
-  try {
-    const res = await fetch(REPO_API, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-aft-client": "extension",
-      },
-      body: JSON.stringify({ url: githubRepoHref(ref) }),
-    });
-    const data = await res.json().catch(() => ({}));
-    let live = data;
-    if (res.status === 202 && data.jobId) {
-      btn.textContent = "Building…";
-      live = await waitForRepoJob(data.jobId, (phase) => {
-        btn.textContent = String(phase || "Building…");
-      });
-    } else if (!res.ok || !data.url) {
-      throw new Error(
-        data.reason || data.message || data.error || `Run failed (${res.status})`,
-      );
-    }
-    const dest = liveOpenUrl(live.url, live.editToken, live.claimUrl);
-    if (opened) opened.location.replace(dest);
-    else window.open(dest, "_blank", "noopener,noreferrer");
-    btn.textContent = "Live";
-  } catch (err) {
-    console.error("[aft.page]", err);
-    opened?.close();
-    btn.textContent = "Failed";
-    btn.title = err instanceof Error ? err.message : "Failed";
-  } finally {
-    btn.disabled = false;
-    setTimeout(() => {
-      btn.textContent = label;
-      btn.title = "Open this repo as a live URL on aft.page";
-    }, 2200);
-  }
+  window.open(runPageUrl(ref), "_blank", "noopener,noreferrer");
+  btn.textContent = label;
+  btn.disabled = false;
 }
 
 function createRunButton(ref, kind) {

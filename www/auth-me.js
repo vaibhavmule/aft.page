@@ -106,5 +106,43 @@
     emit(null);
   }
 
-  global.aftAuth = { getMe, peekMe, clearMe, fetchMe };
+  function loginNext() {
+    return `${global.location.pathname}${global.location.search}`;
+  }
+
+  /** Redirect to login. Optional `next` path (defaults to current URL). */
+  function goLogin(next) {
+    const dest = typeof next === "string" && next ? next : loginNext();
+    global.location.replace(`/login?next=${encodeURIComponent(dest)}`);
+  }
+
+  /**
+   * Gate authenticated pages: peek cache → fetch /v1/me → redirect if missing.
+   * @param {{ next?: string, timeoutMs?: number }} [opts]
+   */
+  async function requireLogin(opts = {}) {
+    const next = opts.next;
+    const timeoutMs = opts.timeoutMs ?? 8000;
+    const cached = peekMe();
+    if (cached) return cached;
+    try {
+      const user = await Promise.race([
+        fetchMe(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("me-timeout")), timeoutMs),
+        ),
+      ]);
+      if (!user) {
+        goLogin(next);
+        return null;
+      }
+      return user;
+    } catch {
+      if (cached) return cached;
+      goLogin(next);
+      return null;
+    }
+  }
+
+  global.aftAuth = { getMe, peekMe, clearMe, fetchMe, goLogin, requireLogin };
 })(typeof window !== "undefined" ? window : globalThis);

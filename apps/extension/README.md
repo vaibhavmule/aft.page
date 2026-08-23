@@ -1,7 +1,7 @@
 # aft.page Chrome extension
 
-**GitHub:** **Run on AFT** next to Fork → `POST /v1/repo/deploy` → live URL
-(static now, Vite/Next via the job).
+**GitHub:** **Run on AFT** next to Fork → `https://aft.page/run/owner/repo` →
+detect → live URL (static now, Vite/Next via the job page).
 
 **ChatGPT / Claude:** aft icon next to Copy still publishes HTML artifacts.
 GitHub repo links in the thread also get **Run on AFT** — not just a share
