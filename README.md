@@ -11,7 +11,7 @@ Hosted path: HTML/files via MCP, paste, upload, or API — plus runtimes
 | --- | --- |
 | [`www/`](www/) | Apex website (landing, login, docs — Cloudflare Pages) |
 | [`apps/api/`](apps/api/) | Worker: deploy, serve, secrets, upstream proxy |
-| [`apps/extension/`](apps/extension/) | Chrome: aft icon / Deploy to aft.page on ChatGPT / Claude |
+| [`apps/extension/`](apps/extension/) | Chrome: **Run on AFT** on GitHub; ChatGPT/Claude HTML + repo links |
 | [`apps/macos/`](apps/macos/) | macOS: Codex **Open in aft Drop** / folder-to-live-URL client |
 | [`apps/mcp/`](apps/mcp/) | MCP: any agent can `deploy_html` / `deploy_files` |
 | [`apps/cli/`](apps/cli/) | Hosted CLI: `curl -fsSL https://aft.page/install \| sh` → `aft deploy` |

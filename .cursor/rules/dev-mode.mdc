@@ -1,0 +1,12 @@
+---
+description: Founder mode — no freeze, distribution built in, Run launch budget
+alwaysApply: true
+---
+
+# Development mode (founder rules)
+
+1. **No freeze. No parking as a reason not to build.** We are in development mode. Do not block work with freeze, park, wait-until-proof, or calendar launch dates. Sequence is still Drop → Deploy → Run (distribution) → Code — that is capacity, not a freeze.
+
+2. **$1,000 USD** for Show HN + Product Hunt of **AFT Run**. Spend on Run compute/builds (jobs, failed builds, timeouts). Not influencers, ads, or README spam. No launch date — ship when paste-repo → URL works.
+
+Distribution is a product door (**Run**), not a later campaign. Canonical: `docs/STRATEGY.md` § Mode, `docs/RUN.md` § Launch budget.

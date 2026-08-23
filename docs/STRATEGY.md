@@ -2,29 +2,47 @@
 
 Internal north star. Canonical mission: [`../rfs.txt`](../rfs.txt).
 Belief: [`../youtube-moment.txt`](../youtube-moment.txt).
-CN + EU are growth exceptions (paid primitives, local agents): [`REGIONS.md`](./REGIONS.md). After the freeze gate — not this month.
+CN + EU are growth exceptions (paid primitives, local agents): [`REGIONS.md`](./REGIONS.md). Not the current build.
 
-Updated: 2026-08-18
+Updated: 2026-08-23
 
-## 30-day freeze (2026-08-11 → 2026-09-10)
+**Runnable OSS (GitHub → URL):** [RUN.md](./RUN.md) — Drop / Deploy / Run / Code:
+[HOST.md](./HOST.md) · [SHIP.md](./SHIP.md) · [CODE.md](./CODE.md). Sites intel:
+[CHATGPT-SITES.md](./CHATGPT-SITES.md) (Code layer, not `aft deploy`).
 
-**No new product lines.** Platform is enough to prove the RFS job.
+## Four doors (one cloud)
 
-**Gate:** one useful app used weekly by two people (invite accepted, both return).
-Until that proof: no new runtimes, no framework-list completion, no plugin
-marketplace expansion.
+Same `*.aft.page`. Four ways in. Do not four brands.
 
-| Do | Don't |
-| --- | --- |
-| Hosted CLI outsider: install → deploy → claim → update → private invite → second person | AI automations / Cron / briefs |
-| Record human T2U and every unhelped failure | Remix, CLI, extension, marketplace (unless blocked) |
-| ≥1 invite-accepted share used the next week | Matching Hatchable/AppDeploy feature dump |
-| YC in review (progress update on retained users) + credits paperwork | Browser automation / Kitesurf / OpenNext auto / containers |
+| Door | Layer | Job | Status |
+| --- | --- | --- | --- |
+| **Drop** | [Host](./HOST.md) | Folder/zip → URL. Easy start | Shipped |
+| **Deploy** | [Ship](./SHIP.md) | Agent already built it → `aft deploy` detects + uploads. Not Sites | Almost (MCP/CLI) |
+| **Run** | [Run](./RUN.md) | Distribution: GitHub repo → try URL | Next — static first |
+| **Code** | [Code](./CODE.md) | Prompt/template → app with D1 + R2. Not v0 | After Run |
 
-Bugfixes that unblock deploy → claim → invite → return are in. New surfaces are out.
-Canonical checklist: [`../todo.txt`](../todo.txt).
-Next runtime (likely automatic Next/OpenNext or a containerized backend) is chosen
-from what that outsider + compat-probe actually failed to deploy — not from
+Run is the **distribution engine**. Drop is on-ramp. Deploy is `aft deploy`
+(detect + ship). **Code** is prompt/template → app with D1 + R2. Not v0. Not
+named Retool (their brand).
+
+**`aft.run` is taken.** Stay on `aft.page` (`/run/`, later `run.aft.page`).
+
+## Mode
+
+**Development mode.** No freeze. No parking as a reason not to build. No
+launch dates. Build. Distribution is in the product (**Run**), not a later
+campaign.
+
+1. Freeze / park / “wait until proof” do not block shipping. Sequence
+   (Drop → Deploy → Run → Code) is capacity, not a freeze.
+2. **$1,000 USD** for Show HN + Product Hunt of **AFT Run** — spend on
+   Run builds, not ads. Details: [RUN.md](./RUN.md) § Launch budget.
+
+Retained users still matter for YC. They do not block building.
+
+Bugfixes that unblock deploy → claim → invite → return stay in. Canonical
+checklist: [`../todo.txt`](../todo.txt). Next runtime is still chosen from what
+outsiders + compat-probe fail to deploy — not from
 [`FRAMEWORK-COMPATIBILITY.md`](./FRAMEWORK-COMPATIBILITY.md).
 
 ## Company thesis
@@ -169,6 +187,8 @@ Claude / Codex / Cursor / ChatGPT / Git / human
 | Sharing | Public, private, invite, revoke | Shipped / outsider proof |
 | Secrets | Per-site vault + capability approve | Shipped |
 | **Distribution** | **Agent Plugin → Cursor “Deploy with AFT”** | **Highest-priority next ship** |
+| **Run** | Public GitHub repo → job → live URL | [RUN.md](./RUN.md) — next |
+| **Code** | Prompt/template → app with D1 + R2 | [CODE.md](./CODE.md) — after Run |
 | Full stack | worker/next via upstream proxy | OpenNext dogfood live (`next-hello.aft.page`) |
 | Anything Drop | More generous static upload (any folder) | Limits raised; deepen on demand |
 | Plugins | Agent Plugin install across coding agents | P0 this month |
@@ -213,9 +233,10 @@ The company **is** AFT Cloud: **anything Small Software needs, deploy it** —
 static, SPA, worker/next, secrets, share, data, automations, clone,
 whatever the app grows into. That is Plan A and the only product category.
 Remix / automations are **the cloud**, not a fallback roadmap.
-(Cron-as-product is [parked](./parked/cron.md) — schedule may return only as automations plumbing.)
+Schedule clock: [cron.md](./parked/cron.md) — plumbing for automations, not a
+third brand.
 
-Build order (plugin + strangers this month) is capacity, not a smaller
+Build order (plugin, strangers, Run) is capacity, not a smaller
 ambition. After ESOP exercise + variable → leave Polymerize → all-in hours
 on the same cloud. YT + IG are brand for that cloud, after quit. Daily 1h
 now is dogfood + GTM (G20), not Plan B.

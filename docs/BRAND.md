@@ -17,8 +17,8 @@ Craft notes: [`DESIGN-INSPIRATION.txt`](./DESIGN-INSPIRATION.txt).
 Identity, permissions, isolation, and connectors are supporting machinery.
 Do not let “control plane” replace the Small Software category.
 
-Not a chat product. Not a website builder. Not a background coding-agent runner.
-Not “another ChatGPT Sites.”
+Not a chat product **except Code** (prompt/template → D1 + R2, later). Drop /
+Deploy / Run are not v0. Do not name the door Retool (their brand).
 
 The name is the **aft** of a ship: what was built gets carried out as a **live,
 durable, shareable URL**.

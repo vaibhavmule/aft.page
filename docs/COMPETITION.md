@@ -56,7 +56,9 @@ hackathon finders, “build a website by chatting”).
 
 | Signal | Read |
 | --- | --- |
+| **ChatGPT Sites** | Managed Ship layer (D1, R2, auth, analytics). Not Run/OSS. See [CHATGPT-SITES.md](./CHATGPT-SITES.md). |
 | [Kitesurf](https://blog.cloudflare.com/kitesurf/) | Agent browser on Workers. Infra, not AFT. Useful only if apps need browser automation. Do not build around it yet. |
+| [Grok Bot](https://x.ai/news/introducing-grok-bot) | SpaceXAI, 11 Aug 2026. Always-on bots + cloud computer + scheduled **routines**. Same *job* as parked [AI automations](./parked/cron.md) (prompt + schedule, e.g. 9am brief). Different product: digital coworker that signs into *your* tools, not automation on a claimed `*.aft.page` app. Watch; do not unpark. |
 | Dynamic Workers | Commoditizes “run generated code.” Edge stays identity, sharing, lifecycle — not the sandbox. |
 | [Perch](https://mandarwagh9.github.io/perch/#access) | Same category language after the YC RFS. Watch for ideas; not a market threat. |
 | [Surge.sh](https://surge.sh) | Historical analog, not a 2026 rival. See below. Not Peak XV Surge, not Surge AI. |
@@ -125,12 +127,13 @@ shareable-link ceremony is what you buy when invite-by-email isn’t the product
 
 | Buyer | SKU | Perimeter |
 | --- | --- | --- |
-| Team of a few | Team **$99** | Private + invite ACL (view/edit/revoke). Doc-simple. No shared password. |
-| Small enterprise | Enterprise **$499** | Team, plus IP whitelist / Trusted IPs–class controls, automation bypass, protection exceptions, domain allowlist / SSO as they ship — the settings page above, without Vercel Advanced + Enterprise stacking |
+| One person | Personal **30 days free, then $19** | Private apps, higher limits. Self-serve when billing starts. |
+| Team of a few | Team **Talk** | Quote $99 on the call. Private + invite ACL. |
+| Small enterprise | Enterprise **Talk** | Quote $499 or a $2k/30-day pilot. IP whitelist / SSO / connector — pick one. |
 
 Do not chase Vercel’s full Deployment Protection UI on Free/Team. Invite is the
-default ACL. Perimeter knobs (IP allowlist and friends) are the **$499** upsell
-when a buyer points at that Vercel screen and asks for parity.
+default ACL. Perimeter knobs (IP allowlist and friends) are the Enterprise
+conversation when a buyer points at that Vercel screen and asks for parity.
 
 Snapshot: Vercel UI, Aug 2026.
 
@@ -143,4 +146,4 @@ whether the URL survives claim — not another bundled database.
 
 Vercel Deployment Protection proves enterprises already budget for that job;
 they just force small teams onto Advanced ($150 password) and Enterprise (IPs).
-AFT undercuts that stack: invite at $99, full perimeter at $499.
+AFT undercuts that stack: invite on a Team conversation, full perimeter as Enterprise.

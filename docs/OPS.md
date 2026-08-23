@@ -16,6 +16,8 @@ Cursor `mcp_auth` timeout is **C**. aft.page was up. See [USE-CASE-PARAKH.md](..
 | --- | --- | --- |
 | `https://status.aft.page` | public | Uptime probes (API process, MCP `/health`, website, hello) |
 | `https://ops.aft.page` | founder (`OPS_EMAILS`) | Scoreboard + users/sites/domains + CF cost + failed deploys + feedback + retry + smoke + hijack audit + domain access + **[/distribute](https://ops.aft.page/distribute)** (plugin/CLI marketplace pipeline) |
+
+**Engine (Network + Stories + Run on ops):** Drop is static HTML/`dist/` only. MCP, CLI, and Run share detect → build → URL. Shipped runners: static, Vite, Next. `needs_container` (Python/Node/Go/Rust/Ruby servers) and `not_a_site` (db/redis/queue) are honest detect fails, not platform bugs.
 | `https://test--{case}.aft.page` | public canary (`noindex`) | Last smoke artifacts — not tenant inventory |
 | `https://test--fw-N.aft.page` | founder | Compat probe canaries (random GitHub → AFT) |
 | CF Workers Logs | you | Stacks / MCP JSON-RPC |
@@ -142,7 +144,7 @@ Not status. Status pings `/health`. Smoke **deploys**, hits MCP `tools/call`, cl
 
 Covers (Worker isolate): HTML paste, multi-file, missing index → 404, `no_files`, reserved `ai`, slug collision, PATCH + rollback, destroy, MCP **binding** `/health`, claimUrl row, private → `/login?next=`, invite+revoke, unknown canary 404, custom-domain **inventory** (D1 counts).
 
-After the isolate suite, API asks **aft-page-mcp** `POST /flight` (other isolate) to GET public `test--*` + `/claim` + active custom domains. Cron and ops Run now get TLS without a laptop. `npm run smoke` still does MCP JSON-RPC as a real client. Same-isolate `tools/call` is API→MCP→API and deadlocks — do not add it back. Marketing landing is optional.
+After the isolate suite, API asks **aft-page-mcp** `POST /flight` (other isolate) to GET public `test--*` + `/claim` + active custom domains. That Worker needs `global_fetch_strictly_public` or those GETs hit originless `100::` (522 / timeout) instead of the API Worker. Cron and ops Run now get TLS without a laptop. `npm run smoke` still does MCP JSON-RPC as a real client. Same-isolate `tools/call` is API→MCP→API and deadlocks — do not add it back. Marketing landing is optional.
 
 Does **not** allocate a 25–100 MB payload or 501-file `too_many_files` in prod. Invite case skips email send. Last canaries stay up until the next run’s sweep.
 
