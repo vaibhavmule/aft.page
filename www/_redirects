@@ -24,5 +24,7 @@
 /api/ /with/api/ 301
 /code /projects/new/ 301
 /code/ /projects/new/ 301
+/run /run/ 301
+/run/ /run/index.html 200
 /run/* /run/index.html 200
 /changelog.md https://api.aft.page/v1/changelog.md 302
