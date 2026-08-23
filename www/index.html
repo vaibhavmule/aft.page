@@ -448,8 +448,9 @@
                       Drop a folder or ZIP → get a live URL
                     </h2>
                     <p class="drop-zone-lede">
-                      Static HTML, CSS, JS — or a built dist/. Next and Vite
-                      source: GitHub or aft deploy. No account required.
+                      Static files or a built dist/. Next and Vite source:
+                      <a href="/run/">aft.page/run</a> or
+                      <a href="/install">aft deploy</a>. No account required.
                     </p>
                     <div class="drop-zone-actions">
                       <button
@@ -526,7 +527,7 @@ deploy({
 # → <a class="hero-demo-liveurl" href="https://hello.aft.page">hello.aft.page</a>
 
 <span class="hero-demo-ps">%</span> # Humans: Drop or CLI · Plugin marketplace: pending
-<span class="hero-demo-ps">%</span> <a href="https://aft.page/drop/">aft.page/drop</a> · <a href="https://aft.page/plugins">aft.page/plugins</a></code></pre>
+<span class="hero-demo-ps">%</span> <a href="https://aft.page/drop/">aft.page/drop</a> · <a href="https://aft.page/run/">aft.page/run</a> · <a href="https://aft.page/plugins">aft.page/plugins</a></code></pre>
             </div>
 
             <div
@@ -555,6 +556,7 @@ deploy({
           <li><a href="/with/kilo/">Kilo</a></li>
           <li><a href="/with/windsurf/">Windsurf</a></li>
           <li><a href="/drop">Drop</a></li>
+          <li><a href="/run/">Run</a></li>
         </ul>
       </div>
     </header>
@@ -657,8 +659,9 @@ deploy({
           </li>
         </ol>
         <p class="ship-limits">
-          Static HTML, CSS, and JS today. 500 files · 25&nbsp;MB each · 100&nbsp;MB
-          total. Claim to keep ownership.
+          Drop: static files. GitHub: <a href="/run/">aft.page/run</a>.
+          Builds: <a href="/install">aft deploy</a>. 500 files · 25&nbsp;MB each ·
+          100&nbsp;MB total. Claim to keep ownership.
         </p>
       </section>
 
@@ -667,7 +670,8 @@ deploy({
           <p class="section-tag">Get started</p>
           <h2 class="section-title" id="start-title">Ways in.</h2>
           <p class="section-lede">
-            Agents: MCP, CLI, cURL, or Plugin. Humans: Drop or CLI. Same live URL.
+            Agents: MCP, CLI, or cURL. Humans: Drop, Run (GitHub), or CLI. Same
+            live URL.
           </p>
         </div>
         <ol class="path-row">
@@ -711,8 +715,21 @@ deploy({
             </a>
           </li>
           <li>
-            <a href="#hero-curl">
+            <a href="/run/">
               <span class="path-num">004</span>
+              <svg class="path-ico" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 6h12v5H6z" />
+                <path d="M6 13h5v5H6z" />
+                <path d="M13 13h5v5h-5z" />
+              </svg>
+              <h3>Run</h3>
+              <p class="path-cmd">aft.page/run/owner/repo</p>
+              <p>Public GitHub repo → live URL.</p>
+            </a>
+          </li>
+          <li>
+            <a href="#hero-curl">
+              <span class="path-num">005</span>
               <svg class="path-ico" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M4 12h13" />
                 <path d="M13 7l5 5-5 5" />
@@ -724,7 +741,7 @@ deploy({
           </li>
           <li>
             <a href="/plugins">
-              <span class="path-num">005</span>
+              <span class="path-num">006</span>
               <svg class="path-ico" viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="5" y="5" width="14" height="14" />
                 <path d="M12 9v6M9 12h6" />
@@ -746,7 +763,8 @@ deploy({
               Same URL whether you ship via
               <a href="#hero-mcp">MCP</a>,
               <a href="#hero-curl">cURL</a>, or
-              <a href="#hero-drop">Drop</a>. Copy a snippet above—or open a
+              <a href="#hero-drop">Drop</a>. GitHub repos via
+              <a href="/run/">Run</a>. Copy a snippet above—or open a
               claimed example at
               <a
                 href="https://hello.aft.page"
