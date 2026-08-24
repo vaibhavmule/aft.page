@@ -1,6 +1,7 @@
 import { cmdLogin, cmdLogout, cmdWhoami } from "./auth.js";
 import { ensureAnalyticsConsent, maybeTrackCommand } from "./analytics.js";
 import { cmdDeploy } from "./deploy.js";
+import { cmdDomains } from "./domains.js";
 import { cmdEnv } from "./env.js";
 import { cmdInit } from "./init.js";
 import { cmdMigrate } from "./migrate.js";
@@ -27,6 +28,8 @@ ${ui.bold("Requires")} ${ui.cyan("aft login")}
   aft sites                     List your projects
   aft open                      Open this project's live URL
   aft rename <slug>             Change the site URL
+  aft domains                   List custom domains
+  aft domain add <host>         Add a custom domain
   aft env list|set|unset        Secrets (same as project UI)
   aft migrate vercel            Copy Vercel env → aft secrets
   aft visibility public|private Who can open the live site
@@ -79,6 +82,10 @@ async function main(argv) {
         break;
       case "deploy":
         await cmdDeploy(args);
+        break;
+      case "domain":
+      case "domains":
+        await cmdDomains(cmd === "domains" ? ["list", ...args] : args);
         break;
       case "init":
         await cmdInit();

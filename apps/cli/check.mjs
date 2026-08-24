@@ -73,8 +73,9 @@ assert.match(help.stdout, /aft visibility/);
 assert.match(help.stdout, /aft sites/);
 assert.match(help.stdout, /aft rollback/);
 assert.match(help.stdout, /aft update/);
-assert.match(help.stdout, /v0.2.8/);
+assert.match(help.stdout, /v0.2.9/);
 assert.match(help.stdout, /aft migrate vercel/);
+assert.match(help.stdout, /aft domains/);
 assert.match(help.stdout, /--check/);
 assert.match(help.stdout, /--verbose/);
 assert.match(help.stdout, /aft version/);
@@ -82,13 +83,13 @@ assert.match(help.stdout, /aft version/);
 assert.equal(cmpVersion("0.1.0", "0.2.2"), -1);
 assert.equal(cmpVersion("0.2.2", "0.2.2"), 0);
 assert.equal(cmpVersion("0.3.0", "0.2.2"), 1);
-assert.equal(localVersion(), "0.2.8");
+assert.equal(localVersion(), "0.2.9");
 
 const versionCmd = spawnSync(process.execPath, [join(root, "bin/aft.js"), "version"], {
   encoding: "utf8",
 });
 assert.equal(versionCmd.status, 0, versionCmd.stderr);
-assert.equal(versionCmd.stdout.trim(), "0.2.8");
+assert.equal(versionCmd.stdout.trim(), "0.2.9");
 
 const envHelp = spawnSync(
   process.execPath,
@@ -97,6 +98,15 @@ const envHelp = spawnSync(
 );
 assert.notEqual(envHelp.status, 0);
 assert.match(envHelp.stderr, /Not logged in|aft login|No project slug/);
+
+const domainHelp = spawnSync(
+  process.execPath,
+  [join(root, "bin/aft.js"), "domain", "--help"],
+  { encoding: "utf8" },
+);
+assert.equal(domainHelp.status, 0, domainHelp.stderr);
+assert.match(domainHelp.stdout, /aft domain add/);
+assert.match(domainHelp.stdout, /request-access/);
 
 assert.equal(await readAftJsonSlug(join(root, "nope-missing")), null);
 
@@ -263,6 +273,7 @@ assert.match(install, /src\/prompt\.js/);
 assert.match(install, /src\/update\.js/);
 assert.match(install, /src\/version\.js/);
 assert.match(install, /src\/analytics\.js/);
+assert.match(install, /src\/domains\.js/);
 assert.match(install, /src\/migrate\.js/);
 assert.match(install, /src\/site-url\.js/);
 assert.match(install, /VERSION/);
