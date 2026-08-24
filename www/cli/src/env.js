@@ -81,7 +81,14 @@ async function setEnv(slug, rest) {
     authHint(res.status, body);
     throw new Error(body.hint || body.error || `env set failed (${res.status})`);
   }
-  ok(`Set ${name} on ${slug}.aft.page`);
+  if (body.synced) ok(`Set ${name} on ${slug}.aft.page (synced to Worker)`);
+  else if (body.syncReason === "worker_not_ready") {
+    ok(`Set ${name} on ${slug}.aft.page`);
+    note("Worker not live yet — secret stays in vault until next/worker upstream exists.");
+  } else {
+    ok(`Set ${name} on ${slug}.aft.page`);
+    note(body.syncReason || "Vault saved; Worker sync pending.");
+  }
 }
 
 async function unsetEnv(slug, name) {

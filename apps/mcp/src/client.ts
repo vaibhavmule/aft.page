@@ -49,6 +49,32 @@ export type RollbackResult = {
   rolledBack: true;
 };
 
+export type RepoDeployResult = {
+  url: string;
+  slug: string;
+  jobId: string;
+  owner: string;
+  repo: string;
+  kind?: string;
+  branch?: string;
+  editToken?: string;
+  claimUrl?: string;
+};
+
+export type RepoJobSnapshot = {
+  jobId: string;
+  status: string;
+  kind?: string;
+  phase?: string;
+  slug?: string;
+  url?: string;
+  owner?: string;
+  repo?: string;
+  reason?: string;
+  error?: string;
+  logTail?: string;
+};
+
 /** One MCP `deploy` tool: html is just files=[{path:index.html}]. */
 export function filesFromDeployInput(opts: {
   html?: string;
@@ -192,4 +218,87 @@ export async function rollbackSite(
     throw new Error(err.message || err.error || `rollback failed (${res.status})`);
   }
   return body;
+}
+
+function normalizeGithubUrl(input: string): string {
+  const raw = input.trim();
+  if (/^https?:\/\//i.test(raw) || /github\.com/i.test(raw)) return raw;
+  if (/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(raw)) {
+    return `https://github.com/${raw}`;
+  }
+  throw new Error("deploy_repo needs a GitHub URL or owner/repo");
+}
+
+export async function getRepoJob(
+  jobId: string,
+  apiBase = DEFAULT_API,
+): Promise<RepoJobSnapshot> {
+  const res = await fetch(`${apiBase}/v1/jobs/${encodeURIComponent(jobId)}`, {
+    headers: { "x-aft-client": "mcp" },
+  });
+  const body = (await res.json()) as RepoJobSnapshot & DeployError;
+  if (!res.ok) {
+    throw new Error(body.message || body.error || `job poll failed (${res.status})`);
+  }
+  return body;
+}
+
+export async function deployRepo(
+  githubUrl: string,
+  opts: { apiBase?: string; waitMs?: number; pollMs?: number } = {},
+): Promise<RepoDeployResult> {
+  const apiBase = opts.apiBase ?? DEFAULT_API;
+  const url = normalizeGithubUrl(githubUrl);
+  const res = await fetch(`${apiBase}/v1/repo/deploy`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-aft-client": "mcp",
+    },
+    body: JSON.stringify({ url }),
+  });
+  const body = (await res.json()) as Record<string, unknown> & DeployError;
+  if (!res.ok) {
+    throw new Error(
+      String(body.reason || body.message || body.error || `deploy_repo failed (${res.status})`),
+    );
+  }
+  if (res.status === 202 && typeof body.jobId === "string") {
+    const waitMs = opts.waitMs ?? 12 * 60 * 1000;
+    const pollMs = opts.pollMs ?? 2000;
+    const deadline = Date.now() + waitMs;
+    let snap = body as RepoJobSnapshot;
+    while (Date.now() < deadline) {
+      snap = await getRepoJob(body.jobId, apiBase);
+      if (snap.status === "live" && snap.url) {
+        return {
+          url: String(snap.url),
+          slug: String(snap.slug || body.slug || ""),
+          jobId: body.jobId,
+          owner: String(snap.owner || body.owner || ""),
+          repo: String(snap.repo || body.repo || ""),
+          kind: snap.kind ? String(snap.kind) : body.kind ? String(body.kind) : undefined,
+          branch: snap.branch ? String(snap.branch) : body.branch ? String(body.branch) : undefined,
+        };
+      }
+      if (snap.status === "failed") {
+        throw new Error(snap.reason || snap.error || "Build failed.");
+      }
+      await new Promise((resolve) => setTimeout(resolve, pollMs));
+    }
+    throw new Error("Build timed out. Retry deploy_repo or check ops.aft.page/run.");
+  }
+  if (typeof body.url === "string" && typeof body.slug === "string") {
+    return {
+      url: body.url,
+      slug: body.slug,
+      jobId: String(body.jobId || ""),
+      owner: String(body.owner || ""),
+      repo: String(body.repo || ""),
+      branch: body.branch ? String(body.branch) : undefined,
+      editToken: body.editToken ? String(body.editToken) : undefined,
+      claimUrl: body.claimUrl ? String(body.claimUrl) : undefined,
+    };
+  }
+  throw new Error("deploy_repo returned an unexpected response.");
 }

@@ -256,30 +256,17 @@ curl -X DELETE https://api.aft.page/v1/sites/{slug}/secrets/ANTHROPIC_API_KEY \
 
           <section id="runtime">
             <h2>Where secrets actually go</h2>
-            <p class="docs-callout docs-callout--warn">
-              <strong>Today, nothing reads the vault for you automatically.</strong>
-              A <code>worker</code> / <code>next</code> site's
-              <code>upstream</code> is a Cloudflare Worker <em>you</em>
-              deploy and run — aft.page proxies requests to it, but doesn't
-              hand it your vault values. Give that Worker its own secrets the
-              normal Cloudflare way:
-            </p>
-            <pre><code>cd your-worker
-npx wrangler secret put ANTHROPIC_API_KEY</code></pre>
             <p>
-              What the vault is for right now: a private, encrypted place to
-              park a value per site, and the source of truth for
-              approve-on-deploy visibility when your <code>aft.json</code>
-              declares <code>capabilities.secrets</code>. Wiring the vault
-              straight into request-time execution for worker/next runtimes
-              is on the roadmap, not shipped — don't rely on
-              <code>aft env set</code> alone to get a value in front of your
-              running app yet.
+              Values live in the encrypted aft vault. For <code>next</code> /
+              <code>worker</code> sites with a live upstream Worker,
+              <code>aft env set</code> also syncs to that Worker via the
+              Cloudflare API (same names as <code>process.env</code> in your
+              app). Static sites never see secrets at runtime.
             </p>
             <p>
-              Static sites never see secrets at all — a Vite/React/Vue SPA
-              needing a public API URL should bake it in at
-              <strong>build</strong> time with a public env prefix instead.
+              Set secrets after the site Worker exists (post-deploy). If you set
+              them earlier, they stay in the vault and sync when the upstream
+              registers.
             </p>
           </section>
         </article>

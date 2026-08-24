@@ -1,5 +1,4 @@
 /** Walk a directory and deploy to api.aft.page. */
-import { spawnSync } from "node:child_process";
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 import { apiFetch, readJson } from "./api.js";
@@ -13,7 +12,7 @@ import {
 import { adviseDeploy, collectSnapshot } from "./preflight.js";
 import { loadState, readAftJsonSlug, saveState } from "./state.js";
 import { deployNextSsr } from "./next-deploy.js";
-import { note, ok, say } from "./ui.js";
+import { isVerbose, note, ok, runCmd, runStep, say, stripVerboseFlags } from "./ui.js";
 
 export { shouldSkip };
 
@@ -57,23 +56,21 @@ export async function collectFiles(root) {
   return out;
 }
 
-function runBuild(projectRoot, script) {
-  say(`Running npm run ${script}…`);
-  const r = spawnSync("npm", ["run", script], {
-    cwd: projectRoot,
-    stdio: "inherit",
-    shell: process.platform === "win32",
-  });
-  if (r.status !== 0) {
-    throw new Error(`npm run ${script} failed (exit ${r.status ?? "?"})`);
-  }
+async function runBuild(projectRoot, script, { verbose = false } = {}) {
+  await runStep(`Running npm run ${script}…`, async () => {
+    runCmd("npm", ["run", script], projectRoot, { verbose });
+  }, { verbose });
 }
 
 function throwAdvice(advice) {
   throw new Error(`${advice.why}\n  fix: ${advice.fix}`);
 }
 
-export async function ensureDeployable(cwd, dirArg, { checkOnly = false } = {}) {
+export async function ensureDeployable(
+  cwd,
+  dirArg,
+  { checkOnly = false, verbose = false } = {},
+) {
   let snapshot = await collectSnapshot(cwd, dirArg);
   let advice = await adviseDeploy(snapshot);
 
@@ -94,7 +91,7 @@ export async function ensureDeployable(cwd, dirArg, { checkOnly = false } = {}) 
       );
       if (!okBuild) throwAdvice(advice);
     }
-    runBuild(snapshot._target.projectRoot, script);
+    await runBuild(snapshot._target.projectRoot, script, { verbose });
     snapshot = await collectSnapshot(cwd, dirArg);
     advice = await adviseDeploy(snapshot);
     if (advice.ok) return snapshot._target;
@@ -104,9 +101,11 @@ export async function ensureDeployable(cwd, dirArg, { checkOnly = false } = {}) 
 }
 
 export async function cmdDeploy(args) {
-  const dirArg = positionalDir(args);
-  const slugFlag = flagValue(args, "--slug");
-  const checkOnly = args.includes("--check");
+  const verbose = isVerbose(args);
+  const filtered = stripVerboseFlags(args);
+  const dirArg = positionalDir(filtered);
+  const slugFlag = flagValue(filtered, "--slug");
+  const checkOnly = filtered.includes("--check");
 
   if (checkOnly) {
     const { advice } = await ensureDeployable(process.cwd(), dirArg, {
@@ -117,9 +116,10 @@ export async function cmdDeploy(args) {
     return;
   }
 
-  const target = await ensureDeployable(process.cwd(), dirArg);
+  const target = await ensureDeployable(process.cwd(), dirArg, { verbose });
 
   if (target.kind === "next") {
+    note("Next.js SSR — OpenNext + wrangler");
     const initSlug = await ensureAftJson(target.projectRoot);
     if (initSlug) note(`Wrote aft.json → ${initSlug}`);
     const state = await loadState(target.projectRoot);
@@ -131,6 +131,7 @@ export async function cmdDeploy(args) {
     if (!slug) throw new Error("No slug. Pass --slug or add name to package.json.");
     const body = await deployNextSsr(target.projectRoot, slug, {
       editToken: state?.editToken,
+      verbose,
     });
     if (body.editToken) {
       await saveState(target.projectRoot, { slug: body.slug, editToken: body.editToken });

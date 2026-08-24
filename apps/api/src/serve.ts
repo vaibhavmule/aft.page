@@ -187,18 +187,20 @@ export async function serveSite(
 
   if (!pinDeployId && upstreamUrl && (runtime === "worker" || runtime === "next")) {
     void touchLastServed(env, slug);
+    const res = await proxyUpstream(request, upstreamUrl);
+    const path = servePath(pathname);
     noteServe(env, request, slug, {
-      httpStatus: 200,
-      path: servePath(pathname),
+      httpStatus: res.status,
+      path,
     });
-    if (looksLikeDocumentPath(pathname)) {
+    if (looksLikeDocumentPath(pathname) && res.status === 200) {
       await trackPageView(env, request, slug, {
-        path: servePath(pathname),
-        contentType: "text/html",
-        httpStatus: 200,
+        path,
+        contentType: res.headers.get("content-type") || "",
+        httpStatus: res.status,
       });
     }
-    return proxyUpstream(request, upstreamUrl);
+    return res;
   }
 
   if (pathname.startsWith("/api/")) {

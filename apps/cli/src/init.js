@@ -68,7 +68,7 @@ export async function ensureAftJson(
     slug,
     runtime: framework.runtime || "static",
   };
-  if (framework.note && !framework.staticDeployable) {
+  if (framework.note && !framework.staticDeployable && !interactive) {
     note(framework.note);
   }
 

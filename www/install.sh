@@ -8,13 +8,13 @@ PREFIX="${AFT_INSTALL_DIR:-$HOME/.aft}"
 BIN_DIR="${AFT_BIN_DIR:-$HOME/.local/bin}"
 ROOT="$PREFIX/cli"
 
-# Colors when stdout is a TTY (piped curl | sh usually is).
+# Colors when stdout is a TTY (aft update inherits the terminal; curl | sh often does not).
 if [ -t 1 ] || [ "${AFT_INSTALL_COLOR:-}" = "1" ]; then
-  BOLD='\033[1m'
-  DIM='\033[2m'
-  GREEN='\033[32m'
-  CYAN='\033[36m'
-  RESET='\033[0m'
+  BOLD=$(printf '\033[1m')
+  DIM=$(printf '\033[2m')
+  GREEN=$(printf '\033[32m')
+  CYAN=$(printf '\033[36m')
+  RESET=$(printf '\033[0m')
 else
   BOLD='' DIM='' GREEN='' CYAN='' RESET=''
 fi

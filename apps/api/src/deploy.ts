@@ -28,6 +28,7 @@ import { ANON_IDLE_NOTICE } from "./anon-gc";
 import { claimSiteUrl, liveSiteUrl } from "./site-url";
 import { extractAftManifest } from "./manifest";
 import { explainDeployFailure } from "./fail-explain";
+import { scheduleVaultSyncToWorker } from "./worker-secrets";
 import {
   resolveClient,
   trackDeploy,
@@ -376,6 +377,7 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
       upstreamUrl,
       mainModule,
     });
+    scheduleVaultSyncToWorker(env, slug, runtime, upstreamUrl);
     if (editToken) {
       await setSiteEditTokenHash(env, slug, await hashEditToken(env, slug, editToken));
     } else {
@@ -519,6 +521,7 @@ async function redeployToSlug(
     upstreamUrl,
     mainModule,
   });
+  scheduleVaultSyncToWorker(env, slug, runtime, upstreamUrl);
   await insertDeploy(env, {
     id: deployId,
     slug,

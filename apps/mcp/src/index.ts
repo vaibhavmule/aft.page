@@ -11,6 +11,7 @@ import { z } from "zod";
 import {
   DEFAULT_API,
   deployFiles,
+  deployRepo,
   filesFromDeployInput,
   health,
   listDeploys,
@@ -64,9 +65,38 @@ function formatDeploy(result: {
   return lines.join("\n");
 }
 
+function formatRepoDeploy(result: {
+  url: string;
+  slug: string;
+  jobId: string;
+  owner: string;
+  repo: string;
+  kind?: string;
+  branch?: string;
+  editToken?: string;
+  claimUrl?: string;
+}): string {
+  const lines = [
+    `Live: ${result.url}`,
+    `Repo: ${result.owner}/${result.repo}`,
+    `slug: ${result.slug}`,
+    `job: ${result.jobId}`,
+  ];
+  if (result.kind) lines.push(`kind: ${result.kind}`);
+  if (result.branch) lines.push(`branch: ${result.branch}`);
+  if (result.editToken) {
+    const state = JSON.stringify({ slug: result.slug, editToken: result.editToken });
+    lines.push(`editToken: ${result.editToken}`);
+    lines.push(`Persist: write .aft/state.json ${state} and gitignore .aft/`);
+  }
+  lines.push(`Claim: ${result.claimUrl || result.url}`);
+  lines.push("Secrets after claim: aft env set NAME=value (syncs to the site Worker).");
+  return lines.join("\n");
+}
+
 const server = new McpServer({
   name: "aft-page",
-  version: "0.4.0",
+  version: "0.5.0",
 });
 
 server.registerTool(
@@ -130,6 +160,38 @@ server.registerTool(
       return {
         isError: true,
         content: [{ type: "text" as const, text: `Deploy failed: ${message}` }],
+      };
+    }
+  },
+);
+
+server.registerTool(
+  "deploy_repo",
+  {
+    title: "Deploy a public GitHub repo",
+    description:
+      "Same engine as aft.page/run: public GitHub URL → detect → build → live URL. " +
+      "Static is instant; Vite and Next.js build in the background (polls until live or failed). " +
+      "Private repos are refused. For a local project dir, use hosted CLI aft deploy instead.",
+    inputSchema: {
+      url: z
+        .string()
+        .min(3)
+        .describe("GitHub URL or owner/repo, e.g. https://github.com/mdn/beginner-html-site"),
+    },
+  },
+  async ({ url }) => {
+    try {
+      const result = await deployRepo(url, { apiBase });
+      return {
+        content: [{ type: "text" as const, text: formatRepoDeploy(result) }],
+        structuredContent: result,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        isError: true,
+        content: [{ type: "text" as const, text: `deploy_repo failed: ${message}` }],
       };
     }
   },

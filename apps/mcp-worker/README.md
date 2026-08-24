@@ -3,7 +3,7 @@
 Thin, **stateless** MCP server (ADR: [`docs/ADR-MCP-THIN.md`](../../docs/ADR-MCP-THIN.md)).
 
 - URL: `https://mcp.aft.page/mcp`
-- Tools: `deploy` · `aft_deploys` · `aft_rollback` · `aft_health`
+- Tools: `deploy` · `deploy_repo` · `aft_deploys` · `aft_rollback` · `aft_health`
 - Calls `aft-page-api` over a service binding (`env.API`) — no public hostname hop, no Durable Object
 - Production hostname `mcp.aft.page` is served by **aft-page-api** then bound here — two Workers Logs streams. Structured `{ where: "mcp" }` logs + AE `mcp` events. See [OPS.md](../../docs/OPS.md).
 

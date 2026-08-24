@@ -614,7 +614,13 @@ async function putSecret(
 
   const { putSiteSecret } = await import("./secrets");
   await putSiteSecret(env, slug, name, value);
-  return json({ ok: true, slug, name }, 200, extra);
+  const { syncSiteSecretToWorker } = await import("./worker-secrets");
+  const sync = await syncSiteSecretToWorker(env, slug, name, value);
+  return json(
+    { ok: true, slug, name, synced: sync.synced, ...(sync.reason ? { syncReason: sync.reason } : {}) },
+    200,
+    extra,
+  );
 }
 
 async function deleteSecret(
@@ -630,5 +636,11 @@ async function deleteSecret(
   const { deleteSiteSecret } = await import("./secrets");
   const ok = await deleteSiteSecret(env, slug, name);
   if (!ok) return json({ error: "not_found" }, 404, extra);
-  return json({ ok: true, slug, name }, 200, extra);
+  const { unsyncSiteSecretFromWorker } = await import("./worker-secrets");
+  const sync = await unsyncSiteSecretFromWorker(env, slug, name);
+  return json(
+    { ok: true, slug, name, synced: sync.synced, ...(sync.reason ? { syncReason: sync.reason } : {}) },
+    200,
+    extra,
+  );
 }

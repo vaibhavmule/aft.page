@@ -297,12 +297,23 @@ describe("serving files", () => {
         headers: { "content-type": "text/plain" },
       })) as typeof fetch;
     try {
-      const res = await fetchSite("crash-app");
+      const res = await call(
+        new Request("https://crash-app.aft.page/api/analyze", { method: "POST" }),
+      );
       expect(res.status).toBe(500);
       expect(res.headers.get("x-aft-upstream")).toBe("https://upstream.example");
       const body = await res.text();
       expect(body).toBe("boom from app");
       expect(body).not.toContain("Nothing is deployed here");
+
+      const logs = await env.DB.prepare(
+        `SELECT status, path, method FROM site_logs WHERE slug = ? ORDER BY created_at DESC LIMIT 1`,
+      )
+        .bind("crash-app")
+        .first<{ status: number; path: string; method: string }>();
+      expect(logs?.status).toBe(500);
+      expect(logs?.path).toBe("/api/analyze");
+      expect(logs?.method).toBe("POST");
     } finally {
       globalThis.fetch = orig;
     }

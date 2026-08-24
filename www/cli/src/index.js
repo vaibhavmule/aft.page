@@ -16,8 +16,9 @@ import { localVersion } from "./version.js";
 const HELP = `${ui.bold("aft")} — ship a live URL ${ui.dim(`(v${localVersion()})`)}
 
 ${ui.bold("No login")}
-  aft deploy [dir]              Detect → build (pass/fail) → URL
+  aft deploy [dir]              Detect → build → URL (--verbose for full logs)
   aft deploy --check [dir]      Preflight JSON (no upload)
+  aft version                   Print CLI version
   aft init                      Write aft.json (detect + confirm; also on first deploy)
   aft update                    Reinstall latest CLI from aft.page
 
@@ -102,6 +103,9 @@ async function main(argv) {
         break;
       case "plugins":
         await cmdPlugins(args);
+        break;
+      case "version":
+        console.log(localVersion());
         break;
       case "-h":
       case "--help":

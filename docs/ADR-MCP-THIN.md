@@ -20,6 +20,7 @@ reads `aft.json` / `.aft/state.json` and passes slug + editToken.
 | Tool | Job |
 | --- | --- |
 | `deploy` | `html` or `files` → live URL. With `edit_token` → PATCH same slug. |
+| `deploy_repo` | Public GitHub URL → same engine as Run (`/v1/repo/deploy`). |
 | `aft_deploys` | List rollback-able deploys for a slug (editToken) |
 | `aft_rollback` | Point the live slug at a prior deployId (editToken) |
 | `aft_health` | Liveness |

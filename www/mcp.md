@@ -36,7 +36,7 @@ MCP is a **thin deploy adapter** (not a control plane): `deploy`, `aft_deploys`,
 | --- | --- |
 | Remote URL (preferred) | `https://mcp.aft.page/mcp` |
 | Transport | Streamable HTTP (stateless) |
-| Tools | `deploy` · `aft_deploys` · `aft_rollback` · `aft_health` |
+| Tools | `deploy` · `deploy_repo` · `aft_deploys` · `aft_rollback` · `aft_health` |
 | Default API | `https://api.aft.page` |
 | Local fallback | `apps/mcp` stdio (optional) |
 
@@ -97,7 +97,8 @@ if needed, then uploads ready files.
 | Vite / React / Vue | `npm run build` → **`dist/` only** |
 | CRA / Rsbuild | `npm run build` → `build/` or `dist/` |
 | Next static export (`output: 'export'`) | `npm run build` → **`out/`** |
-| Next SSR | Not this MCP path |
+| Next SSR (local repo) | Hosted CLI `aft deploy` (OpenNext + wrangler) |
+| Next / Vite / static (public GitHub) | MCP `deploy_repo` or aft.page/run |
 
 Never upload `src/`, `node_modules`, or `.next/`.
 
