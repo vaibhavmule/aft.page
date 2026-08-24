@@ -4,7 +4,7 @@ import { requireLogin, resolveProject } from "./project.js";
 import { note, ok, say, ui } from "./ui.js";
 
 export async function cmdDomains(args = []) {
-  const [sub, ...rest] = args;
+  let [sub, ...rest] = args;
 
   if (sub === "-h" || sub === "--help" || sub === "help") {
     console.log(`Usage:
@@ -16,6 +16,28 @@ export async function cmdDomains(args = []) {
 
 Requires aft login and a claimed site.`);
     return;
+  }
+
+  // Shortcut: `aft domain app.example.com` → `aft domain add app.example.com`
+  const known = new Set([
+    "list",
+    "ls",
+    "add",
+    "refresh",
+    "remove",
+    "rm",
+    "delete",
+    "request-access",
+  ]);
+  if (
+    typeof sub === "string" &&
+    !known.has(sub) &&
+    rest.length === 0 &&
+    sub.includes(".")
+  ) {
+    const hostname = sub;
+    sub = "add";
+    rest = [hostname];
   }
 
   await requireLogin();
