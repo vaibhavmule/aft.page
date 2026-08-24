@@ -4,6 +4,7 @@ import { cmdDeploy } from "./deploy.js";
 import { cmdEnv } from "./env.js";
 import { cmdInit } from "./init.js";
 import { cmdMigrate } from "./migrate.js";
+import { cmdOpen } from "./open.js";
 import { cmdPlugins } from "./plugins.js";
 import { cmdRename } from "./rename.js";
 import { cmdRollback } from "./rollback.js";
