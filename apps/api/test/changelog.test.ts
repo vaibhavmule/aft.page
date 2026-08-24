@@ -10,10 +10,13 @@ describe("changelog", () => {
       entries: { id: string; day: string; category: string; html: string }[];
     };
     const ids = body.entries.map((e) => e.id);
-    // Newest-first: day DESC, then sort ASC within a day. hosted-cli
-    // (2026-08-11, sort 0) ranks above mcp-ready (same day, sort 1) —
-    // see migrations 0024-0026.
-    expect(ids[0]).toBe("hosted-cli");
+    // Newest-first: day DESC, then sort ASC within a day. run-github
+    // (2026-08-24, sort 0) ranks above deploy-repo (same day, sort 1).
+    expect(ids[0]).toBe("run-github");
+    expect(ids).toContain("deploy-repo");
+    expect(ids).toContain("signin-with-aft");
+    expect(ids).toContain("deploy-caps");
+    expect(ids).toContain("hosted-cli");
     expect(ids).toContain("ai-discovery-files");
     expect(ids).toContain("remote-mcp");
     expect(ids).toContain("seo-landings");

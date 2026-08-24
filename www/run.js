@@ -88,12 +88,30 @@ function showRepo(ref) {
   document.getElementById("run-title").textContent = `Running ${ref.owner}/${ref.repo}`
 }
 
-function showLive(liveUrl, editToken) {
+async function waitForSite(url, { timeoutMs = 45000, intervalMs = 1000 } = {}) {
+  const probe = new URL(url).origin + "/"
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    try {
+      const res = await fetch(probe, { cache: "no-store" })
+      if (res.ok) return true
+      if (res.status !== 404 || res.headers.get("x-aft-error") !== "SITE_NOT_FOUND") {
+        return res.ok
+      }
+    } catch (_) {}
+    await new Promise((resolve) => setTimeout(resolve, intervalMs))
+  }
+  return false
+}
+
+async function showLive(liveUrl, editToken) {
   const dest = liveOpenUrl(liveUrl, editToken, null)
   if (!dest) {
     setStatus("Live, but no URL returned.", "err")
     return
   }
+  setStatus("Almost ready…", "pending")
+  await waitForSite(liveUrl)
   const card = document.getElementById("live-card")
   const open = document.getElementById("live-open")
   const urlText = document.getElementById("live-url-text")
@@ -117,10 +135,11 @@ async function watchJob(data) {
   phaseEl.textContent = PHASE_LABEL.queued
   let settled = false
 
-  const finishLive = (snap) => {
+  const finishLive = async (snap) => {
     settled = true
+    phaseEl.textContent = "Going live…"
+    await showLive(snap.url, snap.editToken)
     phaseEl.textContent = PHASE_LABEL.live
-    showLive(snap.url, snap.editToken)
   }
 
   const applySnap = async (snap) => {
@@ -132,7 +151,7 @@ async function watchJob(data) {
     }
     logEl.scrollTop = logEl.scrollHeight
     if (snap.status === "live" && snap.url) {
-      finishLive(snap)
+      await finishLive(snap)
       return
     }
     if (snap.status === "failed") {
@@ -147,7 +166,7 @@ async function watchJob(data) {
   const es = new EventSource(`${API}/v1/jobs/${encodeURIComponent(data.jobId)}/events`)
   es.onmessage = (ev) => {
     try {
-      applySnap(JSON.parse(ev.data))
+      applySnap(JSON.parse(ev.data)).catch(() => {})
     } catch (_) {}
   }
 
@@ -185,7 +204,7 @@ async function runRepo(ref, { pushState = false } = {}) {
         return
       }
       if (res.ok && data.url) {
-        showLive(data.url, data.editToken)
+        await showLive(data.url, data.editToken)
         return
       }
       const rateLimited =

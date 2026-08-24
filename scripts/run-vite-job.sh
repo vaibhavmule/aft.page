@@ -80,7 +80,7 @@ if [[ -z "$OUT" ]]; then
   fail "No dist/, out/, or build/ with index.html after npm run build."
 fi
 
-post_phase deploying "Uploading ${OUT##*/}/"
+post_phase deploying "Deploying"
 python3 - "$API" "$JOB_ID" "$JOB_TOKEN" "$OUT" <<'PY'
 import base64, json, os, sys, urllib.request
 api, job_id, token, out = sys.argv[1:5]
