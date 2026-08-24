@@ -3,7 +3,7 @@ import { ensureAnalyticsConsent, maybeTrackCommand } from "./analytics.js";
 import { cmdDeploy } from "./deploy.js";
 import { cmdEnv } from "./env.js";
 import { cmdInit } from "./init.js";
-import { cmdOpen } from "./open.js";
+import { cmdMigrate } from "./migrate.js";
 import { cmdPlugins } from "./plugins.js";
 import { cmdRename } from "./rename.js";
 import { cmdRollback } from "./rollback.js";
@@ -27,6 +27,7 @@ ${ui.bold("Requires")} ${ui.cyan("aft login")}
   aft open                      Open this project's live URL
   aft rename <slug>             Change the site URL
   aft env list|set|unset        Secrets (same as project UI)
+  aft migrate vercel            Copy Vercel env → aft secrets
   aft visibility public|private Who can open the live site
   aft rollback                  List deploys
   aft rollback <deployId>       Roll back to a prior deploy
@@ -83,6 +84,9 @@ async function main(argv) {
         break;
       case "update":
         await cmdUpdate(args);
+        break;
+      case "migrate":
+        await cmdMigrate(args);
         break;
       case "open":
         await cmdOpen();

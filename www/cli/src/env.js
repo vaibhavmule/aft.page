@@ -67,6 +67,11 @@ async function setEnv(slug, rest) {
     throw new Error("usage: aft env set NAME=value");
   }
   name = String(name || "").trim();
+  await putEnvSecret(slug, name, value);
+}
+
+/** PUT one secret; used by aft env set and aft migrate vercel. */
+export async function putEnvSecret(slug, name, value, { quiet = false } = {}) {
   if (!/^[A-Za-z0-9_.-]+$/.test(name)) {
     throw new Error("secret name must match [A-Za-z0-9_.-]+");
   }
@@ -81,14 +86,17 @@ async function setEnv(slug, rest) {
     authHint(res.status, body);
     throw new Error(body.hint || body.error || `env set failed (${res.status})`);
   }
-  if (body.synced) ok(`Set ${name} on ${slug}.aft.page (synced to Worker)`);
-  else if (body.syncReason === "worker_not_ready") {
-    ok(`Set ${name} on ${slug}.aft.page`);
-    note("Worker not live yet — secret stays in vault until next/worker upstream exists.");
-  } else {
-    ok(`Set ${name} on ${slug}.aft.page`);
-    note(body.syncReason || "Vault saved; Worker sync pending.");
+  if (!quiet) {
+    if (body.synced) ok(`Set ${name} on ${slug}.aft.page (synced to Worker)`);
+    else if (body.syncReason === "worker_not_ready") {
+      ok(`Set ${name} on ${slug}.aft.page`);
+      note("Worker not live yet — secret stays in vault until next/worker upstream exists.");
+    } else {
+      ok(`Set ${name} on ${slug}.aft.page`);
+      note(body.syncReason || "Vault saved; Worker sync pending.");
+    }
   }
+  return { synced: Boolean(body.synced), syncReason: body.syncReason };
 }
 
 async function unsetEnv(slug, name) {

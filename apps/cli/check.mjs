@@ -15,6 +15,7 @@ import { sanitizeSlug } from "./src/slug.js";
 import { ensureAftJson } from "./src/init.js";
 import { isInteractive } from "./src/prompt.js";
 import { cmpVersion, localVersion } from "./src/version.js";
+import { filterMigrateKeys, parseDotEnv } from "./src/migrate.js";
 
 assert.equal(shouldSkip("node_modules/x"), true);
 assert.equal(shouldSkip(".git/config"), true);
@@ -72,7 +73,8 @@ assert.match(help.stdout, /aft visibility/);
 assert.match(help.stdout, /aft sites/);
 assert.match(help.stdout, /aft rollback/);
 assert.match(help.stdout, /aft update/);
-assert.match(help.stdout, /v0\.2\.4/);
+assert.match(help.stdout, /v0\.2\.5/);
+assert.match(help.stdout, /aft migrate vercel/);
 assert.match(help.stdout, /--check/);
 assert.match(help.stdout, /--verbose/);
 assert.match(help.stdout, /aft version/);
@@ -80,13 +82,13 @@ assert.match(help.stdout, /aft version/);
 assert.equal(cmpVersion("0.1.0", "0.2.2"), -1);
 assert.equal(cmpVersion("0.2.2", "0.2.2"), 0);
 assert.equal(cmpVersion("0.3.0", "0.2.2"), 1);
-assert.equal(localVersion(), "0.2.4");
+assert.equal(localVersion(), "0.2.5");
 
 const versionCmd = spawnSync(process.execPath, [join(root, "bin/aft.js"), "version"], {
   encoding: "utf8",
 });
 assert.equal(versionCmd.status, 0, versionCmd.stderr);
-assert.equal(versionCmd.stdout.trim(), "0.2.4");
+assert.equal(versionCmd.stdout.trim(), "0.2.5");
 
 const envHelp = spawnSync(
   process.execPath,
@@ -103,6 +105,19 @@ assert.equal(sanitizeSlug("my-app"), "my-app");
 assert.equal(
   sanitizeSlug("Include XI — Intelligence that sells. Systems that scale."),
   "include-xi-intelligence-that-sells-systems-that",
+);
+
+assert.deepEqual(parseDotEnv('FOO=bar\n# c\nBAZ="x y"\n'), {
+  FOO: "bar",
+  BAZ: "x y",
+});
+assert.equal(
+  filterMigrateKeys([
+    ["OPENROUTER_API_KEY", "sk"],
+    ["VERCEL_URL", "x.vercel.app"],
+    ["TURBO_CACHE", "1"],
+  ]).length,
+  1,
 );
 
 assert.equal(isInteractive(), Boolean(process.stdin.isTTY && process.stdout.isTTY));
@@ -248,7 +263,8 @@ assert.match(install, /src\/prompt\.js/);
 assert.match(install, /src\/update\.js/);
 assert.match(install, /src\/version\.js/);
 assert.match(install, /src\/analytics\.js/);
-assert.match(install, /src\/next-deploy\.js/);
+assert.match(install, /src\/migrate\.js/);
+assert.match(install, /src\/site-url\.js/);
 assert.match(install, /VERSION/);
 
 console.log("ok");
