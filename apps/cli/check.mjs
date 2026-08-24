@@ -72,7 +72,7 @@ assert.match(help.stdout, /aft visibility/);
 assert.match(help.stdout, /aft sites/);
 assert.match(help.stdout, /aft rollback/);
 assert.match(help.stdout, /aft update/);
-assert.match(help.stdout, /v0\.2\.3/);
+assert.match(help.stdout, /v0\.2\.4/);
 assert.match(help.stdout, /--check/);
 assert.match(help.stdout, /--verbose/);
 assert.match(help.stdout, /aft version/);
@@ -80,13 +80,13 @@ assert.match(help.stdout, /aft version/);
 assert.equal(cmpVersion("0.1.0", "0.2.2"), -1);
 assert.equal(cmpVersion("0.2.2", "0.2.2"), 0);
 assert.equal(cmpVersion("0.3.0", "0.2.2"), 1);
-assert.equal(localVersion(), "0.2.3");
+assert.equal(localVersion(), "0.2.4");
 
 const versionCmd = spawnSync(process.execPath, [join(root, "bin/aft.js"), "version"], {
   encoding: "utf8",
 });
 assert.equal(versionCmd.status, 0, versionCmd.stderr);
-assert.equal(versionCmd.stdout.trim(), "0.2.3");
+assert.equal(versionCmd.stdout.trim(), "0.2.4");
 
 const envHelp = spawnSync(
   process.execPath,

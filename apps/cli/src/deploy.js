@@ -119,7 +119,6 @@ export async function cmdDeploy(args) {
   const target = await ensureDeployable(process.cwd(), dirArg, { verbose });
 
   if (target.kind === "next") {
-    note("Next.js SSR — OpenNext + wrangler");
     const initSlug = await ensureAftJson(target.projectRoot);
     if (initSlug) note(`Wrote aft.json → ${initSlug}`);
     const state = await loadState(target.projectRoot);

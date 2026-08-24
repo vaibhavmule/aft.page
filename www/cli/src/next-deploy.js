@@ -67,7 +67,7 @@ export async function deployNextSsr(
     }
   }, { verbose });
 
-  const wr = await runStep(`Deploying Worker ${name}…`, async () =>
+  const wr = await runStep("Deploying…", async () =>
     runCmd("npx", ["wrangler", "deploy", "--name", name], projectRoot, {
       verbose,
     }), { verbose });
@@ -80,7 +80,7 @@ export async function deployNextSsr(
 
   const headers = {};
   if (editToken) headers["x-aft-edit-token"] = editToken;
-  const body = await runStep(`Mapping ${slug}.aft.page…`, async () => {
+  const body = await runStep("Publishing…", async () => {
     const res = await apiFetch(`/v1/deploy?slug=${encodeURIComponent(slug)}`, {
       method: editToken ? "PATCH" : "POST",
       headers,

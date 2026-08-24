@@ -55,7 +55,6 @@ export const FRAMEWORK_CHOICES = [
     buildScript: null,
     runtime: "next",
     staticDeployable: false,
-    note: "OpenNext build, then an aft.page URL.",
   },
   {
     id: "django",
