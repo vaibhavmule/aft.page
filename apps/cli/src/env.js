@@ -87,14 +87,7 @@ export async function putEnvSecret(slug, name, value, { quiet = false } = {}) {
     throw new Error(body.hint || body.error || `env set failed (${res.status})`);
   }
   if (!quiet) {
-    if (body.synced) ok(`Set ${name} on ${slug}.aft.page (synced to Worker)`);
-    else if (body.syncReason === "worker_not_ready") {
-      ok(`Set ${name} on ${slug}.aft.page`);
-      note("Worker not live yet — secret stays in vault until next/worker upstream exists.");
-    } else {
-      ok(`Set ${name} on ${slug}.aft.page`);
-      note(body.syncReason || "Vault saved; Worker sync pending.");
-    }
+    ok(`Set ${name} on ${slug}.aft.page`);
   }
   return { synced: Boolean(body.synced), syncReason: body.syncReason };
 }

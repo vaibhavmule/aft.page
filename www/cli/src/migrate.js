@@ -196,17 +196,13 @@ async function cmdMigrateVercel(args) {
     if (result.synced) synced++;
     ok(`Set ${name}`);
   }
-  note(
-    `${pairs.length} secret(s) on ${slug}.aft.page` +
-      (synced ? ` (${synced} synced via API)` : ""),
-  );
-
   if (await hasWranglerConfig(cwd)) {
-    say("Syncing to Worker (wrangler)…");
     const wr = pushWorkerSecrets(cwd, pairs);
-    if (wr.ok) ok("Worker secrets updated");
-    else note(`Worker sync skipped: ${wr.reason?.slice(0, 120) || "failed"}`);
-  } else {
-    note("Redeploy if the app still errors: aft deploy");
+    if (wr.ok) {
+      ok(`${pairs.length} secret(s) live on ${slug}.aft.page`);
+      return;
+    }
   }
+  ok(`${pairs.length} secret(s) saved on ${slug}.aft.page`);
+  if (synced < pairs.length) note("Run aft deploy if the app still errors.");
 }
