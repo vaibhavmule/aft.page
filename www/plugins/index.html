@@ -6,7 +6,7 @@
     <title>Agent Plugin — aft.page</title>
     <meta
       name="description"
-      content="Per-IDE Agent Plugin / marketplace pending. Agents: MCP or CLI today. Humans: Drop or CLI."
+      content="Agent Plugin for aft.page. Deploy HTML or small static sites to a live URL, no account required for first deploy."
     />
     <link rel="canonical" href="https://aft.page/plugins" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -18,7 +18,7 @@
     <meta property="og:title" content="Agent Plugin — aft.page" />
     <meta
       property="og:description"
-      content="Plugin marketplace pending. Agents: MCP or CLI. Humans: Drop or CLI."
+      content="Deploy HTML or small static sites to a live URL, no account required for first deploy."
     />
     <meta property="og:url" content="https://aft.page/plugins" />
     <meta property="og:image" content="https://aft.page/og.png" />
@@ -26,7 +26,7 @@
     <meta name="twitter:title" content="Agent Plugin — aft.page" />
     <meta
       name="twitter:description"
-      content="Plugin marketplace pending. Agents: MCP or CLI. Humans: Drop or CLI."
+      content="Deploy HTML or small static sites to a live URL, no account required for first deploy."
     />
     <meta name="twitter:image" content="https://aft.page/og.png" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
@@ -67,7 +67,7 @@
                 </a>
                 <a href="/plugins" aria-current="page">
                   <span class="nav-mega-title">Plugin</span>
-                  <span class="nav-mega-desc">Pending — agents: MCP or CLI.</span>
+                  <span class="nav-mega-desc">npx plugins add — or MCP.</span>
                 </a>
               </div>
               <div class="nav-mega-col nav-mega-list">
@@ -96,17 +96,58 @@
 
       <main>
         <div class="docs-hero">
-          <p class="eyebrow">Pending</p>
+          <p class="eyebrow">Agents</p>
           <h1>Agent Plugin</h1>
           <p class="lede">
-            Per-IDE plugin / marketplace listings are still pending.
+            Deploy HTML or small static sites to a live URL, no account required for first deploy.
           </p>
+        </div>
+
+        <div class="with-body">
+          <ol class="with-steps">
+            <li>
+              <h2>Install the plugin</h2>
+              <p>Run this in your agent's terminal or environment:</p>
+              <div class="copy-block">
+                <button type="button" class="copy-btn" data-copy="#cmd-install">Copy</button>
+                <pre id="cmd-install">npx plugins add vaibhavmule/aft.page</pre>
+              </div>
+              <p>Then restart your agent for the plugin to load.</p>
+            </li>
+            <li>
+              <h2>MCP-only fallback</h2>
+              <p>If your environment doesn't support plugins, add the remote MCP manually:</p>
+              <div class="copy-block">
+                <button type="button" class="copy-btn" data-copy="#cmd-mcp">Copy</button>
+                <pre id="cmd-mcp">{
+  &quot;mcpServers&quot;: {
+    &quot;aft-page&quot;: {
+      &quot;url&quot;: &quot;https://mcp.aft.page/mcp&quot;
+    }
+  }
+}</pre>
+              </div>
+            </li>
+            <li>
+              <h2>Deploy</h2>
+              <p>Once the plugin is loaded, prompt your agent:</p>
+              <div class="copy-block">
+                <button type="button" class="copy-btn" data-copy="#cmd-deploy">Copy</button>
+                <pre id="cmd-deploy">Deploy this to aft.page</pre>
+              </div>
+              <p>Your agent will build the project if needed and deploy it to a live URL.</p>
+            </li>
+          </ol>
+
           <p class="docs-callout">
-            <strong>Agents today:</strong> MCP or CLI.<br />
-            <strong>Humans:</strong> Drop or CLI.<br />
-            Remote MCP: <a href="/mcp"><code>https://mcp.aft.page/mcp</code></a> ·
-            CLI: <a href="/install"><code>curl -fsSL https://aft.page/install | sh</code></a> ·
-            Drop: <a href="/drop/">/drop</a>
+            <strong>Safety note:</strong> First deploy is public immediately. Claim the URL when returned to manage it privately. Unclaimed deploys are deleted after 30 days of inactivity.
+          </p>
+
+          <p class="with-note">
+            See also: <a href="/mcp">Remote MCP</a> · 
+            <a href="/install">CLI install</a> · 
+            <a href="/drop/">Drop files</a> · 
+            <a href="/with/cursor/">Cursor setup</a>
           </p>
         </div>
       </main>
