@@ -149,9 +149,13 @@ async function meDomains(
      FROM custom_domains d
      INNER JOIN sites s ON s.slug = d.slug
      WHERE s.owner_user_id = ?
+        OR EXISTS (
+          SELECT 1 FROM site_members m
+          WHERE m.slug = d.slug AND m.user_id = ?
+        )
      ORDER BY d.created_at DESC`,
   )
-    .bind(user.id)
+    .bind(user.id, user.id)
     .all<{
       hostname: string;
       slug: string;
