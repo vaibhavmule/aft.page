@@ -589,26 +589,34 @@ export async function canAccessSite(
   allowed: boolean;
   role: "owner" | "edit" | "view" | null;
   authenticated: boolean;
+  user: { id: string; email: string } | null;
 }> {
+  const user = await resolveSessionUser(env, request);
   const visibility = await getSiteVisibility(env, slug);
   if (visibility === "public") {
-    return { allowed: true, role: null, authenticated: false };
+    return {
+      allowed: true,
+      role: null,
+      authenticated: Boolean(user),
+      user,
+    };
   }
 
-  const user = await resolveSessionUser(env, request);
-  if (!user) return { allowed: false, role: null, authenticated: false };
+  if (!user) {
+    return { allowed: false, role: null, authenticated: false, user: null };
+  }
 
   const ownerId = await getSiteOwnerId(env, slug);
   if (ownerId && ownerId === user.id) {
-    return { allowed: true, role: "owner", authenticated: true };
+    return { allowed: true, role: "owner", authenticated: true, user };
   }
 
   const memberRole = await getSiteMemberRole(env, slug, user.id);
   if (memberRole) {
-    return { allowed: true, role: memberRole, authenticated: true };
+    return { allowed: true, role: memberRole, authenticated: true, user };
   }
 
-  return { allowed: false, role: null, authenticated: true };
+  return { allowed: false, role: null, authenticated: true, user };
 }
 
 /** Shown when logged in but not invited (avoids login redirect loop). */

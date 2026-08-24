@@ -20,7 +20,7 @@ export default defineConfig(async () => {
             AUTH_SECRET: "test-auth-secret-for-vitest-only",
             OPS_EMAILS: "ops@example.com,vaibhavmule135@gmail.com",
             SMOKE_SECRET: "test-smoke-secret",
-            CF_API_TOKEN: "test-cf-api-token",
+            AFT_DISABLE_THUMB: "1",
             TEST_MIGRATIONS: migrations,
           },
           serviceBindings: {

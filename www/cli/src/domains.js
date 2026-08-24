@@ -125,11 +125,11 @@ async function listAllDomains(args) {
   say(title);
 
   for (const d of domains) {
-    const ssl = d.sslStatus ? ` ${ui.edim(d.sslStatus)}` : "";
-    const err = d.error ? ` ${ui.edim(d.error)}` : "";
+    const phase = domainPhase(d);
+    const detail = phaseDetail(d);
     const project = hereSlug ? "" : `  ${ui.edim(d.slug)}`;
-    console.log(`  ${d.hostname}  ${d.status}${ssl}${err}${project}`);
-    if (d.status !== "active") {
+    console.log(`  ${d.hostname}  ${phase}${detail ? ` ${ui.edim(detail)}` : ""}${project}`);
+    if (needsDns(d)) {
       if (d.txtName && d.txtValue) {
         console.log(`    TXT   ${d.txtName} = ${d.txtValue}`);
       }
@@ -210,13 +210,50 @@ async function requestAccess(slug) {
 }
 
 function printDomainAdded(domain) {
-  ok(`${domain.hostname} (${domain.status})`);
+  const phase = domainPhase(domain);
+  ok(`${domain.hostname} (${phase})`);
   if (domain.status === "active") return;
-  if (domain.txtName && domain.txtValue) {
-    console.log(`TXT   ${domain.txtName} = ${domain.txtValue}`);
+  if (needsDns(domain)) {
+    if (domain.txtName && domain.txtValue) {
+      console.log(`TXT   ${domain.txtName} = ${domain.txtValue}`);
+    }
+    console.log(`CNAME ${domain.hostname} -> ${domain.cname}`);
+    note(`After DNS is live, run: aft domain refresh ${domain.hostname}`);
+    return;
   }
-  console.log(`CNAME ${domain.hostname} -> ${domain.cname}`);
-  note(`After DNS is live, run: aft domain refresh ${domain.hostname}`);
+  note(`Still going. Check again: aft domain refresh ${domain.hostname}`);
+}
+
+/** Human status — matches dashboard domainMeta; no raw SSL enums. */
+export function domainPhase(d) {
+  if (d.status === "active") return "active";
+  if (d.status === "error") return "error";
+  const ssl = String(d.sslStatus || "").toLowerCase();
+  if (ssl === "pending_validation" || ssl === "initializing") {
+    return "issuing certificate";
+  }
+  if (ssl === "pending_issuance" || ssl === "pending_deployment") {
+    return "installing HTTPS";
+  }
+  if (d.cfId) return "waiting on certificate";
+  return "waiting for DNS";
+}
+
+/** Show TXT/CNAME until validation has moved past DNS. */
+export function needsDns(d) {
+  if (d.status === "active") return false;
+  const ssl = String(d.sslStatus || "").toLowerCase();
+  if (ssl === "pending_issuance" || ssl === "pending_deployment" || ssl === "active") {
+    return false;
+  }
+  return true;
+}
+
+function phaseDetail(d) {
+  if (d.status === "active" || d.status === "error") return "";
+  const err = String(d.error || "");
+  if (err && !/cname/i.test(err)) return err;
+  return "";
 }
 
 function hintDomainAuth(status, body) {

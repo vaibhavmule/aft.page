@@ -90,6 +90,55 @@ describe("custom domain endpoints", () => {
     expect(await listed.json()).toMatchObject({ access: "requested", domains: [] });
   });
 
+  it("caps regular owners at two domains; OPS_EMAILS has no cap", async () => {
+    const capped = await deployPaste("<h1>Cap</h1>", "vanity-cap");
+    const cookie = await ownSite(capped.slug, "capped@example.com");
+    for (const host of ["one.cap.test", "two.cap.test"]) {
+      const add = await call(
+        new Request(`${API_ORIGIN}/v1/sites/${capped.slug}/domains`, {
+          method: "POST",
+          headers: {
+            cookie,
+            origin: "https://aft.page",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ hostname: host }),
+        }),
+      );
+      expect(add.status).toBe(200);
+    }
+    const over = await call(
+      new Request(`${API_ORIGIN}/v1/sites/${capped.slug}/domains`, {
+        method: "POST",
+        headers: {
+          cookie,
+          origin: "https://aft.page",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ hostname: "three.cap.test" }),
+      }),
+    );
+    expect(over.status).toBe(400);
+    expect(await over.json()).toMatchObject({ error: "limit" });
+
+    const ops = await deployPaste("<h1>Ops</h1>", "vanity-ops-cap");
+    const opsCookie = await ownSite(ops.slug, "vaibhavmule135@gmail.com");
+    for (const host of ["a.ops.test", "b.ops.test", "c.ops.test"]) {
+      const add = await call(
+        new Request(`${API_ORIGIN}/v1/sites/${ops.slug}/domains`, {
+          method: "POST",
+          headers: {
+            cookie: opsCookie,
+            origin: "https://aft.page",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ hostname: host }),
+        }),
+      );
+      expect(add.status).toBe(200);
+    }
+  });
+
   it("owner adds a hostname and the site serves on it", async () => {
     const { slug } = await deployPaste("<h1>Vanity</h1>", "vanity-serve");
     const cookie = await ownSite(slug, "vanity@example.com");

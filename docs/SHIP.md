@@ -13,6 +13,8 @@ artifacts), Drop after local build. Dashboard: [PROJECTS-UI.md](./PROJECTS-UI.md
 
 - Remote MCP: `https://mcp.aft.page/mcp` — [`www/mcp.md`](../www/mcp.md)
 - CLI: `curl -fsSL https://aft.page/install | sh` → `aft deploy`
+- Agent Plugin + Skill: `npx plugins add vaibhavmule/aft.page` — [`www/plugins.md`](../www/plugins.md)
+- libaft (embed): [`apps/sdk`](../apps/sdk) — own CLI / background agent / software factory
 - Extension: `apps/extension/` — GitHub **Run on AFT** + ChatGPT/Claude HTML (DOM fragile)
 - Agent landings: `www/with/*`
 

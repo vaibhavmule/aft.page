@@ -1,9 +1,15 @@
+import {
+  applyAftIdentityHeaders,
+  type AftViewer,
+} from "../aft-identity";
+
 /**
  * Proxy slug.aft.page → upstream Worker (temp account or aft-owned Worker).
  */
 export async function proxyUpstream(
   request: Request,
   upstreamBase: string,
+  user: AftViewer | null = null,
 ): Promise<Response> {
   const incoming = new URL(request.url);
   const base = new URL(upstreamBase);
@@ -21,6 +27,7 @@ export async function proxyUpstream(
   headers.delete("host");
   headers.set("x-forwarded-host", incoming.host);
   headers.set("x-aft-proxy", "1");
+  applyAftIdentityHeaders(headers, user);
 
   const init: RequestInit = {
     method: request.method,

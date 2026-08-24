@@ -7,6 +7,8 @@ type SecretBindings = {
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
   CF_API_TOKEN?: string;
+  /** Set to "1" in Vitest so post-deploy thumbs never schedule waitUntil. */
+  AFT_DISABLE_THUMB?: string;
   AFT_RUN_GITHUB_TOKEN?: string;
   AFT_RUN_GITHUB_REPO?: string;
   AFT_AI_GATEWAY?: string;

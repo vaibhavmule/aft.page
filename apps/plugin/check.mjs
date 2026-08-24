@@ -25,4 +25,10 @@ assert.ok(existsSync(join(root, "skills/deploy-to-aft/SKILL.md")));
 assert.equal(market.plugins[0].source, "./apps/plugin");
 assert.equal(market.plugins[0].name, "aft-page");
 
+const philosophy = readFileSync(join(repo, "www/plugins.md"), "utf8");
+assert.match(philosophy, /modelcontextprotocol\.io/);
+assert.match(philosophy, /agentskills\.io/);
+assert.match(philosophy, /agent-plugins\.org/);
+assert.match(philosophy, /libaft/);
+
 console.log("ok plugin install surface");

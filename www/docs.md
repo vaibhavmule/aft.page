@@ -23,7 +23,9 @@ Never upload `src/`, `node_modules`, or `.next/`. Details: https://aft.page/docs
 
 - **Drop:** https://aft.page/drop/ — folder or zip
 - **MCP:** `https://mcp.aft.page/mcp` — tools in https://aft.page/mcp.md
+- **Plugin / Skill:** `npx plugins add vaibhavmule/aft.page` — https://aft.page/plugins.md
 - **CLI (no login):** `curl -fsSL https://aft.page/install | sh` then `aft deploy`
+- **libaft:** embed deploy (`apps/sdk`) — own CLI / agent / factory
 - **API:** `POST https://api.aft.page/v1/deploy`
 
 CLI auto-picks `dist/` / `out/` / `build/`, writes `aft.json` on first deploy.
@@ -58,4 +60,5 @@ Claimed sites can be paused (reversible) or destroyed (irreversible) — see /do
 - Capabilities: https://aft.page/docs/capabilities/
 - Frameworks: https://aft.page/docs/frameworks/
 - MCP: https://aft.page/mcp.md
+- Open protocols: https://aft.page/plugins.md
 - Examples: https://github.com/vaibhavmule/aft.page/tree/main/examples

@@ -49,7 +49,7 @@ Legal: /privacy/  /terms/
 | `/docs.md` | Short agent index (not an HTML twin) | — |
 | `/changelog` | What shipped, by day (D1 via `GET /v1/changelog`) | `styles.css` |
 | `/mcp`, `/mcp.md`, `/llms.txt` | Agent / MCP reference | `styles.css` |
-| `/plugins` | Agent Plugin pending (agents: MCP/CLI · humans: Drop/CLI) | `styles.css` |
+| `/plugins` | Open protocols: MCP, Skills, Plugins, Unix/libaft | `styles.css` |
 | `/drop/`, `/host-html/`, `/share-html/`, `/upload-html/` | SEO landings | `styles.css` |
 | `/vs/vercel/`, `/vs/cloudflare-drop/`, `/vs/github-pages/` | Comparison landings | `styles.css` |
 | `/privacy/`, `/terms/` | Legal | `styles.css` |

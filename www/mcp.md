@@ -8,7 +8,7 @@
 **Agent index:** https://aft.page/llms.txt  
 **Agents today:** MCP below, or hosted CLI (`curl -fsSL https://aft.page/install | sh` → `aft deploy`)  
 **Humans:** [Drop](https://aft.page/drop/) or the same CLI  
-**Pending:** Per-IDE Agent Plugin / marketplace — https://aft.page/plugins  
+**Open protocols:** MCP · Skills · Plugins · Unix/libaft — https://aft.page/plugins.md  
 
 **Remote MCP:** https://mcp.aft.page/mcp  
 **API:** https://api.aft.page  

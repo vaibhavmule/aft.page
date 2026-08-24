@@ -3,8 +3,11 @@
 One portable [Agent Plugin](https://agent-plugins.org) that gives any compatible
 agent a **Deploy with AFT** capability: publish HTML or a small static site to a
 live URL — no account required. It bundles a deploy Skill plus the
-thin remote MCP (`deploy` · `aft_deploys` · `aft_rollback` · `aft_health`). See the design
-rationale in [`../../docs/ADR-MCP-THIN.md`](../../docs/ADR-MCP-THIN.md).
+thin remote MCP (`deploy` · `aft_deploys` · `aft_rollback` · `aft_health`).
+
+AFT extends through open protocols (MCP, Skills, Plugins) and Unix (CLI +
+libaft). Philosophy: [`/plugins`](https://aft.page/plugins). Thin MCP:
+[`../../docs/ADR-MCP-THIN.md`](../../docs/ADR-MCP-THIN.md).
 
 ## Install
 

@@ -169,7 +169,7 @@ export async function finishRunJob(
   await env.DB.prepare(
     `UPDATE run_jobs SET
        finished_at = ?, status = ?, phase = ?, error = ?, reason = ?, slug = ?, site_url = ?,
-       branch = ?, ms = ?, http_status = ?, log_tail = COALESCE(?, log_tail)
+       branch = COALESCE(?, branch), ms = ?, http_status = ?, log_tail = COALESCE(?, log_tail)
      WHERE id = ?`,
   )
     .bind(

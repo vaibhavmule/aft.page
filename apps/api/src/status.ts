@@ -21,11 +21,13 @@ export type ProbeDef = {
   /** Public URL shown on the status page. */
   url: string;
   /** How to judge a successful response. */
-  expect: "health_json" | "http_ok";
+  expect: "health_json" | "http_ok" | "aft_me_json";
   /** Skip edge fetch — check inside this Worker (avoids 522 self-fetch). */
   mode: "internal_api" | "internal_site" | "internal_mcp" | "external";
   /** Slug for internal_site probes. */
   siteSlug?: string;
+  /** Pathname for internal_site probes (default `/`). */
+  sitePath?: string;
 };
 
 export type ProbeResult = {
@@ -100,6 +102,16 @@ export const STATUS_PROBES: ProbeDef[] = [
     expect: "http_ok",
     mode: "internal_site",
     siteSlug: "hello",
+  },
+  {
+    id: "aft_me",
+    name: "Sign in with AFT",
+    description: "Tenant /_aft/me returns JSON identity (not SPA HTML)",
+    url: "https://hello.aft.page/_aft/me",
+    expect: "aft_me_json",
+    mode: "internal_site",
+    siteSlug: "hello",
+    sitePath: "/_aft/me",
   },
   {
     id: "mcp",
@@ -217,12 +229,33 @@ async function probeOne(
     if (def.mode === "internal_site") {
       const slug = def.siteSlug || "hello";
       const root = env.ROOT_DOMAIN || "aft.page";
-      const req = new Request(`https://${slug}.${root}/`, {
+      const path = def.sitePath || "/";
+      const req = new Request(`https://${slug}.${root}${path}`, {
         method: "GET",
         headers: { "user-agent": "aft.page-status/1.0" },
       });
-      const res = await serveSite(req, env, slug, "/");
-      return resultFromResponse(def, checkedAt, started, res);
+      const res = await serveSite(req, env, slug, path);
+      let bodyOk: boolean | null = null;
+      if (def.expect === "aft_me_json") {
+        try {
+          const ct = res.headers.get("content-type") || "";
+          const body = (await res.clone().json()) as { user?: unknown };
+          bodyOk =
+            ct.includes("application/json") &&
+            res.status === 200 &&
+            body !== null &&
+            typeof body === "object" &&
+            "user" in body &&
+            (body.user === null ||
+              (typeof body.user === "object" &&
+                body.user !== null &&
+                "id" in body.user &&
+                "email" in body.user));
+        } catch {
+          bodyOk = false;
+        }
+      }
+      return resultFromResponse(def, checkedAt, started, res, bodyOk);
     }
 
     if (def.mode === "internal_mcp") {

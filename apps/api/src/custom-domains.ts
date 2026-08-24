@@ -360,16 +360,19 @@ async function addDomain(
     return privateJson({ ok: true, domain: synced }, 200, extra);
   }
 
-  const count = await countDomains(env, slug);
-  if (count >= MAX_CUSTOM_DOMAINS) {
-    return json(
-      {
-        error: "limit",
-        hint: `At most ${MAX_CUSTOM_DOMAINS} custom domains per site`,
-      },
-      400,
-      extra,
-    );
+  // OPS_EMAILS (founders) — no per-site domain cap.
+  if (!isOpsUser(env, owner.email)) {
+    const count = await countDomains(env, slug);
+    if (count >= MAX_CUSTOM_DOMAINS) {
+      return json(
+        {
+          error: "limit",
+          hint: `At most ${MAX_CUSTOM_DOMAINS} custom domains per site`,
+        },
+        400,
+        extra,
+      );
+    }
   }
 
   const now = new Date().toISOString();

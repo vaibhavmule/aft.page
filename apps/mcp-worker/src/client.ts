@@ -73,6 +73,7 @@ export type RepoJobSnapshot = {
   url?: string;
   owner?: string;
   repo?: string;
+  branch?: string;
   reason?: string;
   error?: string;
   logTail?: string;

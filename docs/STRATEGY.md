@@ -4,7 +4,7 @@ Internal north star. Canonical mission: [`../rfs.txt`](../rfs.txt).
 Belief: [`../youtube-moment.txt`](../youtube-moment.txt).
 CN + EU are growth exceptions (paid primitives, local agents): [`REGIONS.md`](./REGIONS.md). Not the current build.
 
-Updated: 2026-08-23
+Updated: 2026-08-24
 
 **Runnable OSS (GitHub → URL):** [RUN.md](./RUN.md) — Drop / Deploy / Run / Code:
 [HOST.md](./HOST.md) · [SHIP.md](./SHIP.md) · [CODE.md](./CODE.md). Sites intel:
@@ -111,14 +111,22 @@ needs a runtime Drop cannot provide.
 
 See [ADR-TEMP-ACCOUNTS.md](./ADR-TEMP-ACCOUNTS.md), [OPENNEXT-ORCHESTRATION.md](./OPENNEXT-ORCHESTRATION.md).
 
-### Agent Plugins = highest-priority distribution
+### Extending AFT: open protocols
 
-[Vercel Agent Plugins](https://vercel.com/blog/introducing-agent-plugins) is a
-vendor-neutral format for bundling Agent Skills + MCP servers. Cursor already
-supports it; ChatGPT/Codex, Copilot, VS Code, and others are in the launch set.
+Do not grow a proprietary agent island. Extend AFT — and let agents reach it —
+through open protocols. Then Unix.
 
-**One AFT plugin can eventually work across multiple coding agents.** That is an
-immediate distribution opportunity — higher priority than new runtimes this week.
+| | Spec | AFT surface |
+| --- | --- | --- |
+| **MCP** | [modelcontextprotocol.io](https://modelcontextprotocol.io) | Thin remote server `https://mcp.aft.page/mcp` |
+| **Skills** | [agentskills.io](https://agentskills.io) | [`apps/plugin/skills/deploy-to-aft/SKILL.md`](../apps/plugin/skills/deploy-to-aft/SKILL.md) |
+| **Plugins** | [agent-plugins.org](https://agent-plugins.org) | [`apps/plugin`](../apps/plugin) — `npx plugins add vaibhavmule/aft.page` |
+| **Unix** | — | Small programs that compose (`aft deploy`, curl, MCP tools). **libaft** ([`apps/sdk`](../apps/sdk)) embeds deploy into someone else's CLI, background agent, or software factory — local or cloud. |
+
+Public copy: [`www/plugins.md`](../www/plugins.md) · [`/plugins`](https://aft.page/plugins).
+
+Marketplace listings can lag. The portable package is the product. Do not invent
+a fourth agent format.
 
 #### Thin MCP (not a platform)
 
@@ -126,8 +134,9 @@ See [ADR-MCP-THIN.md](./ADR-MCP-THIN.md). MCP is a **thin deploy adapter**,
 aligned with Cloudflare’s stateless MCP / `createMcpHandler` model — not an MCP
 portal or control plane.
 
-Frozen tools: `deploy_html` · `deploy_files` · `aft_health`. Prefer remote
-`https://mcp.aft.page/mcp`; stdio remains a local/dev fallback.
+Frozen tools: `deploy` · `deploy_repo` · `aft_deploys` · `aft_rollback` ·
+`aft_health`. Prefer remote `https://mcp.aft.page/mcp`; stdio remains a
+local/dev fallback.
 
 Plugin core action:
 
@@ -136,7 +145,7 @@ Plugin core action:
 Package:
 
 - AFT deployment skill (`SKILL.md`)
-- Existing `deploy_html` / `deploy_files` MCP tools ([`apps/mcp/`](../apps/mcp/))
+- Existing thin MCP ([`apps/mcp`](../apps/mcp), [`apps/mcp-worker`](../apps/mcp-worker))
 - Authentication
 - Default privacy and expiry settings
 - Update / redeploy capability
@@ -146,6 +155,7 @@ Ship bar:
 - Valid Agent Plugin (skill + MCP): `npx plugins add vaibhavmule/aft.page`
 - 30-second demo: prompt → application → private URL (still open)
 - Public plugin repo + install command (this repo)
+- **libaft** import: `createAft().deploy({ html })` without wrapping MCP
 - Analytics for deploy, open, share, and repeat deployment ([METRICS.md](./METRICS.md))
 
 ### Track vs ignore

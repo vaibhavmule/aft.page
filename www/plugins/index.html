@@ -3,30 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Agent Plugin — aft.page</title>
+    <title>Open protocols — aft.page</title>
     <meta
       name="description"
-      content="Per-IDE Agent Plugin / marketplace pending. Agents: MCP or CLI today. Humans: Drop or CLI."
+      content="Extend aft through MCP, Agent Skills, Agent Plugins, and Unix. libaft embeds deploy in your own CLI, agent, or software factory."
     />
     <link rel="canonical" href="https://aft.page/plugins" />
+    <link rel="alternate" type="text/markdown" href="https://aft.page/plugins.md" title="Open protocols (Markdown)" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#000000" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="aft.page" />
-    <meta property="og:title" content="Agent Plugin — aft.page" />
+    <meta property="og:title" content="Open protocols — aft.page" />
     <meta
       property="og:description"
-      content="Plugin marketplace pending. Agents: MCP or CLI. Humans: Drop or CLI."
+      content="MCP, Skills, Plugins, then Unix: small programs plus libaft you can embed."
     />
     <meta property="og:url" content="https://aft.page/plugins" />
     <meta property="og:image" content="https://aft.page/og.png" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Agent Plugin — aft.page" />
+    <meta name="twitter:title" content="Open protocols — aft.page" />
     <meta
       name="twitter:description"
-      content="Plugin marketplace pending. Agents: MCP or CLI. Humans: Drop or CLI."
+      content="MCP, Skills, Plugins, then Unix: small programs plus libaft you can embed."
     />
     <meta name="twitter:image" content="https://aft.page/og.png" />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
@@ -67,7 +68,7 @@
                 </a>
                 <a href="/plugins" aria-current="page">
                   <span class="nav-mega-title">Plugin</span>
-                  <span class="nav-mega-desc">Pending — agents: MCP or CLI.</span>
+                  <span class="nav-mega-desc">MCP, Skills, Plugins, Unix.</span>
                 </a>
               </div>
               <div class="nav-mega-col nav-mega-list">
@@ -96,18 +97,148 @@
 
       <main>
         <div class="docs-hero">
-          <p class="eyebrow">Pending</p>
-          <h1>Agent Plugin</h1>
+          <p class="eyebrow">Extending aft</p>
+          <h1>Open protocols.</h1>
           <p class="lede">
-            Per-IDE plugin / marketplace listings are still pending.
+            We do not grow a proprietary agent island. Agents reach aft through
+            MCP, Skills, and Plugins. The best extension is still Unix.
           </p>
+          <div class="docs-machine">
+            <a class="btn btn-primary" href="/plugins.md">Read as Markdown</a>
+            <a class="btn btn-ghost" href="#plugin">Install the plugin</a>
+            <a class="btn btn-ghost" href="#unix">Unix / libaft</a>
+          </div>
           <p class="docs-callout">
-            <strong>Agents today:</strong> MCP or CLI.<br />
-            <strong>Humans:</strong> Drop or CLI.<br />
-            Remote MCP: <a href="/mcp"><code>https://mcp.aft.page/mcp</code></a> ·
-            CLI: <a href="/install"><code>curl -fsSL https://aft.page/install | sh</code></a> ·
-            Drop: <a href="/drop/">/drop</a>
+            Per-IDE marketplace listings can lag. The portable plugin, remote MCP,
+            CLI, and libaft work today.
           </p>
+        </div>
+
+        <div class="docs-layout">
+          <nav class="docs-toc" aria-label="On this page">
+            <p>On this page</p>
+            <ol>
+              <li><a href="#protocols">Protocols</a></li>
+              <li><a href="#mcp">MCP</a></li>
+              <li><a href="#skills">Skills</a></li>
+              <li><a href="#plugin">Plugins</a></li>
+              <li><a href="#unix">Unix</a></li>
+            </ol>
+          </nav>
+
+          <article class="docs-body">
+            <section id="protocols">
+              <h2>The set</h2>
+              <p>
+                Four ways in. Same deploy API. Same live URL. Do not invent a
+                fifth format.
+              </p>
+              <div class="docs-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th>Spec</th>
+                    <th>AFT</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>MCP</td>
+                    <td><a href="https://modelcontextprotocol.io">modelcontextprotocol.io</a></td>
+                    <td><a href="/mcp"><code>mcp.aft.page/mcp</code></a></td>
+                  </tr>
+                  <tr>
+                    <td>Skills</td>
+                    <td><a href="https://agentskills.io">agentskills.io</a></td>
+                    <td><code>deploy-to-aft</code> Skill in the plugin</td>
+                  </tr>
+                  <tr>
+                    <td>Plugins</td>
+                    <td><a href="https://agent-plugins.org">agent-plugins.org</a></td>
+                    <td><code>npx plugins add vaibhavmule/aft.page</code></td>
+                  </tr>
+                  <tr>
+                    <td>Unix</td>
+                    <td>—</td>
+                    <td>CLI + curl + <strong>libaft</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+              </div>
+            </section>
+
+            <section id="mcp">
+              <h2>MCP</h2>
+              <p>
+                Thin deploy adapter — not a control plane. Tools:
+                <code>deploy</code>, <code>deploy_repo</code>,
+                <code>aft_deploys</code>, <code>aft_rollback</code>,
+                <code>aft_health</code>.
+              </p>
+              <pre><code>{
+  "mcpServers": {
+    "aft-page": {
+      "type": "streamable-http",
+      "url": "https://mcp.aft.page/mcp"
+    }
+  }
+}</code></pre>
+              <p>Full schemas: <a href="/mcp.md">/mcp.md</a>.</p>
+            </section>
+
+            <section id="skills">
+              <h2>Skills</h2>
+              <p>
+                The plugin ships an Agent Skill (<code>deploy-to-aft</code>).
+                Compatible hosts load <code>SKILL.md</code> as reusable
+                instructions: build locally, upload artifacts, persist
+                <code>.aft/state.json</code>, return the live URL. The Skill
+                does not add tools — MCP already has them.
+              </p>
+            </section>
+
+            <section id="plugin">
+              <h2>Plugins</h2>
+              <p>
+                One portable package: Skill + remote MCP. Restart the host, then
+                ask it to deploy to aft.page.
+              </p>
+              <pre><code>npx plugins add vaibhavmule/aft.page</code></pre>
+              <p>
+                Alias: <code>aft plugins add</code>. Source:
+                <a href="https://github.com/vaibhavmule/aft.page">vaibhavmule/aft.page</a>
+                (<code>apps/plugin</code>).
+              </p>
+            </section>
+
+            <section id="unix">
+              <h2>Unix</h2>
+              <p>The best protocol is still Unix.</p>
+              <ol>
+                <li>
+                  <strong>Small programs</strong> that do one thing and compose:
+                  <code>aft deploy</code>, <code>curl</code>, MCP tools. Pipe,
+                  script, cron.
+                  <pre><code>curl -fsSL https://aft.page/install | sh
+aft deploy</code></pre>
+                </li>
+                <li>
+                  <strong>libaft</strong> — embed deploy in a more complex
+                  program. Your own CLI, a background agent, a software factory.
+                  Local or cloud. You do not have to speak MCP.
+                  <pre><code>import { createAft } from "@aft.page/sdk";
+
+const aft = createAft();
+const site = await aft.deploy({ html: "&lt;h1&gt;hello&lt;/h1&gt;" });</code></pre>
+                </li>
+              </ol>
+              <p>
+                In-repo: <code>apps/sdk</code>. Humans who do not want an agent:
+                <a href="/drop/">Drop</a> or the same CLI.
+              </p>
+            </section>
+          </article>
         </div>
       </main>
 

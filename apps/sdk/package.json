@@ -1,0 +1,19 @@
+{
+  "name": "@aft.page/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "libaft — embeddable aft.page client. Build your own CLI, background agent, or software factory.",
+  "exports": "./index.js",
+  "files": [
+    "index.js",
+    "README.md"
+  ],
+  "scripts": {
+    "check": "node check.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

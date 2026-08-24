@@ -14,7 +14,7 @@ Specification: [AI Visibility](https://www.ai-visibility.org.uk/)
 - [Hosted CLI](https://aft.page/install): `curl -fsSL https://aft.page/install | sh` → `aft deploy` (no login). After claim: `aft login` for rename, env, rollback, sites — [CLI guide](https://aft.page/docs/cli/)
 - [Drop deploy](https://aft.page/drop/): Humans — folder or zip → live URL, no account required
 - [Run](https://aft.page/run/): Public GitHub repo → live URL (`/run/owner/repo`). Static fast; Vite/Next build when supported
-- [Agent Plugin](https://aft.page/plugins): Pending — per-IDE plugin / marketplace listings
+- [Agent Plugin](https://aft.page/plugins): MCP + Skill + Agent Plugin. Unix/libaft embed. Marketplace listings may lag — portable package works today (`npx plugins add vaibhavmule/aft.page`)
 - [API deploy](https://api.aft.page): `POST /v1/deploy` and redeploy with an edit token for agents and scripts
 - [Claim and share](https://aft.page/docs/claim/): Attach an anonymous deploy to an account, make it private, or invite people by email
 - [Custom domains](https://aft.page/docs/domains/): After claim, request access, CNAME to `cname.aft.page` (invite-only during beta)

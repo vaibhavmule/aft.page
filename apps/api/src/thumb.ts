@@ -121,6 +121,17 @@ async function screenshotJpeg(
   return screenshotViaRest(env, pageUrl);
 }
 
+/** True when Browser Rendering or REST screenshot can run for real. */
+export function canCaptureSiteThumb(env: Env): boolean {
+  // Vitest: explicit flag and/or test AUTH_SECRET — never schedule waitUntil thumbs.
+  if (env.AFT_DISABLE_THUMB === "1") return false;
+  if (env.AUTH_SECRET === "test-auth-secret-for-vitest-only") return false;
+  if (env.BROWSER) return true;
+  const token = env.CF_API_TOKEN?.trim();
+  const account = env.CF_ACCOUNT_ID?.trim();
+  return Boolean(token && account);
+}
+
 export async function captureSiteThumb(
   env: Env,
   opts: {
@@ -131,6 +142,7 @@ export async function captureSiteThumb(
     skipWarmWait?: boolean;
   },
 ): Promise<boolean> {
+  if (!canCaptureSiteThumb(env)) return false;
   const visibility =
     opts.visibility ?? (await getSiteVisibility(env, opts.slug));
   if (visibility === "private") return false;
@@ -153,18 +165,22 @@ export function scheduleSiteThumb(
   env: Env,
   opts: { slug: string; deployId: string; visibility?: string | null },
 ): void {
-  waitUntil(
-    captureSiteThumb(env, opts).catch((err) => {
-      console.warn(
-        JSON.stringify({
-          level: "warn",
-          where: "thumb.schedule",
-          slug: opts.slug,
-          message: err instanceof Error ? err.message : String(err),
-        }),
-      );
-    }),
-  );
+  if (!canCaptureSiteThumb(env)) return;
+  const task = captureSiteThumb(env, opts).catch((err) => {
+    console.warn(
+      JSON.stringify({
+        level: "warn",
+        where: "thumb.schedule",
+        slug: opts.slug,
+        message: err instanceof Error ? err.message : String(err),
+      }),
+    );
+  });
+  try {
+    waitUntil(task);
+  } catch {
+    void task;
+  }
 }
 
 export type ThumbBackfillRow = {

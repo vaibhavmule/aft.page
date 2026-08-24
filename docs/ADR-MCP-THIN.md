@@ -56,6 +56,9 @@ before the first URL.
 ## Consequences
 
 - Agents install via URL, not `npx tsx /ABSOLUTE/PATH/...`
-- Agent Plugin wraps this thin MCP
+- Agent Plugin wraps this thin MCP; Skill teaches the agent; MCP does not grow a control plane
 - Website leads with remote config; stdio is “local / advanced”
 - Agent persists `.aft/state.json` (gitignored). MCP is stateless.
+- libaft (`apps/sdk`) talks to the same deploy API. Embedding AFT must not require speaking MCP.
+
+Extension set (do not add a proprietary fourth format): MCP · Skills · Plugins · Unix (CLI + libaft). Canonical: [STRATEGY.md](./STRATEGY.md) § Extending AFT, [www/plugins.md](../www/plugins.md).

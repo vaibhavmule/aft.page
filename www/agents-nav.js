@@ -90,7 +90,7 @@
             </a>
             <a href="/plugins"${currentAttribute("/plugins", path)}>
               <span class="nav-mega-title">Agent plugin</span>
-              <span class="nav-mega-desc">Install paths and availability.</span>
+              <span class="nav-mega-desc">MCP, Skills, Plugins, Unix.</span>
             </a>
           </div>
           <div class="nav-mega-col nav-mega-list">
