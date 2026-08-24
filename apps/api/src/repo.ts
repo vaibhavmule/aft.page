@@ -279,7 +279,7 @@ export async function fetchRepoIndexHtml(
   if (got.kind === "next") {
     return {
       error: "needs_build",
-      reason: "Next.js — import to queue an OpenNext build, do not fetch index.html.",
+      reason: "Next.js — queue a build; do not fetch index.html.",
     };
   }
   if (got.kind === "vite") {

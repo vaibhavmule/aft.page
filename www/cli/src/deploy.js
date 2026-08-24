@@ -57,8 +57,11 @@ export async function collectFiles(root) {
 }
 
 async function runBuild(projectRoot, script, { verbose = false } = {}) {
-  await runStep(`Running npm run ${script}…`, async () => {
-    runCmd("npm", ["run", script], projectRoot, { verbose });
+  await runStep("Building…", async () => {
+    runCmd("npm", ["run", script], projectRoot, {
+      verbose,
+      failMessage: "Build failed",
+    });
   }, { verbose });
 }
 

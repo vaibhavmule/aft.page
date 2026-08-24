@@ -29,7 +29,7 @@ export function adviseLocal(s) {
       action: "refuse",
       source: "rules",
       why: `${s.label || "This server"} needs a container runner that is not shipped.`,
-      fix: "Detect ok; build failed. Static, Vite, or Next.js OpenNext only until containers ship.",
+      fix: "Detect ok; build failed. Static, Vite, or Next.js only until containers ship.",
     };
   }
   if (s.runtime === "next" && s.staticDeployable === false) {
@@ -38,8 +38,8 @@ export function adviseLocal(s) {
       error: "needs_next_build",
       action: "run_next",
       source: "rules",
-      why: "Next.js SSR — OpenNext build, then a live URL.",
-      fix: "aft deploy will run OpenNext + wrangler (CLOUDFLARE_API_TOKEN or wrangler login).",
+      why: "Next.js app — aft will build and publish a live URL.",
+      fix: "Run aft deploy (or paste the public GitHub repo on aft.page/run).",
     };
   }
   if (s.runtime && s.runtime !== "static" && s.staticDeployable === false) {
@@ -48,8 +48,8 @@ export function adviseLocal(s) {
       error: "not_static",
       action: "refuse",
       source: "rules",
-      why: "This looks like a Worker app — set runtime + upstream in aft.json after wrangler deploy.",
-      fix: "Deploy the Worker, put its URL in aft.json, then aft deploy the mapping site.",
+      why: "This looks like a custom server app — set runtime + upstream in aft.json.",
+      fix: "Ship the server URL into aft.json, then aft deploy the mapping site.",
     };
   }
   if (s.needsBuild && s.buildScript) {

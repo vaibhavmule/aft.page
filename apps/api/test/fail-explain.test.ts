@@ -13,12 +13,12 @@ describe("explainDeployFailure", () => {
     expect(ex.fix.toLowerCase()).toContain("shrink");
   });
 
-  it("tells Next SSR to OpenNext", () => {
+  it("tells Next to deploy", () => {
     const ex = explainDeployFailure({ error: "needs_next_build" });
-    expect(ex.fix).toMatch(/OpenNext|wrangler/);
+    expect(ex.fix).toMatch(/aft deploy/i);
   });
 
-  it("tells Worker apps to set upstream", () => {
+  it("tells custom server apps to set upstream", () => {
     const ex = explainDeployFailure({ error: "not_static" });
     expect(ex.fix).toMatch(/aft\.json/);
   });

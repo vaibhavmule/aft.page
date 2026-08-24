@@ -305,7 +305,7 @@ function refuseCopy(
       reason:
         door === "drop"
           ? "Drop is static files only. Next.js: aft deploy or paste the public GitHub repo."
-          : "Next.js SSR — aft deploy (OpenNext) or paste the public GitHub repo.",
+          : "Next.js — aft deploy, or paste the public GitHub repo.",
     };
   }
   return {

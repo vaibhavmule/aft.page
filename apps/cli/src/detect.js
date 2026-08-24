@@ -50,7 +50,7 @@ export const FRAMEWORK_CHOICES = [
   },
   {
     id: "next-ssr",
-    label: "Next.js (SSR / upstream)",
+    label: "Next.js",
     outDir: ".",
     buildScript: null,
     runtime: "next",
@@ -63,7 +63,7 @@ export const FRAMEWORK_CHOICES = [
     buildScript: null,
     runtime: "container",
     staticDeployable: false,
-    note: "Container runner not shipped. Detect succeeds; build fails honestly.",
+    note: "Containers are not supported yet.",
   },
   {
     id: "container",
@@ -72,7 +72,7 @@ export const FRAMEWORK_CHOICES = [
     buildScript: null,
     runtime: "container",
     staticDeployable: false,
-    note: "Container runner not shipped. Detect succeeds; build fails honestly.",
+    note: "Containers are not supported yet.",
   },
   {
     id: "not-a-site",
@@ -85,7 +85,7 @@ export const FRAMEWORK_CHOICES = [
   },
   {
     id: "worker",
-    label: "Worker + upstream",
+    label: "Custom server",
     outDir: ".",
     buildScript: null,
     runtime: "worker",
@@ -334,7 +334,7 @@ function projectFromEngine(got, pkg) {
       ...choiceById("container"),
       framework: "container",
       label: got.stack,
-      note: `${got.stack} — container runner not shipped. Detect ok; build failed.`,
+      note: `${got.stack} — containers are not supported yet.`,
     };
   }
   if (got.kind === "not_a_site") {

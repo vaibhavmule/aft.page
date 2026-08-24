@@ -63,7 +63,7 @@ function pushWorkerSecrets(cwd, pairs, workerName) {
     });
     if (r.status !== 0) {
       const msg = `${r.stderr || ""}\n${r.stdout || ""}`.trim();
-      return { ok: false, reason: msg || "wrangler secret bulk failed" };
+      return { ok: false, reason: msg || "Could not apply secrets" };
     }
     return { ok: true };
   } finally {
@@ -142,11 +142,10 @@ export async function cmdMigrate(args) {
       console.log(`Usage:
   aft migrate vercel [--environment production|preview|development] [--dry-run]
 
-Pull env from linked Vercel project (vercel link) into this site's aft env vault.
-Skips VERCEL_*, TURBO_*, NX_* unless --include-vercel.
-Sets NEXT_PUBLIC_APP_URL to https://<slug>.aft.page when missing.
+Copy env vars from your linked Vercel project into this site's secrets.
+Sets NEXT_PUBLIC_APP_URL to https://<slug>.aft.page.
 
-Requires: aft login, vercel CLI (vercel login), linked .vercel/ in project root.`);
+Requires: aft login, Vercel CLI logged in, project linked in this folder.`);
       return;
     default:
       throw new Error(`Unknown migrate target: ${target}\nRun: aft migrate --help`);
@@ -161,10 +160,10 @@ async function cmdMigrateVercel(args) {
   const includeVercel = hasFlag(args, "--include-vercel");
 
   if (!vercelOnPath()) {
-    throw new Error("vercel CLI not found. Install: npm i -g vercel && vercel login");
+    throw new Error("Vercel CLI not found. Install it and log in, then retry.");
   }
 
-  say(`Pulling Vercel ${environment} env…`);
+  say(`Reading Vercel ${environment} env…`);
   const raw = pullVercelEnv(cwd, environment);
   const parsed = parseDotEnv(raw);
   let pairs = filterMigrateKeys(Object.entries(parsed), { includeVercel });

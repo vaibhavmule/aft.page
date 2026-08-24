@@ -1,4 +1,4 @@
-/** Next.js SSR: OpenNext build → wrangler → mapping site on aft.page. */
+/** Next.js SSR: build → ship Worker → map slug on aft.page. Internals stay out of UI. */
 import { access, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { apiFetch, readJson } from "./api.js";
@@ -20,7 +20,10 @@ export async function deployNextSsr(
 ) {
   await runStep("Installing dependencies…", async () => {
     if (!(await exists(join(projectRoot, "node_modules")))) {
-      runCmd("npm", ["install", "--legacy-peer-deps"], projectRoot, { verbose });
+      runCmd("npm", ["install", "--legacy-peer-deps"], projectRoot, {
+        verbose,
+        failMessage: "Install failed",
+      });
     }
     runCmd(
       "npm",
@@ -32,7 +35,7 @@ export async function deployNextSsr(
         "--legacy-peer-deps",
       ],
       projectRoot,
-      { verbose },
+      { verbose, failMessage: "Install failed" },
     );
   }, { verbose });
 
@@ -61,21 +64,25 @@ export async function deployNextSsr(
   }
 
   await runStep("Building…", async () => {
-    runCmd("npx", ["opennextjs-cloudflare", "build"], projectRoot, { verbose });
+    runCmd("npx", ["opennextjs-cloudflare", "build"], projectRoot, {
+      verbose,
+      failMessage: "Build failed",
+    });
     if (!(await exists(join(projectRoot, ".open-next/worker.js")))) {
-      throw new Error("OpenNext produced no .open-next/worker.js.");
+      throw new Error("Build failed — no output.");
     }
   }, { verbose });
 
   const wr = await runStep("Deploying…", async () =>
     runCmd("npx", ["wrangler", "deploy", "--name", name], projectRoot, {
       verbose,
+      failMessage: "Deploy failed",
     }), { verbose });
 
   const found = `${wr.stdout || ""}\n${wr.stderr || ""}`.match(
     /https:\/\/[a-z0-9.-]+\.workers\.dev/,
   );
-  if (!found) throw new Error("wrangler deploy did not print a workers.dev URL.");
+  if (!found) throw new Error("Deploy failed — no live URL returned.");
   const upstream = new URL(found[0]).origin;
 
   const headers = {};
@@ -88,7 +95,7 @@ export async function deployNextSsr(
         files: [
           {
             path: "index.html",
-            content: `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><title>${slug}</title></head><body><p>Next.js on aft.page</p></body></html>`,
+            content: `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><title>${slug}</title></head><body><p>${slug}.aft.page</p></body></html>`,
           },
           {
             path: "aft.json",
@@ -100,7 +107,7 @@ export async function deployNextSsr(
     const parsed = await readJson(res);
     if (!res.ok || !parsed.url) {
       throw new Error(
-        parsed.hint || parsed.message || parsed.error || "mapping deploy failed",
+        parsed.hint || parsed.message || parsed.error || "Publish failed",
       );
     }
     return parsed;

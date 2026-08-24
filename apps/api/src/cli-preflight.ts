@@ -99,7 +99,7 @@ export function adviseFromSnapshot(s: PreflightSnapshot): PreflightAdvice {
   return {
     ok: true,
     why: "Artifact looks like a static site aft.page can host.",
-    fix: "POST /v1/deploy with the built output (index.html at the root).",
+    fix: "Run aft deploy with the built output (index.html at the root).",
     action: "none",
     source: "rules",
   };
@@ -223,7 +223,7 @@ async function runAdviceModel(
             {
               role: "system",
               content:
-                "You advise the aft.page CLI. Detect then build: static HTML, Vite npm run build→dist, Next OpenNext, Django refuses until containers. Caps: 500 files, 25MB/file, 100MB total. Need index.html at the deploy root for static. Never upload node_modules or .next. Reply with JSON only: {why, fix}. why: one sentence. fix: concrete steps for an agent. No markdown.",
+                "You advise the aft.page CLI. Detect then build: static HTML, Vite npm run build→dist, Next.js, Django refuses until containers. Caps: 500 files, 25MB/file, 100MB total. Need index.html at the deploy root for static. Never upload node_modules or .next. Reply with JSON only: {why, fix}. why: one sentence. fix: concrete steps for an agent. No markdown. Do not mention Cloudflare, Wrangler, OpenNext, or Workers.",
             },
             {
               role: "user",

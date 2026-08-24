@@ -147,7 +147,7 @@ describe("sourceTreeRefuse", () => {
     expect(r?.reason).toMatch(/Drop is static/);
   });
 
-  it("refuses next source on engine with OpenNext copy", () => {
+  it("refuses next source on engine", () => {
     const r = sourceTreeRefuse(
       {
         paths: ["package.json"],
@@ -156,7 +156,7 @@ describe("sourceTreeRefuse", () => {
       "engine",
     );
     expect(r?.error).toBe("needs_next_build");
-    expect(r?.reason).toMatch(/OpenNext/);
+    expect(r?.reason).toMatch(/aft deploy|GitHub repo/i);
   });
 
   it("refuses Express even when index.html is present", () => {

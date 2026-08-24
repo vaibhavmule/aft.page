@@ -6,7 +6,7 @@ import {
 import { API_ORIGIN, call } from "./helpers";
 
 describe("adviseFromSnapshot", () => {
-  it("tells CLI Next to run OpenNext", () => {
+  it("tells CLI Next to run deploy", () => {
     const a = adviseFromSnapshot({
       framework: "next-ssr",
       runtime: "next",
@@ -16,7 +16,7 @@ describe("adviseFromSnapshot", () => {
     expect(a.ok).toBe(false);
     expect(a.error).toBe("needs_next_build");
     expect(a.action).toBe("run_next");
-    expect(a.fix).toMatch(/OpenNext|wrangler/i);
+    expect(a.fix).toMatch(/aft deploy/i);
   });
 
   it("asks for a build when output is missing", () => {

@@ -44,15 +44,15 @@ export function explainDeployFailure(f: FailureExplainIn): FailureExplain {
       };
     case "needs_next_build":
       return {
-        why: "Next.js SSR — OpenNext build, then a live URL.",
-        fix: "aft deploy runs OpenNext + wrangler (CLOUDFLARE_API_TOKEN or wrangler login). Or paste the public GitHub repo.",
+        why: "Next.js app — aft will build and publish a live URL.",
+        fix: "Run aft deploy, or paste the public GitHub repo on aft.page/run.",
       };
     case "needs_container":
       return {
         why: f.hint
           ? f.hint
-          : "This is a process server (Python, Node, Go, Rust, Ruby) — container runner not shipped.",
-        fix: "Detect ok; build failed. Static, Vite/CSR, or Next.js OpenNext only until containers ship.",
+          : "This is a process server (Python, Node, Go, Rust, Ruby) — containers are not supported yet.",
+        fix: "Detect ok; build failed. Static, Vite, or Next.js only until containers ship.",
       };
     case "not_a_site":
       return {
@@ -68,8 +68,8 @@ export function explainDeployFailure(f: FailureExplainIn): FailureExplain {
       };
     case "not_static":
       return {
-        why: "This looks like a Worker app — aft.page needs runtime + upstream after wrangler deploy.",
-        fix: "Deploy the Worker, put its URL in aft.json, then aft deploy the mapping site.",
+        why: "This looks like a custom server app — set runtime + upstream in aft.json.",
+        fix: "Put the live server URL in aft.json, then aft deploy the mapping site.",
       };
     case "unknown_project":
       return {
@@ -130,14 +130,14 @@ export function explainDeployFailure(f: FailureExplainIn): FailureExplain {
     case "internal":
       return {
         why: f.hint
-          ? `Worker threw: ${f.hint}`
-          : "Unhandled exception in deploy. Message is only in logs / hint.",
-        fix: "Open aft-page-api Workers Logs for this request id.",
+          ? `Something went wrong: ${f.hint}`
+          : "Something went wrong on our side.",
+        fix: "Retry. If it keeps failing, contact support with the request id.",
       };
     default:
       return {
-        why: f.hint || `Deploy rejected with code ${f.error}.`,
-        fix: "Match the code in deploy.ts; search Workers Logs by request id.",
+        why: f.hint || `Deploy rejected (${f.error}).`,
+        fix: "Retry, or check aft.page/docs for this error code.",
       };
   }
 }

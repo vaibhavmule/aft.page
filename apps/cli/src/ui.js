@@ -71,20 +71,9 @@ function quietNpmEnv(verbose) {
   };
 }
 
-const TAIL_LINES = 40;
-
-function tailText(text, lines = TAIL_LINES) {
-  const parts = String(text || "")
-    .split(/\r?\n/)
-    .filter((l) => l.trim());
-  if (parts.length <= lines) return parts.join("\n");
-  return parts.slice(-lines).join("\n");
-}
-
-function dumpFailureLog(label, stdout, stderr) {
+function dumpFailureLog(stdout, stderr) {
   const combined = `${stdout || ""}\n${stderr || ""}`.trim();
   if (!combined) return;
-  say(tailText(combined));
   try {
     const dir = mkdtempSync(join(tmpdir(), "aft-cli-"));
     const path = join(dir, "deploy.log");
@@ -95,8 +84,13 @@ function dumpFailureLog(label, stdout, stderr) {
   }
 }
 
-/** Run a subprocess; quiet by default (pipe + tail on failure). */
-export function runCmd(cmd, args, cwd, { verbose = false } = {}) {
+/** Run a subprocess; quiet by default. failMessage is what the user sees. */
+export function runCmd(
+  cmd,
+  args,
+  cwd,
+  { verbose = false, failMessage = "Command failed" } = {},
+) {
   const npmArgs =
     cmd === "npm" && !verbose
       ? [...args, "--loglevel=error", "--no-audit", "--no-fund"]
@@ -110,14 +104,8 @@ export function runCmd(cmd, args, cwd, { verbose = false } = {}) {
     maxBuffer: 64 * 1024 * 1024,
   });
   if (r.status !== 0) {
-    if (!verbose) {
-      dumpFailureLog(
-        `${cmd} ${args.join(" ")}`,
-        r.stdout,
-        r.stderr,
-      );
-    }
-    throw new Error(`${cmd} ${args.join(" ")} failed (exit ${r.status ?? "?"})`);
+    if (!verbose) dumpFailureLog(r.stdout, r.stderr);
+    throw new Error(failMessage);
   }
   return {
     stdout: verbose ? "" : String(r.stdout || ""),
