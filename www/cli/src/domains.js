@@ -1,20 +1,25 @@
-/** aft domain(s) — custom domains for a claimed site. */
+/** aft domain(s) — custom domains. List is account-wide by default. */
 import { apiFetch, readJson } from "./api.js";
 import { requireLogin, resolveProject } from "./project.js";
 import { note, ok, say, ui } from "./ui.js";
 
 export async function cmdDomains(args = []) {
-  let [sub, ...rest] = args;
+  const flags = args.filter((a) => String(a).startsWith("--"));
+  const positional = args.filter((a) => !String(a).startsWith("--"));
+  let [sub, ...rest] = positional;
 
-  if (sub === "-h" || sub === "--help" || sub === "help") {
+  if (sub === "-h" || sub === "--help" || sub === "help" || flags.includes("--help")) {
     console.log(`Usage:
-  aft domains
+  aft domains [--pending|--active|--error|--here]
   aft domain add app.example.com
   aft domain refresh app.example.com
   aft domain remove app.example.com
   aft domain request-access
 
-Requires aft login and a claimed site.`);
+List shows every domain on your account (pending + active). Filter with flags.
+Add/remove/refresh use this project (aft.json / .aft/state.json).
+
+Requires aft login.`);
     return;
   }
 
@@ -41,30 +46,58 @@ Requires aft login and a claimed site.`);
   }
 
   await requireLogin();
-  const { slug } = await resolveProject();
 
   switch (sub) {
     case undefined:
     case "list":
     case "ls":
-      return listDomains(slug);
+      return listAllDomains(flags);
     case "add":
-      return addDomain(slug, rest[0]);
     case "refresh":
-      return refreshDomain(slug, rest[0]);
     case "remove":
     case "rm":
     case "delete":
+    case "request-access": {
+      const { slug } = await resolveProject();
+      if (sub === "add") return addDomain(slug, rest[0]);
+      if (sub === "refresh") return refreshDomain(slug, rest[0]);
+      if (sub === "request-access") return requestAccess(slug);
       return removeDomain(slug, rest[0]);
-    case "request-access":
-      return requestAccess(slug);
+    }
     default:
       throw new Error(`Unknown aft domain command: ${sub}\nRun: aft domain --help`);
   }
 }
 
-async function listDomains(slug) {
-  const res = await apiFetch(`/v1/sites/${encodeURIComponent(slug)}/domains`);
+function listFlags(args) {
+  const pending = args.includes("--pending");
+  const active = args.includes("--active");
+  const error = args.includes("--error");
+  const here = args.includes("--here");
+  let status;
+  if (pending) status = "pending";
+  else if (active) status = "active";
+  else if (error) status = "error";
+  return { status, here };
+}
+
+async function listAllDomains(args) {
+  const { status, here } = listFlags(args);
+  const q = new URLSearchParams();
+  if (status) q.set("status", status);
+
+  let hereSlug = null;
+  if (here) {
+    try {
+      hereSlug = (await resolveProject()).slug;
+      q.set("slug", hereSlug);
+    } catch {
+      throw new Error("No project here. Run from a deployed folder, or drop --here.");
+    }
+  }
+
+  const path = `/v1/me/domains${q.toString() ? `?${q}` : ""}`;
+  const res = await apiFetch(path);
   const body = await readJson(res);
   if (!res.ok) {
     hintDomainAuth(res.status, body);
@@ -72,11 +105,12 @@ async function listDomains(slug) {
   }
 
   const domains = body.domains || [];
-  const access = body.access || "none";
   const cname = body.cname || "cname.aft.page";
+  const access = body.access || "none";
 
   if (domains.length === 0) {
-    note(`No custom domains on ${slug}.aft.page`);
+    if (hereSlug) note(`No custom domains on ${hereSlug}.aft.page`);
+    else note("No custom domains yet.");
     if (access !== "approved") {
       note("Request access: aft domain request-access");
     } else {
@@ -85,16 +119,21 @@ async function listDomains(slug) {
     return;
   }
 
-  say(`${ui.ebold(slug)} domains`);
+  const title = hereSlug
+    ? `${ui.ebold(hereSlug)} domains`
+    : ui.ebold(`Domains (${domains.length})`);
+  say(title);
+
   for (const d of domains) {
     const ssl = d.sslStatus ? ` ${ui.edim(d.sslStatus)}` : "";
     const err = d.error ? ` ${ui.edim(d.error)}` : "";
-    console.log(`  ${d.hostname}  ${d.status}${ssl}${err}`);
+    const project = hereSlug ? "" : `  ${ui.edim(d.slug)}`;
+    console.log(`  ${d.hostname}  ${d.status}${ssl}${err}${project}`);
     if (d.status !== "active") {
       if (d.txtName && d.txtValue) {
         console.log(`    TXT   ${d.txtName} = ${d.txtValue}`);
       }
-      console.log(`    CNAME ${d.hostname} -> ${cname}`);
+      console.log(`    CNAME ${d.hostname} -> ${d.cname || cname}`);
     }
   }
 }
@@ -177,7 +216,7 @@ function printDomainAdded(domain) {
     console.log(`TXT   ${domain.txtName} = ${domain.txtValue}`);
   }
   console.log(`CNAME ${domain.hostname} -> ${domain.cname}`);
-  note("After DNS is live, run: aft domain refresh app.example.com");
+  note(`After DNS is live, run: aft domain refresh ${domain.hostname}`);
 }
 
 function hintDomainAuth(status, body) {

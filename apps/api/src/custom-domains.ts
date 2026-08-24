@@ -79,6 +79,9 @@ export async function handleCustomDomainRoute(
   env: Env,
   url: URL,
 ): Promise<Response | null> {
+  if (url.pathname === "/v1/me/domains" && request.method === "GET") {
+    return meDomains(request, env, url);
+  }
   const accessMatch = url.pathname.match(
     /^\/v1\/sites\/([a-z0-9-]+)\/domains\/access$/,
   );
@@ -110,6 +113,85 @@ export async function handleCustomDomainRoute(
     return null;
   }
   return null;
+}
+
+/** Account-wide domain inventory (owned sites). Filters: status, slug. */
+async function meDomains(
+  request: Request,
+  env: Env,
+  url: URL,
+): Promise<Response> {
+  const extra = Object.fromEntries(
+    corsHeaders(request.headers.get("origin"), true),
+  );
+  const user = await resolveSessionUser(env, request);
+  if (!user) return privateJson({ error: "unauthorized" }, 401, extra);
+
+  const statusFilter = (url.searchParams.get("status") || "").toLowerCase();
+  const slugFilter = (url.searchParams.get("slug") || "").toLowerCase();
+  const statusOk =
+    !statusFilter ||
+    statusFilter === "pending" ||
+    statusFilter === "active" ||
+    statusFilter === "error";
+  if (!statusOk) {
+    return json(
+      { error: "invalid_status", hint: "status=pending|active|error" },
+      400,
+      extra,
+    );
+  }
+
+  await ensureDb(env);
+  const { results } = await env.DB.prepare(
+    `SELECT d.hostname, d.slug, d.status, d.cf_id, d.txt_name, d.txt_value,
+            d.ssl_status, d.error, d.created_at, d.updated_at
+     FROM custom_domains d
+     INNER JOIN sites s ON s.slug = d.slug
+     WHERE s.owner_user_id = ?
+     ORDER BY d.created_at DESC`,
+  )
+    .bind(user.id)
+    .all<{
+      hostname: string;
+      slug: string;
+      status: string;
+      cf_id: string | null;
+      txt_name: string | null;
+      txt_value: string | null;
+      ssl_status: string | null;
+      error: string | null;
+      created_at: string;
+      updated_at: string;
+    }>();
+
+  const cname = cnameTarget(env);
+  let domains = (results || []).map((r) => ({
+    hostname: r.hostname,
+    slug: r.slug,
+    status: r.status as CustomDomainStatus,
+    cfId: r.cf_id,
+    txtName: r.txt_name,
+    txtValue: r.txt_value,
+    sslStatus: r.ssl_status,
+    error: r.error,
+    cname,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  }));
+  if (statusFilter) {
+    domains = domains.filter((d) => d.status === statusFilter);
+  }
+  if (slugFilter) {
+    domains = domains.filter((d) => d.slug === slugFilter);
+  }
+
+  const access = await domainAccessForUser(env, user);
+  return privateJson(
+    { cname, access, domains, total: domains.length },
+    200,
+    extra,
+  );
 }
 
 async function requireOwner(

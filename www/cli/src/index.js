@@ -28,8 +28,8 @@ ${ui.bold("Requires")} ${ui.cyan("aft login")}
   aft sites                     List your projects
   aft open                      Open this project's live URL
   aft rename <slug>             Change the site URL
-  aft domains                   List custom domains
-  aft domain add <host>         Add a custom domain
+  aft domains                   List all custom domains (pending + active)
+  aft domain add <host>         Add a custom domain to this project
   aft env list|set|unset        Secrets (same as project UI)
   aft migrate vercel            Copy Vercel env → aft secrets
   aft visibility public|private Who can open the live site

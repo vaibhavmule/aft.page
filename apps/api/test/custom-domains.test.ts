@@ -213,4 +213,56 @@ describe("custom domain endpoints", () => {
     const res = await call(new Request("https://evil.example.com/"));
     expect(res.status).toBe(404);
   });
+
+  it("lists every owned domain on GET /v1/me/domains", async () => {
+    const a = await deployPaste("<h1>A</h1>", "me-dom-a");
+    const b = await deployPaste("<h1>B</h1>", "me-dom-b");
+    const cookie = await ownSite(a.slug, "me-domains@example.com");
+    await ownSite(b.slug, "me-domains@example.com");
+
+    await call(
+      new Request(`${API_ORIGIN}/v1/sites/${a.slug}/domains`, {
+        method: "POST",
+        headers: {
+          cookie,
+          origin: "https://aft.page",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ hostname: "a.example.com" }),
+      }),
+    );
+    await call(
+      new Request(`${API_ORIGIN}/v1/sites/${b.slug}/domains`, {
+        method: "POST",
+        headers: {
+          cookie,
+          origin: "https://aft.page",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ hostname: "b.example.com" }),
+      }),
+    );
+
+    const all = await call(
+      new Request(`${API_ORIGIN}/v1/me/domains`, {
+        headers: { cookie, origin: "https://aft.page" },
+      }),
+    );
+    expect(all.status).toBe(200);
+    const body = (await all.json()) as {
+      domains: { hostname: string; slug: string }[];
+    };
+    const hosts = body.domains.map((d) => d.hostname).sort();
+    expect(hosts).toEqual(["a.example.com", "b.example.com"]);
+
+    const filtered = await call(
+      new Request(`${API_ORIGIN}/v1/me/domains?slug=${a.slug}`, {
+        headers: { cookie, origin: "https://aft.page" },
+      }),
+    );
+    const onlyA = (await filtered.json()) as {
+      domains: { hostname: string }[];
+    };
+    expect(onlyA.domains.map((d) => d.hostname)).toEqual(["a.example.com"]);
+  });
 });
