@@ -158,7 +158,7 @@ if len(files) > 500:
     raise SystemExit(f"too many files in build output ({len(files)})")
 req = urllib.request.Request(
     f"{api}/v1/jobs/{job_id}/complete",
-    data=json.dumps({"files": files, "log": f"Deployed {len(files)} files from {os.path.basename(out)}/"}).encode(),
+    data=json.dumps({"files": files}).encode(),
     method="POST",
     headers={
         "authorization": f"Bearer {token}",
