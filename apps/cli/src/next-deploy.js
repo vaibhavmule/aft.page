@@ -13,6 +13,23 @@ async function exists(path) {
   }
 }
 
+async function installedNextVersion(root) {
+  try {
+    const raw = await readFile(join(root, "node_modules/next/package.json"), "utf8");
+    return JSON.parse(raw).version || "";
+  } catch {
+    return "";
+  }
+}
+
+function needsNext14_2(ver) {
+  const m = String(ver).match(/^(\d+)\.(\d+)/);
+  if (!m) return false;
+  const maj = Number(m[1]);
+  const minor = Number(m[2]);
+  return maj === 14 && minor < 2;
+}
+
 export async function deployNextSsr(
   projectRoot,
   slug,
@@ -37,6 +54,13 @@ export async function deployNextSsr(
       projectRoot,
       { verbose, failMessage: "Install failed" },
     );
+    const nextVer = await installedNextVersion(projectRoot);
+    if (needsNext14_2(nextVer)) {
+      runCmd("npm", ["install", "next@14.2", "--legacy-peer-deps"], projectRoot, {
+        verbose,
+        failMessage: "Install failed",
+      });
+    }
   }, { verbose });
 
   const wranglerPath = join(projectRoot, "wrangler.jsonc");
@@ -63,8 +87,16 @@ export async function deployNextSsr(
     );
   }
 
+  const openNextNames = ["open-next.config.ts", "open-next.config.js", "open-next.config.mjs", "open-next.config.mts"];
+  if (!(await Promise.all(openNextNames.map((n) => exists(join(projectRoot, n))))).some(Boolean)) {
+    await writeFile(
+      join(projectRoot, "open-next.config.ts"),
+      'import { defineCloudflareConfig } from "@opennextjs/cloudflare";\n\nexport default defineCloudflareConfig();\n',
+    );
+  }
+
   await runStep("Building…", async () => {
-    runCmd("npx", ["opennextjs-cloudflare", "build"], projectRoot, {
+    runCmd("npx", ["opennextjs-cloudflare", "build", "--dangerouslyUseUnsupportedNextVersion"], projectRoot, {
       verbose,
       failMessage: "Build failed",
     });

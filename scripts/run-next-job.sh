@@ -67,6 +67,61 @@ write_wrangler() {
 EOF
 }
 
+# Vanilla Next repos have no OpenNext file; latest @opennextjs/cloudflare refuses to build without it.
+ensure_open_next_config() {
+  if [[ -f "$SRC/open-next.config.ts" || -f "$SRC/open-next.config.js" || -f "$SRC/open-next.config.mjs" || -f "$SRC/open-next.config.mts" ]]; then
+    post_phase installing "open-next.config already present"
+    return
+  fi
+  cat > "$SRC/open-next.config.ts" <<'EOF'
+import { defineCloudflareConfig } from "@opennextjs/cloudflare";
+
+export default defineCloudflareConfig();
+EOF
+  post_phase installing "Wrote open-next.config.ts"
+}
+
+# ponytail: OpenNext Cloudflare requires Next >= 14.2. Bump only 14.0/14.1 in-place; leave 13.x to fail honestly.
+ensure_next_min() {
+  local info ver bump
+  info="$(python3 - "$SRC" <<'PY'
+import json, os, sys
+root = sys.argv[1]
+path = os.path.join(root, "node_modules", "next", "package.json")
+try:
+    ver = json.load(open(path)).get("version") or ""
+except Exception:
+    ver = ""
+parts = []
+for p in ver.split("-")[0].split("."):
+    try:
+        parts.append(int(p))
+    except ValueError:
+        break
+maj, minor = (parts + [0, 0])[:2]
+bump = "1" if maj == 14 and minor < 2 else "0"
+print(f"{ver}\n{bump}")
+PY
+)"
+  ver="$(printf '%s\n' "$info" | sed -n '1p')"
+  bump="$(printf '%s\n' "$info" | sed -n '2p')"
+  post_phase installing "next ${ver:-unknown}"
+  # #region agent log
+  NEXT_VER="$ver" NEXT_BUMP="$bump" python3 - <<'PY' 2>/dev/null || true
+import json, os, time
+p = "/Users/vaibhavmule/Projects/aft/.cursor/debug-b4ab23.log"
+if os.path.isdir(os.path.dirname(p)):
+    open(p, "a").write(json.dumps({"sessionId":"b4ab23","hypothesisId":"B","location":"run-next-job.sh:ensure_next_min","message":"next version","data":{"next":os.environ.get("NEXT_VER"),"bump":os.environ.get("NEXT_BUMP")},"timestamp":int(time.time()*1000),"runId":"post-fix"})+"\n")
+PY
+  # #endregion
+  if [[ "$bump" != "1" ]]; then
+    return
+  fi
+  post_phase installing "Bumping next ${ver} → 14.2 (OpenNext minimum)"
+  run_logged installing npm install next@14.2 --legacy-peer-deps \
+    || fail "Could not bump Next.js to 14.2."
+}
+
 untrusted() {
   # Strip AFT/CF secrets so the clone's npm lifecycle cannot read them.
   env -u JOB_TOKEN -u AFT_RUN_GITHUB_TOKEN -u CLOUDFLARE_API_TOKEN \
@@ -144,9 +199,11 @@ if [[ "$MODE" == "build" ]]; then
     || fail "Could not install OpenNext / wrangler."
   post_phase installing "npm install done"
 
+  ensure_next_min
+  ensure_open_next_config
   write_wrangler
   post_phase building "opennextjs-cloudflare build"
-  run_logged building npx opennextjs-cloudflare build \
+  run_logged building npx opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion \
     || fail "OpenNext build failed (middleware, env, size, or not a Next app)."
   write_wrangler
   post_phase building "OpenNext build done"

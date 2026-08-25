@@ -90,6 +90,51 @@ describe("run job API", () => {
     expect(job?.siteUrl).toContain(slug);
   });
 
+  it("PATCH failed keeps streamed logTail", async () => {
+    const token = randomToken("run_tok_");
+    const id = await insertRunJob(env, {
+      owner: "octo",
+      repo: "hello-next",
+      url: "https://github.com/octo/hello-next",
+      trigger: "test",
+      kind: "next",
+      phase: "queued",
+      slug: "failkeep",
+      jobTokenHash: await sha256Hex(token),
+    });
+    const headers = {
+      "content-type": "application/json",
+      authorization: `Bearer ${token}`,
+    };
+    await call(
+      new Request(`${API_ORIGIN}/v1/jobs/${id}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          phase: "building",
+          line: "Error: No `open-next.config.ts` file was found",
+        }),
+      }),
+    );
+    const fail = await call(
+      new Request(`${API_ORIGIN}/v1/jobs/${id}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({
+          phase: "failed",
+          reason: "OpenNext build failed (middleware, env, size, or not a Next app).",
+          line: "OpenNext build failed (middleware, env, size, or not a Next app).",
+        }),
+      }),
+    );
+    expect(fail.status).toBe(200);
+    const snap = await call(new Request(`${API_ORIGIN}/v1/jobs/${id}`));
+    const body = (await snap.json()) as { status: string; logTail: string; reason: string };
+    expect(body.status).toBe("failed");
+    expect(body.logTail).toContain("open-next.config.ts");
+    expect(body.reason).toContain("OpenNext build failed");
+  });
+
   it("GET /events streams a terminal snapshot then closes", async () => {
     const id = await insertRunJob(env, {
       owner: "octo",

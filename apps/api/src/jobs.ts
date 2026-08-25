@@ -345,11 +345,18 @@ export async function handleJobRoute(
       return jobJson({ error: "invalid_phase" }, 400, origin);
     }
     if (phase === "failed") {
+      const extra = typeof body.line === "string" ? body.line : "";
+      if (extra) {
+        await patchRunJobProgress(env, id, {
+          phase: "failed",
+          line: extra,
+          reason: typeof body.reason === "string" ? body.reason : "Build failed.",
+        });
+      }
       await finishRunJob(env, id, {
         status: "failed",
         error: "build_failed",
         reason: typeof body.reason === "string" ? body.reason : "Build failed.",
-        logTail: typeof body.line === "string" ? body.line : undefined,
         httpStatus: 422,
       });
       return jobJson({ ok: true, status: "failed" }, 200, origin);
