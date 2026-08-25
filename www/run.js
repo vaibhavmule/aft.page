@@ -147,9 +147,6 @@ async function watchJob(data) {
 
   const applySnap = async (snap) => {
     if (settled || !snap || snap.error === "not_found") return
-    // #region agent log
-    fetch("http://127.0.0.1:7535/ingest/b353d6af-4a3a-4835-a235-c1ace0aec6c2",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"b4ab23"},body:JSON.stringify({sessionId:"b4ab23",location:"run.js:applySnap",message:"job snap",data:{status:snap.status,phase:snap.phase,kind:snap.kind,reason:snap.reason,logHasConfig:String(snap.logTail||"").includes("open-next.config"),logTail:(snap.logTail||"").slice(-600)},timestamp:Date.now(),hypothesisId:"A",runId:"post-fix"})}).catch(()=>{})
-    // #endregion
     if (snap.phase) phaseEl.textContent = PHASE_LABEL[snap.phase] || snap.phase
     if (typeof snap.logTail === "string" && snap.logTail) logEl.textContent = snap.logTail
     else if (snap.line) {

@@ -106,14 +106,6 @@ PY
   ver="$(printf '%s\n' "$info" | sed -n '1p')"
   bump="$(printf '%s\n' "$info" | sed -n '2p')"
   post_phase installing "next ${ver:-unknown}"
-  # #region agent log
-  NEXT_VER="$ver" NEXT_BUMP="$bump" python3 - <<'PY' 2>/dev/null || true
-import json, os, time
-p = "/Users/vaibhavmule/Projects/aft/.cursor/debug-b4ab23.log"
-if os.path.isdir(os.path.dirname(p)):
-    open(p, "a").write(json.dumps({"sessionId":"b4ab23","hypothesisId":"B","location":"run-next-job.sh:ensure_next_min","message":"next version","data":{"next":os.environ.get("NEXT_VER"),"bump":os.environ.get("NEXT_BUMP")},"timestamp":int(time.time()*1000),"runId":"post-fix"})+"\n")
-PY
-  # #endregion
   if [[ "$bump" != "1" ]]; then
     return
   fi
