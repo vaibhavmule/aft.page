@@ -548,17 +548,23 @@ async function acceptInvite(
   url: URL,
 ): Promise<Response> {
   const token = url.searchParams.get("token") || "";
+  const root = env.ROOT_DOMAIN || "aft.page";
+  
   if (!token) {
-    return json({ error: "invalid_request" }, 400);
+    return inviteErrorHtml("Invalid link", null, root);
   }
 
   const tokenHash = await sha256Hex(`${env.AUTH_SECRET}:invite:${token}`);
   const invite = await findSiteInviteByTokenHash(env, tokenHash);
   if (!invite || invite.accepted_at) {
-    return json({ error: "invalid_or_expired_token" }, 400);
+    return inviteErrorHtml(
+      "Invite expired",
+      invite?.slug || null,
+      root,
+    );
   }
   if (new Date(invite.expires_at).getTime() < Date.now()) {
-    return json({ error: "invalid_or_expired_token" }, 400);
+    return inviteErrorHtml("Invite expired", invite.slug, root);
   }
 
   const role = invite.role === "edit" ? "edit" : "view";
@@ -568,7 +574,6 @@ async function acceptInvite(
 
   // Auto-private when first invite is accepted if still public? Keep owner-controlled.
   const session = await createSession(env, user.id);
-  const root = env.ROOT_DOMAIN || "aft.page";
   const liveUrl = `https://${invite.slug}.${root}/`;
 
   return new Response(null, {
@@ -694,6 +699,37 @@ button:hover{background:var(--cta-hover)}button:disabled{opacity:.6;cursor:defau
 })();
 </script>
 </body></html>`;
+}
+
+/** Branded error page for invite link failures. */
+function inviteErrorHtml(title: string, slug: string | null, root: string): Response {
+  const siteLink = slug
+    ? `<a href="https://${slug}.${root}/">${slug}.${root}</a>`
+    : `<a href="https://${root}/">aft.page</a>`;
+  const loginLink = `https://${root}/login`;
+
+  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="${BRAND.void}"/><title>${title} — aft.page</title>
+${BRAND_FONT_LINKS}
+<style>
+${BRAND_CSS_VARS}
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 var(--font-sans);color:var(--ink);background:var(--void);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.25rem;-webkit-font-smoothing:antialiased}
+main{width:min(24rem,100%)}
+${BRAND_WORDMARK_CSS}
+.brand{display:inline-block;margin:0 0 1.25rem;font-size:1.15rem}
+h1{font-size:1.25rem;margin:0 0 .35rem;font-weight:600}p{color:var(--quiet);margin:0 0 1rem}p strong{color:var(--ink)}
+p a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+</style></head><body>
+<main>
+  <a class="brand" href="https://${root}/">aft<span>.</span>page</a>
+  <h1>${title}</h1>
+  <p>This invite link is invalid or has expired. ${slug ? `Visit ${siteLink} or ` : "Visit "}${slug ? `<a href="${loginLink}">log in</a>` : siteLink} to continue.</p>
+</main>
+</body></html>`;
+
+  return new Response(html, {
+    status: 400,
+    headers: { "content-type": "text/html; charset=utf-8" },
+  });
 }
 
 /**
