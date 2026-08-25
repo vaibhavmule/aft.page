@@ -201,6 +201,20 @@ export async function getRunJob(
   return { ...mapRunJob(row), jobTokenHash: row.job_token_hash ?? null };
 }
 
+/** Newest Run job for a slug — used when KV has not caught up yet. */
+export async function getLatestRunJobBySlug(
+  env: Env,
+  slug: string,
+): Promise<RunJobRow | null> {
+  await ensureDb(env);
+  const row = await env.DB.prepare(
+    `SELECT ${RUN_JOB_SELECT} FROM run_jobs WHERE slug = ? ORDER BY created_at DESC LIMIT 1`,
+  )
+    .bind(slug)
+    .first<RunJobDbRow>();
+  return row ? mapRunJob(row) : null;
+}
+
 export async function patchRunJobProgress(
   env: Env,
   id: string,

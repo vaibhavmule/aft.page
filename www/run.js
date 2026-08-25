@@ -95,9 +95,12 @@ async function waitForSite(url, { timeoutMs = 45000, intervalMs = 1000 } = {}) {
     try {
       const res = await fetch(probe, { cache: "no-store" })
       if (res.ok) return true
-      if (res.status !== 404 || res.headers.get("x-aft-error") !== "SITE_NOT_FOUND") {
-        return res.ok
+      // Build still running or KV catching up — keep waiting.
+      if (res.status === 202 || res.status === 404) {
+        await new Promise((resolve) => setTimeout(resolve, intervalMs))
+        continue
       }
+      return false
     } catch (_) {}
     await new Promise((resolve) => setTimeout(resolve, intervalMs))
   }

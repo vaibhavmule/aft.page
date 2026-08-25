@@ -6,7 +6,13 @@ import {
   BRAND_FONT_LINKS,
   BRAND_WORDMARK_CSS,
 } from "./brand";
-import { deployExists, getSiteRow, touchLastServed } from "./db";
+import {
+  deployExists,
+  getLatestRunJobBySlug,
+  getSiteRow,
+  touchLastServed,
+  type RunJobPhase,
+} from "./db";
 import { corsHeaders, json } from "./http";
 import { trackPageView, trackServe } from "./metrics";
 import { injectAftChrome } from "./aft-chrome";
@@ -131,6 +137,15 @@ export async function serveSite(
 
   const raw = await env.SITES.get(`site:${slug}`);
   if (!raw) {
+    const pending = await resolveSitePending(env, slug);
+    if (pending) {
+      noteServe(env, request, slug, {
+        httpStatus: 202,
+        path: servePath(pathname),
+        persist: false,
+      });
+      return sitePendingResponse(request, slug, root, pending);
+    }
     noteServe(env, request, slug, {
       httpStatus: 404,
       path: servePath(pathname),
@@ -373,6 +388,143 @@ function ensureSmokeNoindex(html: string): string {
     );
   }
   return `<head><meta name="robots" content="noindex"/></head>${html}`;
+}
+
+const PENDING_PHASE_LABEL: Record<RunJobPhase, string> = {
+  queued: "Queued",
+  cloning: "Cloning repo",
+  installing: "Installing packages",
+  building: "Building",
+  deploying: "Deploying",
+  live: "Going live…",
+  failed: "Failed",
+};
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+type SitePending = {
+  phase: RunJobPhase;
+  label: string;
+  repo?: string;
+  logLine?: string;
+};
+
+async function resolveSitePending(
+  env: Env,
+  slug: string,
+): Promise<SitePending | null> {
+  const job = await getLatestRunJobBySlug(env, slug);
+  if (job?.status === "queued") {
+    const phase = job.phase === "live" || job.phase === "failed" ? "queued" : job.phase;
+    return {
+      phase,
+      label: PENDING_PHASE_LABEL[phase],
+      repo: `${job.owner}/${job.repo}`,
+      logLine: lastLogLine(job.logTail),
+    };
+  }
+  if (job?.status === "live") {
+    return {
+      phase: "live",
+      label: PENDING_PHASE_LABEL.live,
+      repo: `${job.owner}/${job.repo}`,
+      logLine: lastLogLine(job.logTail),
+    };
+  }
+  const site = await getSiteRow(env, slug);
+  if (site) {
+    return { phase: "live", label: PENDING_PHASE_LABEL.live };
+  }
+  return null;
+}
+
+function lastLogLine(tail: string | null): string | undefined {
+  if (!tail) return undefined;
+  const lines = tail.trim().split("\n").filter(Boolean);
+  const line = lines[lines.length - 1];
+  return line ? line.slice(0, 200) : undefined;
+}
+
+/** KV miss while a Run job (or D1 site row) says this slug is coming online. */
+export function sitePendingHtml(
+  slug: string,
+  root: string,
+  pending: SitePending,
+): string {
+  const host = liveSiteHost(slug, root);
+  const repo = pending.repo ? escapeHtml(pending.repo) : "";
+  const line = pending.logLine ? escapeHtml(pending.logLine) : "";
+  const label = escapeHtml(pending.label);
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="robots" content="noindex"/><meta http-equiv="refresh" content="2"/><meta name="theme-color" content="${BRAND.void}"/><title>${label} — aft.page</title>
+${BRAND_FONT_LINKS}
+<style>
+${BRAND_CSS_VARS}
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 var(--font-sans);color:var(--ink);background:var(--void);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.25rem;-webkit-font-smoothing:antialiased}
+main{width:min(26rem,100%);text-align:center}
+${BRAND_WORDMARK_CSS}
+.brand{display:inline-block;margin:0 0 1.5rem;font-size:1.15rem}
+.badge{display:inline-block;margin:0 0 1rem;padding:.2rem .6rem;border:1px solid var(--line-bright);border-radius:999px;font-size:.72rem;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--quiet)}
+h1{font-size:1.25rem;margin:0 0 .5rem;font-weight:600}
+p{color:var(--quiet);margin:0 0 .75rem}p strong{color:var(--ink)}
+.phase{margin:1rem 0 .5rem;font-size:1rem;font-weight:650;color:var(--ink)}
+.log{margin:0 auto;max-width:100%;padding:.85rem 1rem;text-align:left;border:1px solid var(--line);border-radius:8px;background:#0a0a0a;font:12px/1.45 var(--font-mono);color:#a1a1aa;white-space:pre-wrap;word-break:break-word}
+.hint{margin-top:1.25rem;font-size:.85rem;color:var(--faint)}.hint a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+</style></head><body>
+<main>
+  <a class="brand" href="https://${root}/">aft<span>.</span>page</a>
+  <div class="badge">Build in progress</div>
+  <h1>${label}</h1>
+  <p><strong>${escapeHtml(host)}</strong>${repo ? ` · ${repo}` : ""}</p>
+  ${line ? `<pre class="log" aria-live="polite">${line}</pre>` : `<p class="phase">${label}</p>`}
+  <p class="hint">This page refreshes automatically. Or watch <a href="https://${root}/run/">aft.page/run</a>.</p>
+</main>
+</body></html>`;
+}
+
+function sitePendingResponse(
+  request: Request,
+  slug: string,
+  root: string,
+  pending: SitePending,
+): Response {
+  const extra: Record<string, string> = {
+    "cache-control": "no-store",
+    "x-aft-slug": slug,
+    "x-aft-error": "SITE_PENDING",
+    "x-aft-phase": pending.phase,
+    "retry-after": "2",
+    vary: "Accept",
+  };
+  if (!wantsHtml(request)) {
+    return json(
+      {
+        error: "pending",
+        code: "SITE_PENDING",
+        slug,
+        phase: pending.phase,
+        label: pending.label,
+      },
+      202,
+      extra,
+    );
+  }
+  const headers = new Headers({
+    "content-type": "text/html; charset=utf-8",
+    ...extra,
+  });
+  for (const [name, value] of corsHeaders(null, false)) {
+    headers.set(name, value);
+  }
+  return new Response(sitePendingHtml(slug, root, pending), {
+    status: 202,
+    headers,
+  });
 }
 
 /** Platform 404: hostname resolved, nothing deployed at this slug. */

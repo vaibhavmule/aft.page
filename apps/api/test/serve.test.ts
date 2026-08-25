@@ -62,6 +62,71 @@ describe("serving files", () => {
     expect(html).not.toContain("Claim this site");
   });
 
+  it("shows build in progress when a Run job owns the slug but KV is empty", async () => {
+    const { insertRunJob, patchRunJobProgress } = await import("../src/db");
+    await insertRunJob(env, {
+      owner: "mdn",
+      repo: "todo-react",
+      url: "https://github.com/mdn/todo-react",
+      trigger: "test",
+      kind: "vite",
+      branch: "main",
+      slug: "pending-vite",
+    });
+    await patchRunJobProgress(env, (
+      await env.DB.prepare(
+        `SELECT id FROM run_jobs WHERE slug = ? ORDER BY created_at DESC LIMIT 1`,
+      )
+        .bind("pending-vite")
+        .first<{ id: string }>()
+    )!.id, {
+      phase: "building",
+      line: "npm run build",
+    });
+    const res = await call(
+      new Request("https://pending-vite.aft.page/", {
+        headers: { accept: "text/html" },
+      }),
+    );
+    expect(res.status).toBe(202);
+    expect(res.headers.get("x-aft-error")).toBe("SITE_PENDING");
+    expect(res.headers.get("x-aft-phase")).toBe("building");
+    const html = await res.text();
+    expect(html).toContain("Build in progress");
+    expect(html).toContain("Building");
+    expect(html).toContain("npm run build");
+    expect(html).not.toContain("Nothing is deployed here");
+  });
+
+  it("shows going live when the job is live but KV has not caught up", async () => {
+    const { insertRunJob, finishRunJob } = await import("../src/db");
+    const id = await insertRunJob(env, {
+      owner: "mdn",
+      repo: "todo-react",
+      url: "https://github.com/mdn/todo-react",
+      trigger: "test",
+      kind: "vite",
+      branch: "main",
+      slug: "kv-lag-vite",
+    });
+    await finishRunJob(env, id, {
+      status: "live",
+      slug: "kv-lag-vite",
+      siteUrl: "https://kv-lag-vite.aft.page",
+      phase: "live",
+      httpStatus: 200,
+    });
+    const res = await call(
+      new Request("https://kv-lag-vite.aft.page/", {
+        headers: { accept: "text/html" },
+      }),
+    );
+    expect(res.status).toBe(202);
+    expect(res.headers.get("x-aft-error")).toBe("SITE_PENDING");
+    expect(res.headers.get("x-aft-phase")).toBe("live");
+    expect(await res.text()).toContain("Going live");
+  });
+
   it("404s an unknown slug as JSON when Accept prefers it", async () => {
     const res = await fetchSite("nobody-here");
     expect(res.status).toBe(404);
