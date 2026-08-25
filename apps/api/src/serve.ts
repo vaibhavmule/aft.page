@@ -412,7 +412,8 @@ type SitePending = {
   phase: RunJobPhase;
   label: string;
   repo?: string;
-  logLine?: string;
+  logTail?: string;
+  jobId?: string;
 };
 
 async function resolveSitePending(
@@ -426,7 +427,8 @@ async function resolveSitePending(
       phase,
       label: PENDING_PHASE_LABEL[phase],
       repo: `${job.owner}/${job.repo}`,
-      logLine: lastLogLine(job.logTail),
+      logTail: job.logTail || undefined,
+      jobId: job.id,
     };
   }
   if (job?.status === "live") {
@@ -434,7 +436,8 @@ async function resolveSitePending(
       phase: "live",
       label: PENDING_PHASE_LABEL.live,
       repo: `${job.owner}/${job.repo}`,
-      logLine: lastLogLine(job.logTail),
+      logTail: job.logTail || undefined,
+      jobId: job.id,
     };
   }
   const site = await getSiteRow(env, slug);
@@ -444,11 +447,18 @@ async function resolveSitePending(
   return null;
 }
 
-function lastLogLine(tail: string | null): string | undefined {
-  if (!tail) return undefined;
-  const lines = tail.trim().split("\n").filter(Boolean);
-  const line = lines[lines.length - 1];
-  return line ? line.slice(0, 200) : undefined;
+const PENDING_STEPS: RunJobPhase[] = [
+  "queued",
+  "cloning",
+  "installing",
+  "building",
+  "deploying",
+  "live",
+];
+
+function pendingStepIndex(phase: RunJobPhase): number {
+  const i = PENDING_STEPS.indexOf(phase);
+  return i >= 0 ? i : 0;
 }
 
 /** KV miss while a Run job (or D1 site row) says this slug is coming online. */
@@ -459,31 +469,117 @@ export function sitePendingHtml(
 ): string {
   const host = liveSiteHost(slug, root);
   const repo = pending.repo ? escapeHtml(pending.repo) : "";
-  const line = pending.logLine ? escapeHtml(pending.logLine) : "";
+  const log = pending.logTail ? escapeHtml(pending.logTail) : "";
   const label = escapeHtml(pending.label);
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="robots" content="noindex"/><meta http-equiv="refresh" content="2"/><meta name="theme-color" content="${BRAND.void}"/><title>${label} — aft.page</title>
+  const jobId = pending.jobId ? escapeHtml(pending.jobId) : "";
+  const active = pendingStepIndex(pending.phase);
+  const steps = PENDING_STEPS.map((p, i) => {
+    const state = i < active ? "done" : i === active ? "now" : "todo";
+    return `<li class="${state}" data-step="${p}"><span class="dot" aria-hidden="true"></span>${escapeHtml(PENDING_PHASE_LABEL[p])}</li>`;
+  }).join("");
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="robots" content="noindex"/><meta http-equiv="refresh" content="8"/><meta name="theme-color" content="${BRAND.void}"/><title>${label} — aft.page</title>
 ${BRAND_FONT_LINKS}
 <style>
 ${BRAND_CSS_VARS}
 *{box-sizing:border-box}body{margin:0;font:15px/1.5 var(--font-sans);color:var(--ink);background:var(--void);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.25rem;-webkit-font-smoothing:antialiased}
-main{width:min(26rem,100%);text-align:center}
+main{width:min(36rem,100%)}
 ${BRAND_WORDMARK_CSS}
-.brand{display:inline-block;margin:0 0 1.5rem;font-size:1.15rem}
-.badge{display:inline-block;margin:0 0 1rem;padding:.2rem .6rem;border:1px solid var(--line-bright);border-radius:999px;font-size:.72rem;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--quiet)}
-h1{font-size:1.25rem;margin:0 0 .5rem;font-weight:600}
-p{color:var(--quiet);margin:0 0 .75rem}p strong{color:var(--ink)}
-.phase{margin:1rem 0 .5rem;font-size:1rem;font-weight:650;color:var(--ink)}
-.log{margin:0 auto;max-width:100%;padding:.85rem 1rem;text-align:left;border:1px solid var(--line);border-radius:8px;background:#0a0a0a;font:12px/1.45 var(--font-mono);color:#a1a1aa;white-space:pre-wrap;word-break:break-word}
-.hint{margin-top:1.25rem;font-size:.85rem;color:var(--faint)}.hint a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.brand{display:inline-block;margin:0 0 1.25rem;font-size:1.15rem}
+.head{text-align:center;margin:0 0 1.5rem}
+.spinner{width:3.25rem;height:3.25rem;margin:0 auto 1.1rem;border:3px solid var(--line-bright);border-top-color:var(--ink);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.badge{display:inline-block;margin:0 0 .65rem;padding:.25rem .7rem;border:1px solid var(--line-bright);border-radius:999px;font-size:.72rem;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--quiet)}
+h1{font-size:1.45rem;margin:0 0 .4rem;font-weight:650;letter-spacing:-.02em}
+.meta{color:var(--quiet);margin:0;font-size:.9rem}.meta strong{color:var(--ink)}
+.steps{list-style:none;margin:0 0 1rem;padding:0;display:grid;gap:.35rem}
+.steps li{display:flex;align-items:center;gap:.55rem;padding:.35rem .5rem;border-radius:6px;font-size:.88rem;color:var(--faint)}
+.steps li .dot{width:.55rem;height:.55rem;border-radius:50%;background:var(--line-bright);flex:0 0 auto}
+.steps li.done{color:var(--quiet)}.steps li.done .dot{background:#3f3f46}
+.steps li.now{color:var(--ink);font-weight:650;background:rgba(255,255,255,.04)}.steps li.now .dot{background:var(--ink);box-shadow:0 0 0 3px rgba(255,255,255,.12)}
+.panel{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#0a0a0a}
+.panel-h{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.55rem .85rem;border-bottom:1px solid var(--line);font:650 .72rem/1 var(--font-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--quiet)}
+.panel-h .pulse{display:inline-flex;align-items:center;gap:.4rem}
+.panel-h .pulse i{width:.45rem;height:.45rem;border-radius:50%;background:var(--ink);animation:blink 1.1s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25}}
+.log{margin:0;max-height:min(22rem,48vh);overflow:auto;padding:.85rem 1rem;font:12px/1.5 var(--font-mono);color:#d4d4d8;white-space:pre-wrap;word-break:break-word;min-height:6rem}
+.log:empty::before{content:"Waiting for build output…";color:var(--faint)}
+.hint{margin:1rem 0 0;text-align:center;font-size:.85rem;color:var(--faint)}.hint a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
 </style></head><body>
-<main>
-  <a class="brand" href="https://${root}/">aft<span>.</span>page</a>
-  <div class="badge">Build in progress</div>
-  <h1>${label}</h1>
-  <p><strong>${escapeHtml(host)}</strong>${repo ? ` · ${repo}` : ""}</p>
-  ${line ? `<pre class="log" aria-live="polite">${line}</pre>` : `<p class="phase">${label}</p>`}
-  <p class="hint">This page refreshes automatically. Or watch <a href="https://${root}/run/">aft.page/run</a>.</p>
+<main data-pending data-slug="${escapeHtml(slug)}" data-job="${jobId}" data-phase="${pending.phase}">
+  <div class="head">
+    <a class="brand" href="https://${root}/">aft<span>.</span>page</a>
+    <div class="spinner" role="status" aria-label="Build in progress"></div>
+    <div class="badge">Build in progress</div>
+    <h1 id="phase-label">${label}</h1>
+    <p class="meta"><strong id="host">${escapeHtml(host)}</strong>${repo ? ` · <span id="repo">${repo}</span>` : ""}</p>
+  </div>
+  <ul class="steps" id="steps" aria-label="Build phases">${steps}</ul>
+  <div class="panel">
+    <div class="panel-h"><span class="pulse"><i></i> Live log</span><span id="phase-chip">${label}</span></div>
+    <pre class="log" id="log" aria-live="polite">${log}</pre>
+  </div>
+  <p class="hint">Updates every couple of seconds. Or watch <a href="https://${root}/run/">aft.page/run</a>.</p>
 </main>
+<script>
+(function () {
+  var root = ${JSON.stringify(root)};
+  var labels = ${JSON.stringify(PENDING_PHASE_LABEL)};
+  var order = ${JSON.stringify(PENDING_STEPS)};
+  var main = document.querySelector("[data-pending]");
+  if (!main) return;
+  var jobId = main.getAttribute("data-job") || "";
+  var logEl = document.getElementById("log");
+  var labelEl = document.getElementById("phase-label");
+  var chipEl = document.getElementById("phase-chip");
+  var stepsEl = document.getElementById("steps");
+
+  function paintSteps(phase) {
+    var active = order.indexOf(phase);
+    if (active < 0) active = 0;
+    var items = stepsEl.querySelectorAll("li");
+    for (var i = 0; i < items.length; i++) {
+      items[i].className = i < active ? "done" : i === active ? "now" : "todo";
+    }
+  }
+
+  function apply(snap) {
+    if (!snap) return;
+    var phase = snap.phase || main.getAttribute("data-phase") || "queued";
+    var label = labels[phase] || phase;
+    main.setAttribute("data-phase", phase);
+    labelEl.textContent = label;
+    chipEl.textContent = label;
+    document.title = label + " — aft.page";
+    paintSteps(phase);
+    if (typeof snap.logTail === "string" && snap.logTail) {
+      var atBottom = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 40;
+      logEl.textContent = snap.logTail;
+      if (atBottom) logEl.scrollTop = logEl.scrollHeight;
+    }
+    if (snap.status === "failed") {
+      labelEl.textContent = snap.reason || snap.error || "Build failed";
+      chipEl.textContent = "Failed";
+    }
+  }
+
+  async function tick() {
+    try {
+      var site = await fetch(location.origin + "/", { cache: "no-store", headers: { accept: "text/html" } });
+      if (site.ok) { location.reload(); return; }
+    } catch (_) {}
+    if (!jobId) return;
+    try {
+      var res = await fetch("https://api." + root + "/v1/jobs/" + encodeURIComponent(jobId), { cache: "no-store" });
+      if (!res.ok) return;
+      apply(await res.json());
+    } catch (_) {}
+  }
+
+  if (logEl) logEl.scrollTop = logEl.scrollHeight;
+  setInterval(tick, 1500);
+  tick();
+})();
+</script>
 </body></html>`;
 }
 
@@ -509,6 +605,8 @@ function sitePendingResponse(
         slug,
         phase: pending.phase,
         label: pending.label,
+        jobId: pending.jobId || null,
+        logTail: pending.logTail || null,
       },
       202,
       extra,

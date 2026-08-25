@@ -73,6 +73,55 @@ untrusted() {
     -u CLOUDFLARE_ACCOUNT_ID -u CF_API_TOKEN "$@"
 }
 
+# Stream command output into the job log in small chunks (append).
+run_logged() {
+  local phase="$1"
+  shift
+  set +e
+  untrusted "$@" 2>&1 | python3 -c '
+import json, sys, time, urllib.request
+api, job_id, token, phase = sys.argv[1:5]
+buf = []
+last = 0.0
+
+def flush(force=False):
+    global buf, last
+    if not buf:
+        return
+    now = time.time()
+    if not force and len(buf) < 8 and now - last < 1.5:
+        return
+    chunk = "\n".join(buf)[-1800:]
+    buf = []
+    last = now
+    body = {"phase": phase, "line": chunk}
+    req = urllib.request.Request(
+        f"{api}/v1/jobs/{job_id}",
+        data=json.dumps(body).encode(),
+        method="PATCH",
+        headers={
+            "authorization": f"Bearer {token}",
+            "content-type": "application/json",
+            "user-agent": "aft.page-run-next",
+        },
+    )
+    try:
+        urllib.request.urlopen(req, timeout=30).read()
+    except Exception as e:
+        print(f"progress patch failed: {e}", file=sys.stderr)
+
+for raw in sys.stdin:
+    sys.stdout.write(raw)
+    sys.stdout.flush()
+    buf.append(raw.rstrip("\n"))
+    flush(False)
+flush(True)
+' "$API" "$JOB_ID" "$JOB_TOKEN" "$phase"
+  local rc=${PIPESTATUS[0]}
+  set -e
+  return "$rc"
+}
+
 if [[ "$MODE" == "build" ]]; then
   OWNER="${OWNER:?}"
   REPO="${REPO:?}"
@@ -82,22 +131,25 @@ if [[ "$MODE" == "build" ]]; then
   git clone --depth 1 --branch "$BRANCH" "https://github.com/${OWNER}/${REPO}.git" "$SRC" \
     || git clone --depth 1 "https://github.com/${OWNER}/${REPO}.git" "$SRC" \
     || fail "Could not clone the repo."
+  post_phase cloning "Cloned ${OWNER}/${REPO}@${BRANCH}"
 
   if [[ ! -f "$SRC/package.json" ]]; then
     fail "No package.json at the repo root."
   fi
 
-  post_phase installing "npm install"
+  post_phase installing "npm install --legacy-peer-deps"
   cd "$SRC"
-  untrusted npm install --legacy-peer-deps || fail "npm install failed."
-  untrusted npm install --save-dev @opennextjs/cloudflare wrangler --legacy-peer-deps \
+  run_logged installing npm install --legacy-peer-deps || fail "npm install failed."
+  run_logged installing npm install --save-dev @opennextjs/cloudflare wrangler --legacy-peer-deps \
     || fail "Could not install OpenNext / wrangler."
+  post_phase installing "npm install done"
 
   write_wrangler
   post_phase building "opennextjs-cloudflare build"
-  untrusted npx opennextjs-cloudflare build \
+  run_logged building npx opennextjs-cloudflare build \
     || fail "OpenNext build failed (middleware, env, size, or not a Next app)."
   write_wrangler
+  post_phase building "OpenNext build done"
 
   if [[ ! -f "$SRC/.open-next/worker.js" ]]; then
     fail "OpenNext produced no .open-next/worker.js."
