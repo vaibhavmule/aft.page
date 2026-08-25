@@ -477,48 +477,63 @@ export function sitePendingHtml(
     const state = i < active ? "done" : i === active ? "now" : "todo";
     return `<li class="${state}" data-step="${p}"><span class="dot" aria-hidden="true"></span>${escapeHtml(PENDING_PHASE_LABEL[p])}</li>`;
   }).join("");
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="robots" content="noindex"/><meta http-equiv="refresh" content="8"/><meta name="theme-color" content="${BRAND.void}"/><title>${label} — aft.page</title>
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="robots" content="noindex"/><meta name="theme-color" content="${BRAND.void}"/><title>${label} — aft.page</title>
 ${BRAND_FONT_LINKS}
 <style>
 ${BRAND_CSS_VARS}
 *{box-sizing:border-box}body{margin:0;font:15px/1.5 var(--font-sans);color:var(--ink);background:var(--void);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.25rem;-webkit-font-smoothing:antialiased}
-main{width:min(36rem,100%)}
+main{width:min(40rem,100%)}
 ${BRAND_WORDMARK_CSS}
 .brand{display:inline-block;margin:0 0 1.25rem;font-size:1.15rem}
-.head{text-align:center;margin:0 0 1.5rem}
-.spinner{width:3.25rem;height:3.25rem;margin:0 auto 1.1rem;border:3px solid var(--line-bright);border-top-color:var(--ink);border-radius:50%;animation:spin .7s linear infinite}
+.head{text-align:center;margin:0 0 1.25rem}
+.spinner{width:3.5rem;height:3.5rem;margin:0 auto 1.1rem;border:3px solid var(--line-bright);border-top-color:var(--ink);border-radius:50%;animation:spin .65s linear infinite}
+main.failed .spinner,main.live .spinner{display:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 .badge{display:inline-block;margin:0 0 .65rem;padding:.25rem .7rem;border:1px solid var(--line-bright);border-radius:999px;font-size:.72rem;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--quiet)}
+main.failed .badge{border-color:#7f1d1d;color:#fca5a5}
+main.live .badge{border-color:#14532d;color:#86efac}
 h1{font-size:1.45rem;margin:0 0 .4rem;font-weight:650;letter-spacing:-.02em}
 .meta{color:var(--quiet);margin:0;font-size:.9rem}.meta strong{color:var(--ink)}
+.fail{display:none;margin:0 0 1rem;padding:.85rem 1rem;border:1px solid #7f1d1d;border-radius:8px;background:#1c0a0a;color:#fecaca;text-align:left;font-size:.9rem;white-space:pre-wrap;word-break:break-word}
+main.failed .fail{display:block}
 .steps{list-style:none;margin:0 0 1rem;padding:0;display:grid;gap:.35rem}
 .steps li{display:flex;align-items:center;gap:.55rem;padding:.35rem .5rem;border-radius:6px;font-size:.88rem;color:var(--faint)}
 .steps li .dot{width:.55rem;height:.55rem;border-radius:50%;background:var(--line-bright);flex:0 0 auto}
 .steps li.done{color:var(--quiet)}.steps li.done .dot{background:#3f3f46}
 .steps li.now{color:var(--ink);font-weight:650;background:rgba(255,255,255,.04)}.steps li.now .dot{background:var(--ink);box-shadow:0 0 0 3px rgba(255,255,255,.12)}
+.steps li.bad{color:#fca5a5}.steps li.bad .dot{background:#f87171}
 .panel{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#0a0a0a}
-.panel-h{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.55rem .85rem;border-bottom:1px solid var(--line);font:650 .72rem/1 var(--font-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--quiet)}
+.panel-h{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;padding:.55rem .85rem;border-bottom:1px solid var(--line);font:650 .72rem/1 var(--font-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--quiet)}
 .panel-h .pulse{display:inline-flex;align-items:center;gap:.4rem}
 .panel-h .pulse i{width:.45rem;height:.45rem;border-radius:50%;background:var(--ink);animation:blink 1.1s ease-in-out infinite}
 @keyframes blink{50%{opacity:.25}}
-.log{margin:0;max-height:min(22rem,48vh);overflow:auto;padding:.85rem 1rem;font:12px/1.5 var(--font-mono);color:#d4d4d8;white-space:pre-wrap;word-break:break-word;min-height:6rem}
+.panel-h a{color:var(--quiet);text-decoration:underline;text-underline-offset:2px;text-transform:none;letter-spacing:0;font-weight:500}
+.log{margin:0;max-height:min(28rem,55vh);overflow:auto;padding:.85rem 1rem;font:12px/1.5 var(--font-mono);color:#d4d4d8;white-space:pre-wrap;word-break:break-word;min-height:8rem}
 .log:empty::before{content:"Waiting for build output…";color:var(--faint)}
+.conn{margin:.65rem 0 0;font:12px/1.4 var(--font-mono);color:var(--faint)}
+.conn.ok{color:#86efac}.conn.bad{color:#fca5a5}
 .hint{margin:1rem 0 0;text-align:center;font-size:.85rem;color:var(--faint)}.hint a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
 </style></head><body>
 <main data-pending data-slug="${escapeHtml(slug)}" data-job="${jobId}" data-phase="${pending.phase}">
   <div class="head">
     <a class="brand" href="https://${root}/">aft<span>.</span>page</a>
     <div class="spinner" role="status" aria-label="Build in progress"></div>
-    <div class="badge">Build in progress</div>
+    <div class="badge" id="badge">Build in progress</div>
     <h1 id="phase-label">${label}</h1>
     <p class="meta"><strong id="host">${escapeHtml(host)}</strong>${repo ? ` · <span id="repo">${repo}</span>` : ""}</p>
   </div>
+  <p class="fail" id="fail" role="alert"></p>
   <ul class="steps" id="steps" aria-label="Build phases">${steps}</ul>
   <div class="panel">
-    <div class="panel-h"><span class="pulse"><i></i> Live log</span><span id="phase-chip">${label}</span></div>
+    <div class="panel-h">
+      <span class="pulse"><i></i> Live log · SSE</span>
+      <span id="phase-chip">${label}</span>
+      ${jobId ? `<a id="job-link" href="https://api.${root}/v1/jobs/${jobId}" target="_blank" rel="noopener noreferrer">${jobId}</a>` : ""}
+    </div>
     <pre class="log" id="log" aria-live="polite">${log}</pre>
   </div>
-  <p class="hint">Updates every couple of seconds. Or watch <a href="https://${root}/run/">aft.page/run</a>.</p>
+  <p class="conn" id="conn">Connecting to build stream…</p>
+  <p class="hint">Realtime build stream. Watch on <a href="https://${root}/run/">aft.page/run</a> too.</p>
 </main>
 <script>
 (function () {
@@ -532,52 +547,114 @@ h1{font-size:1.45rem;margin:0 0 .4rem;font-weight:650;letter-spacing:-.02em}
   var labelEl = document.getElementById("phase-label");
   var chipEl = document.getElementById("phase-chip");
   var stepsEl = document.getElementById("steps");
+  var badgeEl = document.getElementById("badge");
+  var failEl = document.getElementById("fail");
+  var connEl = document.getElementById("conn");
+  var es = null;
+  var settled = false;
+  var siteTimer = null;
 
-  function paintSteps(phase) {
+  function setConn(text, kind) {
+    connEl.textContent = text;
+    connEl.className = "conn" + (kind ? " " + kind : "");
+  }
+
+  function paintSteps(phase, failed) {
     var active = order.indexOf(phase);
     if (active < 0) active = 0;
     var items = stepsEl.querySelectorAll("li");
     for (var i = 0; i < items.length; i++) {
-      items[i].className = i < active ? "done" : i === active ? "now" : "todo";
+      if (failed && i === active) items[i].className = "bad";
+      else items[i].className = i < active ? "done" : i === active ? "now" : "todo";
     }
   }
 
   function apply(snap) {
-    if (!snap) return;
+    if (!snap || snap.error === "not_found") return;
     var phase = snap.phase || main.getAttribute("data-phase") || "queued";
     var label = labels[phase] || phase;
     main.setAttribute("data-phase", phase);
-    labelEl.textContent = label;
-    chipEl.textContent = label;
-    document.title = label + " — aft.page";
-    paintSteps(phase);
+    if (snap.status !== "failed") {
+      labelEl.textContent = label;
+      chipEl.textContent = label;
+      document.title = label + " — aft.page";
+    }
+    paintSteps(phase, snap.status === "failed");
     if (typeof snap.logTail === "string" && snap.logTail) {
-      var atBottom = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 40;
+      var atBottom = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 48;
       logEl.textContent = snap.logTail;
       if (atBottom) logEl.scrollTop = logEl.scrollHeight;
+    } else if (snap.line) {
+      var cur = logEl.textContent || "";
+      if (!cur.endsWith(snap.line)) {
+        logEl.textContent = cur ? cur + "\\n" + snap.line : snap.line;
+        logEl.scrollTop = logEl.scrollHeight;
+      }
     }
     if (snap.status === "failed") {
-      labelEl.textContent = snap.reason || snap.error || "Build failed";
+      settled = true;
+      main.classList.add("failed");
+      badgeEl.textContent = "Build failed";
+      var why = snap.reason || snap.error || "Build failed.";
+      labelEl.textContent = why;
       chipEl.textContent = "Failed";
+      document.title = "Failed — aft.page";
+      failEl.textContent = why + (snap.error && snap.reason ? "\\n(" + snap.error + ")" : "");
+      setConn("Stream ended · failed", "bad");
+      if (es) { es.close(); es = null; }
+      return;
+    }
+    if (snap.status === "live") {
+      settled = true;
+      main.classList.add("live");
+      badgeEl.textContent = "Going live";
+      labelEl.textContent = "Going live…";
+      chipEl.textContent = "Going live…";
+      setConn("Build finished · waiting for edge…", "ok");
+      if (es) { es.close(); es = null; }
+      waitForSite();
     }
   }
 
-  async function tick() {
-    try {
-      var site = await fetch(location.origin + "/", { cache: "no-store", headers: { accept: "text/html" } });
-      if (site.ok) { location.reload(); return; }
-    } catch (_) {}
-    if (!jobId) return;
-    try {
-      var res = await fetch("https://api." + root + "/v1/jobs/" + encodeURIComponent(jobId), { cache: "no-store" });
-      if (!res.ok) return;
-      apply(await res.json());
-    } catch (_) {}
+  async function waitForSite() {
+    if (siteTimer) return;
+    siteTimer = setInterval(async function () {
+      try {
+        var site = await fetch(location.origin + "/", {
+          cache: "no-store",
+          headers: { accept: "text/html" },
+        });
+        if (site.ok) {
+          clearInterval(siteTimer);
+          location.reload();
+        }
+      } catch (_) {}
+    }, 1000);
+  }
+
+  function connectSse() {
+    if (!jobId || settled) return;
+    if (es) { try { es.close(); } catch (_) {} }
+    setConn("SSE connected · streaming…", "ok");
+    es = new EventSource("https://api." + root + "/v1/jobs/" + encodeURIComponent(jobId) + "/events");
+    es.onmessage = function (ev) {
+      try { apply(JSON.parse(ev.data)); } catch (_) {}
+    };
+    es.onerror = function () {
+      if (settled) return;
+      setConn("SSE reconnecting…", "bad");
+      try { es.close(); } catch (_) {}
+      es = null;
+      setTimeout(connectSse, 1200);
+    };
   }
 
   if (logEl) logEl.scrollTop = logEl.scrollHeight;
-  setInterval(tick, 1500);
-  tick();
+  if (jobId) connectSse();
+  else {
+    setConn("No job id · refreshing page…", "bad");
+    setTimeout(function () { location.reload(); }, 3000);
+  }
 })();
 </script>
 </body></html>`;

@@ -96,7 +96,8 @@ describe("serving files", () => {
     expect(html).toContain("Building");
     expect(html).toContain("npm run build");
     expect(html).toContain("class=\"spinner\"");
-    expect(html).toContain("Live log");
+    expect(html).toContain("Live log · SSE");
+    expect(html).toContain("/v1/jobs/");
     expect(html).not.toContain("Nothing is deployed here");
   });
 

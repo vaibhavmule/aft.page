@@ -15,7 +15,7 @@ import { sha256Hex, timingSafeEqual } from "./auth";
 import { liveSiteUrl } from "./site-url";
 
 const SSE_MS = 24_000;
-const SSE_TICK_MS = 2_000;
+const SSE_TICK_MS = 800;
 
 export async function dispatchRunBuildWorkflow(
   env: Env,

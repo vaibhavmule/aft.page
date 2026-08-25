@@ -89,7 +89,7 @@ def flush(force=False):
     if not buf:
         return
     now = time.time()
-    if not force and len(buf) < 8 and now - last < 1.5:
+    if not force and len(buf) < 3 and now - last < 0.5:
         return
     chunk = "\n".join(buf)[-1800:]
     buf = []
