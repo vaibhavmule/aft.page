@@ -14,7 +14,12 @@ BRANCH="${BRANCH:-main}"
 INSTALL_CMD="${INSTALL_CMD:-npm install --legacy-peer-deps}"
 BUILD_CMD="${BUILD_CMD:-npm run build}"
 OUTPUT_DIRS="${OUTPUT_DIRS:-dist,out,build}"
+ROOT="${ROOT:-}"
 SRC="${GITHUB_WORKSPACE:-${RUNNER_TEMP:-/tmp}}/aft-run-src"
+APP="$SRC"
+if [[ -n "$ROOT" ]]; then
+  APP="$SRC/$ROOT"
+fi
 UA="aft.page-run-static-build"
 
 post_phase() {
@@ -112,12 +117,12 @@ git clone --depth 1 --branch "$BRANCH" "https://github.com/${OWNER}/${REPO}.git"
   || fail "Could not clone the repo."
 post_phase cloning "Cloned ${OWNER}/${REPO}@${BRANCH}"
 
-if [[ ! -f "$SRC/package.json" ]]; then
-  fail "No package.json at the repo root."
+if [[ ! -f "$APP/package.json" ]]; then
+  fail "No package.json at ${ROOT:-the repo root}."
 fi
 
 post_phase installing "$INSTALL_CMD"
-cd "$SRC"
+cd "$APP"
 # shellcheck disable=SC2086
 run_logged installing bash -lc "$INSTALL_CMD" || fail "install failed: ${INSTALL_CMD}"
 post_phase installing "install done"
@@ -132,13 +137,13 @@ IFS=',' read -r -a dirs <<< "$OUTPUT_DIRS"
 for d in "${dirs[@]}"; do
   d="$(echo "$d" | xargs)"
   [[ -z "$d" ]] && continue
-  if [[ -f "$SRC/$d/index.html" ]]; then
-    OUT="$SRC/$d"
+  if [[ -f "$APP/$d/index.html" ]]; then
+    OUT="$APP/$d"
     break
   fi
   # Angular often nests under dist/<project>/
-  if [[ -d "$SRC/$d" ]]; then
-    found="$(find "$SRC/$d" -maxdepth 3 -name index.html -type f 2>/dev/null | head -n 1 || true)"
+  if [[ -d "$APP/$d" ]]; then
+    found="$(find "$APP/$d" -maxdepth 3 -name index.html -type f 2>/dev/null | head -n 1 || true)"
     if [[ -n "$found" ]]; then
       OUT="$(dirname "$found")"
       break

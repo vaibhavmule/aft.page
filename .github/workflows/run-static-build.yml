@@ -34,6 +34,10 @@ on:
         required: false
         type: string
         default: "dist,out,build"
+      root:
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -63,6 +67,7 @@ jobs:
           INSTALL_CMD: ${{ inputs.install }}
           BUILD_CMD: ${{ inputs.build }}
           OUTPUT_DIRS: ${{ inputs.output_dirs }}
+          ROOT: ${{ inputs.root }}
           AFT_API: https://api.aft.page
         run: |
           chmod +x scripts/run-static-build-job.sh
