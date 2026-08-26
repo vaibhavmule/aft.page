@@ -2,18 +2,22 @@
 
 Paste-repo path via `POST https://api.aft.page/v1/repo/deploy` (same as https://aft.page/run/).
 
-## A. Vite (still blocked — workflow not on origin)
+## A. Vite success (2026-08-26)
 
 | Field | Value |
 | --- | --- |
 | Repo | `mdn/todo-react` |
 | Detection | `static_build` / Vite (branch `main`) |
-| 2026-08-24 job | `run_fce84089f050` |
-| 2026-08-24 error | `runner_unavailable` — GHA workflow_dispatch **403** (token missing `actions: write`) |
-| 2026-08-26 retry | `runner_unavailable` — GHA workflow_dispatch **404** (`run-static-build.yml` not on `main`) |
-| Working URL | none |
+| 2026-08-24 job | `run_fce84089f050` — `runner_unavailable` (GHA **403**, token) |
+| 2026-08-26 first retry | `runner_unavailable` (GHA **404**, `run-static-build.yml` not on `main` yet) |
+| Working job | `run_0efab2257d65` |
+| Working URL | https://moz-todo-react-sage.aft.page |
+| Failure logs | none |
+| Second person | **yes** — anonymous GET 200; added a todo in the browser (“Run on AFT”, 4 tasks remaining) |
 
-Live API now dispatches `run-static-build.yml`. Origin still only has `run-vite.yml`. Token 403 is no longer the blocker. Re-run after that workflow file is on `main`.
+Note: this repo’s Vite `base` points at `mdn.github.io/todo-react`, so JS/CSS load from GitHub Pages. The AFT URL serves the built `index.html` and the app is interactive.
+
+Open: https://aft.page/run/mdn/todo-react
 
 ## B. Static success (complete Run path)
 
