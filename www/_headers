@@ -43,7 +43,7 @@
   Cache-Control: public, max-age=60
 
 /developer-ai.txt
-  Content: text/plain; charset=utf-8
+  Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=60
 
 /robots-ai.txt
