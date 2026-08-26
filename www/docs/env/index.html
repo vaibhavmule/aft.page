@@ -258,15 +258,15 @@ curl -X DELETE https://api.aft.page/v1/sites/{slug}/secrets/ANTHROPIC_API_KEY \
             <h2>Where secrets actually go</h2>
             <p>
               Values live in the encrypted aft vault. For <code>next</code> /
-              <code>worker</code> sites with a live upstream Worker,
-              <code>aft env set</code> also syncs to that Worker via the
-              Cloudflare API (same names as <code>process.env</code> in your
-              app). Static sites never see secrets at runtime.
+              <code>worker</code> sites with a live upstream,
+              <code>aft env set</code> also syncs those names onto the
+              upstream runtime as <code>process.env</code>. Static sites never
+              see secrets at runtime.
             </p>
             <p>
-              Set secrets after the site Worker exists (post-deploy). If you set
-              them earlier, they stay in the vault and sync when the upstream
-              registers.
+              Set secrets after the site upstream exists (post-deploy). If you
+              set them earlier, they stay in the vault and sync when the
+              upstream registers.
             </p>
           </section>
         </article>

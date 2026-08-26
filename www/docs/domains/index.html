@@ -204,12 +204,12 @@
             <h2>HTTPS</h2>
             <p>
               Certificates issue after DNS is live and aft.page has verified
-              the hostname with Cloudflare. Status moves
-              <code>pending</code> → <code>active</code> on the same Domains
-              tab; a failure moves it to <code>error</code> with a message
-              explaining why. This step depends on DNS propagation, which is
-              outside aft.page's control and can take anywhere from a few
-              minutes to a few hours depending on your registrar.
+              the hostname with aft. Status moves <code>pending</code> →
+              <code>active</code> on the same Domains tab; a failure moves it
+              to <code>error</code> with a message explaining why. This step
+              depends on DNS propagation, which is outside aft.page's control
+              and can take anywhere from a few minutes to a few hours
+              depending on your registrar.
             </p>
           </section>
 
@@ -234,7 +234,7 @@ curl -X POST https://api.aft.page/v1/sites/{slug}/domains \
   -H "Content-Type: application/json" -H "Cookie: …" \
   -d '{"hostname":"app.example.com"}'
 
-# re-check status against Cloudflare (same as clicking Refresh)
+# re-check status (same as clicking Refresh)
 curl -X POST https://api.aft.page/v1/sites/{slug}/domains/app.example.com \
   -H "Cookie: …"
 
@@ -257,16 +257,16 @@ curl -X DELETE https://api.aft.page/v1/sites/{slug}/domains/app.example.com \
               (<code>dig CNAME app.example.com</code>) and give DNS time to
               propagate. If it's been live a while, hit
               <strong>Refresh</strong> on the Domains tab (or the re-check
-              API call above) to force aft.page to re-poll Cloudflare instead
-              of waiting for the next automatic check.
+              API call above) to force aft.page to re-check status instead of
+              waiting for the next automatic check.
             </p>
             <p class="docs-callout docs-callout--warn">
-              <strong>Seeing "Cloudflare for SaaS is not enabled on aft.page yet"?</strong>
+              <strong>Seeing "Custom domains are not fully enabled on aft.page yet"?</strong>
               That's a message from our side, not a problem with your DNS —
-              your CNAME is correct, but aft.page's own Cloudflare for SaaS
-              setup isn't finished issuing certificates yet. Nothing to fix
-              on your end; the domain will move to <code>active</code> once
-              that's turned on.
+              your CNAME is correct, but aft.page custom domains setup isn't
+              finished issuing certificates yet. Nothing to fix on your end;
+              the domain will move to <code>active</code> once that's turned
+              on.
             </p>
             <p>
               <strong>Hostname already taken</strong> — a hostname can only

@@ -173,7 +173,7 @@
             <li><a href="#html">Plain HTML</a></li>
             <li><a href="#vite">Vite / React / Vue / Svelte</a></li>
             <li><a href="#next-static">Next.js static export</a></li>
-            <li><a href="#next-ssr">Next SSR / OpenNext</a></li>
+            <li><a href="#next-ssr">Next.js SSR</a></li>
             <li><a href="#matrix">Full compatibility matrix</a></li>
           </ol>
         </nav>
@@ -238,21 +238,21 @@ aft deploy out</code></pre>
           </section>
 
           <section id="next-ssr">
-            <h2>Next SSR / OpenNext</h2>
+            <h2>Next.js SSR</h2>
             <p>
-              Deploy the Worker with OpenNext (or any HTTP upstream), then
-              register it with aft via <code>aft.json</code>:
+              Point aft at a live Next.js upstream, then register it via
+              <code>aft.json</code>:
             </p>
             <pre><code>{
   "name": "next-hello",
   "runtime": "next",
-  "upstream": "https://your-worker.example.workers.dev"
+  "upstream": "https://your-app.example.com"
 }</code></pre>
             <p>
               Live dogfood:
               <a href="https://next-hello.aft.page">next-hello.aft.page</a>.
-              aft.page does not build or deploy the Worker for you yet — you
-              own that Worker and its deploys; aft.page just proxies to it.
+              aft.page does not build or deploy the upstream for you yet — you
+              own that upstream and its deploys; aft.page just proxies to it.
             </p>
           </section>
 
@@ -276,7 +276,7 @@ aft deploy out</code></pre>
               <li>React + Vite, Vue + Vite, Svelte + Vite</li>
               <li>Astro (static output)</li>
               <li>Next.js static export</li>
-              <li>Next.js via an existing OpenNext Cloudflare Worker upstream</li>
+              <li>Next.js via an existing HTTP upstream</li>
             </ul>
 
             <h3>Static-capable, unverified — try it, no promises</h3>
@@ -295,7 +295,7 @@ aft deploy out</code></pre>
             <p>
               Containers; Python (Django, FastAPI, FastHTML, Flask); Node
               backends (Express, Fastify, Hono, Koa, NestJS, Nitro); Go;
-              Next.js SSR beyond the manual OpenNext upstream flow above;
+              Next.js SSR beyond the manual upstream flow above;
               Nuxt SSR, React Router SSR, Remix SSR, SvelteKit SSR, SolidStart
               SSR, TanStack Start SSR; multi-function "Services" deployments.
             </p>
