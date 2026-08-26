@@ -125,6 +125,33 @@ post_phase installing "$INSTALL_CMD"
 cd "$APP"
 # shellcheck disable=SC2086
 run_logged installing bash -lc "$INSTALL_CMD" || fail "install failed: ${INSTALL_CMD}"
+
+# ponytail: --legacy-peer-deps skips peers; Vite 8/Rolldown hard-fails (recharts → react-is).
+# Only direct deps' peers; transitive gaps still fail honestly.
+post_phase installing "Installing missing peer packages"
+run_logged installing python3 -c '
+import json, pathlib, re, subprocess
+root = pathlib.Path(".")
+pkg = json.loads((root / "package.json").read_text())
+names = list(pkg.get("dependencies") or {}) + list(pkg.get("devDependencies") or {})
+safe = re.compile(r"^(@[A-Za-z0-9._-]+/)?[A-Za-z0-9._-]+$")
+missing = []
+for name in names:
+    p = root / "node_modules" / name / "package.json"
+    if not p.is_file():
+        continue
+    peers = json.loads(p.read_text()).get("peerDependencies") or {}
+    for peer in peers:
+        if not safe.match(peer):
+            continue
+        if not (root / "node_modules" / peer).exists():
+            missing.append(peer)
+missing = sorted(set(missing))
+if not missing:
+    raise SystemExit(0)
+print("missing peers:", " ".join(missing))
+subprocess.check_call(["npm", "install", "--no-save", "--legacy-peer-deps", *missing])
+' || true
 post_phase installing "install done"
 
 post_phase building "$BUILD_CMD"
