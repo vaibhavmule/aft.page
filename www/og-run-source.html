@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>og run image source — not linked</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css"
+    />
+    <style>
+      * { box-sizing: border-box; margin: 0; }
+      html, body { width: 1200px; height: 630px; overflow: hidden; }
+      body {
+        font-family: "Geist Variable", "Geist", "Segoe UI", system-ui, sans-serif;
+        color: #fafafa;
+        background-color: #000000;
+        background-image:
+          radial-gradient(ellipse 70% 60% at 8% 0%, rgba(250, 250, 250, 0.07), transparent 55%),
+          radial-gradient(circle at 105% 115%, rgba(34, 197, 94, 0.12), transparent 45%),
+          linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+        background-size: auto, auto, 42px 42px, 42px 42px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 0 96px;
+        position: relative;
+      }
+      .eyebrow {
+        font-family: "Geist Mono Variable", "Geist Mono", ui-monospace, monospace;
+        font-size: 22px;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #22c55e;
+        margin-bottom: 28px;
+      }
+      .brand {
+        font-weight: 650;
+        font-size: 96px;
+        letter-spacing: -0.03em;
+        line-height: 0.95;
+        margin-bottom: 28px;
+      }
+      .brand span { color: #22c55e; }
+      .lede {
+        font-size: 38px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+        max-width: 28ch;
+        margin-bottom: 18px;
+      }
+      .support {
+        font-size: 24px;
+        font-weight: 400;
+        color: #a1a1aa;
+        max-width: 40ch;
+      }
+      .flow {
+        position: absolute;
+        left: 96px;
+        bottom: 56px;
+        font-family: "Geist Mono Variable", "Geist Mono", ui-monospace, monospace;
+        font-size: 20px;
+        color: #52525b;
+      }
+      .flow b { color: #22c55e; font-weight: 500; }
+    </style>
+  </head>
+  <body>
+    <p class="eyebrow">Run</p>
+    <h1 class="brand">aft<span>.</span>page</h1>
+    <p class="lede">The run button for open source</p>
+    <p class="support">
+      Paste a public GitHub repo → live URL. Static, Vite, or Next.js. No account
+      required.
+    </p>
+    <p class="flow">github &rarr; run &rarr; <b>live URL</b></p>
+  </body>
+</html>
