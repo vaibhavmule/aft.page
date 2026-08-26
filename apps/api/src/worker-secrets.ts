@@ -15,16 +15,24 @@ export function workerScriptName(
   slug: string,
   upstreamUrl: string | null | undefined,
 ): string {
+  const fallback = `aft-u-${slug}`;
   if (upstreamUrl) {
     try {
       const host = new URL(upstreamUrl).hostname.toLowerCase();
       const m = host.match(/^([a-z0-9-]+)\.([a-z0-9-]+\.)?workers\.dev$/);
-      if (m?.[1]) return m[1];
+      const name = m?.[1];
+      // Never PUT secrets to another site's Worker because aft.json.upstream
+      // pointed at their workers.dev hostname.
+      if (name && scriptNameBelongsToSlug(name, slug)) return name;
     } catch {
       /* fall through */
     }
   }
-  return `aft-u-${slug}`;
+  return fallback;
+}
+
+function scriptNameBelongsToSlug(name: string, slug: string): boolean {
+  return name === slug || name === `aft-${slug}` || name === `aft-u-${slug}`;
 }
 
 function cfAccountId(env: Env): string | null {

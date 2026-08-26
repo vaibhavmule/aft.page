@@ -39,7 +39,10 @@ export function normalizeEmail(email: string): string {
 }
 
 export function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
+  if (email.length > 254 || email.length < 3) return false;
+  // Reject HTML / attribute metacharacters — emails are interpolated in UI.
+  if (/[<>"'\\\s]/.test(email)) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 export async function verifyEditToken(

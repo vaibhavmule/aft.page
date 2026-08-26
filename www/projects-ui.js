@@ -214,7 +214,12 @@
 
     const ownerRow = document.createElement("div");
     ownerRow.className = "share-modal-owner";
-    ownerRow.innerHTML = `<span class="share-modal-label">Owner</span><span>${info.email || opts.ownerEmail || "—"}</span>`;
+    const ownerLabel = document.createElement("span");
+    ownerLabel.className = "share-modal-label";
+    ownerLabel.textContent = "Owner";
+    const ownerEmail = document.createElement("span");
+    ownerEmail.textContent = info.email || opts.ownerEmail || "—";
+    ownerRow.append(ownerLabel, ownerEmail);
 
     const actions = document.createElement("div");
     actions.className = "share-modal-actions";

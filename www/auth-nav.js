@@ -164,8 +164,11 @@
     btn.setAttribute("aria-expanded", "false");
     btn.setAttribute("aria-label", email ? `Account menu for ${email}` : "Account menu");
     btn.title = email;
-    btn.innerHTML =
-      `<span class="aft-auth-avatar" aria-hidden="true">${initial(email)}</span>`;
+    const avatar = document.createElement("span");
+    avatar.className = "aft-auth-avatar";
+    avatar.setAttribute("aria-hidden", "true");
+    avatar.textContent = initial(email);
+    btn.appendChild(avatar);
 
     const path = (window.location.pathname.replace(/\/$/, "") || "/");
     const onProjectsArea =
@@ -177,12 +180,26 @@
     const menu = document.createElement("div");
     menu.className = "aft-auth-menu";
     menu.setAttribute("role", "menu");
-    menu.innerHTML =
-      (email ? `<div class="aft-auth-menu-email" aria-hidden="true">${email}</div>` : "") +
-      (onProjectsArea
-        ? ""
-        : `<a role="menuitem" href="/projects">Projects</a>`) +
-      `<button type="button" role="menuitem" data-aft-logout>Log out</button>`;
+    if (email) {
+      const emailEl = document.createElement("div");
+      emailEl.className = "aft-auth-menu-email";
+      emailEl.setAttribute("aria-hidden", "true");
+      emailEl.textContent = email;
+      menu.appendChild(emailEl);
+    }
+    if (!onProjectsArea) {
+      const projects = document.createElement("a");
+      projects.setAttribute("role", "menuitem");
+      projects.href = "/projects";
+      projects.textContent = "Projects";
+      menu.appendChild(projects);
+    }
+    const logoutBtn = document.createElement("button");
+    logoutBtn.type = "button";
+    logoutBtn.setAttribute("role", "menuitem");
+    logoutBtn.dataset.aftLogout = "";
+    logoutBtn.textContent = "Log out";
+    menu.appendChild(logoutBtn);
 
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -191,7 +208,6 @@
       btn.setAttribute("aria-expanded", open ? "true" : "false");
     });
 
-    const logoutBtn = menu.querySelector("[data-aft-logout]");
     logoutBtn.addEventListener("click", async () => {
       logoutBtn.classList.add("is-busy");
       logoutBtn.disabled = true;

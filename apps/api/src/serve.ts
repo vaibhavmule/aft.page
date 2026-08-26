@@ -222,7 +222,7 @@ export async function serveSite(
 
   if (!pinDeployId && upstreamUrl && (runtime === "worker" || runtime === "next")) {
     void touchLastServed(env, slug);
-    const res = await proxyUpstream(request, upstreamUrl, access.user);
+    const res = await proxyUpstream(request, upstreamUrl, access.user, root);
     const path = servePath(pathname);
     noteServe(env, request, slug, {
       httpStatus: res.status,
