@@ -8,7 +8,7 @@ import {
   type RunJobPhase,
   type RunJobRow,
 } from "./db";
-import { json, optionsResponse } from "./http";
+import { json, optionsResponse, rejectNonProductOrigin } from "./http";
 import { rateLimit } from "./rate-limit";
 import { allocateUniqueSlug, slugFromHint } from "./slug";
 import { randomToken, resolveSessionUser, sha256Hex } from "./auth";
@@ -653,6 +653,11 @@ export async function handleRepoRoute(
   }
   if (request.method === "OPTIONS") return optionsResponse(origin, true);
   if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+
+  if (url.pathname === "/v1/repo/deploy") {
+    const blocked = rejectNonProductOrigin(request, env.ROOT_DOMAIN || "aft.page");
+    if (blocked) return blocked;
+  }
 
   const ip = request.headers.get("cf-connecting-ip") || "unknown";
   if (!(await rateLimit(env, `repo:${ip}`, 30, 3600))) {

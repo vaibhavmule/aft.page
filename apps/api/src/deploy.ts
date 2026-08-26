@@ -23,7 +23,7 @@ import {
   upsertCapabilityRequest,
   upsertSiteRow,
 } from "./db";
-import { corsHeaders, isAllowedWebOrigin, json } from "./http";
+import { corsHeaders, isAllowedWebOrigin, json, rejectNonProductOrigin } from "./http";
 import { ANON_IDLE_NOTICE } from "./anon-gc";
 import { claimSiteUrl, liveSiteUrl } from "./site-url";
 import { extractAftManifest } from "./manifest";
@@ -222,6 +222,16 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const patchSlug = url.searchParams.get("slug")?.toLowerCase();
     const isPatch = request.method === "PATCH";
+
+    if (!isPatch) {
+      const blocked = rejectNonProductOrigin(
+        request,
+        env.ROOT_DOMAIN || "aft.page",
+      );
+      if (blocked) {
+        return done(blocked, { error: "forbidden" });
+      }
+    }
 
     if (isPatch) {
       if (!patchSlug || !isValidSlug(patchSlug)) {

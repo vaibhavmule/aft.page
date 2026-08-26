@@ -274,4 +274,15 @@ describe("projects", () => {
     expect(row?.role).toBe("view");
     expect(row?.ownerEmail).toBe("owner-shared@example.com");
   });
+
+  it("GET /v1/me/sites rejects tenant origin", async () => {
+    const { slug } = await deployPaste("<h1>leak</h1>", "me-tenant");
+    const cookie = await ownSite(slug, "me-tenant@example.com");
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/me/sites?page=1&limit=10`, {
+        headers: { cookie, origin: "https://evil.aft.page" },
+      }),
+    );
+    expect(res.status).toBe(403);
+  });
 });

@@ -4,8 +4,14 @@
 import { parseCsvLower, type Env } from "./env";
 import { resolveSessionUser } from "./auth";
 import { ensureDb, getSiteOwnerId, getSiteRow } from "./db";
-import { corsHeaders, json, originMayActOnSlug, privateJson } from "./http";
-import { clientIp } from "./http";
+import {
+  clientIp,
+  corsHeaders,
+  json,
+  originMayActOnSlug,
+  privateJson,
+  rejectNonProductOrigin,
+} from "./http";
 import { rateLimit } from "./rate-limit";
 
 export const MAX_CUSTOM_DOMAINS = 2;
@@ -121,6 +127,8 @@ async function meDomains(
   env: Env,
   url: URL,
 ): Promise<Response> {
+  const blocked = rejectNonProductOrigin(request, env.ROOT_DOMAIN || "aft.page");
+  if (blocked) return blocked;
   const extra = Object.fromEntries(
     corsHeaders(request.headers.get("origin"), true),
   );

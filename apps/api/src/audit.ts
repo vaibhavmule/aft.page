@@ -13,6 +13,7 @@ import {
   safeAuthRedirect,
 } from "./auth";
 import { handleCliAuthRoute } from "./auth-cli";
+import { handleAuthRoute } from "./auth-login";
 import { getSiteInfo } from "./claim";
 import {
   deleteSite,
@@ -35,6 +36,7 @@ export const AUDIT_SLUG_PREFIX = "test--a-";
 export const AUDIT_CASE_CATALOG: Record<string, { box: string; shakes: string }> = {
   csrf: { box: "Hijack", shakes: "Tenant origin cannot drive another slug" },
   csrfok: { box: "Hijack", shakes: "Matching tenant origin still works" },
+  acct: { box: "Hijack", shakes: "Tenant origin cannot read /v1/me" },
   tokquery: { box: "Hijack", shakes: "editToken in query rejected; header works" },
   claimed: { box: "Hijack", shakes: "editToken dead after claim" },
   ownedtok: { box: "Hijack", shakes: "Logged-in deploy has no live editToken" },
@@ -167,6 +169,57 @@ export async function runAuditSuite(
     });
     assert(info.status === 200 && info.body.owner === true, `owner ${info.body.owner}`);
     return { detail: "same-origin chrome ok", url: publicUrl(slug, root) };
+  });
+
+  await run("acct", async () => {
+    const attacker = auditSlug("acct");
+    const a = await deployHtml(env, attacker, "<p>acct</p>");
+    assert(a.status === 200, errOf(a.body));
+    const user = await findOrCreateUser(env, "audit-acct@aft.page");
+    const session = await createSession(env, user.id);
+    const cookie = `aft_session=${session.token}`;
+    const tenantOrigin = `https://${attacker}.${root}`;
+    const me = await handleAuthRoute(
+      new Request(`https://api.${root}/v1/me`, {
+        headers: { cookie, origin: tenantOrigin },
+      }),
+      env,
+      new URL(`https://api.${root}/v1/me`),
+    );
+    assert(me, "auth miss");
+    assert(me.status === 403, `me ${me.status}`);
+    const sites = await handleLifecycleRoute(
+      new Request(`https://api.${root}/v1/me/sites`, {
+        headers: { cookie, origin: tenantOrigin },
+      }),
+      env,
+      new URL(`https://api.${root}/v1/me/sites`),
+    );
+    assert(sites, "sites miss");
+    assert(sites.status === 403, `sites ${sites.status}`);
+    const create = await deploy(
+      new Request(`https://api.${root}/v1/deploy`, {
+        method: "POST",
+        headers: {
+          "content-type": "text/html; charset=utf-8",
+          cookie,
+          origin: tenantOrigin,
+        },
+        body: "<p>csrf-owned</p>",
+      }),
+      env,
+    );
+    assert(create.status === 403, `create ${create.status}`);
+    const hub = await handleAuthRoute(
+      new Request(`https://api.${root}/v1/me`, {
+        headers: { cookie, origin: `https://${root}` },
+      }),
+      env,
+      new URL(`https://api.${root}/v1/me`),
+    );
+    assert(hub && hub.status === 200, `hub ${hub?.status}`);
+    await destroyAuditSite(env, attacker);
+    return { detail: "tenant origin blocked on account APIs", url: publicUrl(attacker, root) };
   });
 
   await run("tokquery", async () => {

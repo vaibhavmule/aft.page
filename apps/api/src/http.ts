@@ -165,6 +165,16 @@ export function cookieDomain(env: Env): string {
   return `.${root}`;
 }
 
+function requestWebHost(request: Request): string | null | undefined {
+  const raw = request.headers.get("origin") || request.headers.get("referer") || "";
+  if (!raw) return undefined;
+  try {
+    return new URL(raw).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Tenant hosts share Domain=.aft.page session cookies. A credentialed call
  * from https://{attacker}.aft.page must not act on another slug.
@@ -176,14 +186,9 @@ export function originMayActOnSlug(
   slug: string,
   root: string,
 ): boolean {
-  const raw = request.headers.get("origin") || request.headers.get("referer") || "";
-  if (!raw) return true;
-  let host: string;
-  try {
-    host = new URL(raw).hostname.toLowerCase();
-  } catch {
-    return false;
-  }
+  const host = requestWebHost(request);
+  if (host === undefined) return true;
+  if (host === null) return false;
   if (host === "localhost" || host === "127.0.0.1") return true;
   if (host === root) return true;
   const testCase = testHostCase(host, root);
@@ -197,4 +202,35 @@ export function originMayActOnSlug(
   const preview = parseDeployPreviewLabel(left);
   if (preview && preview.slug === slug) return true;
   return left === slug;
+}
+
+/**
+ * Account-wide APIs (/v1/me, logout, create-deploy). Tenant JS is same-site
+ * with api.{root} (Domain=.aft.page, SameSite=Lax), so Origin must be hub
+ * or CLI — not https://{attacker}.{root}.
+ * No Origin/Referer = non-browser — allow. Foreign sites are allowed (cookies
+ * are not sent cross-site).
+ */
+export function originMayActOnAccount(request: Request, root: string): boolean {
+  const host = requestWebHost(request);
+  if (host === undefined) return true;
+  if (host === null) return false;
+  if (host === "localhost" || host === "127.0.0.1") return true;
+  if (host === root) return true;
+  if (testHostCase(host, root) !== null) return false;
+  if (!host.endsWith(`.${root}`)) return true;
+  const left = host.slice(0, -(root.length + 1));
+  if (!left || left.includes(".")) return false;
+  return RESERVED_SLUGS.has(left);
+}
+
+/** 403 tenant browsers off account APIs. CORS stays non-credentialed. */
+export function rejectNonProductOrigin(
+  request: Request,
+  root: string,
+): Response | null {
+  if (originMayActOnAccount(request, root)) return null;
+  return json({ error: "forbidden" }, 403, {
+    "cache-control": "private, no-store",
+  });
 }

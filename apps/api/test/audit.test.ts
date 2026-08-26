@@ -1,7 +1,7 @@
 /** Hijack CIL runner + ops #audit. */
 import { describe, it, expect } from "vitest";
 import { env } from "cloudflare:test";
-import { originMayActOnSlug } from "../src/http";
+import { originMayActOnAccount, originMayActOnSlug } from "../src/http";
 import { runAuditSuite } from "../src/audit";
 import { call } from "./helpers";
 
@@ -30,6 +30,29 @@ describe("originMayActOnSlug", () => {
   });
 });
 
+describe("originMayActOnAccount", () => {
+  const root = "aft.page";
+  const req = (origin?: string) =>
+    new Request("https://api.aft.page/v1/me", {
+      headers: origin ? { origin } : {},
+    });
+
+  it("allows missing origin, apex, reserved product hosts", () => {
+    expect(originMayActOnAccount(req(), root)).toBe(true);
+    expect(originMayActOnAccount(req("https://aft.page"), root)).toBe(true);
+    expect(originMayActOnAccount(req("https://ops.aft.page"), root)).toBe(true);
+    expect(originMayActOnAccount(req("https://preview.aft.page"), root)).toBe(true);
+    expect(originMayActOnAccount(req("http://localhost:8788"), root)).toBe(true);
+  });
+
+  it("blocks tenant sites and preview labels", () => {
+    expect(originMayActOnAccount(req("https://evil.aft.page"), root)).toBe(false);
+    expect(
+      originMayActOnAccount(req("https://152fffaf71c6--vic.aft.page"), root),
+    ).toBe(false);
+  });
+});
+
 describe("audit suite", () => {
   it("passes locally and writes the last run", async () => {
     // Orphan KV pointers (D1 already gone) used to suffix slugs and fail tokquery/hash/cli.
@@ -44,6 +67,7 @@ describe("audit suite", () => {
     await env.SITES.put("site:test--a-cli", ghost);
     await env.SITES.put("site:test--a-enum", ghost);
     await env.SITES.put("site:test--a-aclrev", ghost);
+    await env.SITES.put("site:test--a-acct", ghost);
     const result = await runAuditSuite(env, { trigger: "test" });
     const failed = result.cases.filter((c) => !c.ok);
     expect(failed, JSON.stringify(failed, null, 2)).toEqual([]);

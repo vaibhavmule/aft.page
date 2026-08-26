@@ -9,6 +9,7 @@ import {
   isApiHost,
   json,
   optionsResponse,
+  originMayActOnAccount,
   redirectHttpToHttps,
   subdomainSlug,
   testHostCase,
@@ -271,6 +272,19 @@ async function handleApi(
     url.pathname.includes("/domains");
 
   if (request.method === "OPTIONS") {
+    const accountWide =
+      url.pathname === "/v1/me" ||
+      url.pathname.startsWith("/v1/me/") ||
+      url.pathname === "/v1/deploy" ||
+      url.pathname === "/v1/code/generate" ||
+      url.pathname.startsWith("/v1/repo/") ||
+      url.pathname.startsWith("/v1/auth/");
+    if (
+      accountWide &&
+      !originMayActOnAccount(request, env.ROOT_DOMAIN || "aft.page")
+    ) {
+      return optionsResponse(null, false);
+    }
     return optionsResponse(origin, creds);
   }
 
