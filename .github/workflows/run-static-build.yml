@@ -1,5 +1,4 @@
-# Shim: old name kept for in-flight dispatches. Prefer run-static-build.yml.
-name: run vite
+name: run static build
 
 on:
   workflow_dispatch:

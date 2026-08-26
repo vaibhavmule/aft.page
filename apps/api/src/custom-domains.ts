@@ -711,7 +711,7 @@ function applyCf(row: DomainRow, cf: CfHostname): DomainRow {
 async function provisionCf(env: Env, row: DomainRow): Promise<DomainRow> {
   if (!cfReady(env)) {
     row.error =
-      "Cloudflare for SaaS is not enabled on aft.page yet. Your CNAME is fine — HTTPS cannot issue until SSL for SaaS + fallback origin are Active.";
+      "Custom domains are not fully enabled on aft.page yet. Your CNAME is fine — HTTPS cannot issue until custom hostnames + fallback origin are Active.";
     row.status = "pending";
     await saveDomainRow(env, row);
     return row;
@@ -730,7 +730,7 @@ async function provisionCf(env: Env, row: DomainRow): Promise<DomainRow> {
       created.errors.map((e) => e.message).join("; ") || "cf_create_failed";
     const saasDenied = created.errors.some((e) => e.code === 1456);
     const msg = saasDenied
-      ? "Cloudflare for SaaS is not enabled on aft.page yet. Your CNAME is fine — enable Custom Hostnames + fallback cname.aft.page, then Refresh."
+      ? "Custom domains are not fully enabled on aft.page yet. Your CNAME is fine — enable custom hostnames + fallback cname.aft.page, then Refresh."
       : raw;
     row.error = msg;
     row.status = "pending";

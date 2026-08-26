@@ -13,6 +13,8 @@ import {
 import { corsHeaders, json, optionsResponse } from "./http";
 import { sha256Hex, timingSafeEqual } from "./auth";
 import { liveSiteUrl } from "./site-url";
+import type { BuildPlan } from "./engine-kind";
+import { scrubProductSurface } from "./product-surface";
 
 const SSE_MS = 24_000;
 const SSE_TICK_MS = 800;
@@ -20,58 +22,150 @@ const SSE_TICK_MS = 800;
 export async function dispatchRunBuildWorkflow(
   env: Env,
   input: {
-    kind: "next" | "vite";
+    kind: "next" | "static_build" | "vite" | "container";
     jobId: string;
     jobToken: string;
     owner: string;
     repo: string;
     slug: string;
     branch: string;
+    plan?: BuildPlan;
   },
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
+  if (input.kind === "container") {
+    return dispatchRunContainer(env, input);
+  }
+  if (input.kind !== "next" && input.kind !== "static_build" && input.kind !== "vite") {
+    return {
+      ok: false,
+      reason: "Only Next.js, static builds, and containers can be queued.",
+    };
+  }
   const ghToken = env.AFT_RUN_GITHUB_TOKEN?.trim();
   const ghRepo = (env.AFT_RUN_GITHUB_REPO || "vaibhavmule/aft.page").trim();
+  const isStatic = input.kind === "static_build" || input.kind === "vite";
   if (!ghToken) {
     return {
       ok: false,
-      reason: `${input.kind === "vite" ? "Vite" : "Next.js"} builds need AFT_RUN_GITHUB_TOKEN (workflow dispatch).`,
+      reason: `${isStatic ? "Static" : "Next.js"} build runner is not configured.`,
     };
   }
-  const workflow = input.kind === "vite" ? "run-vite.yml" : "run-next.yml";
-  const res = await fetch(
-    `https://api.github.com/repos/${ghRepo}/actions/workflows/${workflow}/dispatches`,
-    {
-      method: "POST",
-      headers: {
-        accept: "application/vnd.github+json",
-        authorization: `Bearer ${ghToken}`,
-        "user-agent": "aft.page-run",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        ref: "main",
-        inputs: {
-          job_id: input.jobId,
-          job_token: input.jobToken,
-          owner: input.owner,
-          repo: input.repo,
-          slug: input.slug,
-          branch: input.branch,
+  const workflows = isStatic ? ["run-static-build.yml", "run-vite.yml"] : ["run-next.yml"];
+  const plan = input.plan;
+  const inputs: Record<string, string> = {
+    job_id: input.jobId,
+    job_token: input.jobToken,
+    owner: input.owner,
+    repo: input.repo,
+    slug: input.slug,
+    branch: input.branch,
+  };
+  if (isStatic) {
+    inputs.install = plan?.install || "npm install --legacy-peer-deps";
+    inputs.build = plan?.build || "npm run build";
+    inputs.output_dirs = (plan?.outputDirs || ["dist", "out", "build"]).join(",");
+  }
+  let lastStatus = 0;
+  let lastText = "";
+  for (const workflow of workflows) {
+    const dispatchInputs =
+      workflow === "run-vite.yml"
+        ? {
+            job_id: inputs.job_id,
+            job_token: inputs.job_token,
+            owner: inputs.owner,
+            repo: inputs.repo,
+            slug: inputs.slug,
+            branch: inputs.branch,
+          }
+        : inputs;
+    const res = await fetch(
+      `https://api.github.com/repos/${ghRepo}/actions/workflows/${workflow}/dispatches`,
+      {
+        method: "POST",
+        headers: {
+          accept: "application/vnd.github+json",
+          authorization: `Bearer ${ghToken}`,
+          "user-agent": "aft.page-run",
+          "content-type": "application/json",
         },
-      }),
-      signal: AbortSignal.timeout(12_000),
-    },
+        body: JSON.stringify({
+          ref: "main",
+          inputs: dispatchInputs,
+        }),
+        signal: AbortSignal.timeout(12_000),
+      },
+    );
+    if (res.status === 204 || res.ok) return { ok: true };
+    lastStatus = res.status;
+    lastText = await res.text().catch(() => "");
+    if (res.status !== 404) break;
+  }
+  return {
+    ok: false,
+    reason: scrubProductSurface(
+      `Build runner unavailable (${lastStatus}${lastText ? `: ${lastText.slice(0, 120)}` : ""})`,
+    ),
+  };
+}
+
+export function runContainerRunUrl(env: { AFT_RUN_CONTAINER_URL?: string }): string {
+  const base = (env.AFT_RUN_CONTAINER_URL || "https://run-container.aft.page").replace(/\/$/, "");
+  return `${base}/v1/run`;
+}
+
+async function dispatchRunContainer(
+  env: Env,
+  input: {
+    jobId: string;
+    jobToken: string;
+    owner: string;
+    repo: string;
+    slug: string;
+    branch: string;
+    plan?: BuildPlan;
+  },
+): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const payload = JSON.stringify({
+    job_id: input.jobId,
+    job_token: input.jobToken,
+    owner: input.owner,
+    repo: input.repo,
+    slug: input.slug,
+    branch: input.branch,
+    plan: input.plan || null,
+  });
+  const headers = {
+    "content-type": "application/json",
+    "user-agent": "aft.page-run",
+  };
+  // Must use service binding: workers.dev → 1042, same-zone custom domain → 522.
+  if (!env.RUN_CONTAINER) {
+    return { ok: false, reason: "Container runner binding is not configured." };
+  }
+  const res = await env.RUN_CONTAINER.fetch(
+    new Request("https://run-container.internal/v1/run", {
+      method: "POST",
+      headers,
+      body: payload,
+    }),
   );
-  if (res.status === 204 || res.ok) return { ok: true };
+  if (res.ok) {
+    await res.text().catch(() => null);
+    return { ok: true };
+  }
   const text = await res.text().catch(() => "");
   return {
     ok: false,
-    reason: `GitHub Actions dispatch ${res.status}${text ? `: ${text.slice(0, 180)}` : ""}`,
+    reason: scrubProductSurface(
+      `Container runner unavailable (${res.status}${text ? `: ${text.slice(0, 120).replace(/\s+/g, " ")}` : ""})`,
+    ),
   };
 }
 
 function jobPublic(job: RunJobRow): Record<string, unknown> {
-  const line = lastLine(job.logTail);
+  const logTail = scrubProductSurface(job.logTail);
+  const line = lastLine(logTail || null);
   return {
     jobId: job.id,
     status: job.status,
@@ -82,10 +176,10 @@ function jobPublic(job: RunJobRow): Record<string, unknown> {
     slug: job.slug,
     url: job.siteUrl,
     branch: job.branch,
-    reason: job.reason,
+    reason: scrubProductSurface(job.reason) || null,
     error: job.error,
     line,
-    logTail: job.logTail,
+    logTail: logTail || null,
     ms: job.ms,
   };
 }
@@ -181,10 +275,11 @@ async function completeNextJob(
     return { ok: false, reason: "upstream must be https." };
   }
 
-  const placeholder = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><title>${slug}</title></head><body><p>Next.js on aft.page</p></body></html>`;
+  const isContainer = job.kind === "container";
+  const placeholder = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><title>${slug}</title></head><body><p>${slug} on aft.page</p></body></html>`;
   const aftJson = JSON.stringify({
     name: slug,
-    runtime: "next",
+    runtime: isContainer ? "worker" : "next",
     upstream: dest.origin,
   });
   const res = await deploy(
@@ -192,7 +287,7 @@ async function completeNextJob(
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "X-Aft-Client": "run-next",
+        "X-Aft-Client": isContainer ? "run-container" : "run-next",
       },
       body: JSON.stringify({
         files: [
@@ -263,7 +358,7 @@ async function completeFilesJob(
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "X-Aft-Client": "run-vite",
+        "X-Aft-Client": "run-static-build",
       },
       body: JSON.stringify({ files }),
     }),
@@ -345,26 +440,33 @@ export async function handleJobRoute(
       return jobJson({ error: "invalid_phase" }, 400, origin);
     }
     if (phase === "failed") {
-      const extra = typeof body.line === "string" ? body.line : "";
+      const extra = typeof body.line === "string" ? scrubProductSurface(body.line) : "";
+      const reason = scrubProductSurface(
+        typeof body.reason === "string" ? body.reason : "Build failed.",
+      );
       if (extra) {
         await patchRunJobProgress(env, id, {
           phase: "failed",
           line: extra,
-          reason: typeof body.reason === "string" ? body.reason : "Build failed.",
+          reason,
         });
       }
       await finishRunJob(env, id, {
         status: "failed",
         error: "build_failed",
-        reason: typeof body.reason === "string" ? body.reason : "Build failed.",
+        reason,
         httpStatus: 422,
       });
       return jobJson({ ok: true, status: "failed" }, 200, origin);
     }
     await patchRunJobProgress(env, id, {
       phase: phase as RunJobPhase,
-      line: typeof body.line === "string" ? body.line.slice(0, 2000) : null,
-      reason: typeof body.reason === "string" ? body.reason : null,
+      line:
+        typeof body.line === "string"
+          ? scrubProductSurface(body.line).slice(0, 2000)
+          : null,
+      reason:
+        typeof body.reason === "string" ? scrubProductSurface(body.reason) : null,
     });
     return jobJson({ ok: true, phase }, 200, origin);
   }
@@ -408,7 +510,7 @@ export async function handleJobCompleteRoute(
     result = await completeNextJob(env, job, upstream, log);
   } else {
     return jobJson(
-      { error: job.kind === "vite" ? "missing_files" : "missing_upstream" },
+      { error: job.kind === "vite" || job.kind === "static_build" ? "missing_files" : "missing_upstream" },
       400,
       origin,
     );

@@ -39,7 +39,8 @@
     "CF_ZONE_ID": "c9c40ca61385a6346d90abfc954b44c9",
     "CF_ACCOUNT_ID": "44255ec64e0080b678670b53bf810d27",
     "CUSTOM_DOMAIN_CNAME": "cname.aft.page",
-    "AFT_RUN_GITHUB_REPO": "vaibhavmule/aft.page"
+    "AFT_RUN_GITHUB_REPO": "vaibhavmule/aft.page",
+    "AFT_RUN_CONTAINER_URL": "https://run-container.aft.page"
   },
   "kv_namespaces": [
     {
@@ -102,6 +103,10 @@
     {
       "binding": "MCP",
       "service": "aft-page-mcp"
+    },
+    {
+      "binding": "RUN_CONTAINER",
+      "service": "aft-run-container"
     }
   ],
   "triggers": {

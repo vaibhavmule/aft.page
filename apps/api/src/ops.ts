@@ -1373,8 +1373,8 @@ function renderList(title: string, lines: string[]): string {
 function renderStories(): string {
   return `${renderList("Engine", [
     "MCP, CLI, and Run share one path: detect → build (pass/fail) → URL.",
-    "Runners shipped: static (no-op), Vite (npm run build → dist/), Next (OpenNext).",
-    "Servers (Python, Node, Go, Rust, Ruby) detect, then fail needs_container.",
+    "Runners shipped: static (no-op), Vite (npm run build → dist/), Next, container (ephemeral Express/Flask/etc on Run).",
+    "Drop/CLI upload of server source still refuses needs_container — paste the public GitHub on Run instead.",
     "DB / Redis / queue-only (Celery, Bull, Prisma with no web) fail not_a_site.",
     "Do not host a fake index.html for those stacks.",
   ])}
@@ -2442,7 +2442,7 @@ function renderOpsHtml(
         </section>
         <section class="panel${activePanel === "failures" ? " is-active" : ""}" id="failures">
           <h2>Failures</h2>
-          <p class="empty">Click the error code → why / files / retry. <code>needs_container</code> and <code>not_a_site</code> are detect (honest fail), not platform bugs.</p>
+          <p class="empty">Click the error code → why / files / retry. <code>needs_container</code> on Drop/upload means use Run with a public GitHub URL; <code>not_a_site</code> is an honest detect fail.</p>
           ${rows}
         </section>
         <section class="panel${activePanel === "logs" ? " is-active" : ""}" id="logs">

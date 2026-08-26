@@ -14,11 +14,12 @@ import { allocateUniqueSlug, slugFromHint } from "./slug";
 import { randomToken, resolveSessionUser, sha256Hex } from "./auth";
 import { dispatchRunBuildWorkflow } from "./jobs";
 import {
-  detectEngine,
-  packageHasNext,
+  buildPlanFromSignals,
+  canonicalKind,
+  type BuildPlan,
 } from "./engine-kind";
 
-export { packageHasNext };
+export { packageHasNext } from "./engine-kind";
 
 export type GithubRepoRef = { owner: string; repo: string };
 
@@ -162,10 +163,14 @@ async function githubFirstFile(
 }
 
 export type RepoInspect =
-  | { kind: "next"; branch: string; name?: string }
-  | { kind: "vite"; branch: string; name?: string }
-  | { kind: "static"; branch: string; html: string }
-  | { error: string; reason: string };
+  | {
+      kind: "next" | "static_build" | "static" | "container";
+      branch: string;
+      name?: string;
+      html?: string;
+      plan: BuildPlan;
+    }
+  | { error: string; reason: string; plan?: BuildPlan };
 
 export async function inspectGithubRepo(
   ref: GithubRepoRef,
@@ -192,6 +197,12 @@ export async function inspectGithubRepo(
     goMod,
     pyproject,
     goMain,
+    dockerfile,
+    composeYml,
+    composeYaml,
+    composeYmlAlt,
+    composeYamlAlt,
+    uvLock,
   ] = await Promise.all([
     githubFile(ref, "package.json", branch, token),
     githubFile(ref, "index.html", branch, token),
@@ -214,6 +225,12 @@ export async function inspectGithubRepo(
     githubFile(ref, "go.mod", branch, token),
     githubFile(ref, "pyproject.toml", branch, token),
     githubFile(ref, "main.go", branch, token),
+    githubFile(ref, "Dockerfile", branch, token),
+    githubFile(ref, "docker-compose.yml", branch, token),
+    githubFile(ref, "docker-compose.yaml", branch, token),
+    githubFile(ref, "compose.yml", branch, token),
+    githubFile(ref, "compose.yaml", branch, token),
+    githubFile(ref, "uv.lock", branch, token),
   ]);
 
   let pkg: unknown;
@@ -229,7 +246,7 @@ export async function inspectGithubRepo(
     }
   }
 
-  const got = detectEngine({
+  const signals = {
     pkg,
     nextConfigText: nextConfig,
     hasViteConfig: Boolean(viteConfig),
@@ -241,33 +258,56 @@ export async function inspectGithubRepo(
     goMod,
     goMainText: goMain,
     hasIndexHtml: Boolean(html),
-  });
+    hasDockerfile: Boolean(dockerfile),
+    hasCompose: Boolean(composeYml || composeYaml || composeYmlAlt || composeYamlAlt),
+    hasUvLock: Boolean(uvLock),
+  };
+  const plan = buildPlanFromSignals(signals);
+  const kind = canonicalKind(
+    plan.runtime === "static_build"
+      ? "static_build"
+      : plan.runtime === "next"
+        ? "next"
+        : plan.runtime === "static"
+          ? "static"
+          : plan.runtime === "container"
+            ? "container"
+            : plan.runtime === "not_a_site"
+              ? "not_a_site"
+              : "unknown",
+  );
 
-  if (got.kind === "container") {
-    return {
-      error: "needs_container",
-      reason: `${got.stack} needs a container runner that is not shipped. Detect ok; build failed.`,
-    };
-  }
-  if (got.kind === "not_a_site") {
+  if (kind === "not_a_site") {
     return {
       error: "not_a_site",
-      reason: `${got.stack} is not a website (database, cache, or queue). Nothing to host.`,
+      reason: plan.reason || `${plan.stack} is not a website.`,
+      plan,
     };
   }
-  if (got.kind === "next") {
-    return { kind: "next", branch, name: pkgName };
+  if (kind === "container") {
+    if (!plan.start && plan.stack !== "Docker") {
+      return {
+        error: "needs_container",
+        reason: plan.reason || `${plan.stack} needs a start command we could not infer.`,
+        plan,
+      };
+    }
+    return { kind: "container", branch, name: pkgName, plan };
   }
-  if (got.kind === "vite") {
-    return { kind: "vite", branch, name: pkgName };
+  if (kind === "next") {
+    return { kind: "next", branch, name: pkgName, plan };
   }
-  if (got.kind === "static" && html) {
-    return { kind: "static", branch, html };
+  if (kind === "static_build") {
+    return { kind: "static_build", branch, name: pkgName, plan };
+  }
+  if (kind === "static" && html) {
+    return { kind: "static", branch, html, plan };
   }
   return {
     error: "no_index",
     reason:
-      "Need index.html at the repo root, Next.js, or Vite. Servers, databases, and queues fail honestly.",
+      "Need index.html at the repo root, Next.js, or a Node static build (npm run build). Servers, databases, and queues fail honestly.",
+    plan,
   };
 }
 
@@ -282,11 +322,14 @@ export async function fetchRepoIndexHtml(
       reason: "Next.js — queue a build; do not fetch index.html.",
     };
   }
-  if (got.kind === "vite") {
+  if (got.kind === "static_build") {
     return {
       error: "needs_build",
-      reason: "Vite — import to queue npm run build, do not fetch source index.html.",
+      reason: "Static build — import to queue npm run build, do not fetch source index.html.",
     };
+  }
+  if (!got.html) {
+    return { error: "no_index", reason: "No index.html at repo root." };
   }
   return { html: got.html, branch: got.branch };
 }
@@ -327,6 +370,7 @@ function failedJob(
     httpStatus: opts.httpStatus,
     logTail: null,
     userId: null,
+    planJson: null,
   };
 }
 
@@ -335,7 +379,12 @@ export type RepoJobResult = RunJobRow & { editToken?: string };
 export async function executeRepoJob(
   env: Env,
   rawUrl: string,
-  opts: { trigger: string; slug?: string; request?: Request },
+  opts: {
+    trigger: string;
+    slug?: string;
+    request?: Request;
+    ctx?: ExecutionContext;
+  },
 ): Promise<RepoJobResult> {
   const started = Date.now();
   const ref = parseGithubRepoUrl(rawUrl) || parseOwnerRepoShorthand(rawUrl);
@@ -370,11 +419,13 @@ export async function executeRepoJob(
   const inspected = await inspectGithubRepo(ref, token);
 
   if ("error" in inspected) {
+    const planJson = inspected.plan ? JSON.stringify(inspected.plan) : null;
     const id = await insertRunJob(env, {
       owner: ref.owner,
       repo: ref.repo,
       url: ghUrl,
       trigger: opts.trigger,
+      planJson,
     });
     await finishRunJob(env, id, {
       status: "failed",
@@ -384,19 +435,26 @@ export async function executeRepoJob(
       httpStatus: 422,
       branch: null,
     });
-    return failedJob(id, {
-      owner: ref.owner,
-      repo: ref.repo,
-      url: ghUrl,
-      trigger: opts.trigger,
-      error: inspected.error,
-      reason: inspected.reason,
-      ms: Date.now() - started,
-      httpStatus: 422,
-    });
+    return {
+      ...failedJob(id, {
+        owner: ref.owner,
+        repo: ref.repo,
+        url: ghUrl,
+        trigger: opts.trigger,
+        error: inspected.error,
+        reason: inspected.reason,
+        ms: Date.now() - started,
+        httpStatus: 422,
+      }),
+      planJson,
+    };
   }
 
-  if (inspected.kind === "next" || inspected.kind === "vite") {
+  if (
+    inspected.kind === "next" ||
+    inspected.kind === "static_build" ||
+    inspected.kind === "container"
+  ) {
     if (opts.trigger === "ops-sample") {
       const id = await insertRunJob(env, {
         owner: ref.owner,
@@ -405,11 +463,12 @@ export async function executeRepoJob(
         trigger: opts.trigger,
         kind: inspected.kind,
         branch: inspected.branch,
+        planJson: JSON.stringify(inspected.plan),
       });
       await finishRunJob(env, id, {
         status: "failed",
         error: "needs_build",
-        reason: `${inspected.kind === "next" ? "Next.js" : "Vite"} — import from /projects/new to queue a build. Ops sample does not spend the runner.`,
+        reason: `${inspected.kind === "next" ? "Next.js" : inspected.kind === "container" ? inspected.plan.stack : inspected.plan.stack} — import from /projects/new to queue a build. Ops sample does not spend the runner.`,
         ms: Date.now() - started,
         httpStatus: 422,
         branch: inspected.branch,
@@ -420,19 +479,30 @@ export async function executeRepoJob(
         url: ghUrl,
         trigger: opts.trigger,
         error: "needs_build",
-        reason: `${inspected.kind === "next" ? "Next.js" : "Vite"} — import from /projects/new to queue a build. Ops sample does not spend the runner.`,
+        reason: `${inspected.kind === "next" ? "Next.js" : inspected.kind === "container" ? inspected.plan.stack : inspected.plan.stack} — import from /projects/new to queue a build. Ops sample does not spend the runner.`,
         ms: Date.now() - started,
         httpStatus: 422,
         branch: inspected.branch,
         kind: inspected.kind,
       });
     }
-    return queueBuildJob(env, ref, inspected, {
-      trigger: opts.trigger,
-      slug: opts.slug,
-      request: opts.request,
-      started,
-    });
+    return queueBuildJob(
+      env,
+      ref,
+      {
+        kind: inspected.kind,
+        branch: inspected.branch,
+        name: inspected.name,
+        plan: inspected.plan,
+      },
+      {
+        trigger: opts.trigger,
+        slug: opts.slug,
+        request: opts.request,
+        started,
+        ctx: opts.ctx,
+      },
+    );
   }
 
   const id = await insertRunJob(env, {
@@ -512,6 +582,7 @@ export async function executeRepoJob(
     httpStatus: 200,
     logTail: null,
     userId: null,
+    planJson: null,
     ...(body.editToken ? { editToken: body.editToken } : {}),
   };
 }
@@ -519,12 +590,24 @@ export async function executeRepoJob(
 async function queueBuildJob(
   env: Env,
   ref: GithubRepoRef,
-  inspected: { kind: "next" | "vite"; branch: string; name?: string },
-  opts: { trigger: string; slug?: string; request?: Request; started: number },
+  inspected: {
+    kind: "next" | "static_build" | "container";
+    branch: string;
+    name?: string;
+    plan: BuildPlan;
+  },
+  opts: {
+    trigger: string;
+    slug?: string;
+    request?: Request;
+    started: number;
+    ctx?: ExecutionContext;
+  },
 ): Promise<RepoJobResult> {
   const ghUrl = `https://github.com/${ref.owner}/${ref.repo}`;
   const hint = slugFromHint(inspected.name || ref.repo);
   const slug = opts.slug || (await allocateUniqueSlug(env, hint));
+  const planJson = JSON.stringify(inspected.plan);
   if (!slug) {
     const id = await insertRunJob(env, {
       owner: ref.owner,
@@ -533,6 +616,7 @@ async function queueBuildJob(
       trigger: opts.trigger,
       kind: inspected.kind,
       branch: inspected.branch,
+      planJson,
     });
     await finishRunJob(env, id, {
       status: "failed",
@@ -567,9 +651,10 @@ async function queueBuildJob(
     branch: inspected.branch,
     jobTokenHash: await sha256Hex(jobToken),
     userId: user?.id || null,
+    planJson,
   });
 
-  const dispatched = await dispatchRunBuildWorkflow(env, {
+  const dispatchInput = {
     kind: inspected.kind,
     jobId: id,
     jobToken,
@@ -577,7 +662,10 @@ async function queueBuildJob(
     repo: ref.repo,
     slug,
     branch: inspected.branch,
-  });
+    plan: inspected.plan,
+  };
+
+  const dispatched = await dispatchRunBuildWorkflow(env, dispatchInput);
   if (!dispatched.ok) {
     await finishRunJob(env, id, {
       status: "failed",
@@ -588,18 +676,22 @@ async function queueBuildJob(
       ms: Date.now() - opts.started,
       httpStatus: 503,
     });
-    return failedJob(id, {
-      owner: ref.owner,
-      repo: ref.repo,
-      url: ghUrl,
-      trigger: opts.trigger,
-      error: "runner_unavailable",
-      reason: dispatched.reason,
-      ms: Date.now() - opts.started,
-      httpStatus: 503,
-      branch: inspected.branch,
-      kind: inspected.kind,
-    });
+    return {
+      ...failedJob(id, {
+        owner: ref.owner,
+        repo: ref.repo,
+        url: ghUrl,
+        trigger: opts.trigger,
+        error: "runner_unavailable",
+        reason: dispatched.reason,
+        ms: Date.now() - opts.started,
+        httpStatus: 503,
+        branch: inspected.branch,
+        kind: inspected.kind,
+      }),
+      slug,
+      planJson,
+    };
   }
 
   return {
@@ -622,6 +714,7 @@ async function queueBuildJob(
     httpStatus: 202,
     logTail: null,
     userId: user?.id || null,
+    planJson,
   };
 }
 
@@ -643,6 +736,7 @@ export async function handleRepoRoute(
   request: Request,
   env: Env,
   url: URL,
+  ctx?: ExecutionContext,
 ): Promise<Response | null> {
   const origin = request.headers.get("origin");
   if (
@@ -672,16 +766,52 @@ export async function handleRepoRoute(
   if (url.pathname === "/v1/repo/check") {
     const got = await inspectGithubRepo(ref, env.AFT_RUN_GITHUB_TOKEN?.trim());
     if ("error" in got) {
-      return json({ ok: false, ...ref, ...got });
+      return json({
+        ok: false,
+        ...ref,
+        error: got.error,
+        reason: got.reason,
+        ...(got.plan
+          ? {
+              runtime: got.plan.runtime,
+              stack: got.plan.stack,
+              install: got.plan.install,
+              build: got.plan.build,
+              outputDirs: got.plan.outputDirs,
+            }
+          : {}),
+      });
     }
-    if (got.kind === "next" || got.kind === "vite") {
-      return json({ ok: true, kind: got.kind, ...ref, branch: got.branch });
+    const planFields = {
+      runtime: got.plan.runtime,
+      stack: got.plan.stack,
+      install: got.plan.install,
+      build: got.plan.build,
+      start: got.plan.start,
+      port: got.plan.port,
+      outputDirs: got.plan.outputDirs,
+    };
+    if (got.kind === "next" || got.kind === "static_build" || got.kind === "container") {
+      return json({ ok: true, kind: got.kind, ...ref, branch: got.branch, ...planFields });
     }
-    return json({ ok: true, kind: "static", ...ref, branch: got.branch, bytes: got.html.length });
+    return json({
+      ok: true,
+      kind: "static",
+      ...ref,
+      branch: got.branch,
+      bytes: got.html!.length,
+      ...planFields,
+    });
   }
 
-  const job = await executeRepoJob(env, raw, { trigger: "web", request });
-  if (job.status === "queued" && (job.kind === "next" || job.kind === "vite")) {
+  const job = await executeRepoJob(env, raw, { trigger: "web", request, ctx });
+  if (
+    job.status === "queued" &&
+    (job.kind === "next" ||
+      job.kind === "static_build" ||
+      job.kind === "vite" ||
+      job.kind === "container")
+  ) {
     return json(
       {
         jobId: job.id,

@@ -132,7 +132,14 @@ async function watchJob(data) {
   panel.hidden = false
   logEl.textContent = ""
 
-  const kindLabel = data.kind === "vite" ? "Vite" : data.kind === "next" ? "Next.js" : "Static"
+  const kindLabel =
+    data.kind === "vite" || data.kind === "static_build"
+      ? "Static build"
+      : data.kind === "next"
+        ? "Next.js"
+        : data.kind === "container"
+          ? data.stack || "App"
+          : "Static"
   const repoLabel = data.owner && data.repo ? `${data.owner}/${data.repo}` : "repo"
   setStatus(`Building ${kindLabel} for ${repoLabel}…`, "pending")
   phaseEl.textContent = PHASE_LABEL.queued

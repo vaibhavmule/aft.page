@@ -9,7 +9,7 @@ API="${AFT_API:-https://api.aft.page}"
 JOB_ID="${JOB_ID:?}"
 JOB_TOKEN="${JOB_TOKEN:?}"
 SLUG="${SLUG:?}"
-SRC="${GITHUB_WORKSPACE:-${RUNNER_TEMP:-/tmp}}/aft-run-src"
+SRC="${AFT_RUN_SRC:-${GITHUB_WORKSPACE:-${RUNNER_TEMP:-/tmp}}/aft-run-src}"
 COMPAT_DATE="${COMPAT_DATE:-2026-08-08}"
 
 if [[ "$MODE" != "build" && "$MODE" != "deploy" ]]; then
@@ -17,18 +17,38 @@ if [[ "$MODE" != "build" && "$MODE" != "deploy" ]]; then
   exit 2
 fi
 
-post_phase() {
+  post_phase() {
   local phase="$1"
   local line="${2:-}"
   local reason="${3:-}"
   python3 - "$API" "$JOB_ID" "$JOB_TOKEN" "$phase" "$line" "$reason" <<'PY'
-import json, sys, urllib.request
+import json, re, sys, urllib.request
 api, job_id, token, phase, line, reason = sys.argv[1:7]
+
+def scrub(s: str) -> str:
+    if not s:
+        return s
+    reps = [
+        (r"opennextjs-cloudflare", "next build"),
+        (r"@opennextjs/\S+", "next"),
+        (r"\bOpenNext\b", "Next.js"),
+        (r"\bopen-next\b", "next"),
+        (r"\bWrangler\b", "Deploy"),
+        (r"\bwrangler\b", "deploy"),
+        (r"\bCloudflare\b", "aft"),
+        (r"\bworkers\.dev\b", "aft.page"),
+        (r"GitHub Actions", "build runner"),
+    ]
+    out = s
+    for pat, to in reps:
+        out = re.sub(pat, to, out, flags=re.I)
+    return out
+
 body = {"phase": phase}
 if line:
-    body["line"] = line[-2000:]
+    body["line"] = scrub(line)[-2000:]
 if reason:
-    body["reason"] = reason[:500]
+    body["reason"] = scrub(reason)[:500]
 req = urllib.request.Request(
     f"{api}/v1/jobs/{job_id}",
     data=json.dumps(body).encode(),
@@ -68,6 +88,8 @@ EOF
 }
 
 # Vanilla Next repos have no OpenNext file; latest @opennextjs/cloudflare refuses to build without it.
+# Default = SSG static-assets incremental cache so prerendered pages (markdown blogs, etc.) are
+# served from assets instead of re-executing Node `fs` on the Worker (which 500s).
 ensure_open_next_config() {
   if [[ -f "$SRC/open-next.config.ts" || -f "$SRC/open-next.config.js" || -f "$SRC/open-next.config.mjs" || -f "$SRC/open-next.config.mts" ]]; then
     post_phase installing "open-next.config already present"
@@ -75,15 +97,19 @@ ensure_open_next_config() {
   fi
   cat > "$SRC/open-next.config.ts" <<'EOF'
 import { defineCloudflareConfig } from "@opennextjs/cloudflare";
+import staticAssetsIncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/static-assets-incremental-cache";
 
-export default defineCloudflareConfig();
+export default defineCloudflareConfig({
+  incrementalCache: staticAssetsIncrementalCache,
+  enableCacheInterception: true,
+});
 EOF
-  post_phase installing "Wrote open-next.config.ts"
+  post_phase installing "Wrote Next.js deploy config"
 }
 
-# ponytail: OpenNext Cloudflare requires Next >= 14.2. Bump only 14.0/14.1 in-place; leave 13.x to fail honestly.
+# OpenNext dropped Next 14 in Q1 2026. Do not pin 14.0/14.1 onto unmaintained 14.2.
 ensure_next_min() {
-  local info ver bump
+  local info ver maj
   info="$(python3 - "$SRC" <<'PY'
 import json, os, sys
 root = sys.argv[1]
@@ -92,30 +118,24 @@ try:
     ver = json.load(open(path)).get("version") or ""
 except Exception:
     ver = ""
-parts = []
-for p in ver.split("-")[0].split("."):
-    try:
-        parts.append(int(p))
-    except ValueError:
-        break
-maj, minor = (parts + [0, 0])[:2]
-bump = "1" if maj == 14 and minor < 2 else "0"
-print(f"{ver}\n{bump}")
+maj = 0
+try:
+    maj = int(ver.split("-")[0].split(".")[0])
+except ValueError:
+    pass
+print(f"{ver}\n{maj}")
 PY
 )"
   ver="$(printf '%s\n' "$info" | sed -n '1p')"
-  bump="$(printf '%s\n' "$info" | sed -n '2p')"
+  maj="$(printf '%s\n' "$info" | sed -n '2p')"
   post_phase installing "next ${ver:-unknown}"
-  if [[ "$bump" != "1" ]]; then
-    return
+  if [[ -z "$ver" || "$maj" -lt 15 ]]; then
+    fail "Next.js ${ver:-unknown} is not supported. Use Next 15 or 16."
   fi
-  post_phase installing "Bumping next ${ver} → 14.2 (OpenNext minimum)"
-  run_logged installing npm install next@14.2 --legacy-peer-deps \
-    || fail "Could not bump Next.js to 14.2."
 }
 
 untrusted() {
-  # Strip AFT/CF secrets so the clone's npm lifecycle cannot read them.
+  # Strip AFT secrets so the clone's npm lifecycle cannot read them.
   env -u JOB_TOKEN -u AFT_RUN_GITHUB_TOKEN -u CLOUDFLARE_API_TOKEN \
     -u CLOUDFLARE_ACCOUNT_ID -u CF_API_TOKEN "$@"
 }
@@ -126,10 +146,27 @@ run_logged() {
   shift
   set +e
   untrusted "$@" 2>&1 | python3 -c '
-import json, sys, time, urllib.request
+import json, re, sys, time, urllib.request
 api, job_id, token, phase = sys.argv[1:5]
 buf = []
 last = 0.0
+
+def scrub(s):
+    reps = [
+        (r"opennextjs-cloudflare", "next build"),
+        (r"@opennextjs/\S+", "next"),
+        (r"\bOpenNext\b", "Next.js"),
+        (r"\bopen-next\b", "next"),
+        (r"\bWrangler\b", "Deploy"),
+        (r"\bwrangler\b", "deploy"),
+        (r"\bCloudflare\b", "aft"),
+        (r"\bworkers\.dev\b", "aft.page"),
+        (r"GitHub Actions", "build runner"),
+    ]
+    out = s
+    for pat, to in reps:
+        out = re.sub(pat, to, out, flags=re.I)
+    return out
 
 def flush(force=False):
     global buf, last
@@ -138,7 +175,7 @@ def flush(force=False):
     now = time.time()
     if not force and len(buf) < 3 and now - last < 0.5:
         return
-    chunk = "\n".join(buf)[-1800:]
+    chunk = scrub("\n".join(buf))[-1800:]
     buf = []
     last = now
     body = {"phase": phase, "line": chunk}
@@ -173,12 +210,17 @@ if [[ "$MODE" == "build" ]]; then
   OWNER="${OWNER:?}"
   REPO="${REPO:?}"
   BRANCH="${BRANCH:-main}"
-  post_phase cloning "Cloning ${OWNER}/${REPO}@${BRANCH}"
-  rm -rf "$SRC"
-  git clone --depth 1 --branch "$BRANCH" "https://github.com/${OWNER}/${REPO}.git" "$SRC" \
-    || git clone --depth 1 "https://github.com/${OWNER}/${REPO}.git" "$SRC" \
-    || fail "Could not clone the repo."
-  post_phase cloning "Cloned ${OWNER}/${REPO}@${BRANCH}"
+  # Workflow may pre-clone into SRC and set SKIP_CLONE=1 so setup-node can cache npm.
+  if [[ "${SKIP_CLONE:-}" == "1" && -f "$SRC/package.json" ]]; then
+    post_phase cloning "Using pre-cloned ${OWNER}/${REPO}@${BRANCH}"
+  else
+    post_phase cloning "Cloning ${OWNER}/${REPO}@${BRANCH}"
+    rm -rf "$SRC"
+    git clone --depth 1 --branch "$BRANCH" "https://github.com/${OWNER}/${REPO}.git" "$SRC" \
+      || git clone --depth 1 "https://github.com/${OWNER}/${REPO}.git" "$SRC" \
+      || fail "Could not clone the repo."
+    post_phase cloning "Cloned ${OWNER}/${REPO}@${BRANCH}"
+  fi
 
   if [[ ! -f "$SRC/package.json" ]]; then
     fail "No package.json at the repo root."
@@ -188,20 +230,20 @@ if [[ "$MODE" == "build" ]]; then
   cd "$SRC"
   run_logged installing npm install --legacy-peer-deps || fail "npm install failed."
   run_logged installing npm install --save-dev @opennextjs/cloudflare wrangler --legacy-peer-deps \
-    || fail "Could not install OpenNext / wrangler."
+    || fail "Could not install the Next.js build tools."
   post_phase installing "npm install done"
 
   ensure_next_min
   ensure_open_next_config
   write_wrangler
-  post_phase building "opennextjs-cloudflare build"
-  run_logged building npx opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion \
-    || fail "OpenNext build failed (middleware, env, size, or not a Next app)."
+  post_phase building "Building Next.js"
+  run_logged building npx opennextjs-cloudflare build \
+    || fail "Next.js build failed (unsupported middleware, missing env, or not a Next app)."
   write_wrangler
-  post_phase building "OpenNext build done"
+  post_phase building "Next.js build done"
 
   if [[ ! -f "$SRC/.open-next/worker.js" ]]; then
-    fail "OpenNext produced no .open-next/worker.js."
+    fail "Next.js build produced no deployable output."
   fi
   exit 0
 fi
@@ -210,15 +252,15 @@ if [[ ! -f "$SRC/.open-next/worker.js" ]]; then
   fail "Build output missing; cannot deploy."
 fi
 if [[ -z "${CLOUDFLARE_API_TOKEN:-}" ]]; then
-  fail "CLOUDFLARE_API_TOKEN is not set on the deploy step."
+  fail "Deploy credentials are not set on the runner."
 fi
 
 write_wrangler
-post_phase deploying "wrangler deploy aft-u-${SLUG}"
+post_phase deploying "Deploying"
 cd "$SRC"
 DEPLOY_OUT="$(npx wrangler deploy --name "aft-u-${SLUG}" 2>&1)" || {
   echo "$DEPLOY_OUT"
-  fail "wrangler deploy failed."
+  fail "Deploy failed."
 }
 echo "$DEPLOY_OUT"
 UPSTREAM="$(printf '%s\n' "$DEPLOY_OUT" | python3 -c "
@@ -228,7 +270,7 @@ m=re.search(r'https://[a-z0-9.-]+\.workers\.dev', t)
 print(m.group(0) if m else '')
 ")"
 if [[ -z "$UPSTREAM" ]]; then
-  fail "wrangler deploy did not print a workers.dev URL."
+  fail "Deploy did not return a live URL."
 fi
 
 python3 - "$API" "$JOB_ID" "$JOB_TOKEN" "$UPSTREAM" <<'PY'

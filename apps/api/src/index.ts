@@ -207,7 +207,7 @@ async function routeRequest(
   await ensureDb(env);
 
   if (isApiHost(host, root)) {
-    return await handleApi(request, env, url);
+    return await handleApi(request, env, url, ctx);
   }
 
   const testCase = testHostCase(host, root);
@@ -250,6 +250,7 @@ async function handleApi(
   request: Request,
   env: Env,
   url: URL,
+  ctx: ExecutionContext,
 ): Promise<Response> {
   const origin = request.headers.get("origin");
   const creds =
@@ -292,7 +293,7 @@ async function handleApi(
     return handleCodeGenerate(request, env);
   }
 
-  const repo = await handleRepoRoute(request, env, url);
+  const repo = await handleRepoRoute(request, env, url, ctx);
   if (repo) return repo;
 
   const jobComplete = await handleJobCompleteRoute(request, env, url);
@@ -346,7 +347,7 @@ async function handleApi(
       waitlist: "POST /v1/waitlist",
       cli: "POST /v1/cli/event, POST /v1/cli/preflight",
       code: "POST /v1/code/generate (session; prompt or template → HTML)",
-      run: "POST /v1/repo/check, POST /v1/repo/deploy (detect → static | vite | next | fail). GET /v1/jobs/{id}, GET /v1/jobs/{id}/events",
+      run: "POST /v1/repo/check, POST /v1/repo/deploy (detect → plan → static | static_build | next | container). GET /v1/jobs/{id}, GET /v1/jobs/{id}/events",
       changelog: "GET /v1/changelog · GET /v1/changelog.md",
       sharing:
         "PATCH /v1/sites/{slug}, POST /v1/sites/{slug}/rename, POST /v1/sites/{slug}/access, POST/GET/DELETE /v1/sites/{slug}/invites, PATCH|DELETE /v1/sites/{slug}/members/{id}, GET /v1/invites/accept",

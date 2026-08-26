@@ -51,6 +51,19 @@ export default defineConfig(async () => {
                 status: 200,
                 headers: { "content-type": "application/json" },
               }),
+            RUN_CONTAINER: (request: Request) => {
+              const path = new URL(request.url).pathname;
+              if (request.method === "POST" && path === "/v1/run") {
+                return new Response(JSON.stringify({ ok: true }), {
+                  status: 200,
+                  headers: { "content-type": "application/json" },
+                });
+              }
+              return new Response(JSON.stringify({ ok: true, service: "run-container" }), {
+                status: 200,
+                headers: { "content-type": "application/json" },
+              });
+            },
           },
         },
       }),

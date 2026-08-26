@@ -1,7 +1,7 @@
 # Run — Layer 3 (runnable open source)
 
 Category + GTM + build pipeline. Not canonical mission — see [`../rfs.txt`](../rfs.txt),
-[STRATEGY.md](./STRATEGY.md). Updated: 2026-08-23.
+[STRATEGY.md](./STRATEGY.md). Updated: 2026-08-26.
 
 **Layers:** [HOST.md](./HOST.md) · [SHIP.md](./SHIP.md) · **Run** (this doc) · [CODE.md](./CODE.md).
 
@@ -79,6 +79,18 @@ per hit. WfP dispatch fixes that at scale.
 
 ## Build pipeline (required for Run)
 
+**Detect → plan → one runner.** `/v1/repo/check` returns a build plan (`runtime`, `stack`, `install`, `build`, `outputDirs`). Drivers execute the plan; they do not hardcode Vite vs Angular.
+
+| `runtime` | What happens |
+| --- | --- |
+| `static` | Sync `index.html` (and assets) now |
+| `static_build` | Queue GHA `run-static-build` with plan install/build/outputDirs (Vite/Vue/Angular/CRA share this) |
+| `next` | Queue GHA `run-next` (OpenNext + default config; Next 15 or 16; older versions fail honestly) |
+| `container` | Queue Sandbox runner → process upstream → `*.aft.page` proxy ([CONTAINER.md](./CONTAINER.md)) |
+| `not_a_site` | Refuse (queue/db only) |
+
+Priority: Dockerfile/compose → `package.json` → Python (`requirements.txt` / `pyproject.toml` / `uv.lock`) → root `index.html`.
+
 Today: upload finished files (Host/Ship). Run needs **honest jobs**:
 
 ```text
@@ -122,17 +134,23 @@ Untrusted repos: ephemeral job only, timeout, no outbound secrets to repo, delet
 
 ## Runtime strategy
 
-- Static/Vite → R2
+- Static / `static_build` → R2
 - Next SSR → OpenNext + `aft-u-{slug}` + proxy ([OPENNEXT-ORCHESTRATION.md](./OPENNEXT-ORCHESTRATION.md))
+  - Default OpenNext config uses **static-assets incremental cache** so prerendered pages (e.g. markdown blogs using `fs` at build time) do not re-run Node filesystem on the Worker.
+  - GHA Next runner caches npm from the cloned lockfile; cold builds can still be multi-minute. Next 14 and older fail honestly.
+- Docker / Python web → `container` runner ([CONTAINER.md](./CONTAINER.md))
 - OpenNext middleware gap → detect + skip or AWS fallback tier
 - DB: demo/UI-only now; D1/Turso full mode later
 
 ## Launch budget
 
-**$1,000 USD** for **Show HN + Product Hunt** of AFT Run. Spend on Run
-compute (clone/build/deploy jobs, failed builds, timeouts). Not
-influencers, ads, or mass README PRs. No launch date — post when
-paste-repo → URL (or honest fail) works.
+**Amp, not the engine.** Show HN + Product Hunt flood a door that already
+works. Owned channel is Agent Plugin / MCP; viral loop is README “Run on
+AFT.” See [STRATEGY.md](./STRATEGY.md) § Mode stack.
+
+**$1,000 USD** for that amp. Spend on Run compute (clone/build/deploy jobs,
+failed builds, timeouts). Not influencers, ads, or mass README PRs. No
+launch date — post when paste-repo → URL (or honest fail) works.
 
 ## Monetization
 
@@ -140,14 +158,14 @@ Virality first. Price later. Free try → claim / private / domains / DB / limit
 
 ## Ship order
 
-1. `GET /v1/repo/check`
-2. Job queue + GHA (or Sandbox spike in parallel)
-3. `POST /v1/repo/deploy` static/Vite
-4. OpenNext in same queue
-5. Extension GitHub + `@aft` bot
-6. README PR campaign
-7. WfP before Run GTM if Next fraction expected
-8. MCP `deploy_repo`
+1. Honest Run job path (static / Vite / Next / container) → URL or fail reason
+2. MCP `deploy_repo` + Cursor Agent Plugin marketplace listing (owned channel)
+3. `/run/` paste UI + 30s demo clip
+4. Show HN → PH ($1k builds) when #1 is stranger-proof
+5. Targeted “Run on AFT” README buttons (not mass PRs)
+6. Extension GitHub + `@aft` bot
+7. WfP before viral Next fraction hits the 500-script wall
+8. Remix/clone after try volume exists
 
 ## Related
 

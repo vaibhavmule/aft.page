@@ -29,18 +29,64 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    # Cold OpenNext can exceed 12m; npm cache keeps warm runs under this.
+    timeout-minutes: 20
+    env:
+      AFT_RUN_SRC: ${{ runner.temp }}/aft-run-src
     steps:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: |
             scripts/run-next-job.sh
 
+      - name: Clone public repo
+        env:
+          OWNER: ${{ inputs.owner }}
+          REPO: ${{ inputs.repo }}
+          BRANCH: ${{ inputs.branch }}
+          JOB_ID: ${{ inputs.job_id }}
+          JOB_TOKEN: ${{ inputs.job_token }}
+          SLUG: ${{ inputs.slug }}
+          AFT_API: https://api.aft.page
+        run: |
+          set -euo pipefail
+          SRC="${AFT_RUN_SRC}"
+          rm -rf "$SRC"
+          git clone --depth 1 --branch "$BRANCH" "https://github.com/${OWNER}/${REPO}.git" "$SRC" \
+            || git clone --depth 1 "https://github.com/${OWNER}/${REPO}.git" "$SRC"
+          # Patch job so the UI shows cloning done before npm cache restore.
+          python3 - <<'PY'
+          import json, os, urllib.request
+          api, job_id, token = os.environ["AFT_API"], os.environ["JOB_ID"], os.environ["JOB_TOKEN"]
+          owner, repo, branch = os.environ["OWNER"], os.environ["REPO"], os.environ["BRANCH"]
+          body = {"phase": "cloning", "line": f"Cloned {owner}/{repo}@{branch}"}
+          req = urllib.request.Request(
+              f"{api}/v1/jobs/{job_id}",
+              data=json.dumps(body).encode(),
+              method="PATCH",
+              headers={
+                  "authorization": f"Bearer {token}",
+                  "content-type": "application/json",
+                  "user-agent": "aft.page-run-next",
+              },
+          )
+          try:
+              urllib.request.urlopen(req, timeout=30).read()
+          except Exception as e:
+              print(e)
+          PY
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            ${{ runner.temp }}/aft-run-src/package-lock.json
+            ${{ runner.temp }}/aft-run-src/npm-shrinkwrap.json
+            ${{ runner.temp }}/aft-run-src/yarn.lock
+            ${{ runner.temp }}/aft-run-src/pnpm-lock.yaml
 
-      - name: Clone and OpenNext build
+      - name: Next.js build
         env:
           JOB_ID: ${{ inputs.job_id }}
           JOB_TOKEN: ${{ inputs.job_token }}
@@ -49,6 +95,8 @@ jobs:
           SLUG: ${{ inputs.slug }}
           BRANCH: ${{ inputs.branch }}
           AFT_API: https://api.aft.page
+          SKIP_CLONE: "1"
+          AFT_RUN_SRC: ${{ runner.temp }}/aft-run-src
         run: |
           chmod +x scripts/run-next-job.sh
           scripts/run-next-job.sh build
@@ -61,6 +109,7 @@ jobs:
           AFT_API: https://api.aft.page
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: "44255ec64e0080b678670b53bf810d27"
+          AFT_RUN_SRC: ${{ runner.temp }}/aft-run-src
         run: scripts/run-next-job.sh deploy
 
       - name: Mark job failed
@@ -75,7 +124,7 @@ jobs:
           api, job_id, token = os.environ["AFT_API"], os.environ["JOB_ID"], os.environ["JOB_TOKEN"]
           body = {
               "phase": "failed",
-              "reason": "GitHub Actions failed or timed out (12 min).",
+              "reason": "GitHub Actions failed or timed out (20 min).",
               "line": "runner failed or cancelled",
           }
           req = urllib.request.Request(

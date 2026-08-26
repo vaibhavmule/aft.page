@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { randomToken, sha256Hex } from "../src/auth";
-import { getRunJob, finishRunJob, insertRunJob } from "../src/db";
+import { getRunJob, finishRunJob, insertRunJob, getSiteRow } from "../src/db";
 import { API_ORIGIN, call } from "./helpers";
 import { env } from "cloudflare:test";
 
@@ -52,7 +52,7 @@ describe("run job API", () => {
           "content-type": "application/json",
           authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ phase: "building", line: "opennextjs-cloudflare build" }),
+        body: JSON.stringify({ phase: "building", line: "Building Next.js" }),
       }),
     );
     expect(patch.status).toBe(200);
@@ -63,7 +63,7 @@ describe("run job API", () => {
       status: string;
     };
     expect(body.phase).toBe("building");
-    expect(body.logTail).toContain("opennextjs-cloudflare build");
+    expect(body.logTail).toContain("Building Next.js");
     expect(body.status).toBe("queued");
 
     const complete = await call(
@@ -131,8 +131,10 @@ describe("run job API", () => {
     const snap = await call(new Request(`${API_ORIGIN}/v1/jobs/${id}`));
     const body = (await snap.json()) as { status: string; logTail: string; reason: string };
     expect(body.status).toBe("failed");
-    expect(body.logTail).toContain("open-next.config.ts");
-    expect(body.reason).toContain("OpenNext build failed");
+    expect(body.logTail).toMatch(/next/i);
+    expect(body.reason).toMatch(/Next\.js build failed/i);
+    expect(body.logTail).not.toMatch(/OpenNext|Wrangler|Cloudflare|opennextjs/i);
+    expect(body.reason).not.toMatch(/OpenNext|Wrangler|Cloudflare|opennextjs/i);
   });
 
   it("GET /events streams a terminal snapshot then closes", async () => {
@@ -188,5 +190,82 @@ describe("run job API", () => {
     expect(done.slug).toBe(slug);
     const job = await getRunJob(env, id);
     expect(job?.status).toBe("live");
+  });
+
+  it("container complete maps runtime worker + upstream", async () => {
+    const token = randomToken("run_tok_");
+    const slug = `ctrj${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`;
+    const id = await insertRunJob(env, {
+      owner: "octo",
+      repo: "hello-express",
+      url: "https://github.com/octo/hello-express",
+      trigger: "test",
+      kind: "container",
+      phase: "queued",
+      slug,
+      jobTokenHash: await sha256Hex(token),
+    });
+    const upstream = "https://example-tunnel.trycloudflare.com";
+    const complete = await call(
+      new Request(`${API_ORIGIN}/v1/jobs/${id}/complete`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ upstream, log: "live" }),
+      }),
+    );
+    expect(complete.status).toBe(200);
+    const done = (await complete.json()) as { ok: boolean; slug: string };
+    expect(done.ok).toBe(true);
+
+    const meta = JSON.parse((await env.SITES.get(`site:${slug}`))!) as {
+      runtime: string;
+      upstreamUrl: string;
+    };
+    expect(meta.runtime).toBe("worker");
+    expect(meta.upstreamUrl).toBe("https://example-tunnel.trycloudflare.com");
+
+    const row = await getSiteRow(env, slug);
+    expect(row?.runtime).toBe("worker");
+    expect(row?.upstreamUrl).toBe("https://example-tunnel.trycloudflare.com");
+
+    const job = await getRunJob(env, id);
+    expect(job?.status).toBe("live");
+  });
+});
+
+describe("runContainerRunUrl", () => {
+  it("defaults and strips trailing slash", async () => {
+    const { runContainerRunUrl } = await import("../src/jobs");
+    expect(runContainerRunUrl({})).toBe("https://run-container.aft.page/v1/run");
+    expect(runContainerRunUrl({ AFT_RUN_CONTAINER_URL: "https://run-container.aft.page/" })).toBe(
+      "https://run-container.aft.page/v1/run",
+    );
+  });
+});
+
+describe("dispatchRunContainer", () => {
+  it("posts to the RUN_CONTAINER mock and succeeds", async () => {
+    const { dispatchRunBuildWorkflow } = await import("../src/jobs");
+    expect(env.RUN_CONTAINER).toBeTruthy();
+    const out = await dispatchRunBuildWorkflow(env, {
+      kind: "container",
+      jobId: "run_testcontainer",
+      jobToken: "tok",
+      owner: "octo",
+      repo: "hello-express",
+      slug: "hello-express",
+      branch: "main",
+      plan: {
+        runtime: "container",
+        stack: "Express",
+        install: "npm install",
+        start: "npm start",
+        port: 3000,
+      },
+    });
+    expect(out).toEqual({ ok: true });
   });
 });

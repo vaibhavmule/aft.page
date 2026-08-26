@@ -140,7 +140,7 @@ function refuseSourceTree(files: UploadFile[], door: "drop" | "engine") {
 function refuseForClient(request: Request, files: UploadFile[]) {
   const client = resolveClient(request);
   const header = (request.headers.get("x-aft-client") || "").toLowerCase();
-  if (header === "run-next" || header === "run-vite") return null;
+  if (header === "run-next" || header === "run-vite" || header === "run-static-build" || header === "run-container") return null;
   const door = client === "web" ? "drop" : "engine";
   return refuseSourceTree(files, door);
 }

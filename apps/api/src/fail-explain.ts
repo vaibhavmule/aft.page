@@ -51,8 +51,8 @@ export function explainDeployFailure(f: FailureExplainIn): FailureExplain {
       return {
         why: f.hint
           ? f.hint
-          : "This is a process server (Python, Node, Go, Rust, Ruby) — containers are not supported yet.",
-        fix: "Detect ok; build failed. Static, Vite, or Next.js only until containers ship.",
+          : "This app needs a process runner (server).",
+        fix: "Paste the public GitHub repo on aft.page/run, or ship a static/Next build.",
       };
     case "not_a_site":
       return {

@@ -28,8 +28,8 @@ export function adviseLocal(s) {
       error: "needs_container",
       action: "refuse",
       source: "rules",
-      why: `${s.label || "This server"} needs a container runner that is not shipped.`,
-      fix: "Detect ok; build failed. Static, Vite, or Next.js only until containers ship.",
+      why: `${s.label || "This server"} needs a process runner. Local CLI upload is static/Next only.`,
+      fix: "Paste the public GitHub repo on aft.page/run.",
     };
   }
   if (s.runtime === "next" && s.staticDeployable === false) {

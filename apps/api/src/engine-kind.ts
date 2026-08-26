@@ -1,7 +1,16 @@
-/** One detect → kind. CLI, MCP, and GitHub Run share the engine. Web Drop is static-only. */
+/** One detect → kind + build plan. CLI, MCP, and GitHub Run share the engine. Web Drop is static-only. */
 export type EngineKind =
   | "static"
-  | "vite"
+  | "static_build"
+  | "vite" // ponytail: alias of static_build for older callers / DB rows
+  | "next"
+  | "container"
+  | "not_a_site"
+  | "unknown";
+
+export type BuildRuntime =
+  | "static"
+  | "static_build"
   | "next"
   | "container"
   | "not_a_site"
@@ -21,6 +30,9 @@ export type EngineSignals = {
   hasManagePy?: boolean;
   requirementsTxt?: string | null;
   pyprojectToml?: string | null;
+  hasUvLock?: boolean;
+  hasDockerfile?: boolean;
+  hasCompose?: boolean;
   cargoToml?: string | null;
   gemfile?: string | null;
   goMod?: string | null;
@@ -29,6 +41,19 @@ export type EngineSignals = {
 };
 
 export type EngineDetect = { kind: EngineKind; stack: string };
+
+/** Detect → plan that a runner executes (or refuses honestly). */
+export type BuildPlan = {
+  runtime: BuildRuntime;
+  stack: string;
+  install?: string;
+  build?: string;
+  /** Process start command for container runtime (e.g. npm start). */
+  start?: string;
+  port?: number;
+  outputDirs?: string[];
+  reason?: string;
+};
 
 type Named = readonly [string, string];
 
@@ -137,6 +162,8 @@ const GO_INFRA: Named[] = [
   ["github.com/go-redis/redis", "Redis"],
 ];
 
+const DEFAULT_STATIC_OUTPUT = ["dist", "out", "build"] as const;
+
 export function pkgHasDep(pkg: PkgJson | null | undefined, name: string): boolean {
   if (!pkg) return false;
   return Boolean(pkg.dependencies?.[name] || pkg.devDependencies?.[name]);
@@ -163,6 +190,12 @@ export function requirementsLookLikeDjango(text: string): boolean {
 
 export function nextConfigIsStaticExport(text: string): boolean {
   return /output\s*:\s*['"]export['"]/.test(text);
+}
+
+/** Normalize vite → static_build for plans and new API surfaces. */
+export function canonicalKind(kind: EngineKind): Exclude<EngineKind, "vite"> {
+  if (kind === "vite") return "static_build";
+  return kind;
 }
 
 function pipHas(text: string, name: string): boolean {
@@ -196,10 +229,108 @@ function pkgFirst(pkg: PkgJson | undefined, items: Named[]): string | null {
   return firstNamed(items, (n) => pkgHasDep(pkg, n));
 }
 
+function staticBuildStack(pkg: PkgJson | undefined, s: EngineSignals): string {
+  if (packageHasNext(pkg) && s.nextConfigText && nextConfigIsStaticExport(s.nextConfigText)) {
+    return "Next.js export";
+  }
+  if (pkgHasDep(pkg, "@angular/core")) return "Angular";
+  if (pkgHasDep(pkg, "nuxt") || pkgHasDep(pkg, "nuxt3")) return "Nuxt";
+  if (pkgHasDep(pkg, "@sveltejs/kit") || pkgHasDep(pkg, "svelte")) return "Svelte";
+  if (packageHasVite(pkg) || s.hasViteConfig) return "Vite";
+  if (pkgHasDep(pkg, "react-scripts")) return "Create React App";
+  if (pkgHasDep(pkg, "@rsbuild/core")) return "Rsbuild";
+  if (pkgHasDep(pkg, "vue")) return "Vue";
+  if (pkgHasDep(pkg, "react")) return "React";
+  return "static_build";
+}
+
+function staticOutputDirs(pkg: PkgJson | undefined, stack: string): string[] {
+  if (stack === "Angular") return ["dist", "out", "build"];
+  if (stack === "Create React App") return ["build", "dist", "out"];
+  if (stack === "Next.js export") return ["out", "dist", "build"];
+  if (pkg?.name) {
+    /* keep defaults */
+  }
+  return [...DEFAULT_STATIC_OUTPUT];
+}
+
+function npmInstallCmd(): string {
+  return "npm install --legacy-peer-deps";
+}
+
+function npmBuildCmd(pkg: PkgJson | undefined): string {
+  if (pkg?.scripts?.build) return "npm run build";
+  return "npm run build";
+}
+
+function containerStartCmd(
+  stack: string,
+  s: EngineSignals,
+  pkg: PkgJson | undefined,
+): string | undefined {
+  if (stack === "Docker") return undefined;
+  if (pkg?.scripts?.start) return "npm start";
+  if (pkgHasDep(pkg, "express") || pkgHasDep(pkg, "fastify") || pkgHasDep(pkg, "hono") || pkgHasDep(pkg, "koa")) {
+    if (pkg?.scripts?.start) return "npm start";
+    return "npm start";
+  }
+  if (stack === "Django" || s.hasManagePy) {
+    return "python manage.py runserver 0.0.0.0:8080";
+  }
+  if (stack === "Flask") {
+    return "flask run --host 0.0.0.0 --port 8080";
+  }
+  if (stack === "FastAPI") {
+    return "uvicorn main:app --host 0.0.0.0 --port 8080";
+  }
+  if (pkg?.scripts?.dev && !pkg.scripts.start) {
+    return "npm run dev -- --host 0.0.0.0 --port 8080";
+  }
+  return undefined;
+}
+
 /** Classify a repo from the same files CLI, MCP, and GitHub Run look at. */
 export function detectEngine(s: EngineSignals): EngineDetect {
+  // Docker first — runtime decision overrides language manifests.
+  if (s.hasDockerfile || s.hasCompose) {
+    return { kind: "container", stack: "Docker" };
+  }
+
   const pkg = s.pkg && typeof s.pkg === "object" ? (s.pkg as PkgJson) : undefined;
   const pip = pipText(s);
+  const hasPython =
+    Boolean(s.hasManagePy) ||
+    Boolean(s.requirementsTxt) ||
+    Boolean(s.pyprojectToml) ||
+    Boolean(s.hasUvLock) ||
+    Boolean(s.pyprojectToml && /\[tool\.uv\]/.test(s.pyprojectToml));
+
+  // package.json before Python / other languages (plan priority).
+  if (packageHasNext(pkg)) {
+    if (s.nextConfigText && nextConfigIsStaticExport(s.nextConfigText)) {
+      return { kind: "static_build", stack: "Next.js export" };
+    }
+    return { kind: "next", stack: "Next.js" };
+  }
+
+  if (
+    packageHasVite(pkg) ||
+    s.hasViteConfig ||
+    (pkg && (pkgHasDep(pkg, "react-scripts") || pkgHasDep(pkg, "@rsbuild/core"))) ||
+    (pkg && pkgHasDep(pkg, "@angular/core") && pkg.scripts?.build)
+  ) {
+    return { kind: "static_build", stack: staticBuildStack(pkg, s) };
+  }
+
+  const nodeWeb = pkgFirst(pkg, NODE_WEB);
+  if (nodeWeb) return { kind: "container", stack: nodeWeb };
+
+  if (pkg && pkg.scripts?.build && (pkgHasDep(pkg, "react") || pkgHasDep(pkg, "vue"))) {
+    return {
+      kind: "static_build",
+      stack: pkgHasDep(pkg, "vue") ? "Vue" : "React",
+    };
+  }
 
   if (s.hasManagePy) return { kind: "container", stack: "Django" };
   const pyWeb = firstNamed(PIP_WEB, (n) => pipHas(pip, n) || tomlDep(pip, n));
@@ -219,34 +350,15 @@ export function detectEngine(s: EngineSignals): EngineDetect {
     return { kind: "container", stack: "Go" };
   }
 
-  if (packageHasNext(pkg)) {
-    if (s.nextConfigText && nextConfigIsStaticExport(s.nextConfigText)) {
-      return { kind: "vite", stack: "Next.js export" };
-    }
-    return { kind: "next", stack: "Next.js" };
+  // Python manifests (incl. uv) — web handled above; queue/db → not_a_site.
+  if (hasPython) {
+    const pyQueue = firstNamed(PIP_QUEUE, (n) => pipHas(pip, n) || tomlDep(pip, n));
+    if (pyQueue) return { kind: "not_a_site", stack: pyQueue };
+    const pyRedis = firstNamed(PIP_REDIS, (n) => pipHas(pip, n) || tomlDep(pip, n));
+    if (pyRedis) return { kind: "not_a_site", stack: pyRedis };
+    const pyDb = firstNamed(PIP_DB, (n) => pipHas(pip, n) || tomlDep(pip, n));
+    if (pyDb) return { kind: "not_a_site", stack: pyDb };
   }
-
-  if (
-    packageHasVite(pkg) ||
-    s.hasViteConfig ||
-    (pkg && (pkgHasDep(pkg, "react-scripts") || pkgHasDep(pkg, "@rsbuild/core")))
-  ) {
-    return { kind: "vite", stack: "Vite" };
-  }
-
-  const nodeWeb = pkgFirst(pkg, NODE_WEB);
-  if (nodeWeb) return { kind: "container", stack: nodeWeb };
-
-  if (pkg && pkg.scripts?.build && (pkgHasDep(pkg, "react") || pkgHasDep(pkg, "vue"))) {
-    return { kind: "vite", stack: pkgHasDep(pkg, "vue") ? "Vue" : "React" };
-  }
-
-  const pyQueue = firstNamed(PIP_QUEUE, (n) => pipHas(pip, n) || tomlDep(pip, n));
-  if (pyQueue) return { kind: "not_a_site", stack: pyQueue };
-  const pyRedis = firstNamed(PIP_REDIS, (n) => pipHas(pip, n) || tomlDep(pip, n));
-  if (pyRedis) return { kind: "not_a_site", stack: pyRedis };
-  const pyDb = firstNamed(PIP_DB, (n) => pipHas(pip, n) || tomlDep(pip, n));
-  if (pyDb) return { kind: "not_a_site", stack: pyDb };
 
   if (s.gemfile) {
     const gemQ = firstNamed(GEM_QUEUE, (n) => gemHas(s.gemfile!, n));
@@ -278,6 +390,84 @@ export function engineKindFromSignals(s: EngineSignals): EngineKind {
   return detectEngine(s).kind;
 }
 
+/** Full plan for Run / CLI / MCP from the same signals as detectEngine. */
+export function buildPlanFromSignals(s: EngineSignals): BuildPlan {
+  const got = detectEngine(s);
+  const kind = canonicalKind(got.kind);
+  const pkg = s.pkg && typeof s.pkg === "object" ? (s.pkg as PkgJson) : undefined;
+
+  if (kind === "static") {
+    return { runtime: "static", stack: got.stack };
+  }
+  if (kind === "static_build") {
+    return {
+      runtime: "static_build",
+      stack: got.stack,
+      install: npmInstallCmd(),
+      build: npmBuildCmd(pkg),
+      outputDirs: staticOutputDirs(pkg, got.stack),
+    };
+  }
+  if (kind === "next") {
+    return {
+      runtime: "next",
+      stack: got.stack,
+      install: npmInstallCmd(),
+      build: "next build",
+    };
+  }
+  if (kind === "container") {
+    const port = 8080;
+    const start = containerStartCmd(got.stack, s, pkg);
+    const install =
+      got.stack === "Docker"
+        ? undefined
+        : packageHasNext(pkg) || (pkg && (pkg.dependencies || pkg.devDependencies))
+          ? npmInstallCmd()
+          : s.hasUvLock
+            ? "uv sync"
+            : s.requirementsTxt
+              ? "pip install -r requirements.txt"
+              : s.pyprojectToml
+                ? "pip install ."
+                : undefined;
+    if (!start && got.stack === "Docker") {
+      return {
+        runtime: "container",
+        stack: got.stack,
+        port,
+        reason: "Dockerfile detected — container runner will build the image.",
+        build: "docker build -t aft-run .",
+        start: "docker run --rm -p 8080:8080 aft-run",
+      };
+    }
+    if (!start) {
+      return {
+        runtime: "container",
+        stack: got.stack,
+        install,
+        port,
+        reason: `${got.stack} needs a start command we could not infer.`,
+      };
+    }
+    return {
+      runtime: "container",
+      stack: got.stack,
+      install,
+      start,
+      port,
+    };
+  }
+  if (kind === "not_a_site") {
+    return {
+      runtime: "not_a_site",
+      stack: got.stack,
+      reason: `${got.stack} is not a website (database, cache, or queue). Nothing to host.`,
+    };
+  }
+  return { runtime: "unknown", stack: got.stack, reason: "Could not detect a shippable site." };
+}
+
 function normPath(p: string): string {
   return p.replace(/^\.\//, "").replace(/\\/g, "/");
 }
@@ -287,19 +477,23 @@ function refuseCopy(
   kind: EngineKind,
   stack: string,
 ): { error: string; reason: string } {
-  if (kind === "container") {
+  const k = canonicalKind(kind);
+  if (k === "container") {
     return {
       error: "needs_container",
-      reason: `${stack} needs a container runner that is not shipped. Detect ok; build failed.`,
+      reason:
+        door === "drop"
+          ? `${stack} needs a process runner. Drop is static files only — paste the public GitHub repo on aft.page/run.`
+          : `${stack} needs a process runner. Paste the public GitHub repo on aft.page/run (local upload is static/Next only).`,
     };
   }
-  if (kind === "not_a_site") {
+  if (k === "not_a_site") {
     return {
       error: "not_a_site",
       reason: `${stack} is not a website (database, cache, or queue). Nothing to host.`,
     };
   }
-  if (kind === "next") {
+  if (k === "next") {
     return {
       error: "needs_next_build",
       reason:
@@ -313,7 +507,7 @@ function refuseCopy(
     reason:
       door === "drop"
         ? "Drop is static files only. Build, then drop dist/, or paste the public GitHub repo."
-        : "CSR/Vite — run npm run build, then deploy dist/, or paste the public GitHub repo.",
+        : "CSR — run npm run build, then deploy dist/, or paste the public GitHub repo.",
   };
 }
 
@@ -375,22 +569,30 @@ export function sourceTreeRefuse(
     gemfile: input.gemfile,
     goMod: input.goMod,
     goMainText: input.goMainText,
+    hasDockerfile: has("Dockerfile") || has("dockerfile"),
+    hasCompose:
+      has("docker-compose.yml") ||
+      has("docker-compose.yaml") ||
+      has("compose.yml") ||
+      has("compose.yaml"),
+    hasUvLock: has("uv.lock"),
     hasViteConfig: paths.some((p) => /^vite\.config\.(js|ts|mjs)$/.test(p.split("/").pop() || "")),
   });
 
-  if (got.kind === "container" || got.kind === "not_a_site") {
-    return refuseCopy(door, got.kind, got.stack);
+  const kind = canonicalKind(got.kind);
+  if (kind === "container" || kind === "not_a_site") {
+    return refuseCopy(door, kind, got.stack);
   }
-  if (got.kind === "next" && !has(".open-next/worker.js") && !has("out/index.html")) {
+  if (kind === "next" && !has(".open-next/worker.js") && !has("out/index.html")) {
     return refuseCopy(door, "next", got.stack);
   }
   if (
-    got.kind === "vite" &&
+    kind === "static_build" &&
     !has("dist/index.html") &&
     !has("out/index.html") &&
     !has("build/index.html")
   ) {
-    return refuseCopy(door, "vite", got.stack);
+    return refuseCopy(door, "static_build", got.stack);
   }
   return null;
 }

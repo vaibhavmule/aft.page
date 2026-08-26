@@ -17,7 +17,7 @@ Cursor `mcp_auth` timeout is **C**. aft.page was up. See [USE-CASE-PARAKH.md](..
 | `https://status.aft.page` | public | Uptime probes (API process, MCP `/health`, website, hello) |
 | `https://ops.aft.page` | founder (`OPS_EMAILS`) | Scoreboard + users/sites/domains + CF cost + failed deploys + feedback + retry + smoke + hijack audit + domain access + **[/distribute](https://ops.aft.page/distribute)** (plugin/CLI marketplace pipeline) |
 
-**Engine (Network + Stories + Run on ops):** Drop is static HTML/`dist/` only. MCP, CLI, and Run share detect → build → URL. Shipped runners: static, Vite, Next. `needs_container` (Python/Node/Go/Rust/Ruby servers) and `not_a_site` (db/redis/queue) are honest detect fails, not platform bugs.
+**Engine (Network + Stories + Run on ops):** Drop is static HTML/`dist/` only. MCP, CLI, and Run share detect → build → URL. Shipped runners: static, Vite, Next, container (ephemeral on Run for Express/Flask/etc). Drop/CLI upload of server source still returns `needs_container` (paste public GitHub on Run). `not_a_site` (db/redis/queue) remains an honest detect fail.
 | `https://test--{case}.aft.page` | public canary (`noindex`) | Last smoke artifacts — not tenant inventory |
 | `https://test--fw-N.aft.page` | founder | Compat probe canaries (random GitHub → AFT) |
 | CF Workers Logs | you | Stacks / MCP JSON-RPC |

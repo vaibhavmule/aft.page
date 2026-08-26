@@ -2,7 +2,7 @@ import type { Env } from "../env";
 import { ensureDb } from "./core";
 
 export type RunJobStatus = "queued" | "live" | "failed";
-export type RunJobKind = "static" | "next" | "vite";
+export type RunJobKind = "static" | "next" | "vite" | "static_build" | "container";
 export type RunJobPhase =
   | "queued"
   | "cloning"
@@ -42,6 +42,7 @@ export type RunJobRow = {
   httpStatus: number | null;
   logTail: string | null;
   userId: string | null;
+  planJson: string | null;
 };
 
 type RunJobDbRow = {
@@ -65,6 +66,7 @@ type RunJobDbRow = {
   log_tail?: string | null;
   job_token_hash?: string | null;
   user_id?: string | null;
+  plan_json?: string | null;
 };
 
 function asPhase(raw: string | null | undefined, status: RunJobStatus): RunJobPhase {
@@ -74,6 +76,11 @@ function asPhase(raw: string | null | undefined, status: RunJobStatus): RunJobPh
     return raw as RunJobPhase;
   }
   return "queued";
+}
+
+function asKind(raw: string | null | undefined): RunJobKind {
+  if (raw === "next" || raw === "vite" || raw === "static_build" || raw === "container") return raw;
+  return "static";
 }
 
 function mapRunJob(row: RunJobDbRow): RunJobRow {
@@ -88,7 +95,7 @@ function mapRunJob(row: RunJobDbRow): RunJobRow {
     url: row.url,
     trigger: row.trigger,
     status,
-    kind: row.kind === "next" || row.kind === "vite" ? row.kind : "static",
+    kind: asKind(row.kind),
     phase: asPhase(row.phase, status),
     error: row.error,
     reason: row.reason,
@@ -99,12 +106,13 @@ function mapRunJob(row: RunJobDbRow): RunJobRow {
     httpStatus: row.http_status,
     logTail: row.log_tail ?? null,
     userId: row.user_id ?? null,
+    planJson: row.plan_json ?? null,
   };
 }
 
 const RUN_JOB_SELECT = `id, created_at, finished_at, owner, repo, url, trigger, status,
             kind, phase, error, reason, slug, site_url, branch, ms, http_status,
-            log_tail, job_token_hash, user_id`;
+            log_tail, job_token_hash, user_id, plan_json`;
 
 export async function insertRunJob(
   env: Env,
@@ -119,6 +127,7 @@ export async function insertRunJob(
     branch?: string | null;
     jobTokenHash?: string | null;
     userId?: string | null;
+    planJson?: string | null;
   },
 ): Promise<string> {
   await ensureDb(env);
@@ -128,8 +137,8 @@ export async function insertRunJob(
   await env.DB.prepare(
     `INSERT INTO run_jobs (
        id, created_at, owner, repo, url, trigger, status, kind, phase,
-       slug, branch, job_token_hash, user_id
-     ) VALUES (?, ?, ?, ?, ?, ?, 'queued', ?, ?, ?, ?, ?, ?)`,
+       slug, branch, job_token_hash, user_id, plan_json
+     ) VALUES (?, ?, ?, ?, ?, ?, 'queued', ?, ?, ?, ?, ?, ?, ?)`,
   )
     .bind(
       id,
@@ -144,6 +153,7 @@ export async function insertRunJob(
       opts.branch || null,
       opts.jobTokenHash || null,
       opts.userId || null,
+      opts.planJson || null,
     )
     .run();
   return id;

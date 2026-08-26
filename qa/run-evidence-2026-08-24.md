@@ -1,21 +1,19 @@
-# Run evidence — 2026-08-24
+# Run evidence — 2026-08-24 (updated 2026-08-26)
 
 Paste-repo path via `POST https://api.aft.page/v1/repo/deploy` (same as https://aft.page/run/).
 
-## A. Vite attempt (failed — runner)
+## A. Vite (still blocked — workflow not on origin)
 
 | Field | Value |
 | --- | --- |
 | Repo | `mdn/todo-react` |
-| Detection | `vite` (branch `main`) |
-| Job | `run_fce84089f050` |
-| Queue/build time | ~1.4s until fail (no build) |
+| Detection | `static_build` / Vite (branch `main`) |
+| 2026-08-24 job | `run_fce84089f050` |
+| 2026-08-24 error | `runner_unavailable` — GHA workflow_dispatch **403** (token missing `actions: write`) |
+| 2026-08-26 retry | `runner_unavailable` — GHA workflow_dispatch **404** (`run-static-build.yml` not on `main`) |
 | Working URL | none |
-| Error | `runner_unavailable` |
-| Reason | GitHub Actions workflow_dispatch **403**: `Resource not accessible by personal access token` |
-| Second person | n/a |
 
-**Unblock:** `AFT_RUN_GITHUB_TOKEN` on `aft-page-api` needs `actions: write` (and contents read) on `vaibhavmule/aft.page` so `run-vite.yml` / `run-next.yml` can be dispatched. Then re-run a Vite repo.
+Live API now dispatches `run-static-build.yml`. Origin still only has `run-vite.yml`. Token 403 is no longer the blocker. Re-run after that workflow file is on `main`.
 
 ## B. Static success (complete Run path)
 
@@ -30,3 +28,16 @@ Paste-repo path via `POST https://api.aft.page/v1/repo/deploy` (same as https://
 | Second person | **yes** — anonymous GET 200; `/_aft/me` → `{"user":null}`; fresh UA also 200 (public site) |
 
 Open: https://aft.page/run/mdn/beginner-html-site-scripted
+
+## C. Express container success (2026-08-26)
+
+| Field | Value |
+| --- | --- |
+| Repo | `heroku/node-js-getting-started` |
+| Detection | `container` / Express (`npm start`, port 8080) |
+| Job | `run_fdaf6677d10d` |
+| Working URL | https://nodejs-getting-started-sky.aft.page |
+| Failure logs | none |
+| Second person | **yes** — anonymous GET 200 (home + in-app nav to How Heroku Works) |
+
+Open: https://aft.page/run/heroku/node-js-getting-started

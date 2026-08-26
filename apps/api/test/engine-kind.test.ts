@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildPlanFromSignals,
   detectEngine,
   engineKindFromSignals,
   sourceTreeRefuse,
@@ -14,7 +15,7 @@ const cases: Array<{
   {
     name: "CSR Vite",
     signals: { pkg: { devDependencies: { vite: "5" } }, hasIndexHtml: true },
-    kind: "vite",
+    kind: "static_build",
     stack: "Vite",
   },
   {
@@ -24,13 +25,50 @@ const cases: Array<{
     stack: "Next.js",
   },
   {
-    name: "Next static export is CSR-shaped",
+    name: "Next static export is static_build",
     signals: {
       pkg: { dependencies: { next: "15" } },
       nextConfigText: "export default { output: 'export' }",
     },
-    kind: "vite",
+    kind: "static_build",
     stack: "Next.js export",
+  },
+  {
+    name: "Dockerfile beats package.json",
+    signals: {
+      hasDockerfile: true,
+      pkg: { dependencies: { next: "15" } },
+      hasIndexHtml: true,
+    },
+    kind: "container",
+    stack: "Docker",
+  },
+  {
+    name: "compose.yaml beats Vite",
+    signals: {
+      hasCompose: true,
+      pkg: { devDependencies: { vite: "5" } },
+    },
+    kind: "container",
+    stack: "Docker",
+  },
+  {
+    name: "package.json Next beats Django manage.py",
+    signals: {
+      pkg: { dependencies: { next: "15" } },
+      hasManagePy: true,
+    },
+    kind: "next",
+    stack: "Next.js",
+  },
+  {
+    name: "uv.lock + Flask is container",
+    signals: {
+      hasUvLock: true,
+      requirementsTxt: "flask>=3.0\n",
+    },
+    kind: "container",
+    stack: "Flask",
   },
   {
     name: "Python Django",
@@ -134,6 +172,68 @@ describe("detectEngine", () => {
   });
 });
 
+describe("buildPlanFromSignals", () => {
+  it("fills install/build/outputDirs for Vite static_build", () => {
+    const plan = buildPlanFromSignals({
+      pkg: { scripts: { build: "vite build" }, devDependencies: { vite: "5" } },
+      hasIndexHtml: true,
+    });
+    expect(plan.runtime).toBe("static_build");
+    expect(plan.stack).toBe("Vite");
+    expect(plan.install).toMatch(/npm install/);
+    expect(plan.build).toBe("npm run build");
+    expect(plan.outputDirs).toEqual(["dist", "out", "build"]);
+  });
+
+  it("OpenNext build for next runtime", () => {
+    const plan = buildPlanFromSignals({ pkg: { dependencies: { next: "15" } } });
+    expect(plan.runtime).toBe("next");
+    expect(plan.build).toBe("next build");
+  });
+
+  it("Docker container plan has start via docker run", () => {
+    const plan = buildPlanFromSignals({ hasDockerfile: true });
+    expect(plan.runtime).toBe("container");
+    expect(plan.stack).toBe("Docker");
+    expect(plan.start).toMatch(/docker run/);
+  });
+
+  it("uv sync when uv.lock present for Python web", () => {
+    const plan = buildPlanFromSignals({
+      hasUvLock: true,
+      requirementsTxt: "fastapi==0.115.0\n",
+    });
+    expect(plan.runtime).toBe("container");
+    expect(plan.install).toBe("uv sync");
+    expect(plan.start).toMatch(/uvicorn/);
+    expect(plan.port).toBe(8080);
+  });
+
+  it("Express plan has npm start and port", () => {
+    const plan = buildPlanFromSignals({
+      pkg: {
+        scripts: { start: "node server.js" },
+        dependencies: { express: "4.21.0" },
+      },
+    });
+    expect(plan.runtime).toBe("container");
+    expect(plan.stack).toBe("Express");
+    expect(plan.start).toBe("npm start");
+    expect(plan.port).toBe(8080);
+    expect(plan.install).toMatch(/npm install/);
+  });
+
+  it("Flask plan has flask run and port", () => {
+    const plan = buildPlanFromSignals({
+      requirementsTxt: "flask==3.0.0\n",
+    });
+    expect(plan.runtime).toBe("container");
+    expect(plan.stack).toBe("Flask");
+    expect(plan.start).toMatch(/flask run/);
+    expect(plan.port).toBe(8080);
+  });
+});
+
 describe("sourceTreeRefuse", () => {
   it("refuses next source on drop with static-only copy", () => {
     const r = sourceTreeRefuse(
@@ -169,6 +269,18 @@ describe("sourceTreeRefuse", () => {
     );
     expect(r?.error).toBe("needs_container");
     expect(r?.reason).toMatch(/Express/);
+  });
+
+  it("refuses Dockerfile as needs_container", () => {
+    expect(
+      sourceTreeRefuse(
+        {
+          paths: ["Dockerfile", "package.json"],
+          pkgRaw: JSON.stringify({ dependencies: { next: "15" } }),
+        },
+        "engine",
+      )?.error,
+    ).toBe("needs_container");
   });
 
   it("refuses Celery as not a site", () => {

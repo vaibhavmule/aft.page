@@ -22,12 +22,11 @@ async function installedNextVersion(root) {
   }
 }
 
-function needsNext14_2(ver) {
-  const m = String(ver).match(/^(\d+)\.(\d+)/);
-  if (!m) return false;
-  const maj = Number(m[1]);
-  const minor = Number(m[2]);
-  return maj === 14 && minor < 2;
+/** Next 14 was dropped Q1 2026. Empty/unreadable counts as unsupported. */
+export function nextVersionUnsupported(ver) {
+  const m = String(ver).match(/^(\d+)/);
+  if (!m) return true;
+  return Number(m[1]) < 15;
 }
 
 export async function deployNextSsr(
@@ -55,11 +54,10 @@ export async function deployNextSsr(
       { verbose, failMessage: "Install failed" },
     );
     const nextVer = await installedNextVersion(projectRoot);
-    if (needsNext14_2(nextVer)) {
-      runCmd("npm", ["install", "next@14.2", "--legacy-peer-deps"], projectRoot, {
-        verbose,
-        failMessage: "Install failed",
-      });
+    if (nextVersionUnsupported(nextVer)) {
+      throw new Error(
+        `Next.js ${nextVer || "unknown"} is not supported. Use Next 15 or 16.`,
+      );
     }
   }, { verbose });
 
@@ -91,12 +89,19 @@ export async function deployNextSsr(
   if (!(await Promise.all(openNextNames.map((n) => exists(join(projectRoot, n))))).some(Boolean)) {
     await writeFile(
       join(projectRoot, "open-next.config.ts"),
-      'import { defineCloudflareConfig } from "@opennextjs/cloudflare";\n\nexport default defineCloudflareConfig();\n',
+      `import { defineCloudflareConfig } from "@opennextjs/cloudflare";
+import staticAssetsIncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/static-assets-incremental-cache";
+
+export default defineCloudflareConfig({
+  incrementalCache: staticAssetsIncrementalCache,
+  enableCacheInterception: true,
+});
+`,
     );
   }
 
   await runStep("Building…", async () => {
-    runCmd("npx", ["opennextjs-cloudflare", "build", "--dangerouslyUseUnsupportedNextVersion"], projectRoot, {
+    runCmd("npx", ["opennextjs-cloudflare", "build"], projectRoot, {
       verbose,
       failMessage: "Build failed",
     });

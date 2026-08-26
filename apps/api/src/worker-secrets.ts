@@ -78,7 +78,7 @@ async function cfWorkerSecretPut(
   if (res.ok && body.success !== false) return { ok: true };
   const msg =
     body.errors?.[0]?.message ||
-    `Cloudflare secret PUT ${res.status}`;
+    `Secret update failed (${res.status})`;
   return { ok: false, reason: msg };
 }
 
@@ -109,7 +109,7 @@ async function cfWorkerSecretDelete(
   };
   return {
     ok: false,
-    reason: body.errors?.[0]?.message || `Cloudflare secret DELETE ${res.status}`,
+    reason: body.errors?.[0]?.message || `Secret delete failed (${res.status})`,
   };
 }
 

@@ -1,0 +1,66 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "aft-run-container",
+  "account_id": "44255ec64e0080b678670b53bf810d27",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-08",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "AFT_API": "https://api.aft.page",
+    "SANDBOX_TRANSPORT": "rpc"
+  },
+  "services": [
+    {
+      "binding": "AFT_API_SERVICE",
+      "service": "aft-page-api"
+    }
+  ],
+  "containers": [
+    {
+      "class_name": "Sandbox",
+      "image": "./Dockerfile",
+      "instance_type": "lite",
+      "max_instances": 20
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "Sandbox",
+        "name": "Sandbox"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "new_sqlite_classes": ["Sandbox"],
+      "tag": "v1"
+    }
+  ],
+  "routes": [
+    {
+      "pattern": "run-container.aft.page/*",
+      "zone_name": "aft.page"
+    }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "RUN_JOBS",
+        "queue": "aft-run-container-jobs"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "aft-run-container-jobs",
+        "max_batch_size": 1,
+        "max_retries": 1,
+        "retry_delay": 30
+      }
+    ]
+  }
+}

@@ -11,6 +11,10 @@ type SecretBindings = {
   AFT_DISABLE_THUMB?: string;
   AFT_RUN_GITHUB_TOKEN?: string;
   AFT_RUN_GITHUB_REPO?: string;
+  /** Base URL for the container Run worker (Sandbox). Prefer RUN_CONTAINER service binding. */
+  AFT_RUN_CONTAINER_URL?: string;
+  /** Service binding to aft-run-container (Worker-to-Worker; avoids custom-domain 522). */
+  RUN_CONTAINER?: Fetcher;
   AFT_AI_GATEWAY?: string;
   AI?: {
     run: (

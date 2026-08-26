@@ -17,6 +17,7 @@ import { isInteractive } from "./src/prompt.js";
 import { cmpVersion, localVersion } from "./src/version.js";
 import { filterMigrateKeys, parseDotEnv } from "./src/migrate.js";
 import { domainPhase, needsDns } from "./src/domains.js";
+import { nextVersionUnsupported } from "./src/next-deploy.js";
 
 assert.equal(shouldSkip("node_modules/x"), true);
 assert.equal(shouldSkip(".git/config"), true);
@@ -80,6 +81,12 @@ assert.match(help.stdout, /aft domains/);
 assert.match(help.stdout, /--check/);
 assert.match(help.stdout, /--verbose/);
 assert.match(help.stdout, /aft version/);
+
+assert.equal(nextVersionUnsupported("14.2.5"), true);
+assert.equal(nextVersionUnsupported("14.1.0"), true);
+assert.equal(nextVersionUnsupported(""), true);
+assert.equal(nextVersionUnsupported("15.5.21"), false);
+assert.equal(nextVersionUnsupported("16.2.11"), false);
 
 assert.equal(cmpVersion("0.1.0", "0.2.2"), -1);
 assert.equal(cmpVersion("0.2.2", "0.2.2"), 0);
@@ -271,6 +278,25 @@ assert.equal(
 assert.equal(
   detectFromSignals({ pkg: { dependencies: { ioredis: "5" } } }).kind,
   "not_a_site",
+);
+assert.equal(
+  detectFromSignals({
+    hasDockerfile: true,
+    pkg: { dependencies: { next: "15" } },
+  }).stack,
+  "Docker",
+);
+assert.equal(
+  detectFromSignals({
+    pkg: { devDependencies: { vite: "5" } },
+    hasIndexHtml: true,
+  }).kind,
+  "static_build",
+);
+const { buildPlanFromSignals } = await import("./src/detect.js");
+assert.equal(
+  buildPlanFromSignals({ hasUvLock: true, requirementsTxt: "flask>=3\n" }).install,
+  "uv sync",
 );
 
 const install = await import("node:fs").then((fs) =>
