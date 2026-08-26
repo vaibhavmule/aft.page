@@ -43,7 +43,7 @@
   Cache-Control: public, max-age=60
 
 /developer-ai.txt
-  Content-Type: text/plain; charset=utf-8
+  Content: text/plain; charset=utf-8
   Cache-Control: public, max-age=60
 
 /robots-ai.txt
@@ -76,6 +76,10 @@
 
 /llms.html
   Cache-Control: public, max-age=60
+
+/og-run.png
+  Content-Type: image/png
+  Cache-Control: public, max-age=86400
 
 # Keep CSS/JS short-lived so website deploys aren't stuck behind 4h edge cache
 /styles.css
