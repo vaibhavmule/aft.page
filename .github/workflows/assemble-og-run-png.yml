@@ -4,7 +4,8 @@ on:
   push:
     branches: [cursor/run-og-specificity-0f49]
     paths:
-      - 'www/functions/og-run-png-parts/t*.txt'
+      - 'www/functions/og-run-png-parts/**'
+      - '.github/workflows/assemble-og-run-png.yml'
 permissions:
   contents: write
 jobs:
@@ -12,33 +13,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Concatenate verified parts into og-run-png-data.js
+        with:
+          ref: cursor/run-og-specificity-0f49
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download and write og-run-png-data.js
         run: |
           set -euo pipefail
+          URL='https://tmpfiles.org/dl/1787731962.f3074b47effb96a9/wMwkG7Wfc19D/final_og_run_png_data.js'
+          curl -fsSL "$URL" -o www/functions/og-run-png-data.js
           python3 << 'PY'
           from pathlib import Path
           import hashlib
-          parts_dir = Path("www/functions/og-run-png-parts")
-          chunks = sorted(parts_dir.glob("t*.txt"))
-          assert len(chunks) == 16, f"expected 16 chunks, got {chunks}"
-          out = "".join(p.read_text(encoding="utf-8") for p in chunks)
-          dest = Path("www/functions/og-run-png-data.js")
-          dest.write_text(out, encoding="utf-8")
-          raw = dest.read_bytes()
-          print("bytes", len(raw))
-          print("sha256", hashlib.sha256(raw).hexdigest())
-          assert raw.startswith(b"/** Auto-generated from www/og-run-source.html")
+          raw = Path('www/functions/og-run-png-data.js').read_bytes()
+          print('bytes', len(raw))
+          print('sha256', hashlib.sha256(raw).hexdigest())
+          assert raw.startswith(b'/** Auto-generated from www/og-run-source.html')
           assert len(raw) == 45700
-          assert hashlib.sha256(raw).hexdigest() == "fd7412f9f1265159602e278d45395acbe6ab8b3fe03b1f90195f425fbad998be"
+          assert hashlib.sha256(raw).hexdigest() == 'fd7412f9f1265159602e278d45395acbe6ab8b3fe03b1f90195f425fbad998be'
           PY
-      - name: Commit assembled file and remove scratch parts
+      - name: Commit assembled file and remove scratch
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add www/functions/og-run-png-data.js
           git rm -r --ignore-unmatch www/functions/og-run-png-parts || true
           git rm --ignore-unmatch .github/workflows/assemble-og-run-png.yml || true
           git status
-          git commit -m "fix(run): serve run-specific OG card for /run/ shares"
-          git push
+          git commit -m 'fix(run): serve run-specific OG card for /run/ shares'
+          git push origin HEAD:cursor/run-og-specificity-0f49
