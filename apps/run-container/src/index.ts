@@ -609,6 +609,8 @@ async function rebindTunnel(
     sleepAfter: "30m",
     transport: "rpc",
   });
+  // Cached Quick Tunnel URLs stay after cloudflared dies. Destroy then mint a new one.
+  await sandbox.tunnels.destroy(port);
   const tunnel = await sandbox.tunnels.get(port);
   return tunnel.url || null;
 }

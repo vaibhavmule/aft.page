@@ -19,9 +19,9 @@ export function isEphemeralContainerOrigin(url: string | null | undefined): bool
   }
 }
 
-/** Tunnel-edge failures, not the app's own 5xx. */
+/** Tunnel-edge failures, not the app's own 5xx. Quick Tunnels often return 502. */
 export function tunnelOriginDead(status: number): boolean {
-  return status === 522 || status === 523 || status === 530;
+  return status === 502 || status === 522 || status === 523 || status === 530;
 }
 
 export async function patchSiteUpstream(
@@ -53,8 +53,12 @@ export async function rebindContainerOrigin(
   slug: string,
 ): Promise<string | null> {
   if (!env.RUN_CONTAINER) return null;
+  const lockKey = `rebind:${slug}`;
+  const locked = await env.SITES.get(lockKey);
+  if (locked) return isEphemeralContainerOrigin(locked) ? locked : null;
   const job = await getLatestRunJobBySlug(env, slug);
   if (!job || job.kind !== "container" || job.status !== "live") return null;
+  await env.SITES.put(lockKey, "1", { expirationTtl: 120 });
   const res = await env.RUN_CONTAINER.fetch(
     new Request("https://run-container.internal/v1/rebind", {
       method: "POST",
@@ -76,5 +80,6 @@ export async function rebindContainerOrigin(
   const upstream = typeof body.upstream === "string" ? body.upstream.trim() : "";
   if (!upstream || !isEphemeralContainerOrigin(upstream)) return null;
   await patchSiteUpstream(env, slug, upstream);
+  await env.SITES.put(lockKey, upstream, { expirationTtl: 120 });
   return upstream;
 }

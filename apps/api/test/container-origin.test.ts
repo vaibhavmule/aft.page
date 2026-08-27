@@ -15,6 +15,7 @@ describe("container origin helpers", () => {
     expect(isEphemeralContainerOrigin("https://abc.trycloudflare.com")).toBe(true);
     expect(isEphemeralContainerOrigin("https://aft-u-x.workers.dev")).toBe(false);
     expect(tunnelOriginDead(530)).toBe(true);
+    expect(tunnelOriginDead(502)).toBe(true);
     expect(tunnelOriginDead(500)).toBe(false);
     expect(sandboxIdForJob("run_abc123")).toBe("run-run-abc123");
   });
@@ -95,7 +96,7 @@ describe("serve rebind", () => {
       if (href.includes("rebound.trycloudflare.com")) {
         return new Response("hello from rebound", { status: 200 });
       }
-      return new Response("tunnel down", { status: 530 });
+      return new Response("tunnel down", { status: 502 });
     }) as typeof fetch;
     try {
       const res = await call(new Request(`https://${slug}.aft.page/`));
