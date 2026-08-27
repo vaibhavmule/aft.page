@@ -173,6 +173,7 @@
             <li><a href="#how">How to claim</a></li>
             <li><a href="#rename">Change URL</a></li>
             <li><a href="#private">Private & invites</a></li>
+            <li><a href="#signin">Sign in with AFT</a></li>
             <li><a href="#history">Redeploy & rollback</a></li>
             <li><a href="#lifecycle">Pause &amp; destroy</a></li>
             <li><a href="#faq">Ownership FAQ</a></li>
@@ -254,6 +255,48 @@ aft visibility public</code></pre>
               <code>{ "email": "…", "role": "edit" | "view" }</code>. Revoke
               the same way you'd remove a collaborator from a shared doc —
               from the project's Access tab.
+            </p>
+          </section>
+
+          <section id="signin">
+            <h2>Sign in with AFT</h2>
+            <p>
+              Apps on <code>*.aft.page</code> can read the viewer's identity
+              and redirect to login or sign-out. Available on every live slug:
+            </p>
+            <pre><code>GET /_aft/me
+GET /signin-with-aft?return_to=/
+GET /signout-with-aft?return_to=/</code></pre>
+            <p>
+              <code>/_aft/me</code> returns JSON
+              <code>{ user: { id, email } | null }</code> (always 200 on
+              public sites; on private sites it follows the site ACL).
+              <code>/signin-with-aft</code> redirects to
+              <code>https://aft.page/login</code> if not signed in, or to the
+              same-origin <code>return_to</code> if already logged in.
+              <code>/signout-with-aft</code> clears the session and returns
+              to the site.
+            </p>
+            <pre><code>fetch('/_aft/me')
+  .then(r =&gt; r.json())
+  .then(({ user }) =&gt; {
+    if (user) {
+      console.log(`Signed in: ${user.email}`);
+    } else {
+      location.href = '/signin-with-aft?return_to=' + location.pathname;
+    }
+  });</code></pre>
+            <p>
+              Worker and Next.js upstreams also receive request headers
+              <code>aft-authenticated-user-email</code> and
+              <code>aft-authenticated-user-id</code> (spoofed incoming values
+              are overwritten). Static HTML should call
+              <code>/_aft/me</code>.
+            </p>
+            <p>
+              Sign in with AFT provides identity — it's not a substitute for
+              private-site invites. Use invite-by-email to control who can
+              access a private app.
             </p>
           </section>
 

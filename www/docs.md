@@ -46,6 +46,7 @@ Then same as the project dashboard:
 | `aft update` | /docs/cli/ |
 | Custom domains | /docs/domains/ |
 | `aft.json` capabilities | /docs/capabilities/ |
+| Sign in with AFT | /docs/claim/#signin |
 
 Unclaimed sites deleted after 30 days idle. Limits: 500 files · 25 MB/file · 100 MB.
 Claimed sites can be paused (reversible) or destroyed (irreversible) — see /docs/claim/.
