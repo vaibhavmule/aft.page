@@ -363,11 +363,11 @@ export function buildPlanFromSignals(s) {
     } else if (pkg?.scripts?.start) {
       start = "npm start";
     } else if (got.stack === "Django" || s.hasManagePy) {
-      start = "python manage.py runserver 0.0.0.0:8080";
+      start = "python3 manage.py runserver 0.0.0.0:8080";
     } else if (got.stack === "Flask") {
-      start = "flask run --host 0.0.0.0 --port 8080";
+      start = "python3 -m flask run --host 0.0.0.0 --port 8080";
     } else if (got.stack === "FastAPI") {
-      start = "uvicorn main:app --host 0.0.0.0 --port 8080";
+      start = "python3 -m uvicorn main:app --host 0.0.0.0 --port 8080";
     } else if (pkg?.scripts?.dev) {
       start = "npm run dev -- --host 0.0.0.0 --port 8080";
     }
@@ -379,9 +379,9 @@ export function buildPlanFromSignals(s) {
           : s.hasUvLock
             ? "uv sync"
             : s.requirementsTxt
-              ? "pip install -r requirements.txt"
+              ? "python3 -m pip install -r requirements.txt"
               : s.pyprojectToml
-                ? "pip install ."
+                ? "python3 -m pip install ."
                 : undefined;
     return {
       runtime: "container",

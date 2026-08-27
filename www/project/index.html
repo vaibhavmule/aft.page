@@ -711,6 +711,10 @@
             />
             <button type="submit" class="btn" id="add-secret-submit">Add</button>
           </form>
+          <p class="danger-desc" id="rerun-hint">
+            Process apps (Express, Flask) pick up secrets on the next run, not on save.
+          </p>
+          <button type="button" class="btn" id="rerun-with-secrets">Re-run with secrets</button>
           <div class="msg" id="secrets-msg" role="status"></div>
         </section>
 
@@ -2006,6 +2010,7 @@
           return;
         }
         panel.hidden = false;
+        document.getElementById("rerun-with-secrets").hidden = false;
 
         let existing = [];
         try {
@@ -2326,6 +2331,41 @@
         if (document.getElementById("secrets-msg").classList.contains("ok")) {
           nameEl.value = "";
           valueEl.value = "";
+        }
+      });
+
+      document.getElementById("rerun-with-secrets").addEventListener("click", async () => {
+        if (!canRollback()) return;
+        const btn = document.getElementById("rerun-with-secrets");
+        btn.disabled = true;
+        setMsg(document.getElementById("secrets-msg"), "Re-running…", "");
+        try {
+          const res = await fetch(
+            `${API}/v1/sites/${encodeURIComponent(slug)}/rerun`,
+            { method: "POST", credentials: "include" },
+          );
+          const body = await res.json().catch(() => ({}));
+          if (res.status === 202 && body.jobId) {
+            setMsg(
+              document.getElementById("secrets-msg"),
+              "Queued. Watch it on /run/ — you’ll get a notification when it finishes.",
+              "ok",
+            );
+            return;
+          }
+          if (res.ok && body.url) {
+            setMsg(document.getElementById("secrets-msg"), "Live again.", "ok");
+            return;
+          }
+          setMsg(
+            document.getElementById("secrets-msg"),
+            body.reason || body.error || "Could not re-run",
+            "err",
+          );
+        } catch (_) {
+          setMsg(document.getElementById("secrets-msg"), "Network error", "err");
+        } finally {
+          btn.disabled = false;
         }
       });
 

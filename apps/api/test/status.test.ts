@@ -252,6 +252,14 @@ describe("status.aft.page host", () => {
         (p) => p.id === "sites" && p.siteSlug === "hello" && p.url === "https://hello.aft.page/",
       ),
     ).toBe(true);
+    expect(
+      STATUS_PROBES.some(
+        (p) =>
+          p.id === "express" &&
+          p.siteSlug === "nodejs-getting-started-sky" &&
+          p.mode === "internal_site",
+      ),
+    ).toBe(true);
     expect(STATUS_PROBES.some((p) => p.id === "mcp" && p.mode === "internal_mcp")).toBe(
       true,
     );

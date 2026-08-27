@@ -85,7 +85,7 @@ per hit. WfP dispatch fixes that at scale.
 | --- | --- |
 | `static` | Sync `index.html` (and assets) now |
 | `static_build` | Queue GHA `run-static-build` with plan install/build/outputDirs (Vite/Vue/Angular/CRA share this) |
-| `next` | Queue GHA `run-next` (OpenNext + default config; Next 15 or 16; older versions fail honestly) |
+| `next` | Queue GHA `run-next` (OpenNext + default config; Next **15.5.24+** or **16.3.3+**; older / known-vulnerable versions fail honestly) |
 | `container` | Queue Sandbox runner → process upstream → `*.aft.page` proxy ([CONTAINER.md](./CONTAINER.md)) |
 | `not_a_site` | Refuse (queue/db only) |
 
@@ -137,7 +137,7 @@ Untrusted repos: ephemeral job only, timeout, no outbound secrets to repo, delet
 - Static / `static_build` → R2
 - Next SSR → OpenNext + `aft-u-{slug}` + proxy ([OPENNEXT-ORCHESTRATION.md](./OPENNEXT-ORCHESTRATION.md))
   - Default OpenNext config uses **static-assets incremental cache** so prerendered pages (e.g. markdown blogs using `fs` at build time) do not re-run Node filesystem on the Worker.
-  - GHA Next runner caches npm from the cloned lockfile; cold builds can still be multi-minute. Next 14 and older fail honestly.
+  - GHA Next runner caches npm from the cloned lockfile; cold builds can still be multi-minute. Next 14 and unpatched 15.x / 16.x fail honestly (floor: 15.5.24 / 16.3.3).
 - Docker / Python web → `container` runner ([CONTAINER.md](./CONTAINER.md))
 - OpenNext middleware gap → detect + skip or AWS fallback tier
 - DB: demo/UI-only now; D1/Turso full mode later

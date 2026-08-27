@@ -59,6 +59,15 @@ export default defineConfig(async () => {
                   headers: { "content-type": "application/json" },
                 });
               }
+              if (request.method === "POST" && path === "/v1/rebind") {
+                return new Response(
+                  JSON.stringify({ ok: true, upstream: "https://rebound.trycloudflare.com" }),
+                  {
+                    status: 200,
+                    headers: { "content-type": "application/json" },
+                  },
+                );
+              }
               return new Response(JSON.stringify({ ok: true, service: "run-container" }), {
                 status: 200,
                 headers: { "content-type": "application/json" },

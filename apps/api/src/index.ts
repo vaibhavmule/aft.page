@@ -269,7 +269,8 @@ async function handleApi(
     url.pathname.includes("/rollback") ||
     url.pathname.includes("/capabilities") ||
     url.pathname.includes("/secrets") ||
-    url.pathname.includes("/domains");
+    url.pathname.includes("/domains") ||
+    url.pathname.includes("/rerun");
 
   if (request.method === "OPTIONS") {
     return optionsResponse(origin, creds);
@@ -353,7 +354,7 @@ async function handleApi(
         "PATCH /v1/sites/{slug}, POST /v1/sites/{slug}/rename, POST /v1/sites/{slug}/access, POST/GET/DELETE /v1/sites/{slug}/invites, PATCH|DELETE /v1/sites/{slug}/members/{id}, GET /v1/invites/accept",
       inventory: "GET /v1/me, GET /v1/me/sites?page=&limit=, GET /v1/me/domains?status=&slug=, GET /v1/sites/{slug}/deploys, GET /v1/sites/{slug}/files, GET /v1/sites/{slug}/logs, POST /v1/sites/{slug}/rollback",
       capabilities: "GET|POST /v1/sites/{slug}/capabilities",
-      secrets: "GET /v1/sites/{slug}/secrets, PUT|DELETE /v1/sites/{slug}/secrets/{name}",
+      secrets: "GET /v1/sites/{slug}/secrets, PUT|DELETE /v1/sites/{slug}/secrets/{name}, POST /v1/sites/{slug}/rerun",
       domains:
         "GET|POST /v1/sites/{slug}/domains, POST /v1/sites/{slug}/domains/access, POST|DELETE /v1/sites/{slug}/domains/{hostname}",
       connector:

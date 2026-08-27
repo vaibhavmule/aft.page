@@ -107,9 +107,9 @@ EOF
   post_phase installing "Wrote Next.js deploy config"
 }
 
-# OpenNext dropped Next 14 in Q1 2026. Do not pin 14.0/14.1 onto unmaintained 14.2.
+# OpenNext dropped Next 14 in Q1 2026. Refuse known-vulnerable 15.x / 16.x (Aug 2026).
 ensure_next_min() {
-  local info ver maj
+  local info ver bad
   info="$(python3 - "$SRC" <<'PY'
 import json, os, sys
 root = sys.argv[1]
@@ -118,19 +118,40 @@ try:
     ver = json.load(open(path)).get("version") or ""
 except Exception:
     ver = ""
-maj = 0
-try:
-    maj = int(ver.split("-")[0].split(".")[0])
-except ValueError:
-    pass
-print(f"{ver}\n{maj}")
+
+def parts(v: str):
+    core = v.split("-")[0].lstrip("v")
+    out = []
+    for p in core.split("."):
+        try:
+            out.append(int(p))
+        except ValueError:
+            out.append(0)
+    while len(out) < 3:
+        out.append(0)
+    return tuple(out[:3])
+
+def unsupported(v: str) -> bool:
+    if not v:
+        return True
+    maj, minor, patch = parts(v)
+    if maj < 15:
+        return True
+    if maj == 15:
+        return (maj, minor, patch) < (15, 5, 24)
+    if maj == 16:
+        return (maj, minor, patch) < (16, 3, 3)
+    return False
+
+print(ver)
+print("1" if unsupported(ver) else "0")
 PY
 )"
   ver="$(printf '%s\n' "$info" | sed -n '1p')"
-  maj="$(printf '%s\n' "$info" | sed -n '2p')"
+  bad="$(printf '%s\n' "$info" | sed -n '2p')"
   post_phase installing "next ${ver:-unknown}"
-  if [[ -z "$ver" || "$maj" -lt 15 ]]; then
-    fail "Next.js ${ver:-unknown} is not supported. Use Next 15 or 16."
+  if [[ -z "$ver" || "$bad" == "1" ]]; then
+    fail "Next.js ${ver:-unknown} is not supported. Use Next 15.5.24+ or 16.3.3+."
   fi
 }
 

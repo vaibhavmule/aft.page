@@ -4,6 +4,13 @@ Door name: **Code.** Not Retool (their brand). Path: `/code/` or `/projects/new`
 
 Status: **not started.** After Run. Needs WfP + per-site **D1 + R2**.
 
+Sandbox **persistent interpreters** (Python / JS / TS) are the generate/test
+plane when this door opens — not a reason to open `/code/` now. v1 is still one
+template + real D1; Grok (or whatever [AI Gateway](https://developers.cloudflare.com/ai-gateway/)
+already catalogs) emits JSON against the SDK. Do not chase Vercel’s model list;
+use Cloudflare’s unified `env.AI.run()` catalog so new CF models are a config
+change.
+
 **Layers:** [HOST.md](./HOST.md) · [SHIP.md](./SHIP.md) · [RUN.md](./RUN.md) · **Code**.
 
 ## Job

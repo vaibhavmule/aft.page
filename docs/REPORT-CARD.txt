@@ -1,7 +1,7 @@
 # aft.page — Report Card
 # Graded against the "Cloud for Small Software" (YC RFS) playbook.
 # Grounded in: STRATEGY.md, plan.md, CAPABILITIES.md, SHARING.md, PRICING.md, EVIDENCE-PACK.md, BRAND.md.
-# Updated: 2026-08-08
+# Updated: 2026-08-26
 #
 # Two axes: BUILT (does the code exist) vs PROVEN (do real users do it).
 # Strong on built. Thin on proven.
@@ -109,11 +109,10 @@ STRENGTHS (keep)
 ================================================================
 TOP 3 FIXES (priority order)
 ================================================================
-1. SHIP THE CURSOR AGENT PLUGIN this week (skill + existing MCP). #1 distribution lever.
-2. BUILD ONE-CLICK REMIX/FORK. Only named RFS hard-problem with zero coverage;
-   virality flywheel; cheap on existing ownership + versioning.
-3. FILL THE EVIDENCE PACK with real strangers: >=5 repeat deployers,
-   >=1 app shared+used by a non-friend, >=1 paid/LOI. Grade is capped until these exist.
+1. MAKE RUN STRANGER-HONEST (paste → URL or clear fail). Engine before amp.
+2. SHIP CURSOR MARKETPLACE LISTING (plugin + MCP). Owned channel — #1 install path in 2026.
+3. FILL THE EVIDENCE PACK: >=5 stranger deploys, >=1 invite accept, then Show HN/PH ($1k builds).
+   Remix/fork stays next viral loop after try volume (RFS hole; not amp).
 
 ================================================================
 WATCH ITEMS

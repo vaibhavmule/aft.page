@@ -15,7 +15,7 @@ files → a durable live URL.
 | Plain HTML | files with `index.html` |
 | Vite / React / Vue / … | `npm run build` → **`dist/` only** |
 | Next static export | `output: 'export'` → **`out/`** |
-| Next SSR / Worker | OpenNext (or Worker) + `aft.json` `upstream` |
+| Next SSR / Worker | Next.js SSR + `aft.json` `upstream` |
 
 Never upload `src/`, `node_modules`, or `.next/`. Details: https://aft.page/docs/frameworks/
 

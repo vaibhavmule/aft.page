@@ -3,6 +3,8 @@ import {
   buildPlanFromSignals,
   detectEngine,
   engineKindFromSignals,
+  mergeUiApiPlan,
+  normalizePlanRoot,
   sourceTreeRefuse,
 } from "../src/engine-kind";
 
@@ -205,7 +207,7 @@ describe("buildPlanFromSignals", () => {
     });
     expect(plan.runtime).toBe("container");
     expect(plan.install).toBe("uv sync");
-    expect(plan.start).toMatch(/uvicorn/);
+    expect(plan.start).toMatch(/python3 -m uvicorn/);
     expect(plan.port).toBe(8080);
   });
 
@@ -223,14 +225,109 @@ describe("buildPlanFromSignals", () => {
     expect(plan.install).toMatch(/npm install/);
   });
 
+  it("Express with server.js and no start script uses node server.js", () => {
+    const plan = buildPlanFromSignals({
+      pkg: { dependencies: { express: "4" } },
+      hasServerJs: true,
+    });
+    expect(plan.start).toBe("node server.js");
+  });
+
+  it("Django plan uses python3 pip, migrate, and runserver", () => {
+    const plan = buildPlanFromSignals({
+      hasManagePy: true,
+      requirementsTxt: "Django>=5\n",
+    });
+    expect(plan.runtime).toBe("container");
+    expect(plan.install).toBe("python3 -m pip install -r requirements.txt");
+    expect(plan.build).toBe("python3 manage.py migrate --noinput");
+    expect(plan.start).toBe("python3 manage.py runserver 0.0.0.0:8080");
+  });
+
   it("Flask plan has flask run and port", () => {
     const plan = buildPlanFromSignals({
       requirementsTxt: "flask==3.0.0\n",
     });
     expect(plan.runtime).toBe("container");
     expect(plan.stack).toBe("Flask");
-    expect(plan.start).toMatch(/flask run/);
+    expect(plan.install).toBe("python3 -m pip install -r requirements.txt");
+    expect(plan.start).toMatch(/python3 -m flask run/);
     expect(plan.port).toBe(8080);
+  });
+});
+
+describe("mergeUiApiPlan", () => {
+  it("pairs one Vite UI with one Express API", () => {
+    const plan = mergeUiApiPlan([
+      {
+        path: "frontend",
+        kind: "static_build",
+        stack: "Vite",
+        plan: {
+          runtime: "static_build",
+          stack: "Vite",
+          install: "npm install --legacy-peer-deps",
+          build: "npm run build",
+          outputDirs: ["dist"],
+          root: "frontend",
+        },
+      },
+      {
+        path: "backend",
+        kind: "container",
+        stack: "Express",
+        plan: {
+          runtime: "container",
+          stack: "Express",
+          install: "npm install --legacy-peer-deps",
+          start: "node server.js",
+          port: 8080,
+          root: "backend",
+        },
+      },
+    ]);
+    expect(plan).toBeTruthy();
+    expect(plan?.runtime).toBe("container");
+    expect(plan?.root).toBe("backend");
+    expect(plan?.frontendRoot).toBe("frontend");
+    expect(plan?.frontendBuild).toBe("npm run build");
+    expect(plan?.start).toBe("node server.js");
+    expect(plan?.stack).toBe("Vite + Express");
+  });
+
+  it("leaves two UIs to the picker", () => {
+    const plan = mergeUiApiPlan([
+      {
+        path: "frontend",
+        kind: "static_build",
+        stack: "Vite",
+        plan: { runtime: "static_build", stack: "Vite", root: "frontend" },
+      },
+      {
+        path: "web",
+        kind: "static",
+        stack: "static",
+        plan: { runtime: "static", stack: "static", root: "web" },
+      },
+    ]);
+    expect(plan).toBeNull();
+  });
+});
+
+describe("normalizePlanRoot", () => {
+  it("treats empty as repo root", () => {
+    expect(normalizePlanRoot("")).toBe("");
+    expect(normalizePlanRoot(null)).toBe("");
+  });
+
+  it("accepts frontend and nested paths", () => {
+    expect(normalizePlanRoot("frontend")).toBe("frontend");
+    expect(normalizePlanRoot("/client/web/")).toBe("client/web");
+  });
+
+  it("rejects traversal", () => {
+    expect(normalizePlanRoot("../etc")).toBeNull();
+    expect(normalizePlanRoot("frontend/../../x")).toBeNull();
   });
 });
 

@@ -85,8 +85,11 @@ assert.match(help.stdout, /aft version/);
 assert.equal(nextVersionUnsupported("14.2.5"), true);
 assert.equal(nextVersionUnsupported("14.1.0"), true);
 assert.equal(nextVersionUnsupported(""), true);
-assert.equal(nextVersionUnsupported("15.5.21"), false);
-assert.equal(nextVersionUnsupported("16.2.11"), false);
+assert.equal(nextVersionUnsupported("15.5.21"), true);
+assert.equal(nextVersionUnsupported("15.5.24"), false);
+assert.equal(nextVersionUnsupported("16.2.11"), true);
+assert.equal(nextVersionUnsupported("16.3.3"), false);
+assert.equal(nextVersionUnsupported("17.0.0"), false);
 
 assert.equal(cmpVersion("0.1.0", "0.2.2"), -1);
 assert.equal(cmpVersion("0.2.2", "0.2.2"), 0);

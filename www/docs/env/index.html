@@ -260,7 +260,7 @@ curl -X DELETE https://api.aft.page/v1/sites/{slug}/secrets/ANTHROPIC_API_KEY \
               Values live in the encrypted aft vault. For <code>next</code> /
               <code>worker</code> sites with a live upstream Worker,
               <code>aft env set</code> also syncs to that Worker via the
-              Cloudflare API (same names as <code>process.env</code> in your
+              Same names as <code>process.env</code> in your
               app). Static sites never see secrets at runtime.
             </p>
             <p>

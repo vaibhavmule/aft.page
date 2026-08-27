@@ -1,6 +1,6 @@
 # aft.page — todo
-# Development mode. No freeze. No parking-as-blocker. No launch dates.
-# $1K USD: Show HN + Product Hunt for AFT Run (builds, not ads). docs/RUN.md
+# Distribution mode. Stack: Run engine → Plugin/MCP owned channel → AEO cite →
+# README Run button → Show HN/PH amp ($1K builds). See STRATEGY.md § Mode.
 # Shipped: Hosted CLI (`curl -fsSL https://aft.page/install | sh`)
 
 ## Dual track — now
@@ -23,6 +23,7 @@
 - [x] **Drop + CLI for humans** — Drop or `curl …/install | sh`
 - [ ] Per-IDE Agent Plugin / marketplace listings
 - [ ] **Run** — paste public GitHub repo → job → URL. Distribution door. Show HN + PH on this. $1K builds. docs/RUN.md
+- [x] Run runtime milestone: nested UI+API, Python pip, rerun, notify, origin rebind, Next 15.5.24/16.3.3 floor
 - [ ] **Code** — prompt/template → app with D1 + R2. Grok via xAI. docs/CODE.md
 
 ### Proof
@@ -30,7 +31,8 @@
 - [x] Ops distribute tracker: https://ops.aft.page/distribute (ready → listings → proof)
 - [ ] Push plugin · marketplace submit · 30s demo live
 - [ ] Cursor marketplace + cursor.directory submit
-- [ ] ≥5 strangers deploy without founder help
+- [ ] ≥5 strangers deploy without founder help — scoreboard: [qa/stranger-trial.md](qa/stranger-trial.md)
+- [ ] ≥1 deployed app used repeatedly by **two** real people (gate before cron / connectors / broader agent infra)
 - [ ] ≥5 repeat deployers + evidence pack
 - [ ] ≥1 app shared with another person (invite accept)
 - [ ] Show HN + Product Hunt for **AFT Run** ($1K compute budget)
@@ -50,8 +52,9 @@
 - [ ] Claude marketplace          # track on ops /distribute (dist-claude-marketplace)
 - [ ] Workspace / Entra SSO
 - [ ] Connector deepen / CF Sandbox only if a partner needs it
+      **Freeze:** do not expand cron, connectors, or agent infra until ≥1 app is used repeatedly by two real people.
 - [ ] Workers for Platforms / Dynamic Workers (when tenant JS / SSR needs isolation)
-- [ ] AI automations / schedule clock — in scope (docs/parked/cron.md)
+- [ ] AI automations / schedule clock — in scope (docs/parked/cron.md) — frozen until two-person repeat use
 
 ### This round (reserve / claim / generous Drop)
 - [x] Reserve product slugs (`ai`, `cron`, `cname`, automations, …)

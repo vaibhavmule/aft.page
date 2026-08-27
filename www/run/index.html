@@ -6,7 +6,7 @@
     <title>Run — aft.page</title>
     <meta
       name="description"
-      content="Paste a public GitHub repo → live URL. Static, Vite, or Next.js. No account required."
+      content="Paste a public GitHub repo → live URL. Static, Vite, Next.js, or a frontend + API pair. No account required."
     />
     <link rel="canonical" href="https://aft.page/run/" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -158,6 +158,23 @@
         color: var(--quiet);
         word-break: break-all;
       }
+      .root-picker {
+        margin-top: 1.25rem;
+        padding: 1rem 1.1rem;
+        border: 1px solid var(--line-bright);
+        border-radius: 0.65rem;
+        background: var(--panel);
+      }
+      .root-picker p {
+        margin: 0 0 0.75rem;
+        font-size: 0.9rem;
+        color: var(--quiet);
+      }
+      .root-choices {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+      }
       .visually-hidden {
         position: absolute;
         width: 1px;
@@ -181,7 +198,7 @@
       <main>
         <h1 class="run-title" id="run-title">Run a GitHub repo</h1>
         <p class="run-lede" id="run-lede">
-          Public repo → detect → live URL. Static is instant; Vite and Next.js build in the background.
+          Public repo → live URL. Static is instant; Vite, Next, and servers build in the background. A frontend/ + backend/ pair shares one URL. Needs a database? Claim, add secrets, re-run.
         </p>
         <p class="repo-chip" id="repo-chip" hidden></p>
         <form class="git-row" id="git-form">
@@ -194,6 +211,10 @@
           />
           <button type="submit" class="btn" id="git-go">Run</button>
         </form>
+        <div class="root-picker" id="root-picker" hidden>
+          <p id="root-picker-lede">This repo has more than one app. Pick a folder to run.</p>
+          <div class="root-choices" id="root-choices"></div>
+        </div>
         <div class="build-panel" id="build-panel" hidden>
           <p class="build-phase" id="build-phase">Queued</p>
           <pre class="build-log" id="build-log" aria-live="polite"></pre>
@@ -206,6 +227,6 @@
         </div>
       </main>
     </div>
-    <script src="/run.js" defer></script>
+    <script src="/run.js?v=20260826-split" defer></script>
   </body>
 </html>

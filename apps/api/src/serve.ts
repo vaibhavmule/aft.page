@@ -21,6 +21,11 @@ import { isJunkPath } from "./junk-path";
 import { queueOwnerLog } from "./site-logs";
 import { renderSiteOgImage, siteOgImagePath } from "./og-image";
 import { proxyUpstream } from "./runtimes/proxy";
+import {
+  isEphemeralContainerOrigin,
+  rebindContainerOrigin,
+  tunnelOriginDead,
+} from "./container-origin";
 import { canAccessSite, privateDeniedHtml } from "./sharing";
 import { getObject } from "./storage";
 import { deployPreviewHost, isSmokeSlug, liveSiteHost } from "./site-url";
@@ -222,7 +227,24 @@ export async function serveSite(
 
   if (!pinDeployId && upstreamUrl && (runtime === "worker" || runtime === "next")) {
     void touchLastServed(env, slug);
-    const res = await proxyUpstream(request, upstreamUrl, access.user);
+    let res: Response;
+    if (isEphemeralContainerOrigin(upstreamUrl)) {
+      const replay = request.clone();
+      try {
+        res = await proxyUpstream(request, upstreamUrl, access.user);
+      } catch {
+        res = new Response("origin unreachable", { status: 530 });
+      }
+      if (tunnelOriginDead(res.status)) {
+        const next = await rebindContainerOrigin(env, slug);
+        if (next) {
+          await res.body?.cancel().catch(() => null);
+          res = await proxyUpstream(replay, next, access.user);
+        }
+      }
+    } else {
+      res = await proxyUpstream(request, upstreamUrl, access.user);
+    }
     const path = servePath(pathname);
     noteServe(env, request, slug, {
       httpStatus: res.status,

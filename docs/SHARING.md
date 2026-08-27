@@ -23,6 +23,11 @@ Sites can be **public** or **private**. Private sites use Google Doc–style **i
 **Not yet**
 - Google Workspace / Entra org SSO (domain allowlist on private sites)
 - Company-wide IdP (invite-by-email is still the ACL)
+- Cloudflare Access under the hood (spike): lock `aft-u-{slug}` workers.dev +
+  preview URLs so the public hostname stays `*.aft.page` with AFT invite. Do not
+  turn on account-wide Access — the platform Worker serves public Drop + API +
+  MCP on the same account. Per-slug Access cannot attach to one shared Worker;
+  invite stays the default product ACL until a spike proves otherwise.
 
 ## Sign in with AFT
 

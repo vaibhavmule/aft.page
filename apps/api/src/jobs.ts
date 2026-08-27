@@ -15,6 +15,7 @@ import { sha256Hex, timingSafeEqual } from "./auth";
 import { liveSiteUrl } from "./site-url";
 import type { BuildPlan } from "./engine-kind";
 import { scrubProductSurface } from "./product-surface";
+import { getSiteSecretsMap } from "./secrets";
 
 const SSE_MS = 24_000;
 const SSE_TICK_MS = 800;
@@ -64,6 +65,7 @@ export async function dispatchRunBuildWorkflow(
     inputs.install = plan?.install || "npm install --legacy-peer-deps";
     inputs.build = plan?.build || "npm run build";
     inputs.output_dirs = (plan?.outputDirs || ["dist", "out", "build"]).join(",");
+    if (plan?.root) inputs.root = plan.root;
   }
   let lastStatus = 0;
   let lastText = "";
@@ -126,6 +128,12 @@ async function dispatchRunContainer(
     plan?: BuildPlan;
   },
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
+  let secrets: Record<string, string> = {};
+  try {
+    secrets = await getSiteSecretsMap(env, input.slug);
+  } catch {
+    secrets = {};
+  }
   const payload = JSON.stringify({
     job_id: input.jobId,
     job_token: input.jobToken,
@@ -134,6 +142,7 @@ async function dispatchRunContainer(
     slug: input.slug,
     branch: input.branch,
     plan: input.plan || null,
+    env: secrets,
   });
   const headers = {
     "content-type": "application/json",

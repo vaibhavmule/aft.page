@@ -4,7 +4,7 @@ Internal north star. Canonical mission: [`../rfs.txt`](../rfs.txt).
 Belief: [`../youtube-moment.txt`](../youtube-moment.txt).
 CN + EU are growth exceptions (paid primitives, local agents): [`REGIONS.md`](./REGIONS.md). Not the current build.
 
-Updated: 2026-08-24
+Updated: 2026-08-26
 
 **Runnable OSS (GitHub → URL):** [RUN.md](./RUN.md) — Drop / Deploy / Run / Code:
 [HOST.md](./HOST.md) · [SHIP.md](./SHIP.md) · [CODE.md](./CODE.md). Sites intel:
@@ -29,16 +29,36 @@ named Retool (their brand).
 
 ## Mode
 
-**Development mode.** No freeze. No parking as a reason not to build. No
-launch dates. Build. Distribution is in the product (**Run**), not a later
-campaign.
+**Distribution mode.** The job is **Run** (paste repo → URL), not more
+product surface. Drop and Deploy already exist. Code waits. Distribution is
+the product door, not a later campaign. No freeze. No parking as a reason
+not to ship Run. No calendar launch dates — post when paste-repo → URL
+(or honest fail) works.
 
-1. Freeze / park / “wait until proof” do not block shipping. Sequence
-   (Drop → Deploy → Run → Code) is capacity, not a freeze.
+**Distribution stack (2026 — do not reorder casually):**
+
+| Layer | What | Role |
+| --- | --- | --- |
+| **Engine** | Run: paste / `deploy_repo` → URL or honest fail | Without this every channel lies |
+| **Owned channel** | Agent Plugin + MCP (Cursor Marketplace first) | Where coding agents already look; Vercel/CF are not native here |
+| **Cite path** | AEO: `llms.txt`, Markdown-for-agents, Content-Signal `ai-input=yes` (and `ai-train=yes` if we want training) | Retrieval / “how do I deploy what my agent built?” answers — not weight training |
+| **Viral loop** | “Run on AFT” README button → later remix/clone | Compounds after a working try |
+| **Amp** | Show HN → Product Hunt ($1k on Run builds) + one demo clip reposted | Spike density after the engine is honest — not the moat |
+
+**Gary Vee rule (how we max):** jab **~15 major platforms** across US / EU /
+AU-NZ / CN / KR / JP / VN / RU (same demo clip, local captions) → measure
+**stranger → URL** → double down on keepers → **throttle** losers (do not delete
+IG, LI, or regional majors) → *then* sell. **Paid** social ads off for now;
+$1k stays on Run builds. Full board: [gtm.txt](./gtm.txt) § Channel jabs.
+China/EU product primitives: [REGIONS.md](./REGIONS.md).
+
+1. Do not detour into Code, new SKUs, IaaS, or “wait until proof.” Sequence
+   (Drop → Deploy → **Run** → Code) is capacity. Current capacity is Run +
+   Plugin listing so agents can hit that door.
 2. **$1,000 USD** for Show HN + Product Hunt of **AFT Run** — spend on
-   Run builds, not ads. Details: [RUN.md](./RUN.md) § Launch budget.
+   Run builds, not ads. Amp only. Details: [RUN.md](./RUN.md) § Launch budget.
 
-Retained users still matter for YC. They do not block building.
+Retained users still matter for YC. They do not block shipping Run.
 
 Bugfixes that unblock deploy → claim → invite → return stay in. Canonical
 checklist: [`../todo.txt`](../todo.txt). Next runtime is still chosen from what
@@ -69,47 +89,57 @@ operations.
 
 aft deletes that complexity for software with one or a small handful of users.
 
-## Market reality (9 Aug 2026)
+## Cloudflare is the platform partner (not a competitor)
+
+AFT runs on Cloudflare. We do not compete with Cloudflare. Public `/vs/cloudflare-drop/`
+is “AFT adds lifecycle on Cloudflare,” not a rival landing.
+
+When Cloudflare ships a primitive that makes Small Software easier to deploy, share,
+keep private, or keep alive, **wrap it as soon as it fits the door we are shipping**
+(today: Run). Hide Cloudflare complexity from the user. Rebuild only when the
+Doc-simple experience still needs a piece Cloudflare does not provide.
 
 ### Execution: wrap when enough, build when required
 
-Cloudflare Drop and Temporary Accounts commoditize **static** upload → URL → claim.
+Cloudflare Drop and Temporary Accounts cover **static** upload → URL → claim.
 OpenNext on Cloudflare is nearly automatic. Sandbox/Containers and [Dynamic
 Workers](https://blog.cloudflare.com/dynamic-workers/) supply arbitrary-code
-primitives.
+primitives. Worker-level / account-wide [Access](https://developers.cloudflare.com/workers/configuration/cloudflare-access/)
+covers auth across a Worker’s production + preview URLs. Sandbox outbound Workers
+cover credential injection, egress allowlists, and TLS intercept.
 
 AFT should build anything Small Software requires to become live, useful,
 shareable, and durable—including hosting when necessary. The distinction is
 **strategic, not a restriction:**
 
-- Use or wrap Cloudflare primitives when they already solve execution well.
-- Build AFT-owned hosting/runtime pieces whenever the Small Software experience
-  requires them.
+- Wrap Cloudflare primitives as soon as they help the current door.
+- Build AFT-owned pieces only when the Small Software experience still requires them.
 - Own the complete user experience: deploy, environment configuration, data,
   authentication, permissions, secrets, sharing, updates, rollback, schedules,
   logs, safe execution, and deletion.
 - Never expose Cloudflare complexity to the user.
-- Avoid rebuilding infrastructure merely for technical differentiation—but do
-  build it when existing primitives cannot deliver the promised experience.
 
-Do **not** compete primarily on “we host generated HTML.” Hosting is table stakes
-when Drop already covers it; hosting is in-scope when the Doc-simple experience
-needs a runtime Drop cannot provide.
+Hosting is table stakes when Drop already covers it; hosting is in-scope when the
+Doc-simple experience needs a runtime Drop cannot provide.
 
-### Moat (what Cloudflare will not own for you)
+### What AFT still owns in the UX
 
-| Capability | Why it sticks |
-| --- | --- |
-| Identity and SSO | Who owns the app |
-| Roles and permissions | Who can open, edit, invite |
-| Private sharing | Doc-simple access control |
-| Audit history | What changed, when, by whom |
-| Persistent data | Apps that survive beyond the session |
-| Safe secrets | Capability approve + vault |
-| Redeployment / versioning | Update without losing the URL |
-| Organization-wide discovery | Find team Small Software |
+Cloudflare supplies the substrate. AFT still owns the Doc-simple surface on
+`*.aft.page` (invite, same URL after claim, inventory). That is product UX, not
+a reason to ignore a Cloudflare primitive that can enforce it.
 
-See [ADR-TEMP-ACCOUNTS.md](./ADR-TEMP-ACCOUNTS.md), [OPENNEXT-ORCHESTRATION.md](./OPENNEXT-ORCHESTRATION.md).
+| Capability | AFT surface | Cloudflare to wrap |
+| --- | --- | --- |
+| Who can open | Invite by email, revoke | Access (email / email-domain policies) |
+| Preview / workers.dev back doors | Same private app | Worker-level Access on `aft-u-{slug}` + Sandbox preview URLs |
+| Org SSO | Later: Workspace / Entra | Access email-domain / IdP |
+| Secrets in untrusted code | Vault + approve | Sandbox credential injection (never put the secret in the box) |
+| Egress | `capabilities.egress` | Sandbox outbound allow/deny |
+| Durable data | Project tables / files | D1 + R2 |
+| Same URL after update | Claim + redeploy | Workers / R2 in place |
+
+See [ADR-TEMP-ACCOUNTS.md](./ADR-TEMP-ACCOUNTS.md), [OPENNEXT-ORCHESTRATION.md](./OPENNEXT-ORCHESTRATION.md),
+[SHARING.md](./SHARING.md), [CONTAINER.md](./CONTAINER.md), [CODE.md](./CODE.md).
 
 ### Extending AFT: open protocols
 
@@ -167,7 +197,7 @@ Hatchable, MiniUp. Do not match their BaaS dump.
 | Signal | Read |
 | --- | --- |
 | [Kitesurf](https://blog.cloudflare.com/kitesurf/) | Lightweight agent browser on Workers. Infrastructure, not an AFT competitor. Useful only if AFT apps need browser automation, screenshots, extraction, or website testing. **Do not build around it yet.** |
-| Dynamic Workers | Commoditizes “run generated code.” Reinforces that AFT’s edge is identity, sharing, and lifecycle — not the execution sandbox. |
+| Dynamic Workers | Partner primitive: run generated code. Wrap when tenant JS needs isolation (WfP trigger). Concurrency 4→10 is a free upgrade — no work. |
 | [Perch](https://mandarwagh9.github.io/perch/#access) | GitHub project someone built after the YC RFS (agent deploy → sandbox URL → share like a doc → eject). Same category language, not a competitor to track — watch for ideas / overlap, don’t treat as market threat. |
 
 ## Product job
@@ -196,8 +226,8 @@ Claude / Codex / Cursor / ChatGPT / Git / human
 | Ownership | Claim, list, update, rollback | Shipped / polish (`/claim` after deploy) |
 | Sharing | Public, private, invite, revoke | Shipped / outsider proof |
 | Secrets | Per-site vault + capability approve | Shipped |
-| **Distribution** | **Agent Plugin → Cursor “Deploy with AFT”** | **Highest-priority next ship** |
-| **Run** | Public GitHub repo → job → live URL | [RUN.md](./RUN.md) — next |
+| **Distribution** | **Owned:** Agent Plugin → Cursor Marketplace / `deploy_repo`. **Door:** [Run](./RUN.md) paste → URL. Amp = Show HN/PH after honest fail works. | Stack in § Mode — engine + plugin before amp |
+| **Run** | Public GitHub repo → job → live URL | [RUN.md](./RUN.md) — current capacity |
 | **Code** | Prompt/template → app with D1 + R2 | [CODE.md](./CODE.md) — after Run |
 | Full stack | worker/next via upstream proxy | OpenNext dogfood live (`next-hello.aft.page`) |
 | Anything Drop | More generous static upload (any folder) | Limits raised; deepen on demand |

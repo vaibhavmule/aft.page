@@ -8,7 +8,7 @@ import {
   type RunJobPhase,
   type RunJobRow,
 } from "./db";
-import { json, optionsResponse } from "./http";
+import { corsHeaders, json, optionsResponse } from "./http";
 import { rateLimit } from "./rate-limit";
 import { allocateUniqueSlug, slugFromHint } from "./slug";
 import { randomToken, resolveSessionUser, sha256Hex } from "./auth";
@@ -16,6 +16,8 @@ import { dispatchRunBuildWorkflow } from "./jobs";
 import {
   buildPlanFromSignals,
   canonicalKind,
+  mergeUiApiPlan,
+  normalizePlanRoot,
   type BuildPlan,
 } from "./engine-kind";
 
@@ -162,6 +164,18 @@ async function githubFirstFile(
   return null;
 }
 
+/** Folders we probe when the repo root is not a site (split frontend/backend). */
+export const NESTED_APP_DIRS = [
+  "frontend",
+  "client",
+  "web",
+  "backend",
+  "server",
+  "api",
+] as const;
+
+export type NestedRoot = { path: string; kind: string; stack: string };
+
 export type RepoInspect =
   | {
       kind: "next" | "static_build" | "static" | "container";
@@ -170,21 +184,50 @@ export type RepoInspect =
       html?: string;
       plan: BuildPlan;
     }
-  | { error: string; reason: string; plan?: BuildPlan };
+  | { error: string; reason: string; plan?: BuildPlan; roots?: NestedRoot[] };
 
-export async function inspectGithubRepo(
+function joinRepoPath(root: string, file: string): string {
+  return root ? `${root}/${file}` : file;
+}
+
+async function githubDirNames(
   ref: GithubRepoRef,
+  path: string,
+  branch: string,
   token?: string,
-): Promise<RepoInspect> {
-  const metaGot = await githubRepoMeta(ref, token);
-  if (!metaGot.ok) {
-    return { error: metaGot.error, reason: metaGot.reason };
-  }
-  const meta = metaGot.meta;
-  if (meta.private) {
-    return { error: "private_repo", reason: "Run is public repos only." };
-  }
-  const branch = meta.default_branch || "main";
+): Promise<string[]> {
+  const suffix = path ? `/${encodeURIComponent(path).replace(/%2F/gi, "/")}` : "";
+  const data = await githubJson(
+    `/repos/${ref.owner}/${ref.repo}/contents${suffix}?ref=${encodeURIComponent(branch)}`,
+    token,
+  );
+  if (!Array.isArray(data)) return [];
+  return data
+    .filter((x): x is { type: string; name: string } => {
+      return Boolean(
+        x &&
+          typeof x === "object" &&
+          (x as { type?: unknown }).type === "dir" &&
+          typeof (x as { name?: unknown }).name === "string",
+      );
+    })
+    .map((x) => x.name);
+}
+
+type LoadedTree = {
+  html: string | null;
+  pkgName?: string;
+  plan: BuildPlan;
+  kind: ReturnType<typeof canonicalKind> | "unknown";
+};
+
+async function loadRepoTree(
+  ref: GithubRepoRef,
+  branch: string,
+  token: string | undefined,
+  root: string,
+): Promise<LoadedTree> {
+  const at = (file: string) => joinRepoPath(root, file);
   const [
     pkgRaw,
     html,
@@ -203,34 +246,38 @@ export async function inspectGithubRepo(
     composeYmlAlt,
     composeYamlAlt,
     uvLock,
+    serverJs,
+    indexJs,
   ] = await Promise.all([
-    githubFile(ref, "package.json", branch, token),
-    githubFile(ref, "index.html", branch, token),
-    githubFile(ref, "manage.py", branch, token),
-    githubFile(ref, "requirements.txt", branch, token),
+    githubFile(ref, at("package.json"), branch, token),
+    githubFile(ref, at("index.html"), branch, token),
+    githubFile(ref, at("manage.py"), branch, token),
+    githubFile(ref, at("requirements.txt"), branch, token),
     githubFirstFile(
       ref,
-      ["next.config.js", "next.config.mjs", "next.config.ts"],
+      ["next.config.js", "next.config.mjs", "next.config.ts"].map(at),
       branch,
       token,
     ),
     githubFirstFile(
       ref,
-      ["vite.config.js", "vite.config.ts", "vite.config.mjs"],
+      ["vite.config.js", "vite.config.ts", "vite.config.mjs"].map(at),
       branch,
       token,
     ),
-    githubFile(ref, "Cargo.toml", branch, token),
-    githubFile(ref, "Gemfile", branch, token),
-    githubFile(ref, "go.mod", branch, token),
-    githubFile(ref, "pyproject.toml", branch, token),
-    githubFile(ref, "main.go", branch, token),
-    githubFile(ref, "Dockerfile", branch, token),
-    githubFile(ref, "docker-compose.yml", branch, token),
-    githubFile(ref, "docker-compose.yaml", branch, token),
-    githubFile(ref, "compose.yml", branch, token),
-    githubFile(ref, "compose.yaml", branch, token),
-    githubFile(ref, "uv.lock", branch, token),
+    githubFile(ref, at("Cargo.toml"), branch, token),
+    githubFile(ref, at("Gemfile"), branch, token),
+    githubFile(ref, at("go.mod"), branch, token),
+    githubFile(ref, at("pyproject.toml"), branch, token),
+    githubFile(ref, at("main.go"), branch, token),
+    githubFile(ref, at("Dockerfile"), branch, token),
+    githubFile(ref, at("docker-compose.yml"), branch, token),
+    githubFile(ref, at("docker-compose.yaml"), branch, token),
+    githubFile(ref, at("compose.yml"), branch, token),
+    githubFile(ref, at("compose.yaml"), branch, token),
+    githubFile(ref, at("uv.lock"), branch, token),
+    githubFile(ref, at("server.js"), branch, token),
+    githubFile(ref, at("index.js"), branch, token),
   ]);
 
   let pkg: unknown;
@@ -246,7 +293,7 @@ export async function inspectGithubRepo(
     }
   }
 
-  const signals = {
+  const plan = buildPlanFromSignals({
     pkg,
     nextConfigText: nextConfig,
     hasViteConfig: Boolean(viteConfig),
@@ -261,8 +308,9 @@ export async function inspectGithubRepo(
     hasDockerfile: Boolean(dockerfile),
     hasCompose: Boolean(composeYml || composeYaml || composeYmlAlt || composeYamlAlt),
     hasUvLock: Boolean(uvLock),
-  };
-  const plan = buildPlanFromSignals(signals);
+    hasServerJs: Boolean(serverJs),
+    hasIndexJs: Boolean(indexJs),
+  });
   const kind = canonicalKind(
     plan.runtime === "static_build"
       ? "static_build"
@@ -276,7 +324,11 @@ export async function inspectGithubRepo(
               ? "not_a_site"
               : "unknown",
   );
+  return { html, pkgName, plan: root ? { ...plan, root } : plan, kind };
+}
 
+function inspectFromTree(branch: string, tree: LoadedTree): RepoInspect {
+  const { plan, kind, pkgName, html } = tree;
   if (kind === "not_a_site") {
     return {
       error: "not_a_site",
@@ -309,6 +361,83 @@ export async function inspectGithubRepo(
       "Need index.html at the repo root, Next.js, or a Node static build (npm run build). Servers, databases, and queues fail honestly.",
     plan,
   };
+}
+
+function treeIsShippable(tree: LoadedTree): boolean {
+  if (tree.kind === "not_a_site" || tree.kind === "unknown") return false;
+  if (tree.kind === "container" && !tree.plan.start && tree.plan.stack !== "Docker") return false;
+  if (tree.kind === "static" && !tree.html) return false;
+  return true;
+}
+
+export async function inspectGithubRepo(
+  ref: GithubRepoRef,
+  token?: string,
+  opts?: { root?: string },
+): Promise<RepoInspect> {
+  const metaGot = await githubRepoMeta(ref, token);
+  if (!metaGot.ok) {
+    return { error: metaGot.error, reason: metaGot.reason };
+  }
+  const meta = metaGot.meta;
+  if (meta.private) {
+    return { error: "private_repo", reason: "Run is public repos only." };
+  }
+  const branch = meta.default_branch || "main";
+  const explicit = normalizePlanRoot(opts?.root);
+  if (explicit === null) {
+    return { error: "invalid_root", reason: "That folder path is not allowed." };
+  }
+
+  if (explicit) {
+    return inspectFromTree(branch, await loadRepoTree(ref, branch, token, explicit));
+  }
+
+  const rootTree = await loadRepoTree(ref, branch, token, "");
+  const rootGot = inspectFromTree(branch, rootTree);
+  if (!("error" in rootGot) || rootGot.error !== "no_index") {
+    return rootGot;
+  }
+
+  const dirs = await githubDirNames(ref, "", branch, token);
+  const wanted = new Set<string>(NESTED_APP_DIRS);
+  const nested = dirs.filter((d) => wanted.has(d.toLowerCase()));
+  const found: NestedRoot[] = [];
+  const trees: LoadedTree[] = [];
+  for (const dir of nested) {
+    const tree = await loadRepoTree(ref, branch, token, dir);
+    if (!treeIsShippable(tree)) continue;
+    trees.push(tree);
+    found.push({ path: dir, kind: tree.kind, stack: tree.plan.stack });
+  }
+  if (found.length === 1 && trees[0]) {
+    return inspectFromTree(branch, trees[0]);
+  }
+  if (found.length > 1) {
+    const paired = mergeUiApiPlan(
+      trees.map((t, i) => ({
+        path: found[i]!.path,
+        kind: t.kind,
+        stack: t.plan.stack,
+        plan: t.plan,
+      })),
+    );
+    if (paired) {
+      return {
+        kind: "container",
+        branch,
+        name: ref.repo,
+        plan: paired,
+      };
+    }
+    return {
+      error: "pick_root",
+      reason: "This repo has more than one app. Pick a folder to run.",
+      roots: found,
+      plan: rootTree.plan,
+    };
+  }
+  return rootGot;
 }
 
 export async function fetchRepoIndexHtml(
@@ -374,7 +503,7 @@ function failedJob(
   };
 }
 
-export type RepoJobResult = RunJobRow & { editToken?: string };
+export type RepoJobResult = RunJobRow & { editToken?: string; roots?: NestedRoot[] };
 
 export async function executeRepoJob(
   env: Env,
@@ -384,6 +513,7 @@ export async function executeRepoJob(
     slug?: string;
     request?: Request;
     ctx?: ExecutionContext;
+    root?: string;
   },
 ): Promise<RepoJobResult> {
   const started = Date.now();
@@ -416,7 +546,7 @@ export async function executeRepoJob(
 
   const ghUrl = `https://github.com/${ref.owner}/${ref.repo}`;
   const token = env.AFT_RUN_GITHUB_TOKEN?.trim();
-  const inspected = await inspectGithubRepo(ref, token);
+  const inspected = await inspectGithubRepo(ref, token, { root: opts.root });
 
   if ("error" in inspected) {
     const planJson = inspected.plan ? JSON.stringify(inspected.plan) : null;
@@ -447,6 +577,7 @@ export async function executeRepoJob(
         httpStatus: 422,
       }),
       planJson,
+      ...(inspected.roots ? { roots: inspected.roots } : {}),
     };
   }
 
@@ -605,7 +736,7 @@ async function queueBuildJob(
   },
 ): Promise<RepoJobResult> {
   const ghUrl = `https://github.com/${ref.owner}/${ref.repo}`;
-  const hint = slugFromHint(inspected.name || ref.repo);
+  const hint = slugFromHint(inspected.name || "") || slugFromHint(ref.repo);
   const slug = opts.slug || (await allocateUniqueSlug(env, hint));
   const planJson = JSON.stringify(inspected.plan);
   if (!slug) {
@@ -746,41 +877,47 @@ export async function handleRepoRoute(
     return null;
   }
   if (request.method === "OPTIONS") return optionsResponse(origin, true);
-  if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+  if (request.method !== "POST") return repoJson({ error: "method_not_allowed" }, 405, origin);
 
   const ip = request.headers.get("cf-connecting-ip") || "unknown";
-  if (!(await rateLimit(env, `repo:${ip}`, 30, 3600))) {
-    return json({ error: "rate_limited" }, 429);
+  // 1000/hour/IP — platform target is 10k deploys; this is anti-spam, not capacity.
+  if (!(await rateLimit(env, `repo:${ip}`, 1000, 3600))) {
+    return repoJson({ error: "rate_limited" }, 429, origin);
   }
 
-  let body: { url?: unknown } = {};
+  let body: { url?: unknown; root?: unknown } = {};
   try {
     body = (await request.json()) as typeof body;
   } catch {
-    return json({ error: "invalid_json" }, 400);
+    return repoJson({ error: "invalid_json" }, 400, origin);
   }
   const raw = typeof body.url === "string" ? body.url : "";
   const ref = parseGithubRepoUrl(raw) || parseOwnerRepoShorthand(raw);
-  if (!ref) return json({ error: "invalid_repo" }, 400);
+  if (!ref) return repoJson({ error: "invalid_repo" }, 400, origin);
+  const root = typeof body.root === "string" ? body.root : undefined;
 
   if (url.pathname === "/v1/repo/check") {
-    const got = await inspectGithubRepo(ref, env.AFT_RUN_GITHUB_TOKEN?.trim());
+    const got = await inspectGithubRepo(ref, env.AFT_RUN_GITHUB_TOKEN?.trim(), { root });
     if ("error" in got) {
-      return json({
+      return repoJson({
         ok: false,
         ...ref,
         error: got.error,
         reason: got.reason,
+        ...(got.roots ? { roots: got.roots } : {}),
         ...(got.plan
           ? {
               runtime: got.plan.runtime,
               stack: got.plan.stack,
               install: got.plan.install,
               build: got.plan.build,
+              start: got.plan.start,
+              root: got.plan.root,
+              frontendRoot: got.plan.frontendRoot,
               outputDirs: got.plan.outputDirs,
             }
           : {}),
-      });
+      }, 200, origin);
     }
     const planFields = {
       runtime: got.plan.runtime,
@@ -789,22 +926,24 @@ export async function handleRepoRoute(
       build: got.plan.build,
       start: got.plan.start,
       port: got.plan.port,
+      root: got.plan.root,
+      frontendRoot: got.plan.frontendRoot,
       outputDirs: got.plan.outputDirs,
     };
     if (got.kind === "next" || got.kind === "static_build" || got.kind === "container") {
-      return json({ ok: true, kind: got.kind, ...ref, branch: got.branch, ...planFields });
+      return repoJson({ ok: true, kind: got.kind, ...ref, branch: got.branch, ...planFields }, 200, origin);
     }
-    return json({
+    return repoJson({
       ok: true,
       kind: "static",
       ...ref,
       branch: got.branch,
       bytes: got.html!.length,
       ...planFields,
-    });
+    }, 200, origin);
   }
 
-  const job = await executeRepoJob(env, raw, { trigger: "web", request, ctx });
+  const job = await executeRepoJob(env, raw, { trigger: "web", request, ctx, root });
   if (
     job.status === "queued" &&
     (job.kind === "next" ||
@@ -812,7 +951,7 @@ export async function handleRepoRoute(
       job.kind === "vite" ||
       job.kind === "container")
   ) {
-    return json(
+    return repoJson(
       {
         jobId: job.id,
         status: "queued",
@@ -823,21 +962,24 @@ export async function handleRepoRoute(
         branch: job.branch,
       },
       202,
+      origin,
     );
   }
   if (job.status !== "live") {
-    return json(
+    return repoJson(
       {
         error: job.error,
         reason: job.reason,
         owner: job.owner,
         repo: job.repo,
         jobId: job.id,
+        ...(job.roots ? { roots: job.roots } : {}),
       },
       job.httpStatus && job.httpStatus >= 400 ? job.httpStatus : 422,
+      origin,
     );
   }
-  return json({
+  return repoJson({
     slug: job.slug,
     url: job.siteUrl,
     jobId: job.id,
@@ -845,5 +987,9 @@ export async function handleRepoRoute(
     repo: job.repo,
     branch: job.branch,
     ...(job.editToken ? { editToken: job.editToken } : {}),
-  });
+  }, 200, origin);
+}
+
+function repoJson(data: unknown, status: number, origin: string | null): Response {
+  return json(data, status, Object.fromEntries(corsHeaders(origin, true)));
 }

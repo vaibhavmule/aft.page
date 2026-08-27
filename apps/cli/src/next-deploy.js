@@ -3,6 +3,7 @@ import { access, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { apiFetch, readJson } from "./api.js";
 import { runCmd, runStep } from "./ui.js";
+import { cmpVersion } from "./version.js";
 
 async function exists(path) {
   try {
@@ -22,11 +23,15 @@ async function installedNextVersion(root) {
   }
 }
 
-/** Next 14 was dropped Q1 2026. Empty/unreadable counts as unsupported. */
+/** Next 14 dropped Q1 2026. 15.x < 15.5.24 and 16.x < 16.3.3 are known-vulnerable. */
 export function nextVersionUnsupported(ver) {
   const m = String(ver).match(/^(\d+)/);
   if (!m) return true;
-  return Number(m[1]) < 15;
+  const major = Number(m[1]);
+  if (major < 15) return true;
+  if (major === 15) return cmpVersion(ver, "15.5.24") < 0;
+  if (major === 16) return cmpVersion(ver, "16.3.3") < 0;
+  return false;
 }
 
 export async function deployNextSsr(
@@ -56,7 +61,7 @@ export async function deployNextSsr(
     const nextVer = await installedNextVersion(projectRoot);
     if (nextVersionUnsupported(nextVer)) {
       throw new Error(
-        `Next.js ${nextVer || "unknown"} is not supported. Use Next 15 or 16.`,
+        `Next.js ${nextVer || "unknown"} is not supported. Use Next 15.5.24+ or 16.3.3+.`,
       );
     }
   }, { verbose });

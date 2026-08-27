@@ -45,3 +45,13 @@ Open: https://aft.page/run/mdn/beginner-html-site-scripted
 | Second person | **yes** — anonymous GET 200 (home + in-app nav to How Heroku Works) |
 
 Open: https://aft.page/run/heroku/node-js-getting-started
+
+## Known misses (2026-08-26)
+
+### Kartik `Odoo_HRMS` — split app, no root detect
+
+https://aft.page/run/kartik-suryawanshi/Odoo_HRMS — `no_index` at repo root (`frontend/` Vite + `backend/` Express + Postgres). UI can pick a folder. Frontend-only is a login SPA that still needs the API. Use a root-level Kartik repo instead: [Portfolio](https://aft.page/run/kartik-suryawanshi/Portfolio) (Vite) or [Buget_Tracker](https://aft.page/run/kartik-suryawanshi/Buget_Tracker) (static).
+
+### Rohit Django — pip missing in sandbox
+
+`Django-CRM-mastery-app-Project` and `QuickMart-MarketPlace-app` detect as `container` / Django, then `pip: command not found`. Fix: `python3 -m pip` + pip in the runner image.

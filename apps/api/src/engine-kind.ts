@@ -38,6 +38,8 @@ export type EngineSignals = {
   goMod?: string | null;
   goMainText?: string | null;
   hasIndexHtml?: boolean;
+  hasServerJs?: boolean;
+  hasIndexJs?: boolean;
 };
 
 export type EngineDetect = { kind: EngineKind; stack: string };
@@ -53,6 +55,13 @@ export type BuildPlan = {
   port?: number;
   outputDirs?: string[];
   reason?: string;
+  /** Subfolder to install/build/start in (monorepo frontend/backend). */
+  root?: string;
+  /** UI folder when a frontend/ + backend/ pair runs as one URL. */
+  frontendRoot?: string;
+  frontendInstall?: string;
+  frontendBuild?: string;
+  frontendOutputDirs?: string[];
 };
 
 type Named = readonly [string, string];
@@ -198,6 +207,45 @@ export function canonicalKind(kind: EngineKind): Exclude<EngineKind, "vite"> {
   return kind;
 }
 
+export type NestedApp = {
+  path: string;
+  kind: string;
+  stack: string;
+  plan: BuildPlan;
+};
+
+/** One UI + one API in allowlisted folders → one container plan. Else null (picker). */
+export function mergeUiApiPlan(apps: NestedApp[]): BuildPlan | null {
+  const ui = apps.filter((a) => a.kind === "static" || a.kind === "static_build");
+  const api = apps.filter(
+    (a) => a.kind === "container" && a.plan.start && a.plan.stack !== "Docker",
+  );
+  if (ui.length !== 1 || api.length !== 1) return null;
+  const u = ui[0]!;
+  const b = api[0]!;
+  return {
+    ...b.plan,
+    root: b.plan.root || b.path,
+    frontendRoot: u.plan.root || u.path,
+    frontendInstall: u.plan.install,
+    frontendBuild: u.plan.build,
+    frontendOutputDirs: u.plan.outputDirs || ["dist", "out", "build"],
+    stack: `${u.stack} + ${b.stack}`,
+  };
+}
+
+/** Safe git subfolder, or null if junk. Empty string = repo root. */
+export function normalizePlanRoot(raw: unknown): string | null {
+  if (raw == null || raw === "") return "";
+  if (typeof raw !== "string") return null;
+  const p = raw.replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+  if (!p) return "";
+  if (p.length > 80 || p.includes("..") || p.startsWith(".") || !/^[A-Za-z0-9._/-]+$/.test(p)) {
+    return null;
+  }
+  return p;
+}
+
 function pipHas(text: string, name: string): boolean {
   const esc = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(`^${esc}([><=!]|\\s|$|\\[)`, "im").test(text);
@@ -272,16 +320,18 @@ function containerStartCmd(
   if (pkg?.scripts?.start) return "npm start";
   if (pkgHasDep(pkg, "express") || pkgHasDep(pkg, "fastify") || pkgHasDep(pkg, "hono") || pkgHasDep(pkg, "koa")) {
     if (pkg?.scripts?.start) return "npm start";
+    if (s.hasServerJs) return "node server.js";
+    if (s.hasIndexJs) return "node index.js";
     return "npm start";
   }
   if (stack === "Django" || s.hasManagePy) {
-    return "python manage.py runserver 0.0.0.0:8080";
+    return "python3 manage.py runserver 0.0.0.0:8080";
   }
   if (stack === "Flask") {
-    return "flask run --host 0.0.0.0 --port 8080";
+    return "python3 -m flask run --host 0.0.0.0 --port 8080";
   }
   if (stack === "FastAPI") {
-    return "uvicorn main:app --host 0.0.0.0 --port 8080";
+    return "python3 -m uvicorn main:app --host 0.0.0.0 --port 8080";
   }
   if (pkg?.scripts?.dev && !pkg.scripts.start) {
     return "npm run dev -- --host 0.0.0.0 --port 8080";
@@ -427,9 +477,9 @@ export function buildPlanFromSignals(s: EngineSignals): BuildPlan {
           : s.hasUvLock
             ? "uv sync"
             : s.requirementsTxt
-              ? "pip install -r requirements.txt"
+              ? "python3 -m pip install -r requirements.txt"
               : s.pyprojectToml
-                ? "pip install ."
+                ? "python3 -m pip install ."
                 : undefined;
     if (!start && got.stack === "Docker") {
       return {
@@ -456,6 +506,9 @@ export function buildPlanFromSignals(s: EngineSignals): BuildPlan {
       install,
       start,
       port,
+      ...(got.stack === "Django" || s.hasManagePy
+        ? { build: "python3 manage.py migrate --noinput" }
+        : {}),
     };
   }
   if (kind === "not_a_site") {

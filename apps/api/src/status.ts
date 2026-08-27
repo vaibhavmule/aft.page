@@ -104,6 +104,15 @@ export const STATUS_PROBES: ProbeDef[] = [
     siteSlug: "hello",
   },
   {
+    id: "express",
+    name: "Express fixture",
+    description: "Container Run (heroku/node-js-getting-started)",
+    url: "https://nodejs-getting-started-sky.aft.page/",
+    expect: "http_ok",
+    mode: "internal_site",
+    siteSlug: "nodejs-getting-started-sky",
+  },
+  {
     id: "aft_me",
     name: "Sign in with AFT",
     description: "Tenant /_aft/me returns JSON identity (not SPA HTML)",

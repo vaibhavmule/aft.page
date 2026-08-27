@@ -26,6 +26,15 @@ const SKIP_OWNERS = new Set([
   "trending",
 ])
 
+function aliasRoot(raw) {
+  const s = String(raw || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "")
+  if (!s || s.includes("..")) return ""
+  const lower = s.toLowerCase()
+  if (lower === "front-end" || lower === "front_end") return "frontend"
+  if (lower === "back-end" || lower === "back_end") return "backend"
+  return s
+}
+
 function parseRunPath() {
   const parts = location.pathname.replace(/\/+$/, "").split("/").filter(Boolean)
   if (parts[0] !== "run" || parts.length < 3) return null
@@ -33,7 +42,9 @@ function parseRunPath() {
   const repo = decodeURIComponent(parts[2] || "").replace(/\.git$/i, "")
   if (!owner || !repo || SKIP_OWNERS.has(owner.toLowerCase())) return null
   if (!/^[A-Za-z0-9_.-]+$/.test(owner) || !/^[A-Za-z0-9_.-]+$/.test(repo)) return null
-  return { owner, repo }
+  const rest = parts.slice(3).map((p) => decodeURIComponent(p)).join("/")
+  const root = aliasRoot(rest)
+  return root ? { owner, repo, root } : { owner, repo }
 }
 
 function parseGithubInput(raw) {
@@ -63,7 +74,10 @@ function githubUrl(ref) {
 }
 
 function runPageUrl(ref) {
-  return `/run/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}`
+  const base = `/run/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}`
+  const root = aliasRoot(ref.root)
+  if (!root) return base
+  return `${base}/${root.split("/").map(encodeURIComponent).join("/")}`
 }
 
 function liveOpenUrl(liveUrl, editToken, claimUrl) {
@@ -74,6 +88,22 @@ function liveOpenUrl(liveUrl, editToken, claimUrl) {
   return u.toString()
 }
 
+function askNotify() {
+  if (!("Notification" in window)) return
+  if (Notification.permission === "default") {
+    Notification.requestPermission().catch(() => {})
+  }
+}
+
+function notifyDone(title, body) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return
+  try {
+    new Notification(title, { body: body || "", icon: "/favicon-32.png" })
+  } catch (_) {}
+}
+
+const FETCH_CREDS = { credentials: "include" }
+
 function setStatus(text, kind = "pending") {
   const el = document.getElementById("status")
   el.textContent = text || ""
@@ -83,9 +113,12 @@ function setStatus(text, kind = "pending") {
 function showRepo(ref) {
   const chip = document.getElementById("repo-chip")
   chip.hidden = false
-  chip.textContent = `${ref.owner}/${ref.repo}`
+  const root = aliasRoot(ref.root)
+  chip.textContent = root ? `${ref.owner}/${ref.repo}/${root}` : `${ref.owner}/${ref.repo}`
   document.getElementById("git-url").value = githubUrl(ref)
-  document.getElementById("run-title").textContent = `Running ${ref.owner}/${ref.repo}`
+  document.getElementById("run-title").textContent = root
+    ? `Running ${ref.owner}/${ref.repo}/${root}`
+    : `Running ${ref.owner}/${ref.repo}`
 }
 
 async function waitForSite(url, { timeoutMs = 45000, intervalMs = 1000 } = {}) {
@@ -123,6 +156,7 @@ async function showLive(liveUrl, editToken) {
   urlText.textContent = dest
   card.hidden = false
   setStatus("Your app is live. Open it when you’re ready.", "ok")
+  notifyDone("Live on aft.page", dest)
 }
 
 async function watchJob(data) {
@@ -131,6 +165,7 @@ async function watchJob(data) {
   const logEl = document.getElementById("build-log")
   panel.hidden = false
   logEl.textContent = ""
+  askNotify()
 
   const kindLabel =
     data.kind === "vite" || data.kind === "static_build"
@@ -170,10 +205,13 @@ async function watchJob(data) {
       const why = snap.reason || snap.error || "Build failed."
       setStatus(why, "err")
       if (snap.logTail) logEl.textContent = snap.logTail
+      notifyDone("Run failed", why)
     }
   }
 
-  const es = new EventSource(`${API}/v1/jobs/${encodeURIComponent(data.jobId)}/events`)
+  const es = new EventSource(`${API}/v1/jobs/${encodeURIComponent(data.jobId)}/events`, {
+    withCredentials: true,
+  })
   es.onmessage = (ev) => {
     try {
       applySnap(JSON.parse(ev.data)).catch(() => {})
@@ -183,7 +221,7 @@ async function watchJob(data) {
   const deadline = Date.now() + 12 * 60 * 1000
   while (!settled && Date.now() < deadline) {
     try {
-      const r = await fetch(`${API}/v1/jobs/${encodeURIComponent(data.jobId)}`)
+      const r = await fetch(`${API}/v1/jobs/${encodeURIComponent(data.jobId)}`, FETCH_CREDS)
       const snap = await r.json().catch(() => ({}))
       await applySnap(snap)
     } catch (_) {}
@@ -191,22 +229,57 @@ async function watchJob(data) {
     await new Promise((resolve) => setTimeout(resolve, 2000))
   }
   es.close()
-  if (!settled) setStatus("Build timed out. Try again or pick a smaller repo.", "err")
+  if (!settled) {
+    setStatus("Build timed out. Try again or pick a smaller repo.", "err")
+    notifyDone("Run timed out", "Try again or pick a smaller repo.")
+  }
 }
 
-async function runRepo(ref, { pushState = false } = {}) {
+function hideRootPicker() {
+  const picker = document.getElementById("root-picker")
+  const choices = document.getElementById("root-choices")
+  picker.hidden = true
+  choices.replaceChildren()
+}
+
+function showRootPicker(ref, roots) {
+  const picker = document.getElementById("root-picker")
+  const choices = document.getElementById("root-choices")
+  hideRootPicker()
+  roots.forEach((r) => {
+    const btn = document.createElement("button")
+    btn.type = "button"
+    btn.className = "btn"
+    btn.textContent = `${r.path} (${r.stack || r.kind})`
+    btn.setAttribute("aria-label", `Run ${r.path}`)
+    btn.addEventListener("click", () => {
+      hideRootPicker()
+      runRepo({ ...ref, root: r.path }, { pushState: true, root: r.path })
+    })
+    choices.appendChild(btn)
+  })
+  picker.hidden = false
+  setStatus("Pick a folder — frontend is the UI, backend is the API.", "pending")
+}
+
+async function runRepo(ref, { pushState = false, root } = {}) {
+  const folder = aliasRoot(root || ref.root)
+  const at = folder ? { ...ref, root: folder } : { owner: ref.owner, repo: ref.repo }
   const go = document.getElementById("git-go")
   go.disabled = true
-  showRepo(ref)
-  if (pushState) history.replaceState(null, "", runPageUrl(ref))
+  askNotify()
+  showRepo(at)
+  hideRootPicker()
+  if (pushState) history.replaceState(null, "", runPageUrl(at))
 
   for (let attempt = 0; attempt < 2; attempt++) {
     setStatus(attempt ? "Retrying…" : "Checking repo…", "pending")
     try {
       const res = await fetch(`${API}/v1/repo/deploy`, {
         method: "POST",
+        credentials: "include",
         headers: { "content-type": "application/json", "X-Aft-Client": "web" },
-        body: JSON.stringify({ url: githubUrl(ref) }),
+        body: JSON.stringify({ url: githubUrl(at), ...(folder ? { root: folder } : {}) }),
       })
       const data = await res.json().catch(() => ({}))
       if (res.status === 202 && data.jobId) {
@@ -215,6 +288,10 @@ async function runRepo(ref, { pushState = false } = {}) {
       }
       if (res.ok && data.url) {
         await showLive(data.url, data.editToken)
+        return
+      }
+      if (data.error === "pick_root" && Array.isArray(data.roots) && data.roots.length) {
+        showRootPicker(ref, data.roots)
         return
       }
       const rateLimited =
@@ -243,4 +320,4 @@ document.getElementById("git-form").addEventListener("submit", (e) => {
 })
 
 const fromPath = parseRunPath()
-if (fromPath) runRepo(fromPath, { pushState: true })
+if (fromPath) runRepo(fromPath, { pushState: true, root: fromPath.root })
