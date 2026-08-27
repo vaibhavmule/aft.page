@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Clone a public Next.js repo, OpenNext-build, wrangler deploy aft-u-{slug}.
 # Usage: run-next-job.sh build|deploy
-# `build` never receives Cloudflare tokens (GHA step-scoped). `deploy` does.
+# `build` must never see Cloudflare tokens (separate GHA job + unset below).
+# `deploy` runs wrangler from a clean staging dir, not the clone's node_modules.
 set -euo pipefail
 
 MODE="${1:-}"
@@ -73,7 +74,8 @@ fail() {
 }
 
 write_wrangler() {
-  cat > "$SRC/wrangler.jsonc" <<EOF
+  local root="${1:-$SRC}"
+  cat > "$root/wrangler.jsonc" <<EOF
 {
   "name": "aft-u-${SLUG}",
   "main": ".open-next/worker.js",
@@ -207,6 +209,8 @@ flush(True)
 }
 
 if [[ "$MODE" == "build" ]]; then
+  # Defense in depth: even a miswired GHA env must not reach npm lifecycle.
+  unset CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID CF_API_TOKEN || true
   OWNER="${OWNER:?}"
   REPO="${REPO:?}"
   BRANCH="${BRANCH:-main}"
@@ -255,10 +259,16 @@ if [[ -z "${CLOUDFLARE_API_TOKEN:-}" ]]; then
   fail "Deploy credentials are not set on the runner."
 fi
 
-write_wrangler
+# Clone node_modules/.bin is attacker-controlled after npm install. Copy only
+# the OpenNext output and run registry wrangler from a fresh directory.
+STAGING="${AFT_RUN_DEPLOY:-${RUNNER_TEMP:-/tmp}/aft-run-deploy}"
+rm -rf "$STAGING"
+mkdir -p "$STAGING"
+cp -a "$SRC/.open-next" "$STAGING/.open-next"
+write_wrangler "$STAGING"
 post_phase deploying "Deploying"
-cd "$SRC"
-DEPLOY_OUT="$(npx wrangler deploy --name "aft-u-${SLUG}" 2>&1)" || {
+cd "$STAGING"
+DEPLOY_OUT="$(npx --yes wrangler@4 deploy --name "aft-u-${SLUG}" 2>&1)" || {
   echo "$DEPLOY_OUT"
   fail "Deploy failed."
 }

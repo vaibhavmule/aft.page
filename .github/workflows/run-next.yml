@@ -27,6 +27,8 @@ permissions:
   contents: read
 
 jobs:
+  # Untrusted npm install/build. No Cloudflare token in this job — leftover
+  # processes from the clone can read later-step env in the same job.
   build:
     runs-on: ubuntu-latest
     # Cold OpenNext can exceed 12m; npm cache keeps warm runs under this.
@@ -101,16 +103,13 @@ jobs:
           chmod +x scripts/run-next-job.sh
           scripts/run-next-job.sh build
 
-      - name: Deploy Worker
-        env:
-          JOB_ID: ${{ inputs.job_id }}
-          JOB_TOKEN: ${{ inputs.job_token }}
-          SLUG: ${{ inputs.slug }}
-          AFT_API: https://api.aft.page
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: "44255ec64e0080b678670b53bf810d27"
-          AFT_RUN_SRC: ${{ runner.temp }}/aft-run-src
-        run: scripts/run-next-job.sh deploy
+      - uses: actions/upload-artifact@v4
+        with:
+          name: open-next-${{ inputs.job_id }}
+          path: ${{ runner.temp }}/aft-run-src/.open-next
+          include-hidden-files: true
+          retention-days: 1
+          if-no-files-found: error
 
       - name: Mark job failed
         if: failure() || cancelled()
@@ -125,6 +124,72 @@ jobs:
           body = {
               "phase": "failed",
               "reason": "GitHub Actions failed or timed out (20 min).",
+              "line": "runner failed or cancelled",
+          }
+          req = urllib.request.Request(
+              f"{api}/v1/jobs/{job_id}",
+              data=json.dumps(body).encode(),
+              method="PATCH",
+              headers={
+                  "authorization": f"Bearer {token}",
+                  "content-type": "application/json",
+                  "user-agent": "aft.page-run-next",
+              },
+          )
+          try:
+              urllib.request.urlopen(req, timeout=30).read()
+          except Exception as e:
+              print(e)
+          PY
+
+  # Trusted deploy only. Downloads .open-next; never checks out the user repo.
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      AFT_RUN_SRC: ${{ runner.temp }}/aft-run-src
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts/run-next-job.sh
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: open-next-${{ inputs.job_id }}
+          path: ${{ runner.temp }}/aft-run-src/.open-next
+
+      - name: Deploy Worker
+        env:
+          JOB_ID: ${{ inputs.job_id }}
+          JOB_TOKEN: ${{ inputs.job_token }}
+          SLUG: ${{ inputs.slug }}
+          AFT_API: https://api.aft.page
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: "44255ec64e0080b678670b53bf810d27"
+          AFT_RUN_SRC: ${{ runner.temp }}/aft-run-src
+        run: |
+          chmod +x scripts/run-next-job.sh
+          scripts/run-next-job.sh deploy
+
+      - name: Mark job failed
+        if: failure() || cancelled()
+        env:
+          AFT_API: https://api.aft.page
+          JOB_ID: ${{ inputs.job_id }}
+          JOB_TOKEN: ${{ inputs.job_token }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request
+          api, job_id, token = os.environ["AFT_API"], os.environ["JOB_ID"], os.environ["JOB_TOKEN"]
+          body = {
+              "phase": "failed",
+              "reason": "GitHub Actions failed or timed out (10 min).",
               "line": "runner failed or cancelled",
           }
           req = urllib.request.Request(
