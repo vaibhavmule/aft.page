@@ -1,5 +1,6 @@
 /** Run container jobs: Sandbox clone → install → start → public URL → AFT complete. */
 import { getSandbox, proxyToSandbox, type Sandbox } from "@cloudflare/sandbox";
+import { acceptRunBody, isInternalRunHost } from "./accept-run";
 
 export { Sandbox } from "@cloudflare/sandbox";
 
@@ -19,7 +20,6 @@ type RunBody = {
   slug?: string;
   branch?: string;
   plan?: Plan | null;
-  aft_api?: string;
 };
 
 type Env = {
@@ -139,14 +139,19 @@ function isDockerPlan(plan: Plan): boolean {
 
 async function runJob(env: Env, body: RunBody) {
   const started = Date.now();
-  const jobId = body.job_id!.trim();
-  const jobToken = body.job_token!.trim();
-  const owner = body.owner!.trim();
-  const repo = body.repo!.trim();
-  const slug = body.slug!.trim().toLowerCase();
-  const branch = body.branch?.trim() || "main";
-  const plan = body.plan || {};
-  const api = (body.aft_api || env.AFT_API || DEFAULT_API).replace(/\/$/, "");
+  const accepted = acceptRunBody(body);
+  if (!accepted.ok) {
+    console.error("queue runJob rejected payload", accepted.error);
+    return;
+  }
+  const jobId = accepted.value.jobId;
+  const jobToken = accepted.value.jobToken;
+  const owner = accepted.value.owner;
+  const repo = accepted.value.repo;
+  const branch = accepted.value.branch;
+  const plan = (accepted.value.plan || {}) as Plan;
+  // Never honor body.aft_api — that would ship job tokens to an attacker URL.
+  const api = (env.AFT_API || DEFAULT_API).replace(/\/$/, "");
   const port = plan.port && plan.port > 0 ? plan.port : 8080;
 
   const deadline = () => {
@@ -318,6 +323,12 @@ export default {
       return Response.json({ error: "not_found" }, { status: 404 });
     }
 
+    // Custom domain + workers.dev are public. Only the API service binding
+    // uses https://run-container.internal/v1/run.
+    if (!isInternalRunHost(url.hostname)) {
+      return Response.json({ error: "not_found" }, { status: 404 });
+    }
+
     let body: RunBody = {};
     try {
       body = (await request.json()) as RunBody;
@@ -325,32 +336,35 @@ export default {
       return Response.json({ error: "invalid_json" }, { status: 400 });
     }
 
-    if (
-      !body.job_id?.trim() ||
-      !body.job_token?.trim() ||
-      !body.owner?.trim() ||
-      !body.repo?.trim() ||
-      !body.slug?.trim()
-    ) {
-      return Response.json({ error: "missing_fields" }, { status: 400 });
+    const accepted = acceptRunBody(body);
+    if (!accepted.ok) {
+      return Response.json({ error: accepted.error }, { status: 400 });
     }
 
-    const api = (body.aft_api || env.AFT_API || DEFAULT_API).replace(/\/$/, "");
+    const api = (env.AFT_API || DEFAULT_API).replace(/\/$/, "");
     await patchJob(
       env,
       api,
-      body.job_id.trim(),
-      body.job_token.trim(),
+      accepted.value.jobId,
+      accepted.value.jobToken,
       "cloning",
-      `Cloning ${body.owner.trim()}/${body.repo.trim()}@${(body.branch || "main").trim()}`,
+      `Cloning ${accepted.value.owner}/${accepted.value.repo}@${accepted.value.branch}`,
     );
 
     // Queue consumer has a long wall clock; waitUntil on service-binding callees does not.
     if (!env.RUN_JOBS) {
-      await failJob(env, api, body.job_id.trim(), body.job_token.trim(), "Run queue is not configured.");
+      await failJob(env, api, accepted.value.jobId, accepted.value.jobToken, "Run queue is not configured.");
       return Response.json({ error: "queue_unavailable" }, { status: 503 });
     }
-    await env.RUN_JOBS.send(body);
+    await env.RUN_JOBS.send({
+      job_id: accepted.value.jobId,
+      job_token: accepted.value.jobToken,
+      owner: accepted.value.owner,
+      repo: accepted.value.repo,
+      slug: accepted.value.slug,
+      branch: accepted.value.branch,
+      plan: accepted.value.plan as Plan | null,
+    });
     return Response.json({ ok: true, status: "accepted" }, { status: 202 });
   },
 
