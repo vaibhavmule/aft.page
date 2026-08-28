@@ -1,0 +1,12 @@
+{
+  "name": "aft-page",
+  "version": "0.1.0",
+  "description": "Deploy small software to a live, shareable URL.",
+  "author": {
+    "name": "aft.page",
+    "email": "hello@aft.page"
+  },
+  "homepage": "https://aft.page/plugins",
+  "repository": "https://github.com/vaibhavmule/aft.page",
+  "keywords": ["aft.page", "deploy", "hosting", "mcp", "small-software"]
+}

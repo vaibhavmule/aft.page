@@ -23,6 +23,10 @@ Works with Claude Code, Cursor, Codex, Copilot CLI, VS Code, Grok, and Kimi
 via the [plugins](https://www.npmjs.com/package/plugins) installer. No GitHub
 org required — this public repo is the source.
 
+### Cursor Marketplace
+
+This plugin can be submitted to the Cursor marketplace at `https://cursor.com/marketplace/publish` against this public repo. Until it is listed in the Cursor marketplace, users should install via `npx plugins add vaibhavmule/aft.page` or configure the remote MCP at `https://mcp.aft.page/mcp` manually.
+
 ## Contents
 
 ```text

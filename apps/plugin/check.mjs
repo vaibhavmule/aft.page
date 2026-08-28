@@ -12,6 +12,8 @@ const vendor = JSON.parse(readFileSync(join(root, ".plugin/plugin.json"), "utf8"
 const mcp = JSON.parse(readFileSync(join(root, "mcp.json"), "utf8"));
 const dotMcp = JSON.parse(readFileSync(join(root, ".mcp.json"), "utf8"));
 const market = JSON.parse(readFileSync(join(repo, "marketplace.json"), "utf8"));
+const cursorMarket = JSON.parse(readFileSync(join(repo, ".cursor-plugin/marketplace.json"), "utf8"));
+const cursorPlugin = JSON.parse(readFileSync(join(root, ".cursor-plugin/plugin.json"), "utf8"));
 
 assert.equal(plugin.name, "aft-page");
 assert.ok(plugin.version);
@@ -24,6 +26,13 @@ assert.equal(dotMcp.mcpServers["aft-page"].url, mcp.mcpServers["aft-page"].url);
 assert.ok(existsSync(join(root, "skills/deploy-to-aft/SKILL.md")));
 assert.equal(market.plugins[0].source, "./apps/plugin");
 assert.equal(market.plugins[0].name, "aft-page");
+
+assert.ok(existsSync(join(repo, ".cursor-plugin/marketplace.json")));
+assert.ok(cursorMarket.plugins[0].source === "apps/plugin" || cursorMarket.plugins[0].source === "./apps/plugin");
+assert.equal(cursorMarket.plugins[0].name, "aft-page");
+assert.ok(existsSync(join(root, ".cursor-plugin/plugin.json")));
+assert.equal(cursorPlugin.name, plugin.name);
+assert.equal(cursorPlugin.version, plugin.version);
 
 const philosophy = readFileSync(join(repo, "www/plugins.md"), "utf8");
 assert.match(philosophy, /modelcontextprotocol\.io/);
