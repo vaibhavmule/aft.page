@@ -33,16 +33,19 @@ Open: https://aft.page/run/mdn/todo-react
 
 Open: https://aft.page/run/mdn/beginner-html-site-scripted
 
-## C. Express container success (2026-08-26)
+## C. Express container success (2026-08-26, restored 2026-08-29)
 
 | Field | Value |
 | --- | --- |
 | Repo | `heroku/node-js-getting-started` |
 | Detection | `container` / Express (`npm start`, port 8080) |
-| Job | `run_fdaf6677d10d` |
-| Working URL | https://nodejs-getting-started-sky.aft.page |
-| Failure logs | none |
-| Second person | **yes** — anonymous GET 200 (home + in-app nav to How Heroku Works) |
+| Job (2026-08-26) | `run_fdaf6677d10d` |
+| Working URL (2026-08-26) | https://nodejs-getting-started-sky.aft.page (origin dead 2026-08-29; 530/502, sandbox gone) |
+| Job (2026-08-29 restore) | `run_0ae050b66742` |
+| Working URL (ops fixture) | https://nodejs-getting-started-rose-rose.aft.page |
+| Failure logs | npm EBADENGINE warning; peer-install python one-liner SyntaxError (non-fatal); start still published |
+| Second person | **yes** — anonymous GET 200 (home) |
+| Origin rebind | [origin-rebind.md](./origin-rebind.md) — same hostname recovered after deliberate tunnel expire |
 
 Open: https://aft.page/run/heroku/node-js-getting-started
 

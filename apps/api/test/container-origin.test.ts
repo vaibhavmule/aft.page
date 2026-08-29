@@ -18,6 +18,7 @@ describe("container origin helpers", () => {
     expect(tunnelOriginDead(502)).toBe(true);
     expect(tunnelOriginDead(500)).toBe(false);
     expect(sandboxIdForJob("run_abc123")).toBe("run-run-abc123");
+    expect(EXPRESS_FIXTURE_SLUG).toBe("nodejs-getting-started-rose-rose");
   });
 
   it("rebinds a live container origin through the runner", async () => {
@@ -54,15 +55,13 @@ describe("container origin helpers", () => {
     const row = await getSiteRow(env, slug);
     expect(row?.upstreamUrl).toBe("https://rebound.trycloudflare.com");
   });
-
-  it("keeps the Express fixture slug stable for status probes", () => {
-    expect(EXPRESS_FIXTURE_SLUG).toBe("nodejs-getting-started-sky");
-  });
 });
 
 describe("serve rebind", () => {
-  it("retries a dead Quick Tunnel origin once", async () => {
+  it("kills the origin then recovers on the same public hostname", async () => {
     const slug = `rbds${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`;
+    const publicUrl = `https://${slug}.aft.page/`;
+    const stale = "https://stale.trycloudflare.com";
     const deploy = await call(
       uploadJson(
         [
@@ -72,7 +71,7 @@ describe("serve rebind", () => {
             content: JSON.stringify({
               name: slug,
               runtime: "worker",
-              upstream: "https://stale.trycloudflare.com",
+              upstream: stale,
             }),
           },
         ],
@@ -99,12 +98,16 @@ describe("serve rebind", () => {
       return new Response("tunnel down", { status: 502 });
     }) as typeof fetch;
     try {
-      const res = await call(new Request(`https://${slug}.aft.page/`));
+      const res = await call(new Request(publicUrl));
       expect(res.status).toBe(200);
       expect(await res.text()).toBe("hello from rebound");
-      expect((await getSiteRow(env, slug))?.upstreamUrl).toBe(
-        "https://rebound.trycloudflare.com",
-      );
+      expect(res.headers.get("x-aft-slug")).toBe(slug);
+      expect(res.headers.get("x-aft-upstream")).toBe("https://rebound.trycloudflare.com");
+      expect(new URL(publicUrl).hostname).toBe(`${slug}.aft.page`);
+      const row = await getSiteRow(env, slug);
+      expect(row?.slug).toBe(slug);
+      expect(row?.upstreamUrl).toBe("https://rebound.trycloudflare.com");
+      expect(row?.upstreamUrl).not.toBe(stale);
     } finally {
       globalThis.fetch = orig;
     }

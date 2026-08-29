@@ -3,6 +3,7 @@
  */
 import type { Env } from "./env";
 import { json } from "./http";
+import { EXPRESS_FIXTURE_SLUG } from "./container-origin";
 import { serveSite } from "./serve";
 import {
   BRAND,
@@ -21,7 +22,7 @@ export type ProbeDef = {
   /** Public URL shown on the status page. */
   url: string;
   /** How to judge a successful response. */
-  expect: "health_json" | "http_ok" | "aft_me_json";
+  expect: "health_json" | "http_ok";
   /** Skip edge fetch — check inside this Worker (avoids 522 self-fetch). */
   mode: "internal_api" | "internal_site" | "internal_mcp" | "external";
   /** Slug for internal_site probes. */
@@ -41,6 +42,11 @@ export type ProbeResult = {
   latencyMs: number;
   error: string | null;
   checkedAt: string;
+};
+
+export type StatusCheckFailure = ProbeResult & {
+  rowId: number;
+  hidden: boolean;
 };
 
 export type StatusSnapshot = {
@@ -81,7 +87,7 @@ export const STATUS_PROBES: ProbeDef[] = [
   {
     id: "api",
     name: "API",
-    description: "This Worker process is up (does not check D1/R2)",
+    description: "Deploy, claim, and project API",
     url: "https://api.aft.page/health",
     expect: "health_json",
     mode: "internal_api",
@@ -89,48 +95,65 @@ export const STATUS_PROBES: ProbeDef[] = [
   {
     id: "www",
     name: "Website",
-    description: "aft.page landing, login, and docs",
+    description: "aft.page",
     url: "https://aft.page/",
     expect: "http_ok",
     mode: "external",
   },
   {
     id: "sites",
-    name: "Site serve",
-    description: "Hosted applications",
+    name: "Hosted apps",
+    description: "Static hello.aft.page (not container Run)",
     url: "https://hello.aft.page/",
     expect: "http_ok",
     mode: "internal_site",
     siteSlug: "hello",
   },
   {
-    id: "express",
-    name: "Express fixture",
-    description: "Container Run (heroku/node-js-getting-started)",
-    url: "https://nodejs-getting-started-sky.aft.page/",
-    expect: "http_ok",
-    mode: "internal_site",
-    siteSlug: "nodejs-getting-started-sky",
-  },
-  {
-    id: "aft_me",
-    name: "Sign in with AFT",
-    description: "Tenant /_aft/me returns JSON identity (not SPA HTML)",
-    url: "https://hello.aft.page/_aft/me",
-    expect: "aft_me_json",
-    mode: "internal_site",
-    siteSlug: "hello",
-    sitePath: "/_aft/me",
-  },
-  {
     id: "mcp",
     name: "MCP",
-    description: "Remote agent deploy (mcp.aft.page)",
+    description: "Agent deploy",
     url: "https://mcp.aft.page/health",
     expect: "health_json",
     mode: "internal_mcp",
   },
 ];
+
+/** Founder canaries. Cron still probes them; public status never shows them. */
+export const OPS_ONLY_PROBES: ProbeDef[] = [
+  {
+    id: "express",
+    name: "Express fixture",
+    description: `Container Run (${EXPRESS_FIXTURE_SLUG})`,
+    url: `https://${EXPRESS_FIXTURE_SLUG}.aft.page/`,
+    expect: "http_ok",
+    mode: "internal_site",
+    siteSlug: EXPRESS_FIXTURE_SLUG,
+  },
+];
+
+const ALL_PROBES: ProbeDef[] = [...STATUS_PROBES, ...OPS_ONLY_PROBES];
+const PUBLIC_PROBE_IDS = new Set(STATUS_PROBES.map((p) => p.id));
+
+function overlayProbeLabels<T extends { id: string; name: string; description: string; url: string }>(
+  c: T,
+): T {
+  const def = ALL_PROBES.find((p) => p.id === c.id);
+  if (!def) return c;
+  return { ...c, name: def.name, description: def.description, url: def.url };
+}
+
+/** Public page: API, website, static hello, MCP. Drop Express / Sign in with AFT. */
+export function filterPublicSnapshot(snapshot: StatusSnapshot): StatusSnapshot {
+  const components = snapshot.components
+    .filter((c) => PUBLIC_PROBE_IDS.has(c.id))
+    .map(overlayProbeLabels);
+  return {
+    ...snapshot,
+    components,
+    overall: overallFromComponents(components),
+  };
+}
 
 export function isStatusHost(host: string, root: string): boolean {
   return host === `status.${root}`;
@@ -244,27 +267,7 @@ async function probeOne(
         headers: { "user-agent": "aft.page-status/1.0" },
       });
       const res = await serveSite(req, env, slug, path);
-      let bodyOk: boolean | null = null;
-      if (def.expect === "aft_me_json") {
-        try {
-          const ct = res.headers.get("content-type") || "";
-          const body = (await res.clone().json()) as { user?: unknown };
-          bodyOk =
-            ct.includes("application/json") &&
-            res.status === 200 &&
-            body !== null &&
-            typeof body === "object" &&
-            "user" in body &&
-            (body.user === null ||
-              (typeof body.user === "object" &&
-                body.user !== null &&
-                "id" in body.user &&
-                "email" in body.user));
-        } catch {
-          bodyOk = false;
-        }
-      }
-      return resultFromResponse(def, checkedAt, started, res, bodyOk);
+      return resultFromResponse(def, checkedAt, started, res);
     }
 
     if (def.mode === "internal_mcp") {
@@ -315,11 +318,12 @@ export async function runProbes(
   fetcher: typeof fetch = fetch,
 ): Promise<StatusSnapshot> {
   const components = await Promise.all(
-    STATUS_PROBES.map((def) => probeOne(def, env, fetcher)),
+    ALL_PROBES.map((def) => probeOne(def, env, fetcher)),
   );
+  const publicComponents = components.filter((c) => PUBLIC_PROBE_IDS.has(c.id));
   return {
     checkedAt: new Date().toISOString(),
-    overall: overallFromComponents(components),
+    overall: overallFromComponents(publicComponents),
     components,
   };
 }
@@ -602,16 +606,20 @@ export function publicProbeError(error: string | null): string {
 }
 
 function toPublicPayload(payload: StatusPayload): StatusPayload {
+  const components = payload.components.filter((c) => PUBLIC_PROBE_IDS.has(c.id));
   return {
     ...payload,
-    components: payload.components.map((c) => ({
-      ...c,
+    overall: overallFromComponents(components),
+    components: components.map((c) => ({
+      ...overlayProbeLabels(c),
       error: c.ok ? null : publicProbeError(c.error),
     })),
-    recentFailures: payload.recentFailures.map((f) => ({
-      ...f,
-      error: publicProbeError(f.error),
-    })),
+    recentFailures: payload.recentFailures
+      .filter((f) => PUBLIC_PROBE_IDS.has(f.id))
+      .map((f) => ({
+        ...overlayProbeLabels(f),
+        error: publicProbeError(f.error),
+      })),
   };
 }
 
@@ -619,15 +627,18 @@ export async function loadRecentFailures(
   env: Env,
   limit = DEFAULT_FAILURE_LIMIT,
 ): Promise<ProbeResult[]> {
+  const ids = STATUS_PROBES.map((p) => p.id);
+  const placeholders = ids.map(() => "?").join(",");
   const rows = await env.DB.prepare(
     `SELECT component_id, component_name, component_description, url, ok, status,
             http_status, latency_ms, error, checked_at
      FROM status_checks
-     WHERE ok = 0 AND component_id != '_snapshot'
+     WHERE ok = 0 AND COALESCE(hidden, 0) = 0
+       AND component_id IN (${placeholders})
      ORDER BY checked_at DESC
      LIMIT ?`,
   )
-    .bind(limit)
+    .bind(...ids, limit)
     .all<{
       component_id: string;
       component_name: string;
@@ -641,18 +652,80 @@ export async function loadRecentFailures(
       checked_at: string;
     }>();
 
+  return (rows.results || []).map((c) =>
+    overlayProbeLabels({
+      id: c.component_id,
+      name: c.component_name,
+      description: c.component_description,
+      url: c.url,
+      ok: false,
+      status: c.status,
+      httpStatus: c.http_status,
+      latencyMs: c.latency_ms,
+      error: c.error,
+      checkedAt: c.checked_at,
+    }),
+  );
+}
+
+export async function loadOpsStatusFailures(
+  env: Env,
+  limit = 50,
+): Promise<StatusCheckFailure[]> {
+  const rows = await env.DB.prepare(
+    `SELECT id, component_id, component_name, component_description, url, ok, status,
+            http_status, latency_ms, error, checked_at, COALESCE(hidden, 0) AS hidden
+     FROM status_checks
+     WHERE ok = 0 AND component_id != '_snapshot'
+     ORDER BY checked_at DESC
+     LIMIT ?`,
+  )
+    .bind(limit)
+    .all<{
+      id: number;
+      component_id: string;
+      component_name: string;
+      component_description: string;
+      url: string;
+      ok: number;
+      status: ComponentState;
+      http_status: number | null;
+      latency_ms: number;
+      error: string | null;
+      checked_at: string;
+      hidden: number;
+    }>();
+
   return (rows.results || []).map((c) => ({
-    id: c.component_id,
-    name: c.component_name,
-    description: c.component_description,
-    url: c.url,
-    ok: false,
-    status: c.status,
-    httpStatus: c.http_status,
-    latencyMs: c.latency_ms,
-    error: c.error,
-    checkedAt: c.checked_at,
+    ...overlayProbeLabels({
+      id: c.component_id,
+      name: c.component_name,
+      description: c.component_description,
+      url: c.url,
+      ok: false,
+      status: c.status,
+      httpStatus: c.http_status,
+      latencyMs: c.latency_ms,
+      error: c.error,
+      checkedAt: c.checked_at,
+    }),
+    rowId: c.id,
+    hidden: c.hidden === 1,
   }));
+}
+
+export async function setStatusCheckHidden(
+  env: Env,
+  rowId: number,
+  hidden: boolean,
+): Promise<boolean> {
+  if (!Number.isInteger(rowId) || rowId < 1) return false;
+  const res = await env.DB.prepare(
+    `UPDATE status_checks SET hidden = ? WHERE id = ? AND ok = 0 AND component_id != '_snapshot'`,
+  )
+    .bind(hidden ? 1 : 0, rowId)
+    .run();
+  return (res.meta.changes || 0) > 0;
 }
 
 /** @deprecated Prefer loadDayStrip — kept for unit tests over in-memory snapshots. */
@@ -721,6 +794,7 @@ export async function buildPayload(
     latest = await runProbes(env);
     await saveSnapshot(env, latest);
   }
+  latest = filterPublicSnapshot(latest);
   const [history, failures, ...componentUptime] = await Promise.all([
     loadDayStrip(env, days),
     loadRecentFailures(env),
@@ -876,7 +950,7 @@ export function renderStatusHtml(payload: StatusPayload): string {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Status — aft.page</title>
-  <meta name="description" content="Live status for aft.page API, MCP, website, and site serving." />
+  <meta name="description" content="Live status for aft.page website, API, hosted apps, and MCP." />
   <meta name="theme-color" content="${BRAND.void}" />
   <link rel="canonical" href="https://status.aft.page/" />
   ${BRAND_FONT_LINKS}

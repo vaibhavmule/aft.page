@@ -240,6 +240,14 @@ export async function serveSite(
         if (next) {
           await res.body?.cancel().catch(() => null);
           res = await proxyUpstream(replay, next, access.user);
+          // ponytail: Quick Tunnel DNS can 530 for ~15–20s after mint. This loop waits up to 12s on the same hostname; first GET can still 530, the next GET on the stable *.aft.page URL recovers. Upgrade: probe origin before swapping KV.
+          if (res.status === 530) {
+            const deadline = Date.now() + 12_000;
+            while (res.status === 530 && Date.now() < deadline) {
+              await scheduler.wait(2000);
+              res = await proxyUpstream(request.clone(), next, access.user);
+            }
+          }
         }
       }
     } else {
@@ -257,7 +265,13 @@ export async function serveSite(
         httpStatus: res.status,
       });
     }
-    return res;
+    const headers = new Headers(res.headers);
+    headers.set("x-aft-slug", slug);
+    return new Response(res.body, {
+      status: res.status,
+      statusText: res.statusText,
+      headers,
+    });
   }
 
   if (pathname.startsWith("/api/")) {

@@ -7,10 +7,19 @@
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
   "observability": {
-    "enabled": true
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true
+    }
+  },
+  "ai": {
+    "binding": "AI",
+    "remote": true
   },
   "vars": {
     "AFT_API": "https://api.aft.page",
+    "AFT_AI_GATEWAY": "default",
     "SANDBOX_TRANSPORT": "rpc"
   },
   "services": [
@@ -32,6 +41,10 @@
       {
         "class_name": "Sandbox",
         "name": "Sandbox"
+      },
+      {
+        "class_name": "AftRunAgent",
+        "name": "AftRunAgent"
       }
     ]
   },
@@ -39,6 +52,10 @@
     {
       "new_sqlite_classes": ["Sandbox"],
       "tag": "v1"
+    },
+    {
+      "new_sqlite_classes": ["AftRunAgent"],
+      "tag": "v2"
     }
   ],
   "routes": [

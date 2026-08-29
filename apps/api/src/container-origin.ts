@@ -3,7 +3,9 @@ import type { Env } from "./env";
 import { getLatestRunJobBySlug, getSiteRow, setSiteRuntime } from "./db";
 
 export const CONTAINER_PUBLISH_PORT = 8080;
-export const EXPRESS_FIXTURE_SLUG = "nodejs-getting-started-sky";
+
+/** Ops-only Express canary. Never on status.aft.page. */
+export const EXPRESS_FIXTURE_SLUG = "nodejs-getting-started-rose-rose";
 
 /** Keep in sync with apps/run-container/src/origin.ts */
 export function sandboxIdForJob(jobId: string): string {

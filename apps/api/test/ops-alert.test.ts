@@ -5,12 +5,14 @@ import type { Env } from "../src/env";
 import { insertDeployFailure } from "../src/db";
 import {
   alertIfSmokeFailed,
+  alertIfStatusMajor,
   alertPlatform500,
   isPlatformAlertHost,
   maybeSendDeployDigest,
   sendOpsAlert,
 } from "../src/ops-alert";
 import type { SmokeRunResult } from "../src/smoke";
+import type { StatusSnapshot } from "../src/status";
 
 function mockMail() {
   const sent: { to: string[]; subject: string; text: string }[] = [];
@@ -142,5 +144,77 @@ describe("ops alert", () => {
     expect(sent.some((m) => m.subject.includes("24h deploy") && m.text.includes("internal"))).toBe(
       true,
     );
+  });
+
+  it("does not page status major_outage for a sleeping Express fixture", async () => {
+    const { sent, env: mailEnv } = mockMail();
+    const snap: StatusSnapshot = {
+      checkedAt: "2026-08-29T06:00:00.000Z",
+      overall: "major_outage",
+      components: [
+        {
+          id: "api",
+          name: "API",
+          description: "Deploy, claim, and project API",
+          url: "https://api.aft.page/health",
+          ok: true,
+          status: "operational",
+          httpStatus: 200,
+          latencyMs: 1,
+          error: null,
+          checkedAt: "2026-08-29T06:00:00.000Z",
+        },
+        {
+          id: "www",
+          name: "Website",
+          description: "aft.page",
+          url: "https://aft.page/",
+          ok: true,
+          status: "operational",
+          httpStatus: 200,
+          latencyMs: 1,
+          error: null,
+          checkedAt: "2026-08-29T06:00:00.000Z",
+        },
+        {
+          id: "sites",
+          name: "Hosted apps",
+          description: "Static hello.aft.page (not container Run)",
+          url: "https://hello.aft.page/",
+          ok: true,
+          status: "operational",
+          httpStatus: 200,
+          latencyMs: 1,
+          error: null,
+          checkedAt: "2026-08-29T06:00:00.000Z",
+        },
+        {
+          id: "mcp",
+          name: "MCP",
+          description: "Agent deploy",
+          url: "https://mcp.aft.page/health",
+          ok: true,
+          status: "operational",
+          httpStatus: 200,
+          latencyMs: 1,
+          error: null,
+          checkedAt: "2026-08-29T06:00:00.000Z",
+        },
+        {
+          id: "express",
+          name: "Express fixture",
+          description: "Container Run",
+          url: "https://nodejs-getting-started-rose-rose.aft.page/",
+          ok: false,
+          status: "major_outage",
+          httpStatus: 530,
+          latencyMs: 20,
+          error: "sandbox asleep",
+          checkedAt: "2026-08-29T06:00:00.000Z",
+        },
+      ],
+    };
+    expect(await alertIfStatusMajor(mailEnv, snap)).toBe(false);
+    expect(sent.some((m) => m.subject.includes("status major_outage"))).toBe(false);
   });
 });
