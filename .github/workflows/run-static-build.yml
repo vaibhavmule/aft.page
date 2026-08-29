@@ -7,7 +7,7 @@ on:
         required: true
         type: string
       job_token:
-        required: true
+        required: false
         type: string
       owner:
         required: true
@@ -41,12 +41,33 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
+      - name: Runner identity
+        env:
+          JOB_ID: ${{ inputs.job_id }}
+          JOB_TOKEN_INPUT: ${{ inputs.job_token }}
+          AFT_API: https://api.aft.page
+        run: |
+          set -euo pipefail
+          if [ -n "${JOB_TOKEN_INPUT:-}" ]; then
+            echo "::add-mask::$JOB_TOKEN_INPUT"
+            echo "JOB_TOKEN=$JOB_TOKEN_INPUT" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          aud="${AFT_API}/v1/jobs/${JOB_ID}"
+          raw=$(curl -fsSL --get "$ACTIONS_ID_TOKEN_REQUEST_URL" \
+            --data-urlencode "audience=${aud}" \
+            -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN")
+          token=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["value"])' <<<"$raw")
+          echo "::add-mask::$token"
+          echo "JOB_TOKEN=$token" >> "$GITHUB_ENV"
+
       - uses: actions/checkout@v4
         with:
           sparse-checkout: |
@@ -59,7 +80,6 @@ jobs:
       - name: Clone, build, complete
         env:
           JOB_ID: ${{ inputs.job_id }}
-          JOB_TOKEN: ${{ inputs.job_token }}
           OWNER: ${{ inputs.owner }}
           REPO: ${{ inputs.repo }}
           SLUG: ${{ inputs.slug }}
@@ -78,7 +98,6 @@ jobs:
         env:
           AFT_API: https://api.aft.page
           JOB_ID: ${{ inputs.job_id }}
-          JOB_TOKEN: ${{ inputs.job_token }}
         run: |
           python3 - <<'PY'
           import json, os, urllib.request
