@@ -1,6 +1,11 @@
 /** Run container jobs: Sandbox clone → install → start → public URL → AFT complete. */
 import { getSandbox, proxyToSandbox, type Sandbox } from "@cloudflare/sandbox";
-import { CONTAINER_PUBLISH_PORT, isSandboxId, sandboxIdForJob } from "./origin";
+import {
+  CONTAINER_PUBLISH_PORT,
+  acceptRebind,
+  isInternalRunHost,
+  sandboxIdForJob,
+} from "./origin";
 import { viteChunkWarnIsOnlyFail } from "./vite-chunk-warn";
 
 export { Sandbox } from "@cloudflare/sandbox";
@@ -640,22 +645,23 @@ export default {
     }
 
     if (url.pathname === "/v1/rebind" && request.method === "POST") {
-      let body: { sandbox_id?: unknown; port?: unknown } = {};
+      // Custom domain + workers.dev are public. Only the API service binding
+      // uses https://run-container.internal/v1/rebind.
+      if (!isInternalRunHost(url.hostname)) {
+        return Response.json({ error: "not_found" }, { status: 404 });
+      }
+      let body: unknown = {};
       try {
-        body = (await request.json()) as typeof body;
+        body = await request.json();
       } catch {
         return Response.json({ error: "invalid_json" }, { status: 400 });
       }
-      const sandboxId = typeof body.sandbox_id === "string" ? body.sandbox_id.trim() : "";
-      const port =
-        typeof body.port === "number" && body.port > 0
-          ? body.port
-          : CONTAINER_PUBLISH_PORT;
-      if (!isSandboxId(sandboxId)) {
-        return Response.json({ error: "invalid_sandbox" }, { status: 400 });
+      const accepted = acceptRebind(body);
+      if (!accepted.ok) {
+        return Response.json({ error: accepted.error }, { status: 400 });
       }
       try {
-        const upstream = await rebindTunnel(env, sandboxId, port);
+        const upstream = await rebindTunnel(env, accepted.sandboxId, accepted.port);
         if (!upstream) {
           return Response.json({ error: "no_origin" }, { status: 503 });
         }
