@@ -53,6 +53,31 @@ export async function deployPaste(
   return body;
 }
 
+/** Deploy a raw HTML paste with an anon quick-view `?expires=` param. */
+export async function deployPasteExpires(
+  html: string,
+  slug: string,
+  expires: string,
+): Promise<{ slug: string; deployId: string; expiresAt: string; notice: string }> {
+  const res = await call(
+    new Request(`${API_ORIGIN}/v1/deploy?slug=${encodeURIComponent(slug)}&expires=${encodeURIComponent(expires)}`, {
+      method: "POST",
+      headers: { "content-type": "text/html; charset=utf-8" },
+      body: html,
+    }),
+  );
+  const body = (await res.json()) as {
+    slug: string;
+    deployId: string;
+    expiresAt: string;
+    notice: string;
+  };
+  if (res.status !== 200) {
+    throw new Error(`deploy failed ${res.status}: ${JSON.stringify(body)}`);
+  }
+  return body;
+}
+
 export function siteRequest(slug: string, path = "/"): Request {
   return new Request(`https://${slug}.aft.page${path}`);
 }

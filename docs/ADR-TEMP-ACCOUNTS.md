@@ -29,9 +29,9 @@ URL strategy for production:
 3. **Proxy** `https://{slug}.aft.page/*` through the existing platform Worker (ACL, metrics, sharing) → upstream site Worker.
 4. Store app secrets in an **aft D1 vault** and sync to the site Worker via Cloudflare API (or inject at proxy edge when CF secret sync is unavailable).
 
-Workers for Platforms remains a later optimization if per-Worker proliferation becomes costly. Costing delta vs today’s setup: see below.
+Workers for Platforms is **in play** (Code door + Next/worker script count). Costing delta vs today’s setup: see below.
 
-## Costing — now vs Workers for Platforms (future)
+## Costing — now vs Workers for Platforms
 
 Do not buy WfP for request volume. Buy it when **script count** or **proxy double-bill** hurts.
 
@@ -57,7 +57,9 @@ revisit WfP trigger early. See [RUN.md](./RUN.md).
 
 ops.aft.page cost row shows this as **WfP trigger** (`stay` / `watch` / `switch`). Look there, not the dashboard template.
 
-Until then $5 Workers Paid (or free) wins. WfP is a second product (dispatch namespace + user Workers), not a dashboard toggle — see 9 Aug 2026: do not start from `workers-for-platforms-template`.
+**WfP is in play.** Still $5 Workers Paid until dispatch is live. WfP is a
+second product (dispatch namespace + user Workers), not a dashboard toggle —
+see 9 Aug 2026: do not start from `workers-for-platforms-template`.
 
 ## Consequences
 

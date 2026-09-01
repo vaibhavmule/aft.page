@@ -22,8 +22,9 @@
 /with/http/ /with/api/ 301
 /api /with/api/ 301
 /api/ /with/api/ 301
-/code /projects/new/ 301
-/code/ /projects/new/ 301
+/code /code/ 301
+/compare /compare/ 301
+/blog/deploy-static-site-without-vercel-netlify-or-cloudflare-pages /blog/deploy-static-site-without-vercel-netlify-or-cloudflare-pages/ 301
 /run /run/ 301
 /run/ /run/index.html 200
 /run/* /run/index.html 200

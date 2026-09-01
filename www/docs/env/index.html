@@ -175,6 +175,7 @@
             <li><a href="#api">API</a></li>
             <li><a href="#aft-json">aft.json capabilities</a></li>
             <li><a href="#runtime">Where secrets actually go</a></li>
+            <li><a href="#try-db">Try URLs: sqlite only</a></li>
           </ol>
         </nav>
 
@@ -267,6 +268,34 @@ curl -X DELETE https://api.aft.page/v1/sites/{slug}/secrets/ANTHROPIC_API_KEY \
               Set secrets after the site Worker exists (post-deploy). If you set
               them earlier, they stay in the vault and sync when the upstream
               registers.
+            </p>
+          </section>
+
+          <section id="try-db">
+            <h2>Try URLs: sqlite only</h2>
+            <p>
+              Paste-repo on <a href="/run/">Run</a> does not provision Postgres
+              or MySQL. The try box can use a local sqlite file when the app
+              already has an ORM engine switch (Django
+              <code>DATABASES</code>, Flask/FastAPI + SQLAlchemy via
+              <code>DATABASE_URL</code> / <code>SQLALCHEMY_DATABASE_URI</code>).
+            </p>
+            <p>
+              Apps that talk the Postgres/MySQL wire protocol
+              (<code>pg</code>, <code>mysql2</code>, Prisma
+              <code>postgresql</code>, raw <code>psycopg</code> without Django,
+              Phoenix/Ecto with <code>postgrex</code> /
+              <code>Ecto.Adapters.Postgres</code>, Rails with
+              <code>gem pg</code> and no <code>sqlite3</code>) fail honestly. We
+              do not rewrite those adapters. Self-healing runtime installs
+              missing language toolchains (Ruby, Elixir, pip) — not databases.
+              D1 is a Worker binding for apps built on Code — not a drop-in for
+              <code>pg</code>.
+            </p>
+            <p>
+              After you <a href="/docs/claim/">claim</a> the URL, add a real
+              <code>DATABASE_URL</code> under
+              <a href="#ui">Secrets</a> and re-run.
             </p>
           </section>
         </article>

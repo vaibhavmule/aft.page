@@ -13,7 +13,7 @@ Docs              App
 ────              ───
 /docs · guides    /login · /claim
   /docs/cli/      /projects
-  /docs/claim/    /projects/new
+  /docs/claim/    /projects/new · /code/
   /docs/env/      Agent Plugin install
   /docs/domains/  /project
   /docs/frameworks/
@@ -44,6 +44,7 @@ Legal: /privacy/  /terms/
 | `/login` | Google or magic-link login → projects | inline (brand tokens) |
 | `/claim` | Post-deploy email / Google → own the slug | inline (login chrome) |
 | `/projects`, `/projects/new/`, `/project/` | App (session) | `app.css` |
+| `/code/` | Code door: prompt/template → static HTML → URL (login on Go) | `app.css` |
 | `/preview` | Legacy shell (unlinked; claim is on the live slug) | `app.css` |
 | `/docs`, `/docs/cli/`, `/docs/claim/`, `/docs/env/`, `/docs/domains/`, `/docs/frameworks/` | Human docs (HTML source of truth) | `styles.css` |
 | `/docs.md` | Short agent index (not an HTML twin) | — |
@@ -52,6 +53,8 @@ Legal: /privacy/  /terms/
 | `/plugins` | Open protocols: MCP, Skills, Plugins, Unix/libaft | `styles.css` |
 | `/drop/`, `/host-html/`, `/share-html/`, `/upload-html/` | SEO landings | `styles.css` |
 | `/vs/vercel/`, `/vs/cloudflare-drop/`, `/vs/github-pages/` | Comparison landings | `styles.css` |
+| `/compare`, `/compare.md` | Four-way: aft.page, Cloudflare Pages, Netlify, Vercel | `styles.css` |
+| `/blog/deploy-static-site-without-vercel-netlify-or-cloudflare-pages/` | Quoteable “without Vercel/Netlify/Cloudflare Pages” post | `styles.css` |
 | `/privacy/`, `/terms/` | Legal | `styles.css` |
 | `/sitemap.xml`, `/robots.txt` | Discovery | — |
 
@@ -65,7 +68,7 @@ Per `docs/BRAND.md`:
 - **Geist Mono Variable** — code / URLs / flow
 
 Visual system: black/white agent-infra craft; white primary CTAs; green for live only.
-See `docs/DESIGN-INSPIRATION.txt`.
+See `docs/DESIGN.md` (agent spec) and `docs/DESIGN-INSPIRATION.txt`.
 
 ## Early-access signup
 

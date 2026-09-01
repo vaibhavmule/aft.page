@@ -3,7 +3,7 @@ import { readdir, readFile, stat } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 import { apiFetch, readJson } from "./api.js";
 import { detectProject } from "./detect.js";
-import { hasIndexHtml, resolveDeployTarget, shouldSkip } from "./resolve.js";
+import { hasIndexHtml, isRepoRoot, resolveDeployTarget, shouldSkip } from "./resolve.js";
 import { localVersion } from "./version.js";
 
 const MAX_FILES = 500;
@@ -12,6 +12,16 @@ const MAX_WALK = 501;
 
 /** Same codes as api/src/cli-preflight.ts adviseFromSnapshot. */
 export function adviseLocal(s) {
+  if (s.deployRootIsRepoRoot && s.fileCount != null && s.fileCount > 500) {
+    return {
+      ok: false,
+      error: "repo_root_upload",
+      action: "refuse",
+      source: "rules",
+      why: "You're at a git repo root with no built output — this would upload the whole repo (likely 500+ files).",
+      fix: "Run aft deploy inside a built output folder (dist/, out/, build/), or pass an explicit dir: aft deploy ./dist",
+    };
+  }
   if (s.runtime === "not_a_site" || s.framework === "not-a-site") {
     return {
       ok: false,
@@ -195,6 +205,7 @@ export async function collectSnapshot(cwd, dirArg) {
     outDir: detected.outDir,
     buildScript: detected.buildScript,
     needsBuild: Boolean(target.needsBuild),
+    deployRootIsRepoRoot: await isRepoRoot(target.deployRoot),
     hasIndexHtml: await hasIndexHtml(target.deployRoot),
     ...pkg,
     ...stats,
@@ -220,10 +231,11 @@ export async function fetchAdvice(snapshot) {
   }
 }
 
-/** Rules locally; API inference when blocked (refuse). */
+/** Rules locally; API inference when blocked (refuse). Local refusal wins (it already knows the guard). */
 export async function adviseDeploy(snapshot) {
   const local = adviseLocal(snapshot);
   if (local.ok || local.action === "run_build" || local.action === "run_next") return local;
+  if (local.action === "refuse") return local;
   const remote = await fetchAdvice(snapshot);
   return remote || local;
 }

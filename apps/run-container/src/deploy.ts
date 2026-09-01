@@ -4,10 +4,12 @@ import { viteChunkWarnIsOnlyFail } from "./vite-chunk-warn";
 import { completeJob, DEFAULT_API, failJob, patchJob, scrub } from "./job-api";
 import { thinkTurn, MAX_REPAIR_TURNS } from "./think";
 import { writePy, type AgentTurn } from "./tools";
+import { ensureRuntime } from "./ensure-runtime";
 import {
   classifySqliteTry,
   DJANGO_SQLITE_OVERRIDE_PY,
   NEED_PG_FAIL,
+  RAILS_SQLITE_OVERRIDE_PY,
   trySqliteEnv,
 } from "./try-sqlite";
 import type { Env, Plan, RunBody } from "./types";
@@ -21,6 +23,11 @@ function cmdOut(r: { stdout?: string; stderr?: string }): string {
 function isDockerPlan(plan: Plan): boolean {
   const s = `${plan.stack || ""} ${plan.start || ""} ${plan.build || ""}`.toLowerCase();
   return s.includes("docker");
+}
+
+function sandboxBinding(env: Env, docker: boolean): DurableObjectNamespace<Sandbox> {
+  if (docker && env.SandboxDind) return env.SandboxDind;
+  return env.Sandbox;
 }
 
 function nestedWorkdir(workdir: string, root?: string): string {
@@ -214,28 +221,16 @@ async function dropStdlibBackports(sandbox: Sandbox, appRoot: string): Promise<v
   await sandbox.exec(`cd ${appRoot} && python3 -c ${JSON.stringify(py)}`);
 }
 
-async function ensurePythonPip(sandbox: Sandbox): Promise<string | null> {
-  const have = await sandbox.exec("python3 -m pip --version");
-  if (have.success) return null;
-  const ep = await sandbox.exec("python3 -m ensurepip --upgrade");
-  if (ep.success) return null;
-  const apt = await sandbox.exec(
-    "apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-pip python3-venv",
-  );
-  if (apt.success) return null;
-  return `Could not install pip. ${cmdOut(have)}\n${cmdOut(ep)}\n${cmdOut(apt)}`.slice(0, 400);
-}
-
 async function snapshotTree(sandbox: Sandbox, appRoot: string): Promise<string> {
   const ls = await sandbox.exec(
-    `cd ${appRoot} && find . -type f ! -path './.git/*' ! -path './node_modules/*' ! -path './__pycache__/*' | head -80`,
+    `cd ${appRoot} && find . -type f ! -path './.git/*' ! -path './node_modules/*' ! -path './__pycache__/*' ! -path './vendor/*' | head -80`,
   );
   const names = (ls.stdout || "").trim();
   const peek = await sandbox.exec(
     `cd ${appRoot} && python3 -c ${JSON.stringify(`
 from pathlib import Path
 root = Path(".")
-want = ["package.json", "requirements.txt", "pyproject.toml", ".env", ".env.example", "manage.py", "app.py", "wsgi.py"]
+want = ["package.json", "requirements.txt", "pyproject.toml", ".env", ".env.example", "manage.py", "app.py", "wsgi.py", "mix.exs", "mix.lock", "Gemfile", "Gemfile.lock", "config/database.yml", "config/runtime.exs", "config/dev.exs", "config/config.exs", "Dockerfile"]
 chunks = []
 for p in root.rglob("settings.py"):
     if ".git" in p.parts: continue
@@ -344,25 +339,32 @@ export async function runDeploy(env: Env, body: RunBody): Promise<void> {
   };
 
   if (isDockerPlan(plan)) {
+    // DinD path uses SandboxDind when bound; otherwise honest fail after try.
+  }
+
+  const docker = isDockerPlan(plan);
+  const sandboxId = sandboxIdForJob(jobId);
+  const appDir = "app";
+  const workdir = `/workspace/${appDir}`;
+  const appRoot = appWorkdir(workdir, plan);
+  const ns = sandboxBinding(env, docker);
+  if (docker && !env.SandboxDind) {
     await failJob(
       env,
       api,
       jobId,
       jobToken,
-      "Dockerfile apps are not supported in this runner yet. Use a Node or Python start command (npm start, flask, uvicorn).",
+      "Dockerfile apps need the DinD runner (SandboxDind). Language stacks (Rails, Django, Express, …) work on the default runner.",
     );
     return;
   }
-
-  const sandboxId = sandboxIdForJob(jobId);
-  const appDir = "app";
-  const workdir = `/workspace/${appDir}`;
-  const appRoot = appWorkdir(workdir, plan);
-  const sandbox = getSandbox(env.Sandbox, sandboxId, {
+  const sandbox = getSandbox(ns, sandboxId, {
     normalizeId: true,
     sleepAfter: "30m",
     transport: "rpc",
   });
+  // Do not hang flags on the sandbox stub — Proxy may not retain ad-hoc props.
+  let dockerLive = false;
 
   try {
     await patchJob(
@@ -390,6 +392,14 @@ export async function runDeploy(env: Env, body: RunBody): Promise<void> {
       return;
     }
     await patchJob(env, api, jobId, jobToken, "cloning", `Cloned ${owner}/${repo}@${branch}`);
+    await patchJob(
+      env,
+      api,
+      jobId,
+      jobToken,
+      "cloning",
+      `runner=${docker ? "dind" : "lang"} stack=${plan.stack || "?"}`,
+    );
 
     const secrets = sanitizeEnv(body.env);
     let extraEnv: Record<string, string> = {};
@@ -397,37 +407,98 @@ export async function runDeploy(env: Env, body: RunBody): Promise<void> {
     const publicPort = CONTAINER_PUBLISH_PORT;
     const apiPort = uiRoot ? 5000 : port;
 
+    if (docker) {
+      const ready = await sandbox.exec("docker version");
+      if (!ready.success) {
+        await failJob(
+          env,
+          api,
+          jobId,
+          jobToken,
+          `Docker daemon not ready in DinD runner. ${cmdOut(ready).slice(0, 300)}`,
+        );
+        return;
+      }
+      const buildCmd =
+        plan.build || "docker build --network=host -t aft-run .";
+      await patchJob(env, api, jobId, jobToken, "building", buildCmd);
+      deadline();
+      const built = await sandbox.exec(`cd ${appRoot} && ${buildCmd}`);
+      const bout = cmdOut(built);
+      if (bout) await patchJob(env, api, jobId, jobToken, "building", bout.slice(-1800));
+      if (!built.success) {
+        await failJob(env, api, jobId, jobToken, `docker build failed: ${bout.slice(0, 400)}`);
+        return;
+      }
+      const startCmd =
+        plan.start ||
+        `docker run --network=host --rm -e PORT=${publicPort} -p ${publicPort}:${publicPort} aft-run`;
+      await patchJob(env, api, jobId, jobToken, "building", `Starting ${plan.stack || "Docker"}`);
+      const proc = await sandbox.startProcess(`cd ${appRoot} && ${startCmd}`, {
+        cwd: appRoot,
+        env: { ...secrets, PORT: String(publicPort), HOST: "0.0.0.0" },
+      });
+      const ok = await waitForListen(sandbox, publicPort, proc, deadline, async (blob) => {
+        await patchJob(env, api, jobId, jobToken, "building", blob);
+      });
+      if (!ok) {
+        await failJob(env, api, jobId, jobToken, `Docker app did not listen on ${publicPort}.`);
+        return;
+      }
+      dockerLive = true;
+    }
+
+    let listenPort = publicPort;
+    if (!dockerLive) {
     const tree = await snapshotTree(sandbox, appRoot);
     const sqliteKind = classifySqliteTry({
       tree,
       stack: plan.stack,
       hasDatabaseUrl: Boolean(secrets.DATABASE_URL),
     });
+    await patchJob(
+      env,
+      api,
+      jobId,
+      jobToken,
+      "installing",
+      `try-db=${sqliteKind} stack=${plan.stack || "?"} install=${plan.install ? "yes" : "no"}`,
+    );
     if (sqliteKind === "need-pg") {
       await failJob(env, api, jobId, jobToken, NEED_PG_FAIL);
       return;
     }
     if (sqliteKind === "orm") {
-      extraEnv = trySqliteEnv();
+      extraEnv = trySqliteEnv(plan.stack);
       await sandbox.exec(`cd ${appRoot} && python3 -c ${JSON.stringify(DJANGO_SQLITE_OVERRIDE_PY)}`);
+      if (/\brails\b/i.test(plan.stack || "")) {
+        await sandbox.exec(`cd ${appRoot} && python3 -c ${JSON.stringify(RAILS_SQLITE_OVERRIDE_PY)}`);
+      }
       await patchJob(env, api, jobId, jobToken, "installing", "Using sqlite for try");
     }
 
-    const first = await agentPass(env, {
-      api,
-      jobId,
-      jobToken,
-      slug,
-      plan,
-      sandbox,
-      appRoot,
-      extraEnv,
-    });
-    if (first.fail) {
-      await failJob(env, api, jobId, jobToken, first.fail);
-      return;
+    // ponytail: first-pass invent only when plan is incomplete or orm hosts need a look.
+    // Full invent on Express with a good start was rewriting index.js into syntax errors.
+    let first: { fail?: string; extraEnv: Record<string, string> } = { extraEnv };
+    if (sqliteKind === "orm" || !plan.start || !plan.install) {
+      first = await agentPass(env, {
+        api,
+        jobId,
+        jobToken,
+        slug,
+        plan,
+        sandbox,
+        appRoot,
+        extraEnv,
+      });
+      if (first.fail) {
+        await failJob(env, api, jobId, jobToken, first.fail);
+        return;
+      }
+      extraEnv = first.extraEnv;
+    } else {
+      await patchJob(env, api, jobId, jobToken, "installing", "Plan has install+start; skip first invent");
     }
-    extraEnv = first.extraEnv;
 
     if (uiRoot) {
       const uiLs = await sandbox.exec(`test -d ${uiRoot} && echo ok`);
@@ -477,9 +548,19 @@ export async function runDeploy(env: Env, body: RunBody): Promise<void> {
       if (plan.install) {
         deadline();
         const installCmd = pythonInstallCmd(plan.install);
+        const runtime = await ensureRuntime(sandbox, plan.stack, installCmd);
+        if (runtime.label !== "none") {
+          await patchJob(
+            env,
+            api,
+            jobId,
+            jobToken,
+            "installing",
+            `Installing runtime: ${runtime.label}`,
+          );
+        }
+        if (runtime.error) return `Install failed: ${runtime.error}`;
         if (/\bpip\b/.test(installCmd)) {
-          const pipErr = await ensurePythonPip(sandbox);
-          if (pipErr) return `Install failed: ${pipErr}`;
           await dropStdlibBackports(sandbox, appRoot);
         }
         await patchJob(env, api, jobId, jobToken, "installing", installCmd);
@@ -616,7 +697,7 @@ export async function runDeploy(env: Env, body: RunBody): Promise<void> {
       return;
     }
 
-    let listenPort = apiPort;
+    listenPort = apiPort;
     if (uiRoot) {
       const dirs = (plan.frontendOutputDirs || ["dist", "out", "build"]).join(",");
       const found = await sandbox.exec(
@@ -673,13 +754,33 @@ if os.path.isfile(os.path.join(root, "index.html")):
       }
       listenPort = publicPort;
     }
+    } // end language path (!dockerLive)
 
     deadline();
     await patchJob(env, api, jobId, jobToken, "deploying", "Publishing");
-    const tunnel = await sandbox.tunnels.get(listenPort);
-    const upstream = tunnel.url;
+    // SDK: Tunnel recovery exhausted → destroy + retry same port (runtime fence).
+    let upstream = "";
+    let tunnelErr = "";
+    for (let attempt = 0; attempt < 3 && !upstream; attempt++) {
+      try {
+        if (attempt > 0) {
+          await sandbox.tunnels.destroy(listenPort).catch(() => null);
+          await new Promise((r) => setTimeout(r, 1500 * attempt));
+        }
+        const tunnel = await sandbox.tunnels.get(listenPort);
+        upstream = tunnel.url || "";
+      } catch (e) {
+        tunnelErr = e instanceof Error ? e.message : String(e);
+      }
+    }
     if (!upstream) {
-      await failJob(env, api, jobId, jobToken, "Could not get a public URL for the process.");
+      await failJob(
+        env,
+        api,
+        jobId,
+        jobToken,
+        tunnelErr || "Could not get a public URL for the process.",
+      );
       return;
     }
     await completeJob(env, api, jobId, jobToken, upstream);

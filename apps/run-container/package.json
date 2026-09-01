@@ -9,7 +9,7 @@
     "deploy": "wrangler deploy",
     "types": "wrangler types --include-runtime false",
     "typecheck": "tsc --noEmit",
-    "check": "node --experimental-strip-types --no-warnings src/vite-chunk-warn.check.ts && node --experimental-strip-types --no-warnings src/origin.check.ts && node --experimental-strip-types --no-warnings src/try-sqlite.check.ts && node --experimental-strip-types --no-warnings src/tools.check.ts && node --experimental-strip-types --no-warnings src/think.check.ts"
+    "check": "node --experimental-strip-types --no-warnings src/vite-chunk-warn.check.ts && node --experimental-strip-types --no-warnings src/origin.check.ts && node --experimental-strip-types --no-warnings src/try-sqlite.check.ts && node --experimental-strip-types --no-warnings src/ensure-runtime.check.ts && node --experimental-strip-types --no-warnings src/tools.check.ts && node --experimental-strip-types --no-warnings src/think.check.ts"
   },
   "engines": {
     "node": ">=20"

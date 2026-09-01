@@ -48,15 +48,17 @@ function textFromAiResult(raw: unknown): string {
 }
 
 const SYSTEM = `You prepare a public GitHub app to run on a try URL https://{slug}.aft.page.
-No Postgres on try URLs. sqlite ${TRY_SQLITE_URL} (also SQLALCHEMY_DATABASE_URI) only when the app already has an ORM engine switch (Django DATABASES, SQLAlchemy URI). Not D1 (Worker binding = Code). Do not replace pg/mysql2/prisma or rewrite SQL. Those apps fail: this API needs Postgres; claim, add DATABASE_URL, re-run. Docs: https://aft.page/docs/env/#try-db
+No Postgres on try URLs. sqlite ${TRY_SQLITE_URL} (also SQLALCHEMY_DATABASE_URI) only when the app already has an ORM engine switch (Django DATABASES, SQLAlchemy URI, Rails with gem sqlite3). Not D1 (Worker binding = Code). Do not replace pg/mysql2/prisma or rewrite SQL. Those apps fail: this API needs Postgres; claim, add DATABASE_URL, re-run. Docs: https://aft.page/docs/env/#try-db
 Django: ALLOWED_HOSTS must include * or the slug host; CSRF_TRUSTED_ORIGINS for https://{slug}.aft.page and https://*.aft.page. Bind 0.0.0.0.
 If settings.py has empty ALLOWED_HOSTS, append:
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = ['https://{slug}.aft.page','https://*.aft.page']
+Phoenix: bind 0.0.0.0 (PORT is already set). Set env SECRET_KEY_BASE and PHX_HOST={slug}.aft.page when missing. Endpoint check_origin / url host must allow https://{slug}.aft.page — one append to config/dev.exs or config/runtime.exs is enough (like Django settings.py). Ecto + Postgres with no URI/adapter switch → {"fail":"this API needs Postgres; claim, add DATABASE_URL, re-run"}. Do not invent a Dockerfile. Do not rewrite lib/.
+Rails: bind 0.0.0.0 (PORT set). One append to config/environments/development.rb or config/application.rb for config.hosts << "{slug}.aft.page" / clear hosts when blocked. gem sqlite3 already → env DATABASE_URL is enough; gem pg only → {"fail":"this API needs Postgres; claim, add DATABASE_URL, re-run"}. Do not rewrite Gemfile or add gems.
 Reply JSON only, no markdown, no reasoning:
 {"note":"short product line","env":{"KEY":"value"},"writes":[{"op":"write"|"append","path":"relative/file","text":"..."}]}
 Or {"fail":"honest reason"}.
-Do not rewrite the app. Small patches only. Empty writes+env is ok if nothing to change.`;
+Do not rewrite the app. Small patches only (at most one config file add/change). Empty writes+env is ok if nothing to change.`;
 
 export async function thinkTurn(
   env: Env,

@@ -12,8 +12,9 @@ sharing** — private by default, invite is the ACL, same URL after claim. Do no
 follow AppDeploy / Hatchable / InsForge into a BaaS feature war.
 
 Public `/vs/` pages stay the three we have (Vercel, Cloudflare Drop, GitHub
-Pages). No new comparison landings unless search intent shows up. Full tracking
-lives here, not on www.
+Pages). No new `/vs/` landings unless search intent shows up. `/compare` is the
+AEO four-way (aft.page, Cloudflare Pages, Netlify, Vercel) — ranking, not a
+Netlify dupe of `/vs/vercel/`. Full tracking lives here, not on www.
 
 ## Already tracked (consoles, not the job)
 

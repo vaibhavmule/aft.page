@@ -3,7 +3,7 @@
 One portable [Agent Plugin](https://agent-plugins.org) that gives any compatible
 agent a **Deploy with AFT** capability: publish HTML or a small static site to a
 live URL — no account required. It bundles a deploy Skill plus the
-thin remote MCP (`deploy` · `aft_deploys` · `aft_rollback` · `aft_health`).
+thin remote MCP (`deploy` · `deploy_repo` · `aft_deploys` · `aft_rollback` · `aft_health`).
 
 AFT extends through open protocols (MCP, Skills, Plugins) and Unix (CLI +
 libaft). Philosophy: [`/plugins`](https://aft.page/plugins). Thin MCP:
@@ -22,6 +22,22 @@ Restart the agent. Then:
 Works with Claude Code, Cursor, Codex, Copilot CLI, VS Code, Grok, and Kimi
 via the [plugins](https://www.npmjs.com/package/plugins) installer. No GitHub
 org required — this public repo is the source.
+
+Cursor Marketplace / [cursor.directory](https://cursor.directory): repo-root
+`.cursor-plugin/marketplace.json` points at `./apps/plugin`. Community listing:
+[cursor.directory/plugins/new](https://cursor.directory/plugins/new) (GitHub
+sign-in). Official review queue:
+[cursor.com/marketplace/publish](https://cursor.com/marketplace/publish).
+
+Claude Code: repo-root `.claude-plugin/marketplace.json` plus
+`apps/plugin/.claude-plugin/plugin.json`. Install from this repo:
+
+```text
+/plugin marketplace add vaibhavmule/aft.page
+/plugin install aft-page@aft-page
+```
+
+Community marketplace submit: https://platform.claude.com/plugins/submit
 
 ## Contents
 

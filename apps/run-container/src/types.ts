@@ -27,6 +27,8 @@ export type RunBody = {
 
 export type Env = {
   Sandbox: DurableObjectNamespace<Sandbox>;
+  /** DinD image for Dockerfile plans. Optional until Wave 3 deploy. */
+  SandboxDind?: DurableObjectNamespace<Sandbox>;
   AftRunAgent: DurableObjectNamespace;
   AI?: {
     run: (

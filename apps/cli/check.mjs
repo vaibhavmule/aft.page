@@ -110,6 +110,48 @@ const envHelp = spawnSync(
 assert.notEqual(envHelp.status, 0);
 assert.match(envHelp.stderr, /Not logged in|aft login|No project slug/);
 
+// Lane banner: hosted CLI must not claim to be the OSS self-hosted deployer.
+const bannerRun = spawnSync(process.execPath, [join(root, "bin/aft.js"), "version"], {
+  encoding: "utf8",
+});
+assert.equal(bannerRun.status, 0, bannerRun.stderr);
+assert.match(bannerRun.stderr, /aft\.page/);
+assert.match(bannerRun.stderr, /hosted/);
+const noBannerRun = spawnSync(
+  process.execPath,
+  [join(root, "bin/aft.js"), "--no-banner", "version"],
+  { encoding: "utf8" },
+);
+assert.equal(noBannerRun.status, 0, noBannerRun.stderr);
+assert.doesNotMatch(noBannerRun.stderr, /aft\.page CLI/);
+
+// `aft deploy --help` must print help and exit 0 WITHOUT deploying.
+const deployHelp = spawnSync(
+  process.execPath,
+  [join(root, "bin/aft.js"), "deploy", "--help"],
+  { encoding: "utf8", cwd: root },
+);
+assert.equal(deployHelp.status, 0, deployHelp.stderr);
+assert.match(deployHelp.stdout, /aft deploy/);
+assert.doesNotMatch(deployHelp.stdout, /Deploying \d+ file/);
+const deployH = spawnSync(
+  process.execPath,
+  [join(root, "bin/aft.js"), "deploy", "-h"],
+  { encoding: "utf8", cwd: root },
+);
+assert.equal(deployH.status, 0, deployH.stderr);
+assert.match(deployH.stdout, /aft deploy/);
+assert.doesNotMatch(deployH.stdout, /Deploying \d+ file/);
+
+// `aft deploy --expires 1h` must pass the flag through to the API.
+const deployExpires = spawnSync(
+  process.execPath,
+  [join(root, "bin/aft.js"), "deploy", "--help", "--expires", "1h"],
+  { encoding: "utf8", cwd: root },
+);
+assert.equal(deployExpires.status, 0, deployExpires.stderr);
+assert.match(deployExpires.stdout, /--expires/);
+
 const domainHelp = spawnSync(
   process.execPath,
   [join(root, "bin/aft.js"), "domain", "--help"],
@@ -172,6 +214,11 @@ const picked = await resolveDeployTarget(project, ".");
 assert.equal(picked.deployRoot, join(project, "dist"));
 assert.equal(picked.projectRoot, project);
 assert.equal(await readSlugHint(project), "demo-app");
+
+// Absolute path dirArg must behave identically to a relative one.
+const absPicked = await resolveDeployTarget(join(tmp, "elsewhere"), project);
+assert.equal(absPicked.deployRoot, join(project, "dist"));
+assert.equal(absPicked.projectRoot, project);
 const viteDet = await detectProject(project);
 assert.equal(viteDet.framework, "vite");
 assert.equal(viteDet.outDir, "dist");
@@ -236,6 +283,29 @@ const plainAft = JSON.parse(
   ),
 );
 assert.equal(plainAft.runtime, "static");
+
+// Absolute path to a plain static folder resolves the same as cwd would.
+const absPlain = await resolveDeployTarget(join(tmp, "elsewhere"), plain);
+assert.equal(absPlain.deployRoot, plain);
+assert.equal(absPlain.projectRoot, plain);
+
+// Repo-root guard: a git repo root with 500+ files must be refused, not uploaded.
+const repoRoot = join(tmp, "repo-root");
+await mkdir(repoRoot);
+await writeFile(join(repoRoot, ".git"), "gitdir: ../real-git\n");
+await writeFile(join(repoRoot, "package.json"), JSON.stringify({ name: "repo-root" }));
+await writeFile(join(repoRoot, "index.html"), "<h1>repo</h1>\n");
+for (let i = 0; i < 520; i++) {
+  await writeFile(join(repoRoot, `f${i}.txt`), "x\n");
+}
+const repoAdvice = await ensureDeployable(repoRoot, ".", { checkOnly: true });
+assert.equal(repoAdvice.advice.ok, false);
+assert.equal(repoAdvice.advice.error, "repo_root_upload");
+assert.match(repoAdvice.advice.fix, /dist/);
+await assert.rejects(
+  () => ensureDeployable(repoRoot, ".", { interactive: false }),
+  /repo_root_upload|dist|built output/,
+);
 
 const nextDir = join(tmp, "next-app");
 await mkdir(nextDir);

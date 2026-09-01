@@ -132,6 +132,12 @@ export function isApiHost(host: string, root: string): boolean {
   return false;
 }
 
+/** wrangler dev — not production api.aft.page. */
+export function isLoopbackRequest(request: Request): boolean {
+  const host = new URL(request.url).hostname.toLowerCase();
+  return host === "localhost" || host === "127.0.0.1";
+}
+
 export function subdomainSlug(host: string, root: string): string | null {
   if (host === root || host === `www.${root}`) return null;
   if (!host.endsWith(`.${root}`)) return null;

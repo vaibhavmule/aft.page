@@ -30,10 +30,18 @@
   ],
   "containers": [
     {
+      // ponytail: lite OOMs after ruby/elixir bake; basic still flaky on tunnel fence → standard-1.
       "class_name": "Sandbox",
       "image": "./Dockerfile",
-      "instance_type": "lite",
+      "instance_type": "standard-1",
       "max_instances": 20
+    },
+    {
+      // dockerd + image build
+      "class_name": "SandboxDind",
+      "image": "./Dockerfile.dind",
+      "instance_type": "standard-1",
+      "max_instances": 10
     }
   ],
   "durable_objects": {
@@ -41,6 +49,10 @@
       {
         "class_name": "Sandbox",
         "name": "Sandbox"
+      },
+      {
+        "class_name": "SandboxDind",
+        "name": "SandboxDind"
       },
       {
         "class_name": "AftRunAgent",
@@ -56,6 +68,10 @@
     {
       "new_sqlite_classes": ["AftRunAgent"],
       "tag": "v2"
+    },
+    {
+      "new_sqlite_classes": ["SandboxDind"],
+      "tag": "v3-dind"
     }
   ],
   "routes": [

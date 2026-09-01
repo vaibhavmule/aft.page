@@ -29,12 +29,14 @@ export async function getSiteRow(
   upstreamUrl: string | null;
   mainModule: string | null;
   active: boolean;
+  expiresAt: string | null;
+  expired: boolean;
 } | null> {
   await ensureDb(env);
   const row = await env.DB.prepare(
     `SELECT slug, deploy_id, owner_user_id, visibility, created_at, updated_at, last_served_at,
             COALESCE(runtime, 'static') AS runtime, upstream_url, main_module,
-            COALESCE(active, 1) AS active
+            COALESCE(active, 1) AS active, expires_at, COALESCE(expired, 0) AS expired
      FROM sites WHERE slug = ?`,
   )
     .bind(slug)
@@ -50,6 +52,8 @@ export async function getSiteRow(
       upstream_url: string | null;
       main_module: string | null;
       active: number;
+      expires_at: string | null;
+      expired: number;
     }>();
   if (!row) return null;
   return {
@@ -64,7 +68,39 @@ export async function getSiteRow(
     upstreamUrl: row.upstream_url ?? null,
     mainModule: row.main_module ?? null,
     active: Number(row.active) !== 0,
+    expiresAt: row.expires_at ?? null,
+    expired: Number(row.expired) !== 0,
   };
+}
+
+/** Soft-expire: keep the D1 row for audit, stop serving, free the slug. */
+export async function markSiteExpired(
+  env: Env,
+  slug: string,
+  nowIso = new Date().toISOString(),
+): Promise<boolean> {
+  await ensureDb(env);
+  const result = await env.DB.prepare(
+    `UPDATE sites SET expired = 1, expires_at = COALESCE(expires_at, ?), updated_at = ? WHERE slug = ?`,
+  )
+    .bind(nowIso, nowIso, slug)
+    .run();
+  return (result.meta?.changes ?? 0) > 0;
+}
+
+/** Record an anon quick-view expiry (expires_at column). */
+export async function setSiteExpiresAt(
+  env: Env,
+  slug: string,
+  expiresAtIso: string | null,
+): Promise<void> {
+  await ensureDb(env);
+  const now = new Date().toISOString();
+  await env.DB.prepare(
+    `UPDATE sites SET expires_at = ?, updated_at = ? WHERE slug = ?`,
+  )
+    .bind(expiresAtIso, now, slug)
+    .run();
 }
 
 export async function setSiteVisibility(

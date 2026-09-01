@@ -18,13 +18,14 @@
 - [ ] Publish extension to Chrome Web Store
 - [ ] Publish `@aft.page/mcp` to npm (optional)
 - [x] **aft.page CLI** (hosted) — `curl -fsSL https://aft.page/install | sh` → `aft deploy` (login optional). Source `apps/cli`; Pages `www/cli` + `install.sh`. npm `@aft.page/cli` later when scope exists.
-- [x] **OSS CLI** (`cli/` / github.com/vaibhavmule/aft) — customer-cloud AWS path; different product. Don’t mix with `npx` for aft.page.
+- [x] **OSS CLI** (`cli/` / github.com/vaibhavmule/aft) — archived origin repo (where AFT started). Parked. Don’t mix with `npx` for aft.page.
 - [x] **Remote MCP ready** — agents: MCP or CLI today
 - [x] **Drop + CLI for humans** — Drop or `curl …/install | sh`
 - [ ] Per-IDE Agent Plugin / marketplace listings
 - [ ] **Run** — paste public GitHub repo → job → URL. Distribution door. Show HN + PH on this. $1K builds. docs/RUN.md
 - [x] Run runtime milestone: nested UI+API, Python pip, rerun, notify, origin rebind, Next 15.5.24/16.3.3 floor
-- [ ] **Code** — prompt/template → app with D1 + R2. Grok via xAI. docs/CODE.md
+- [ ] **Code** — prompt/template → app with D1 + R2. Grok via xAI. In play. docs/CODE.md
+- [ ] **Workers for Platforms / Dynamic Workers** — in play (Code + Next script cap). docs/ADR-TEMP-ACCOUNTS.md
 
 ### Proof
 - [x] Prospect share-checklist app live: https://share-checklist.aft.page
@@ -32,11 +33,11 @@
 - [ ] Push plugin · marketplace submit · 30s demo live
 - [ ] Cursor marketplace + cursor.directory submit
 - [ ] ≥5 strangers deploy without founder help — scoreboard: [qa/stranger-trial.md](qa/stranger-trial.md)
-- [ ] ≥1 deployed app used repeatedly by **two** real people (gate before cron / connectors / broader agent infra)
+- [ ] ≥1 deployed app used repeatedly by **two** real people
 - [ ] ≥5 repeat deployers + evidence pack
 - [ ] ≥1 app shared with another person (invite accept)
 - [ ] Show HN + Product Hunt for **AFT Run** ($1K compute budget)
-- [x] YC Fall 2026 submitted 18 Aug 2026 — In review (late). Progress / video updates via portal if material. docs/YC-APPLICATION.md
+- [x] YC Fall 2026 submitted 18 Aug — **rejected 29 Aug, no interview**. Next: on-time by 2 Nov with retained users. docs/YC-APPLICATION.md
 - [x] Launchpad Cohort #7 — form submitted 13 Aug 2026. Email ack same day: under review, notify if selected. Wait. Startups $10k still open (they linked it). docs/FUNDRAISE.md
 - [ ] Google for Startups Cloud Program — step 1 done; **finish credits apply** + checklist (docs/FUNDRAISE.md)
 - [ ] Cloudflare for Startups Tier 3 $10k — submit with hello@aft.page + CF account
@@ -52,9 +53,7 @@
 - [ ] Claude marketplace          # track on ops /distribute (dist-claude-marketplace)
 - [ ] Workspace / Entra SSO
 - [ ] Connector deepen / CF Sandbox only if a partner needs it
-      **Freeze:** do not expand cron, connectors, or agent infra until ≥1 app is used repeatedly by two real people.
-- [ ] Workers for Platforms / Dynamic Workers (when tenant JS / SSR needs isolation)
-- [ ] AI automations / schedule clock — in scope (docs/parked/cron.md) — frozen until two-person repeat use
+- [ ] AI automations / schedule clock — in scope (docs/parked/cron.md)
 
 ### This round (reserve / claim / generous Drop)
 - [x] Reserve product slugs (`ai`, `cron`, `cname`, automations, …)
@@ -71,6 +70,6 @@
 ## Notes
 - Apex aft.page = www/ (Pages)
 - api.aft.page + *.aft.page = Worker
-- OSS CLI: github.com/vaibhavmule/aft
+- OSS CLI: github.com/vaibhavmule/aft (archived origin, parked)
 - Hosted repo: github.com/vaibhavmule/aft.page
 - Runnable OSS / Run layer: docs/RUN.md

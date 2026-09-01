@@ -234,6 +234,38 @@ describe("run job API", () => {
     const job = await getRunJob(env, id);
     expect(job?.status).toBe("live");
   });
+
+  it("POST stop marks failed so complete cannot go live", async () => {
+    const token = randomToken("run_tok_");
+    const id = await insertRunJob(env, {
+      owner: "octo",
+      repo: "hello-next",
+      url: "https://github.com/octo/hello-next",
+      trigger: "test",
+      kind: "next",
+      phase: "cloning",
+      slug: "stopjob1",
+      jobTokenHash: await sha256Hex(token),
+    });
+    const stop = await call(
+      new Request(`${API_ORIGIN}/v1/jobs/${id}/stop`, { method: "POST" }),
+    );
+    expect(stop.status).toBe(200);
+    const job = await getRunJob(env, id);
+    expect(job?.status).toBe("failed");
+    expect(job?.error).toBe("stopped");
+    const complete = await call(
+      new Request(`${API_ORIGIN}/v1/jobs/${id}/complete`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ upstream: "https://example.com" }),
+      }),
+    );
+    expect(complete.status).toBe(409);
+  });
 });
 
 describe("runContainerRunUrl", () => {

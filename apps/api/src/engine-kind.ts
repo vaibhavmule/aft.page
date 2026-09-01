@@ -28,6 +28,7 @@ export type EngineSignals = {
   nextConfigText?: string | null;
   hasViteConfig?: boolean;
   hasManagePy?: boolean;
+  hasMixExs?: boolean;
   requirementsTxt?: string | null;
   pyprojectToml?: string | null;
   hasUvLock?: boolean;
@@ -327,6 +328,15 @@ function containerStartCmd(
   if (stack === "Django" || s.hasManagePy) {
     return "python3 manage.py runserver 0.0.0.0:8080";
   }
+  if (stack === "Phoenix" || s.hasMixExs) {
+    return "mix phx.server";
+  }
+  if (stack === "Rails") {
+    return "bundle exec rails server -b 0.0.0.0 -p 8080";
+  }
+  if (stack === "Sinatra" || stack === "Hanami" || stack === "Grape") {
+    return "bundle exec rackup -o 0.0.0.0 -p 8080";
+  }
   if (stack === "Flask") {
     return "python3 -m flask run --host 0.0.0.0 --port 8080";
   }
@@ -385,6 +395,8 @@ export function detectEngine(s: EngineSignals): EngineDetect {
   if (s.hasManagePy) return { kind: "container", stack: "Django" };
   const pyWeb = firstNamed(PIP_WEB, (n) => pipHas(pip, n) || tomlDep(pip, n));
   if (pyWeb) return { kind: "container", stack: pyWeb };
+
+  if (s.hasMixExs) return { kind: "container", stack: "Phoenix" };
 
   const gemWeb = s.gemfile ? firstNamed(GEM_WEB, (n) => gemHas(s.gemfile!, n)) : null;
   if (gemWeb) return { kind: "container", stack: gemWeb };
@@ -472,23 +484,30 @@ export function buildPlanFromSignals(s: EngineSignals): BuildPlan {
     const install =
       got.stack === "Docker"
         ? undefined
-        : packageHasNext(pkg) || (pkg && (pkg.dependencies || pkg.devDependencies))
-          ? npmInstallCmd()
-          : s.hasUvLock
-            ? "uv sync"
-            : s.requirementsTxt
-              ? "python3 -m pip install -r requirements.txt"
-              : s.pyprojectToml
-                ? "python3 -m pip install ."
-                : undefined;
+        : got.stack === "Phoenix" || s.hasMixExs
+          ? "mix local.hex --force && mix local.rebar --force && mix deps.get"
+          : got.stack === "Rails" ||
+            got.stack === "Sinatra" ||
+            got.stack === "Hanami" ||
+            got.stack === "Grape"
+          ? "bundle install"
+          : packageHasNext(pkg) || (pkg && (pkg.dependencies || pkg.devDependencies))
+            ? npmInstallCmd()
+            : s.hasUvLock
+              ? "uv sync"
+              : s.requirementsTxt
+                ? "python3 -m pip install -r requirements.txt"
+                : s.pyprojectToml
+                  ? "python3 -m pip install ."
+                  : undefined;
     if (!start && got.stack === "Docker") {
       return {
         runtime: "container",
         stack: got.stack,
         port,
-        reason: "Dockerfile detected — container runner will build the image.",
-        build: "docker build -t aft-run .",
-        start: "docker run --rm -p 8080:8080 aft-run",
+        reason: "Dockerfile detected — DinD runner will build the image.",
+        build: "docker build --network=host -t aft-run .",
+        start: "docker run --network=host --rm -e PORT=8080 -p 8080:8080 aft-run",
       };
     }
     if (!start) {
@@ -616,6 +635,7 @@ export function sourceTreeRefuse(
     pkg,
     hasIndexHtml: has("index.html"),
     hasManagePy: has("manage.py"),
+    hasMixExs: has("mix.exs"),
     requirementsTxt: input.requirementsTxt,
     pyprojectToml: input.pyprojectToml,
     cargoToml: input.cargoToml,

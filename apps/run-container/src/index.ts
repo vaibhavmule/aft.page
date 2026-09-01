@@ -1,11 +1,13 @@
 /** Run container: HTTP accept → queue → AftRunAgent → Sandbox. */
-import { getSandbox, proxyToSandbox, type Sandbox } from "@cloudflare/sandbox";
+import { getSandbox, proxyToSandbox, Sandbox as SandboxBase, type Sandbox } from "@cloudflare/sandbox";
 import { AftRunAgent, runAftAgent } from "./agent";
 import { DEFAULT_API, failJob } from "./job-api";
 import { CONTAINER_PUBLISH_PORT, isSandboxId } from "./origin";
 import type { Env, RunBody } from "./types";
 
 export { Sandbox } from "@cloudflare/sandbox";
+/** DinD container class — same Sandbox DO protocol, different image (wrangler). */
+export class SandboxDind extends SandboxBase {}
 export { AftRunAgent };
 
 async function rebindTunnel(

@@ -83,8 +83,8 @@ From live dashboard (Aug 2026):
 | --- | --- | --- |
 | **Host** (files → URL) | Drop — ✅ | ✅ (subset) |
 | **Ship / Deploy** (`aft deploy`) | MCP, CLI — 🟡 detect + upload | ❌ (no CLI; creation is the builder) |
-| **Run** (GitHub → URL) | Distribution engine — next | ❌ |
-| **Code** (prompt/template → D1 + R2) | [CODE.md](./CODE.md) — after Run | ✅ **primary** (tables + files + invite) |
+| **Run** (GitHub → URL) | Distribution engine — current | ❌ |
+| **Code** (prompt/template → D1 + R2) | [CODE.md](./CODE.md) — in play | ✅ **primary** (tables + files + invite) |
 
 Sites is the **Code** benchmark: prompt/template → app with D1 + R2.
 [v0](https://v0.app/) is only the prompt skin. Deploy is not this. AFT wins **Run**.

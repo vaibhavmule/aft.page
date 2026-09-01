@@ -4,8 +4,8 @@ Internal. Goal: prove **A Cloud for Small Software** with real users in 30 days.
 
 Updated: 2026-08-11
 
-**Freeze lifted 23 Aug 2026.** See [STRATEGY.md](./STRATEGY.md) § Focus and
-[`../todo.txt`](../todo.txt). Host / Ship / Run may ship.
+**Freeze lifted 23 Aug 2026.** Host / Ship / Run / Code may ship. See [STRATEGY.md](./STRATEGY.md) § Mode and
+[`../todo.txt`](../todo.txt).
 
 Sam frame:
 
@@ -74,7 +74,7 @@ not “we host HTML” (Cloudflare already commoditizes that).
 **Product (agent-speed)**
 - [ ] Ship users / ownership / sessions (magic link first)
 - [ ] Private + invite (good enough, not perfect)
-- [x] Submit **YC late application** — 18 Aug 2026, In review ([YC-APPLICATION.md](./YC-APPLICATION.md)). Video/progress updates via portal if material.
+- [x] Submit **YC late application** — 18 Aug 2026. **Rejected 29 Aug, no interview** ([YC-APPLICATION.md](./YC-APPLICATION.md)). Next on-time 2 Nov with users.
 - [ ] Read Polymerize employment agreement (IP / moonlighting)
 
 **Customers (human-speed — this is the bottleneck)**
@@ -217,7 +217,7 @@ Polymerize: **do not resign** in the first seven-week proof.
 ## Related
 
 - [STRATEGY.md](./STRATEGY.md) — north star, dual-track (proof ∥ platform), competitive map
-- [YC-APPLICATION.md](./YC-APPLICATION.md) — submitted 18 Aug 2026, In review
+- [YC-APPLICATION.md](./YC-APPLICATION.md) — Fall 2026 rejected 29 Aug; next on-time 2 Nov
 - [BRAND.md](./BRAND.md) — craft bar (Ona-grade), not this month’s blocker
 - [CONNECTOR.md](./CONNECTOR.md) — Week 3 connector protocol + demo
 - [PRICING.md](./PRICING.md) — Free / Personal 30 days then $19 / Team & Enterprise Contact

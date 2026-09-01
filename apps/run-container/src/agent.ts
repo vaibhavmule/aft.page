@@ -1,4 +1,4 @@
-import { Agent, getAgentByName } from "agents";
+import { Agent } from "agents";
 import { runDeploy } from "./deploy";
 import type { Env, RunBody } from "./types";
 
@@ -10,12 +10,7 @@ export class AftRunAgent extends Agent<Env> {
 }
 
 export async function runAftAgent(env: Env, body: RunBody): Promise<void> {
-  const jobId = body.job_id?.trim();
-  if (!jobId || !env.AftRunAgent) {
-    await runDeploy(env, body);
-    return;
-  }
-  const ns = env.AftRunAgent as unknown as DurableObjectNamespace<AftRunAgent>;
-  const agent = await getAgentByName(ns, jobId);
-  await agent.deploy(body);
+  // ponytail: run deploy on the queue consumer (not AftRunAgent DO) until tunnels
+  // stabilize with SandboxDind. Agent DO left exported for sub-agents later.
+  await runDeploy(env, body);
 }

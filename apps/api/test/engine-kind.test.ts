@@ -123,6 +123,12 @@ const cases: Array<{
     stack: "Express",
   },
   {
+    name: "Phoenix mix.exs",
+    signals: { hasMixExs: true },
+    kind: "container",
+    stack: "Phoenix",
+  },
+  {
     name: "Next + Prisma is still Next",
     signals: { pkg: { dependencies: { next: "15", "@prisma/client": "5" } } },
     kind: "next",
@@ -242,6 +248,33 @@ describe("buildPlanFromSignals", () => {
     expect(plan.install).toBe("python3 -m pip install -r requirements.txt");
     expect(plan.build).toBe("python3 manage.py migrate --noinput");
     expect(plan.start).toBe("python3 manage.py runserver 0.0.0.0:8080");
+  });
+
+  it("Phoenix plan uses mix deps.get and phx.server", () => {
+    const plan = buildPlanFromSignals({ hasMixExs: true });
+    expect(plan.runtime).toBe("container");
+    expect(plan.stack).toBe("Phoenix");
+    expect(plan.install).toBe("mix local.hex --force && mix local.rebar --force && mix deps.get");
+    expect(plan.start).toBe("mix phx.server");
+    expect(plan.port).toBe(8080);
+  });
+
+  it("Rails plan uses bundle install and rails server", () => {
+    const plan = buildPlanFromSignals({
+      gemfile: "gem 'rails', '~> 7.1'\ngem 'sqlite3'\n",
+    });
+    expect(plan.runtime).toBe("container");
+    expect(plan.stack).toBe("Rails");
+    expect(plan.install).toBe("bundle install");
+    expect(plan.start).toBe("bundle exec rails server -b 0.0.0.0 -p 8080");
+    expect(plan.port).toBe(8080);
+  });
+
+  it("Phoenix without Dockerfile is not a Docker plan", () => {
+    const plan = buildPlanFromSignals({ hasMixExs: true });
+    expect(plan.stack).toBe("Phoenix");
+    expect(plan.build).toBeUndefined();
+    expect(plan.start).not.toMatch(/docker/i);
   });
 
   it("Flask plan has flask run and port", () => {

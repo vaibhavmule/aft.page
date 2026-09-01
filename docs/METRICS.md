@@ -29,6 +29,10 @@ Instrument before more features. These numbers beat another feature:
 | Feedback | `feedback` (already shipped) |
 | MCP protocol hits | `mcp` from `aft-page-mcp` (`blob1` = JSON-RPC method) |
 
+## Streams (one dataset)
+
+One AE dataset, three jobs — filter on `index1`, do not invent a second store: **product loop** (`deploy`, `claim`, `redeploy`, `waitlist`, `feedback`, `mcp`, `cli`), **edge ops** (`serve`, `page_view`), and **billing later** (Code / WfP quotas when paid exists). KPI counts are Worker-side only — if a client batch endpoint ever lands, allowlist UI-only names; the browser must never mint `deploy`, `claim`, `invite`, or `redeploy`.
+
 ## Schema
 
 | Field | Alias | Values |

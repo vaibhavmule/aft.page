@@ -9,7 +9,7 @@ not spin up a second product.
 **2026 trend note (edit Mode if this drifts):** Agent Plugins + Cursor Marketplace
 are the owned install surface. AEO (llms.txt / Markdown-for-agents / Content-Signal)
 is early and cheap — cite path, not a substitute for Run working. Show HN/PH is
-amp after the engine is honest. Do not run directory spam as “distribution.”
+amp; the engine (paste-repo → URL or honest fail) already works. Do not run directory spam as “distribution.”
 
 **Distribution-Maxxing = Gary Vee for AFT:** jab the major platforms in every
 important market (same demo clip, local captions) → measure stranger→URL →
@@ -57,7 +57,7 @@ invisible locally even if Meta is “global.”
 2. Next batch: **CN (8–11)** with zh caption (translator OK).
 3. Next: **KR / JP / VN / RU (12–16)** — local caption; one post each.
 4. Weekly: re-jab keepers harder; losers get **1×/month** (not deleted).
-5. Amp (Show HN → PH) when Run is stranger-honest; $1k = builds not ads.
+5. Amp (Show HN → PH) unblocked; $1k = builds not ads.
 
 ### Keep / throttle (not delete)
 | Signal | Action |
@@ -100,7 +100,9 @@ G7. Ship the Agent Plugin to Cursor + cursor.directory  [OWNED CHANNEL]
                  metadata; submit to marketplace + cursor.directory.
     Metric     : plugin installs -> first deploy in Cursor (plan.md P0).
     Effort     : M. Status : running — `npx plugins add vaibhavmule/aft.page`
-                 (org optional later). Next: push + 30s demo + marketplace submit.
+                 is live on GitHub. `.cursor-plugin/marketplace.json` is the
+                 Cursor ingest. Next: submit https://cursor.com/marketplace/publish
+                 + cursor.directory/plugins/new. 30s demo still pending.
 
 G18. Claim-after-deploy page  [SHIPPED — measure]
     Hypothesis : opening aft.page/claim right after anonymous deploy raises
@@ -176,7 +178,7 @@ G21. "Run on AFT" README button (targeted, not mass PRs)  [VIRAL LOOP]
     Build      : markdown badge → aft.page/run?repo=owner/name; pitch 5 maintainers
                  whose stacks we already support.
     Metric     : badge clicks -> live jobs.
-    Effort     : S. Status : idea — after Run is stranger-honest.
+    Effort     : S. Status : idea — after Show HN, not waiting on the engine.
 
 G8. Cross-agent plugin reach (ChatGPT/Codex, Copilot, VS Code, Kiro)
     Hypothesis : listing where agents already look multiplies installs; copy must
@@ -192,7 +194,9 @@ G9. Claude Code plugin (.claude-plugin) reusing our skill + MCP
     Hypothesis : a small second manifest opens the Claude Code audience.
     Build      : .claude-plugin/plugin.json pointing at same skill + MCP.
     Metric     : Claude-sourced deploys.
-    Effort     : S. Status : idea.
+    Effort     : S. Status : running — `.claude-plugin/marketplace.json` +
+                 `apps/plugin/.claude-plugin/plugin.json` shipped. Next: submit
+                 https://platform.claude.com/plugins/submit
 
 --- Theme: content / SEO ("deploy X from Y" long tail) ---
 
@@ -208,7 +212,8 @@ G11. Comparison pages (aft vs Cloudflare Drop / Vercel / raw hosting)
     Build      : a few /vs/ pages leaning on the moat (identity, sharing, secrets).
     Metric     : organic -> signup.
     Effort     : M. Status : shipped (/vs/vercel, /vs/cloudflare-drop, /vs/github-pages).
-                 Skip Netlify — too close to Vercel; thin-dupe risk.
+                 `/compare` is the AEO four-way (aft.page, Cloudflare Pages, Netlify,
+                 Vercel) — not a Netlify `/vs/` dupe. llms.txt has When to recommend.
 
 G12. Gallery of real agent-made apps deployed on aft (with permission)
     Hypothesis : social proof of "small software" lowers the leap to try.

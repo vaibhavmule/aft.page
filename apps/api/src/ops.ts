@@ -1510,7 +1510,7 @@ function renderStories(): string {
     "Billing checkout, company SSO, public plugin store UI.",
     "MCP does not do secrets / invites / billing.",
     "Connector is expenses:read only.",
-    "Dockerfile in the runner not yet. Rails / Go / Rust still fail honestly.",
+    "Dockerfile DinD runner (SandboxDind) for Dockerfile repos. Rails / Ruby invent start shipped; Neon Postgres try later.",
     "Drop does not build. Vite/Next builds are CLI, MCP (agent-side), or GitHub Run.",
   ])}`;
 }

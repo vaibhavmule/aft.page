@@ -99,7 +99,7 @@ describe("slug allocation", () => {
   });
 
   it("rejects reserved names instead of hijacking them", async () => {
-    for (const reserved of ["www", "api", "admin", "ai", "cron", "cname"]) {
+    for (const reserved of ["www", "api", "admin", "ai", "cron", "cname", "code"]) {
       const res = await call(pasteHtml(page("nope"), reserved));
       expect(res.status).toBe(400);
       expect(await res.json()).toMatchObject({ error: "reserved_slug" });

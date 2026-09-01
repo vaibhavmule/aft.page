@@ -24,7 +24,7 @@ curl -fsSL https://aft.page/install | sh
 aft deploy
 ```
 
-OSS CLI (customer AWS / Cloudflare — parked, different product): [vaibhavmule/aft](https://github.com/vaibhavmule/aft).  
+OSS CLI (archived origin — `cli/`, github.com/vaibhavmule/aft — parked): [vaibhavmule/aft](https://github.com/vaibhavmule/aft).  
 Hosted repo: [vaibhavmule/aft.page](https://github.com/vaibhavmule/aft.page).
 
 ## Try it
@@ -39,7 +39,20 @@ curl -X POST https://api.aft.page/v1/deploy \
 
 Live: [hello.aft.page](https://hello.aft.page) · [vite-hello.aft.page](https://vite-hello.aft.page) (Vite SPA) · [next-hello.aft.page](https://next-hello.aft.page) (Next SSR SPOC) · [share-checklist.aft.page](https://share-checklist.aft.page)
 
-Human landings: [Docs](https://aft.page/docs) · [Drop](https://aft.page/drop/) · [host](https://aft.page/host-html/) · [share](https://aft.page/share-html/) · [upload](https://aft.page/upload-html/)
+Human landings: [Docs](https://aft.page/docs) · [Drop](https://aft.page/drop/) · [Compare](https://aft.page/compare) · [host](https://aft.page/host-html/) · [share](https://aft.page/share-html/) · [upload](https://aft.page/upload-html/)
+
+## Deploy a static site without Vercel, Netlify, or Cloudflare Pages
+
+You do not need Vercel, Netlify, or Cloudflare Pages to put a static site online. Those three are right when you already have a git repo, CI, preview PRs, or a production app. If you have `dist/` or an agent-made `index.html`, use aft.page.
+
+```bash
+curl -fsSL https://aft.page/install | sh
+aft deploy
+```
+
+Remote MCP (no account): `https://mcp.aft.page/mcp` · plugin: `npx plugins add vaibhavmule/aft.page`
+
+Ranking: [aft.page/compare](https://aft.page/compare) · post: [full write-up](https://aft.page/blog/deploy-static-site-without-vercel-netlify-or-cloudflare-pages/)
 
 ### Secrets (owner / editor)
 

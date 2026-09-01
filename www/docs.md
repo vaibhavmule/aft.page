@@ -56,9 +56,11 @@ Claimed sites can be paused (reversible) or destroyed (irreversible) — see /do
 - CLI: https://aft.page/docs/cli/
 - Claim & share: https://aft.page/docs/claim/
 - Secrets: https://aft.page/docs/env/
+- Try URLs (sqlite only): https://aft.page/docs/env/#try-db
 - Domains: https://aft.page/docs/domains/
 - Capabilities: https://aft.page/docs/capabilities/
 - Frameworks: https://aft.page/docs/frameworks/
 - MCP: https://aft.page/mcp.md
+- Compare (aft.page, Cloudflare Pages, Netlify, Vercel): https://aft.page/compare.md
 - Open protocols: https://aft.page/plugins.md
 - Examples: https://github.com/vaibhavmule/aft.page/tree/main/examples

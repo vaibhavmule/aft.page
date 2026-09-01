@@ -17,14 +17,16 @@ different configuration and state formats.
 
 Use the `aft-page` MCP server:
 
-- `deploy` publishes a first deploy or updates an unclaimed deploy.
+- `deploy` publishes a first deploy or updates an unclaimed deploy (static artifact).
+- `deploy_repo` publishes a **public** GitHub repo through the same engine as
+  aft.page/run (static, Vite, Next, or container). Private repos are refused.
 - `aft_deploys` lists rollback history for an unclaimed deploy.
 - `aft_rollback` restores a prior deploy for an unclaimed deploy.
 - `aft_health` diagnoses MCP/API connectivity.
 
-The MCP cannot read the workspace or build the app. Read files and run the
-project's build locally. Never send source directories when a built output
-directory exists.
+The MCP cannot read the workspace or build the app. For `deploy`, read files
+and run the project's build locally. Never send source directories when a
+built output directory exists. For `deploy_repo`, pass the GitHub URL only.
 
 ## Public-deploy safety
 
@@ -77,8 +79,12 @@ Choose one path:
 3. Create React App or Rsbuild: run the project build and upload its actual
    `build/` or `dist/` output.
 4. Next.js configured for static export: run the build and upload `out/`.
-5. SSR, server-only, Worker, or `next` runtimes: stop. Do not
-   upload `.next/` or source. This plugin's deploy path is static-only.
+5. SSR, server-only, Worker, or `next` runtimes: do **not** upload `.next/` or
+   source via `deploy`. If the app has a **public** GitHub remote, call
+   `deploy_repo` with that URL (or `owner/repo`). If the repo is private or
+   there is no remote, stop and tell the user to push a public GitHub repo
+   and retry, or run the hosted CLI (`curl -fsSL https://aft.page/install | sh`
+   then `aft deploy`) for a local folder.
 
 If `aft.json` contains a local `output` convention, confirm that it matches the
 fresh build artifact before using it. Do not invent a build for plain HTML.
@@ -96,6 +102,23 @@ Before calling `deploy`:
 - Send text as UTF-8 and binary files as base64 with `encoding: "base64"`.
 - Include a safe hosted `aft.json` at the deployed root when one exists and is
   relevant. Never include CLI configuration or secret state.
+
+## Public GitHub repo (`deploy_repo`)
+
+Use this when the user pointed at a public GitHub URL, `owner/repo`, or a
+local checkout whose `origin` is a public GitHub repo **and** the app is not
+a static artifact you can upload with `deploy`.
+
+1. Resolve the URL (`https://github.com/owner/repo` or `owner/repo`).
+2. Call `deploy_repo` once. Do not also call `deploy` for the same app.
+3. Vite/Next jobs build in the background; wait for the tool result (live URL
+   or a concrete fail reason). Do not invent a second slug.
+4. If the result includes `editToken`, write `.aft/state.json` the same way as
+   a first `deploy`. Keep the token secret.
+5. Return the live URL, claim URL when distinct, and any `notice` line.
+
+Private GitHub, missing origin, or a folder that is not a git repo: do not
+guess. Direct them to `/run/` paste, a public push, or `aft deploy`.
 
 ## First deploy
 

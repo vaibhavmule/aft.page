@@ -86,10 +86,25 @@ function showClaim(email){
   note.style.cssText="font:500 11px/1.35 ui-sans-serif,system-ui,sans-serif;color:#a1a1aa;max-width:14rem;text-align:right;text-shadow:0 1px 2px #000";
   host.appendChild(note);
 }
+function expiresIn(iso){
+  var t=new Date(iso).getTime()-Date.now();
+  if(!(t>0))return "expired";
+  var min=Math.floor(t/60000);
+  if(min<60)return "expires in "+min+"m";
+  var hr=Math.floor(min/60);
+  if(hr<24)return "expires in "+hr+"h";
+  return "expires in "+Math.floor(hr/24)+"d";
+}
 function mount(){
   document.body.appendChild(host);
   fetch(api+"/v1/sites/"+encodeURIComponent(slug),{credentials:"include"}).then(function(r){return r.ok?r.json():null}).then(function(info){
     if(!info){if(showBadge)showVisitor();return}
+    if(info.expiresAt){
+      var chip=document.createElement("div");
+      chip.textContent=expiresIn(info.expiresAt);
+      chip.style.cssText="font:600 11px/1.3 ui-sans-serif,system-ui,sans-serif;color:#fbbf24;padding:4px 9px;border-radius:999px;border:1px solid rgba(251,191,36,.35);background:rgba(0,0,0,.72);box-shadow:0 4px 16px rgba(0,0,0,.35)";
+      host.appendChild(chip);
+    }
     if(info.owner){showOwner(info.manage);return}
     if(!info.owned){showClaim(info.email);return}
     if(showBadge)showVisitor();

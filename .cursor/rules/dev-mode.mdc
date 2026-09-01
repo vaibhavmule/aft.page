@@ -5,8 +5,8 @@ alwaysApply: true
 
 # Distribution mode (founder rules)
 
-1. **The job is Run, not more product.** Paste repo → URL is the door. Do not detour into Code, new SKUs, IaaS, or wait-until-proof. No freeze. No parking as a reason not to ship Run. No calendar launch dates. Sequence is still Drop → Deploy → Run → Code — current capacity is Run + Plugin listing.
+1. **The job is Run as the distribution door, plus Code and WfP in play.** Paste repo → URL still ships. Do not detour into new SKUs, IaaS, or wait-until-proof. No freeze. No parking as a reason not to ship Run or Code. No calendar launch dates. Sequence is still Drop → Deploy → Run → Code — current capacity is Run + Plugin listing + Code + WfP.
 
-2. **Distribution stack** (do not reorder casually): Engine (Run honest) → Owned channel (Agent Plugin / MCP / Cursor Marketplace) → Cite path (AEO) → Viral ("Run on AFT" README) → Amp (Show HN → PH + global social jabs). Jab ~15 majors (IG, LI, X, Shorts, TikTok, FB, Reddit + CN/KR/JP/VN/RU locals) — throttle losers, never delete IG/LI. **$1,000 USD** amp spend goes to Run builds, not paid social. Post Show HN only when paste-repo → URL (or honest fail) works. Board: `docs/gtm.txt` § Channel jabs.
+2. **Distribution stack** (do not reorder casually): Engine (Run honest) → Owned channel (Agent Plugin / MCP / Cursor Marketplace) → Cite path (AEO) → Viral ("Run on AFT" README) → Amp (Show HN → PH + global social jabs). Jab ~15 majors (IG, LI, X, Shorts, TikTok, FB, Reddit + CN/KR/JP/VN/RU locals) — throttle losers, never delete IG/LI. **$1,000 USD** amp spend goes to Run builds, not paid social. Show HN is unblocked (paste-repo → URL or honest fail already works). Board: `docs/gtm.txt` § Channel jabs.
 
 Distribution is a product door (**Run**), not a later campaign. Canonical: `docs/STRATEGY.md` § Mode, `docs/RUN.md` § Launch budget, `docs/gtm.txt`.

@@ -12,10 +12,14 @@ import { cmdRollback } from "./rollback.js";
 import { cmdSites } from "./sites.js";
 import { cmdUpdate, maybeCheckUpdates } from "./update.js";
 import { cmdVisibility } from "./visibility.js";
-import { fail, ui } from "./ui.js";
+import { fail, note, ui } from "./ui.js";
 import { localVersion } from "./version.js";
 
+const BANNER = `${ui.bold("aft")} — hosted ${ui.cyan("aft.page")} CLI (v${localVersion()})
+${ui.dim("This is the hosted cloud CLI. Not the OSS self-hosted deployer (github.com/vaibhavmule/aft).")}`;
+
 const HELP = `${ui.bold("aft")} — ship a live URL ${ui.dim(`(v${localVersion()})`)}
+${ui.dim("Hosted aft.page CLI. Not the OSS self-hosted deployer (github.com/vaibhavmule/aft).")}
 
 ${ui.bold("No login")}
   aft deploy [dir]              Detect → build → URL (--verbose for full logs)
@@ -49,9 +53,25 @@ const SKIP_UPDATE = new Set([
   undefined,
 ]);
 
+const NO_BANNER = new Set(["--no-banner", "-q"]);
+
+function printBanner() {
+  if (process.env.AFT_NO_BANNER === "1") return;
+  note(BANNER);
+}
+
 async function main(argv) {
-  const [cmd, ...args] = argv;
+  const noBanner =
+    argv.includes("--no-banner") ||
+    argv.includes("-q") ||
+    process.env.AFT_NO_BANNER === "1";
+  const rest = argv.filter((a) => !NO_BANNER.has(a));
+  const [cmd, ...args] = rest;
   try {
+    if (!noBanner) {
+      printBanner();
+    }
+
     if (!SKIP_UPDATE.has(cmd)) {
       await ensureAnalyticsConsent();
       await maybeCheckUpdates();

@@ -27,7 +27,7 @@ On anything a **user, visitor, agent customer, or Run log** sees, AFT is just AF
 
 ## Exceptions
 
-- **`/vs/cloudflare-drop/`** (and similar): competitor name is the point.
+- **`/vs/` and `/compare`** (and the quoteable blog post): naming Cloudflare Pages, Netlify, and Vercel is the point.
 - **Privacy / legal** subprocessors list: real legal names stay.
 - **Code comments, scripts, wrangler.jsonc, internal ops**: engineer surface — fine.
 

@@ -5,7 +5,7 @@
 
 Lang: en
 Website: [https://aft.page](https://aft.page)
-Last Updated: 2026-08-09
+Last Updated: 2026-08-30
 
 [About the Product]
 
@@ -72,11 +72,20 @@ A: Yes after you claim. Custom domains are invite-only during beta: project
 URL: [Docs](https://aft.page/docs/domains/)
 
 Q: How is aft.page different from Vercel, Netlify, or Cloudflare Pages?
-A: Those are built for Big Software: repositories, builds, and cloud accounts.
-   aft is the publishing and permission layer for small software that one person
-   or a small team uses — an instant URL, invite-by-email sharing, clear
-   ownership, and secrets, without the ceremony.
-URL: [Compare](https://aft.page/vs/vercel/)
+A: Deploy a static site: aft.page, Cloudflare Pages, Netlify, or Vercel.
+   aft.page — no account, drop dist/ or MCP, live HTTPS URL in seconds.
+   Cloudflare Pages / Netlify / Vercel — better when you already have a git
+   repo, CI, preview PRs, or a big production setup.
+URL: [Compare](https://aft.page/compare)
+
+Q: Does Run support Postgres or MySQL?
+A: Try URLs only use sqlite, and only when the app already has an ORM
+   engine switch (Django DATABASES, Flask/FastAPI + SQLAlchemy URI). Apps
+   that speak the Postgres/MySQL wire protocol (pg, mysql2, Prisma
+   postgresql, Phoenix/Ecto postgrex) fail honestly. Claim the URL, add
+   DATABASE_URL, then re-run. D1 is a Worker binding for Code, not a
+   drop-in for pg.
+URL: [Try URLs: sqlite only](https://aft.page/docs/env/#try-db)
 
 [Contact]
 

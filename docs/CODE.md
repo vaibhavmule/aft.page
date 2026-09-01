@@ -2,14 +2,14 @@
 
 Door name: **Code.** Not Retool (their brand). Path: `/code/` or `/projects/new`.
 
-Status: **not started.** After Run. Needs WfP + per-site **D1 + R2**.
+Status: **in play.** v0 is live at [`/code/`](https://aft.page/code/) — prompt or
+template → static HTML (`localStorage`). Per-site **D1 + R2** still later.
 
 Sandbox **persistent interpreters** (Python / JS / TS) are the generate/test
-plane when this door opens — not a reason to open `/code/` now. v1 is still one
-template + real D1; Grok (or whatever [AI Gateway](https://developers.cloudflare.com/ai-gateway/)
-already catalogs) emits JSON against the SDK. Do not chase Vercel’s model list;
-use Cloudflare’s unified `env.AI.run()` catalog so new CF models are a config
-change.
+plane for this door. v1 is still one template + real D1; Grok (or whatever
+[AI Gateway](https://developers.cloudflare.com/ai-gateway/) already catalogs)
+emits JSON against the SDK. Do not chase Vercel’s model list; use Cloudflare’s
+unified `env.AI.run()` catalog so new CF models are a config change.
 
 **Layers:** [HOST.md](./HOST.md) · [SHIP.md](./SHIP.md) · [RUN.md](./RUN.md) · **Code**.
 
@@ -54,7 +54,8 @@ Do not train anything. Do not let Grok invent Cloudflare APIs.
 
 xAI / Grok via **AI Gateway** on the API Worker. Do not ship keys in the browser.
 
-v0 surface: `/projects/new` (prompt + templates + GitHub + drop).
+v0 surface: **`/code/`** (prompt + templates → static HTML → live URL).
+`/projects/new` stays the kitchen sink (prompt + GitHub + drop).
 `POST /v1/code/generate` · `POST /v1/repo/check` · `POST /v1/repo/deploy`.
 
 ## Loop
@@ -68,7 +69,8 @@ v0 surface: `/projects/new` (prompt + templates + GitHub + drop).
 
 | Path | Job |
 | --- | --- |
-| `/projects/new` · `/code/` | prompt + templates → app with D1/R2 |
+| `/code/` | prompt + templates → static HTML → URL (v0) |
+| `/projects/new` | prompt + GitHub + drop (kitchen sink) |
 | Project → Database | D1 table browser |
 | Project → Files | R2 |
 | Share | invite ACL |
@@ -76,7 +78,7 @@ v0 surface: `/projects/new` (prompt + templates + GitHub + drop).
 ## Build order
 
 1. Run — GitHub → URL
-2. Code v1 — one template (todo) + real D1 + invite
+2. Code v0 — `/code/` static HTML (shipped). v1 = one template + real D1 + invite
 3. Grok via AI Gateway → JSON/HTML against the D1/R2 SDK. Fallback: Workers AI.
 4. Never: ship the word Retool, clone v0’s marketplace
 

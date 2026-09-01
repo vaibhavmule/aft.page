@@ -13,6 +13,8 @@ import { rateLimit } from "./rate-limit";
 import { allocateUniqueSlug, slugFromHint } from "./slug";
 import { randomToken, resolveSessionUser, sha256Hex } from "./auth";
 import { dispatchRunBuildWorkflow } from "./jobs";
+import { getSiteSecretsMap } from "./secrets";
+import { readCachedRunFail, writeCachedRunFail } from "./run-fail-cache";
 import {
   buildPlanFromSignals,
   canonicalKind,
@@ -138,6 +140,19 @@ async function githubRepoMeta(
   return { ok: true, meta: (await res.json()) as { default_branch?: string; private?: boolean } };
 }
 
+async function githubHeadSha(
+  ref: GithubRepoRef,
+  branch: string,
+  token?: string,
+): Promise<string | null> {
+  const data = (await githubJson(
+    `/repos/${ref.owner}/${ref.repo}/commits/${encodeURIComponent(branch)}?per_page=1`,
+    token,
+  )) as { sha?: unknown } | null;
+  const sha = data && typeof data.sha === "string" ? data.sha : "";
+  return /^[0-9a-f]{7,40}$/i.test(sha) ? sha : null;
+}
+
 async function githubFile(
   ref: GithubRepoRef,
   path: string,
@@ -232,6 +247,7 @@ async function loadRepoTree(
     pkgRaw,
     html,
     managePy,
+    mixExs,
     req,
     nextConfig,
     viteConfig,
@@ -252,6 +268,7 @@ async function loadRepoTree(
     githubFile(ref, at("package.json"), branch, token),
     githubFile(ref, at("index.html"), branch, token),
     githubFile(ref, at("manage.py"), branch, token),
+    githubFile(ref, at("mix.exs"), branch, token),
     githubFile(ref, at("requirements.txt"), branch, token),
     githubFirstFile(
       ref,
@@ -298,6 +315,7 @@ async function loadRepoTree(
     nextConfigText: nextConfig,
     hasViteConfig: Boolean(viteConfig),
     hasManagePy: Boolean(managePy),
+    hasMixExs: Boolean(mixExs),
     requirementsTxt: req,
     pyprojectToml: pyproject,
     cargoToml,
@@ -546,10 +564,59 @@ export async function executeRepoJob(
 
   const ghUrl = `https://github.com/${ref.owner}/${ref.repo}`;
   const token = env.AFT_RUN_GITHUB_TOKEN?.trim();
+  const folder = normalizePlanRoot(opts.root) || "";
+  let sha: string | null = null;
+  let skipCache = false;
+  if (opts.slug) {
+    try {
+      const secrets = await getSiteSecretsMap(env, opts.slug);
+      skipCache = Boolean(secrets.DATABASE_URL);
+    } catch {
+      skipCache = false;
+    }
+  }
+  const metaGot = await githubRepoMeta(ref, token);
+  if (metaGot.ok && !metaGot.meta.private) {
+    sha = await githubHeadSha(ref, metaGot.meta.default_branch || "main", token);
+    if (sha && !skipCache) {
+      const cached = await readCachedRunFail(env, ref.owner, ref.repo, sha, folder);
+      if (cached) {
+        const id = await insertRunJob(env, {
+          owner: ref.owner,
+          repo: ref.repo,
+          url: ghUrl,
+          trigger: opts.trigger,
+          branch: metaGot.meta.default_branch || "main",
+          planJson: JSON.stringify({ sha, root: folder || undefined }),
+        });
+        await finishRunJob(env, id, {
+          status: "failed",
+          error: cached.error,
+          reason: cached.reason,
+          ms: Date.now() - started,
+          httpStatus: 422,
+          branch: metaGot.meta.default_branch || "main",
+        });
+        return failedJob(id, {
+          owner: ref.owner,
+          repo: ref.repo,
+          url: ghUrl,
+          trigger: opts.trigger,
+          error: cached.error,
+          reason: cached.reason,
+          ms: Date.now() - started,
+          httpStatus: 422,
+          branch: metaGot.meta.default_branch || "main",
+        });
+      }
+    }
+  }
   const inspected = await inspectGithubRepo(ref, token, { root: opts.root });
 
   if ("error" in inspected) {
-    const planJson = inspected.plan ? JSON.stringify(inspected.plan) : null;
+    const planJson = JSON.stringify(
+      sha ? { ...(inspected.plan || {}), sha } : inspected.plan || null,
+    );
     const id = await insertRunJob(env, {
       owner: ref.owner,
       repo: ref.repo,
@@ -557,6 +624,12 @@ export async function executeRepoJob(
       trigger: opts.trigger,
       planJson,
     });
+    if (sha) {
+      await writeCachedRunFail(env, ref.owner, ref.repo, sha, folder, {
+        error: inspected.error,
+        reason: inspected.reason,
+      });
+    }
     await finishRunJob(env, id, {
       status: "failed",
       error: inspected.error,
@@ -625,6 +698,7 @@ export async function executeRepoJob(
         branch: inspected.branch,
         name: inspected.name,
         plan: inspected.plan,
+        sha,
       },
       {
         trigger: opts.trigger,
@@ -726,6 +800,7 @@ async function queueBuildJob(
     branch: string;
     name?: string;
     plan: BuildPlan;
+    sha?: string | null;
   },
   opts: {
     trigger: string;
@@ -738,7 +813,9 @@ async function queueBuildJob(
   const ghUrl = `https://github.com/${ref.owner}/${ref.repo}`;
   const hint = slugFromHint(inspected.name || "") || slugFromHint(ref.repo);
   const slug = opts.slug || (await allocateUniqueSlug(env, hint));
-  const planJson = JSON.stringify(inspected.plan);
+  const planJson = JSON.stringify(
+    inspected.sha ? { ...inspected.plan, sha: inspected.sha } : inspected.plan,
+  );
   if (!slug) {
     const id = await insertRunJob(env, {
       owner: ref.owner,

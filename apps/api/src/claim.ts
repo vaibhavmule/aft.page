@@ -315,12 +315,20 @@ export async function getSiteInfo(
 
   if (raw) {
     try {
-      const meta = JSON.parse(raw) as { deployId?: string };
+      const meta = JSON.parse(raw) as {
+        deployId?: string;
+        expiresAt?: string | null;
+      };
       if (meta.deployId) payload.deployId = meta.deployId;
+      if (meta.expiresAt) payload.expiresAt = meta.expiresAt;
     } catch {
       /* keep D1 deployId */
     }
   }
+  if (payload.expiresAt == null && siteRow?.expiresAt) {
+    payload.expiresAt = siteRow.expiresAt;
+  }
+  if (siteRow?.expired) payload.expired = true;
 
   return privateJson(payload, 200, extra);
 }

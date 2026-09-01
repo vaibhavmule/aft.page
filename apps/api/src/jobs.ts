@@ -16,6 +16,7 @@ import { liveSiteUrl } from "./site-url";
 import type { BuildPlan } from "./engine-kind";
 import { scrubProductSurface } from "./product-surface";
 import { getSiteSecretsMap } from "./secrets";
+import { shaFromPlanJson, writeCachedRunFail } from "./run-fail-cache";
 
 const SSE_MS = 24_000;
 const SSE_TICK_MS = 800;
@@ -409,12 +410,32 @@ export async function handleJobRoute(
   url: URL,
 ): Promise<Response | null> {
   const origin = request.headers.get("origin");
-  const m = url.pathname.match(/^\/v1\/jobs\/(run_[a-z0-9]+)(\/events)?$/);
+  const m = url.pathname.match(/^\/v1\/jobs\/(run_[a-z0-9]+)(\/events|\/stop)?$/);
   if (!m) return null;
   const id = m[1]!;
-  const events = Boolean(m[2]);
+  const events = m[2] === "/events";
+  const stop = m[2] === "/stop";
 
   if (request.method === "OPTIONS") return optionsResponse(origin, true);
+
+  if (stop) {
+    if (request.method !== "POST") return jobJson({ error: "method_not_allowed" }, 405, origin);
+    const job = await getRunJob(env, id);
+    if (!job) return jobJson({ error: "not_found" }, 404, origin);
+    if (job.status === "live") {
+      return jobJson({ error: "already_live", status: job.status }, 409, origin);
+    }
+    if (job.status === "failed") {
+      return jobJson({ ok: true, status: "failed" }, 200, origin);
+    }
+    await finishRunJob(env, id, {
+      status: "failed",
+      error: "stopped",
+      reason: "Stopped.",
+      httpStatus: 499,
+    });
+    return jobJson({ ok: true, status: "failed" }, 200, origin);
+  }
 
   if (events) {
     if (request.method !== "GET") return jobJson({ error: "method_not_allowed" }, 405, origin);
@@ -466,6 +487,23 @@ export async function handleJobRoute(
         reason,
         httpStatus: 422,
       });
+      const done = await getRunJob(env, id);
+      if (done) {
+        const sha = shaFromPlanJson(done.planJson);
+        let root = "";
+        try {
+          const plan = JSON.parse(done.planJson || "") as { root?: unknown };
+          if (typeof plan.root === "string") root = plan.root;
+        } catch {
+          root = "";
+        }
+        if (sha) {
+          await writeCachedRunFail(env, done.owner, done.repo, sha, root, {
+            error: "build_failed",
+            reason,
+          });
+        }
+      }
       return jobJson({ ok: true, status: "failed" }, 200, origin);
     }
     await patchRunJobProgress(env, id, {

@@ -18,8 +18,8 @@ Same `*.aft.page`. Four ways in. Do not four brands.
 | --- | --- | --- | --- |
 | **Drop** | [Host](./HOST.md) | Folder/zip → URL. Easy start | Shipped |
 | **Deploy** | [Ship](./SHIP.md) | Agent already built it → `aft deploy` detects + uploads. Not Sites | Almost (MCP/CLI) |
-| **Run** | [Run](./RUN.md) | Distribution: GitHub repo → try URL | Next — static first |
-| **Code** | [Code](./CODE.md) | Prompt/template → app with D1 + R2. Not v0 | After Run |
+| **Run** | [Run](./RUN.md) | Distribution: GitHub repo → try URL | Current — paste → URL |
+| **Code** | [Code](./CODE.md) | Prompt/template → app with D1 + R2. Not v0 | In play |
 
 Run is the **distribution engine**. Drop is on-ramp. Deploy is `aft deploy`
 (detect + ship). **Code** is prompt/template → app with D1 + R2. Not v0. Not
@@ -29,11 +29,12 @@ named Retool (their brand).
 
 ## Mode
 
-**Distribution mode.** The job is **Run** (paste repo → URL), not more
-product surface. Drop and Deploy already exist. Code waits. Distribution is
-the product door, not a later campaign. No freeze. No parking as a reason
-not to ship Run. No calendar launch dates — post when paste-repo → URL
-(or honest fail) works.
+**Distribution mode, development unblocked.** The distribution door is still
+**Run** (paste repo → URL). Drop and Deploy already exist. **Code** and **WfP**
+are in play — not parked, not “after proof.” Distribution is the GTM door, not
+a later campaign. No freeze. No parking as a reason not to ship Run or Code.
+No calendar launch dates — Show HN / PH are unblocked (paste-repo → URL or
+honest fail already works).
 
 **Distribution stack (2026 — do not reorder casually):**
 
@@ -43,7 +44,7 @@ not to ship Run. No calendar launch dates — post when paste-repo → URL
 | **Owned channel** | Agent Plugin + MCP (Cursor Marketplace first) | Where coding agents already look; Vercel/CF are not native here |
 | **Cite path** | AEO: `llms.txt`, Markdown-for-agents, Content-Signal `ai-input=yes` (and `ai-train=yes` if we want training) | Retrieval / “how do I deploy what my agent built?” answers — not weight training |
 | **Viral loop** | “Run on AFT” README button → later remix/clone | Compounds after a working try |
-| **Amp** | Show HN → Product Hunt ($1k on Run builds) + one demo clip reposted | Spike density after the engine is honest — not the moat |
+| **Amp** | Show HN → Product Hunt ($1k on Run builds) + one demo clip reposted | Unblocked — engine paste → URL (or honest fail) works |
 
 **Gary Vee rule (how we max):** jab **~15 major platforms** across US / EU /
 AU-NZ / CN / KR / JP / VN / RU (same demo clip, local captions) → measure
@@ -52,13 +53,13 @@ IG, LI, or regional majors) → *then* sell. **Paid** social ads off for now;
 $1k stays on Run builds. Full board: [gtm.txt](./gtm.txt) § Channel jabs.
 China/EU product primitives: [REGIONS.md](./REGIONS.md).
 
-1. Do not detour into Code, new SKUs, IaaS, or “wait until proof.” Sequence
-   (Drop → Deploy → **Run** → Code) is capacity. Current capacity is Run +
-   Plugin listing so agents can hit that door.
+1. Do not detour into new SKUs, IaaS, or “wait until proof.” Sequence
+   (Drop → Deploy → **Run** → Code) is still the door order. Current capacity
+   is Run + Plugin listing + **Code** + **WfP**.
 2. **$1,000 USD** for Show HN + Product Hunt of **AFT Run** — spend on
    Run builds, not ads. Amp only. Details: [RUN.md](./RUN.md) § Launch budget.
 
-Retained users still matter for YC. They do not block shipping Run.
+Retained users are the Winter 2027 YC file. They do not block shipping Run.
 
 Bugfixes that unblock deploy → claim → invite → return stay in. Canonical
 checklist: [`../todo.txt`](../todo.txt). Next runtime is still chosen from what
@@ -197,7 +198,7 @@ Hatchable, MiniUp. Do not match their BaaS dump.
 | Signal | Read |
 | --- | --- |
 | [Kitesurf](https://blog.cloudflare.com/kitesurf/) | Lightweight agent browser on Workers. Infrastructure, not an AFT competitor. Useful only if AFT apps need browser automation, screenshots, extraction, or website testing. **Do not build around it yet.** |
-| Dynamic Workers | Partner primitive: run generated code. Wrap when tenant JS needs isolation (WfP trigger). Concurrency 4→10 is a free upgrade — no work. |
+| Dynamic Workers / WfP | In play. Tenant JS isolation + Next script cap. Concurrency 4→10 is a free upgrade — no work. |
 | [Perch](https://mandarwagh9.github.io/perch/#access) | GitHub project someone built after the YC RFS (agent deploy → sandbox URL → share like a doc → eject). Same category language, not a competitor to track — watch for ideas / overlap, don’t treat as market threat. |
 
 ## Product job
@@ -226,9 +227,9 @@ Claude / Codex / Cursor / ChatGPT / Git / human
 | Ownership | Claim, list, update, rollback | Shipped / polish (`/claim` after deploy) |
 | Sharing | Public, private, invite, revoke | Shipped / outsider proof |
 | Secrets | Per-site vault + capability approve | Shipped |
-| **Distribution** | **Owned:** Agent Plugin → Cursor Marketplace / `deploy_repo`. **Door:** [Run](./RUN.md) paste → URL. Amp = Show HN/PH after honest fail works. | Stack in § Mode — engine + plugin before amp |
-| **Run** | Public GitHub repo → job → live URL | [RUN.md](./RUN.md) — current capacity |
-| **Code** | Prompt/template → app with D1 + R2 | [CODE.md](./CODE.md) — after Run |
+| **Distribution** | **Owned:** Agent Plugin → Cursor Marketplace / `deploy_repo`. **Door:** [Run](./RUN.md) paste → URL. Amp = Show HN/PH unblocked. | Stack in § Mode — plugin listing still the owned channel |
+| **Run** | Public GitHub repo → job → live URL | [RUN.md](./RUN.md) — distribution door |
+| **Code** | Prompt/template → app with D1 + R2 | [CODE.md](./CODE.md) — in play |
 | Full stack | worker/next via upstream proxy | OpenNext dogfood live (`next-hello.aft.page`) |
 | Anything Drop | More generous static upload (any folder) | Limits raised; deepen on demand |
 | Plugins | Agent Plugin install across coding agents | P0 this month |

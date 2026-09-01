@@ -1,6 +1,6 @@
 /** Pick deploy root (dist/out/build) and project root for state + aft.json. */
 import { access, readFile } from "node:fs/promises";
-import { basename, dirname, join } from "node:path";
+import { basename, dirname, isAbsolute, join } from "node:path";
 import { detectProject } from "./detect.js";
 import { sanitizeSlug } from "./slug.js";
 
@@ -35,6 +35,11 @@ export async function hasIndexHtml(dir) {
   return (await exists(join(dir, "index.html"))) || (await exists(join(dir, "index.htm")));
 }
 
+/** True when the deploy root is the root of a git checkout (has .git). */
+export async function isRepoRoot(dir) {
+  return await exists(join(dir, ".git"));
+}
+
 /** Walk up from dir to find package.json (for `cd dist && aft deploy`). */
 export async function findProjectRoot(dir) {
   let cur = dir;
@@ -51,9 +56,37 @@ export async function findProjectRoot(dir) {
  */
 export async function resolveDeployTarget(cwd, explicitDir) {
   if (explicitDir && explicitDir !== ".") {
-    const deployRoot = join(cwd, explicitDir);
-    const projectRoot = (await findProjectRoot(deployRoot)) || deployRoot;
-    return { deployRoot, projectRoot };
+    const base = isAbsolute(explicitDir) ? explicitDir : join(cwd, explicitDir);
+    if (await exists(join(base, "package.json"))) {
+      const detected = await detectProject(base);
+      for (const out of OUTPUT_DIRS) {
+        const candidate = join(base, out);
+        if (await hasIndexHtml(candidate)) {
+          return { deployRoot: candidate, projectRoot: base, detected };
+        }
+      }
+      const preferred = join(base, detected.outDir || "dist");
+      if (detected.outDir && detected.outDir !== "." && (await hasIndexHtml(preferred))) {
+        return { deployRoot: preferred, projectRoot: base, detected };
+      }
+      if (detected.staticDeployable && detected.outDir && detected.outDir !== ".") {
+        return { deployRoot: base, projectRoot: base, needsBuild: true, detected };
+      }
+      if (!detected.staticDeployable && detected.runtime && detected.runtime !== "static") {
+        return { deployRoot: base, projectRoot: base, detected };
+      }
+      if (await hasIndexHtml(base)) {
+        return { deployRoot: base, projectRoot: base, detected };
+      }
+      return { deployRoot: base, projectRoot: base, detected };
+    }
+
+    if (await hasIndexHtml(base)) {
+      const projectRoot = (await findProjectRoot(base)) || base;
+      return { deployRoot: base, projectRoot };
+    }
+
+    return { deployRoot: base, projectRoot: base };
   }
 
   if (await exists(join(cwd, "package.json"))) {

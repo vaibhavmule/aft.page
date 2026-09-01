@@ -14,6 +14,7 @@ Founder-facing umbrella. **Security ship gate is Hijack CIL**, not this folder a
 | 6. Browser-sec | `node qa/browser-sec/check.mjs` | Junk-path 404, private no-leak, ops login gate (HTTP checks of browser-visible gates) |
 | Live CLI T2U (opt-in) | `node qa/time-to-url/check.mjs` | Build/deploy HTML, Vite, and Next fixtures; measure URL readiness |
 | Compat probe (opt-in) | `node qa/compat-probe/check.mjs` then `run.mjs` | Random GitHub framework repos → `aft deploy`; log URL or fail |
+| Arbitrary runtime (opt-in) | [`qa/arbitrary-runtime.md`](./arbitrary-runtime.md) | Detect + live honesty corpus for invent / ensureRuntime / DinD / need-pg |
 
 Passmark / Bug0 hire: **deferred**. Never the security gate.
 

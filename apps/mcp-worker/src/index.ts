@@ -26,6 +26,12 @@ const editTokenSchema = z
   .min(1)
   .describe("From first deploy / .aft/state.json. Required to update or rollback the same URL.");
 
+/** Anon quick-view self-destruct, e.g. "1h", "24h", "90s", "7d". */
+const expiresSchema = z
+  .string()
+  .regex(/^\d+(s|m|h|d)?$/)
+  .describe('Optional quick-view expiry, e.g. "1h", "24h", "90s", "7d". Anonymous (unclaimed) deploys only — the link 404s after this.');
+
 /** JSON-RPC method + tool name from an MCP POST body. */
 export function parseMcpRpcMeta(body: unknown): { method: string; tool: string } {
   if (!body || typeof body !== "object") return { method: "", tool: "" };
@@ -81,6 +87,7 @@ function formatDeploy(result: {
   files: number;
   claimUrl?: string;
   notice?: string;
+  expiresAt?: string;
 }): string {
   const state = JSON.stringify({ slug: result.slug, editToken: result.editToken });
   const lines = [
@@ -94,6 +101,9 @@ function formatDeploy(result: {
     "Next deploy: pass this slug + edit_token → same URL, this deployId becomes rollback history.",
     "Claim keeps this slug. Do not POST again without edit_token.",
   ];
+  if (result.expiresAt) {
+    lines.push(`Expires: ${result.expiresAt} — quick-view link, 404s after this.`);
+  }
   if (result.notice) lines.push(result.notice);
   return lines.join("\n");
 }
@@ -130,7 +140,7 @@ function formatRepoDeploy(result: {
 function createServer(api: ApiTransport) {
   const server = new McpServer({
     name: "aft-page",
-    version: "0.5.0",
+    version: "0.6.0",
   });
 
   server.registerTool(
@@ -164,16 +174,17 @@ function createServer(api: ApiTransport) {
           .optional(),
         preferred_slug: slugSchema.optional().describe("aft.json slug. Required with edit_token."),
         edit_token: editTokenSchema.optional(),
+        expires: expiresSchema.optional(),
       },
     },
-    async ({ html, files, preferred_slug, edit_token }) => {
+    async ({ html, files, preferred_slug, edit_token, expires }) => {
       try {
         const upload = filesFromDeployInput({ html, files }).map((f) =>
           /\.html?$/i.test(f.path)
             ? { ...f, content: sanitizeHtmlDocument(f.content), encoding: "utf8" as const }
             : f,
         );
-        const result = await deployFiles(upload, api, preferred_slug, edit_token);
+        const result = await deployFiles(upload, api, preferred_slug, edit_token, expires);
         return {
           content: [{ type: "text" as const, text: formatDeploy(result) }],
           structuredContent: result,

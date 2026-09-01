@@ -14,7 +14,19 @@
   Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=86400
 
+/.well-known/mcp-registry-auth
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=300
+
 /docs.md
+  Content-Type: text/markdown; charset=utf-8
+  Cache-Control: public, max-age=60
+
+/compare.md
+  Content-Type: text/markdown; charset=utf-8
+  Cache-Control: public, max-age=60
+
+/blog/deploy-static-site-without-vercel-netlify-or-cloudflare-pages.md
   Content-Type: text/markdown; charset=utf-8
   Cache-Control: public, max-age=60
 

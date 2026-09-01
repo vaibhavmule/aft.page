@@ -40,6 +40,7 @@ function slugFromHtml(html) {
       "login",
       "mcp",
       "drop",
+      "code",
       "cname",
       "aft",
       "aft-page",

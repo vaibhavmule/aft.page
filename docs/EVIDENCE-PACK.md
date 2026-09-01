@@ -108,7 +108,7 @@ Ask every call:
 | Capability approvals (non-you) | ≥5 | |
 | Connector demos (if asked) | ≥2 | |
 | Paid / LOI / pilot (non-friend) | ≥1 | |
-| YC app | submitted 18 Aug 2026, In review | |
+| YC app | Fall 2026 rejected 29 Aug (no interview). Next on-time 2 Nov | |
 
 ## Screenshots / artifacts
 

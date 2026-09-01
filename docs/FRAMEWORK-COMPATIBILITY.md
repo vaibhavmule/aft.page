@@ -1,9 +1,9 @@
 # Framework compatibility target
 
 **Do not grow this list.** Next runtime is chosen from outsider +
-[`qa/compat-probe/`](../qa/compat-probe/README.md) fail reasons after weekly
-two-person use exists. Likely automatic Next/OpenNext or a containerized
-backend — not checklist completeness.
+[`qa/compat-probe/`](../qa/compat-probe/README.md) fail reasons — not
+checklist completeness. Likely automatic Next/OpenNext or a containerized
+backend.
 
 Target: the official [Vercel supported-framework list](https://vercel.com/docs/frameworks/more-frameworks),
 retrieved 2026-08-12 (source last updated 2025-07-31).

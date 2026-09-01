@@ -14,7 +14,9 @@ protocols. Then Unix.
 | **Unix** | — | ① small programs (`aft deploy`, curl) ② **libaft** — embed deploy in your own CLI, background agent, or software factory |
 
 Per-IDE marketplace listings can lag. The portable plugin, remote MCP, CLI, and
-libaft work today. Do not invent a fourth agent format.
+libaft work today. Cursor: `npx plugins add vaibhavmule/aft.page`. Claude Code:
+`/plugin marketplace add vaibhavmule/aft.page` then
+`/plugin install aft-page@aft-page`. Official MCP registry: [`page.aft/mcp`](https://registry.modelcontextprotocol.io/v0.1/servers?search=page.aft%2Fmcp) (remote `https://mcp.aft.page/mcp`). Do not invent a fourth agent format.
 
 ## MCP
 

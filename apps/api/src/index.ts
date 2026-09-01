@@ -37,7 +37,7 @@ import {
 } from "./status";
 import { pruneDeployFailures } from "./db";
 import { pruneSiteLogs } from "./site-logs";
-import { sweepUnusedAnonSites } from "./anon-gc";
+import { sweepExpiredSites, sweepUnusedAnonSites } from "./anon-gc";
 import { refreshCfPracticesIfStale } from "./cf-practices";
 import { pruneAuditRuns, runAuditSuite } from "./audit";
 import { attachPublicFlight, pruneSmokeRuns, runSmokeSuite, SMOKE_CRON } from "./smoke";
@@ -123,6 +123,7 @@ export default {
         await pruneSmokeRuns(env);
         await pruneAuditRuns(env);
         await sweepUnusedAnonSites(env);
+        await sweepExpiredSites(env);
       })().catch((err) => {
         const message = err instanceof Error ? err.message : String(err);
         console.error(JSON.stringify({ level: "error", event: "status_cron", message }));
@@ -348,7 +349,7 @@ async function handleApi(
       waitlist: "POST /v1/waitlist",
       cli: "POST /v1/cli/event, POST /v1/cli/preflight",
       code: "POST /v1/code/generate (session; prompt or template → HTML)",
-      run: "POST /v1/repo/check, POST /v1/repo/deploy (detect → plan → static | static_build | next | container). GET /v1/jobs/{id}, GET /v1/jobs/{id}/events",
+      run: "POST /v1/repo/check, POST /v1/repo/deploy (detect → plan → static | static_build | next | container). GET /v1/jobs/{id}, GET /v1/jobs/{id}/events, POST /v1/jobs/{id}/stop",
       changelog: "GET /v1/changelog · GET /v1/changelog.md",
       sharing:
         "PATCH /v1/sites/{slug}, POST /v1/sites/{slug}/rename, POST /v1/sites/{slug}/access, POST/GET/DELETE /v1/sites/{slug}/invites, PATCH|DELETE /v1/sites/{slug}/members/{id}, GET /v1/invites/accept",
