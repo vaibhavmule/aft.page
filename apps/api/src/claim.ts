@@ -1,4 +1,10 @@
 import type { Env } from "./env";
+import {
+  BRAND,
+  BRAND_CSS_VARS,
+  BRAND_FONT_LINKS,
+  BRAND_WORDMARK_CSS,
+} from "./brand";
 import { loadViewRollup, trackClaim, viewsForSlug } from "./metrics";
 import {
   assignSiteOwner,
@@ -202,24 +208,24 @@ async function claimVerify(
 ): Promise<Response> {
   const token = url.searchParams.get("token") || "";
   const slug = url.searchParams.get("slug")?.toLowerCase() || "";
+  const root = env.ROOT_DOMAIN || "aft.page";
 
   if (!token || !slug) {
-    return json({ error: "invalid_request" }, 400);
+    return claimErrorHtml("Invalid link", slug, root);
   }
 
   const row = await consumeMagicLink(env, token, slug);
   if (!row) {
-    return json({ error: "invalid_or_expired_token" }, 400);
+    return claimErrorHtml("Link expired", slug, root);
   }
 
   const user = await findOrCreateUser(env, row.email);
   const assigned = await assignSiteOwner(env, slug, user.id);
   if (!assigned) {
-    return json({ error: "already_claimed" }, 409);
+    return claimErrorHtml("Already claimed", slug, root);
   }
 
   const session = await createSession(env, user.id);
-  const root = env.ROOT_DOMAIN || "aft.page";
 
   trackClaim(env, request, slug, user.id);
 
@@ -400,4 +406,33 @@ export async function authorizeSiteHub(
     return { ok: true };
   }
   return { ok: false, status: 403, error: "forbidden" };
+}
+
+/** Branded error page for claim link failures. */
+function claimErrorHtml(title: string, slug: string, root: string): Response {
+  const siteLink = `https://${slug}.${root}/`;
+  const loginLink = `https://${root}/login`;
+
+  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="${BRAND.void}"/><title>${title} — aft.page</title>
+${BRAND_FONT_LINKS}
+<style>
+${BRAND_CSS_VARS}
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 var(--font-sans);color:var(--ink);background:var(--void);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.25rem;-webkit-font-smoothing:antialiased}
+main{width:min(24rem,100%)}
+${BRAND_WORDMARK_CSS}
+.brand{display:inline-block;margin:0 0 1.25rem;font-size:1.15rem}
+h1{font-size:1.25rem;margin:0 0 .35rem;font-weight:600}p{color:var(--quiet);margin:0 0 1rem}p strong{color:var(--ink)}
+p a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+</style></head><body>
+<main>
+  <a class="brand" href="https://${root}/">aft<span>.</span>page</a>
+  <h1>${title}</h1>
+  <p>This claim link is invalid or has expired. Visit <a href="${siteLink}">${slug}.${root}</a> or <a href="${loginLink}">log in</a> to continue.</p>
+</main>
+</body></html>`;
+
+  return new Response(html, {
+    status: 400,
+    headers: { "content-type": "text/html; charset=utf-8" },
+  });
 }
