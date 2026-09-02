@@ -10,6 +10,30 @@ describe("run job API", () => {
     expect(res.status).toBe(404);
   });
 
+  it("PATCH with a forged JWT is 401", async () => {
+    const id = await insertRunJob(env, {
+      owner: "octo",
+      repo: "hello-next",
+      url: "https://github.com/octo/hello-next",
+      trigger: "test",
+      kind: "next",
+      phase: "queued",
+      slug: "jobjwt1",
+      jobTokenHash: await sha256Hex("run_tok_secret"),
+    });
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/jobs/${id}`, {
+        method: "PATCH",
+        headers: {
+          "content-type": "application/json",
+          authorization: "Bearer eyJhbGciOiJub25lIn0.eyJhdWQiOiJ4In0.",
+        },
+        body: JSON.stringify({ phase: "building", line: "nope" }),
+      }),
+    );
+    expect(res.status).toBe(401);
+  });
+
   it("PATCH without the job token is 401", async () => {
     const id = await insertRunJob(env, {
       owner: "octo",
@@ -265,6 +289,48 @@ describe("run job API", () => {
       }),
     );
     expect(complete.status).toBe(409);
+  });
+});
+
+describe("ghaDispatchInputs", () => {
+  it("never includes a job bearer token", async () => {
+    const { ghaDispatchInputs } = await import("../src/jobs");
+    const next = ghaDispatchInputs({
+      kind: "next",
+      jobId: "run_abc",
+      owner: "octo",
+      repo: "hello",
+      slug: "hello",
+      branch: "main",
+    });
+    expect(next).toEqual({
+      job_id: "run_abc",
+      owner: "octo",
+      repo: "hello",
+      slug: "hello",
+      branch: "main",
+    });
+    expect(Object.keys(next).join(",")).not.toMatch(/token/i);
+
+    const stat = ghaDispatchInputs({
+      kind: "static_build",
+      jobId: "run_abc",
+      owner: "octo",
+      repo: "hello",
+      slug: "hello",
+      branch: "main",
+      plan: {
+        runtime: "static",
+        stack: "Vite",
+        install: "npm ci",
+        build: "npm run build",
+        outputDirs: ["dist"],
+        root: "web",
+      },
+    });
+    expect(stat.job_token).toBeUndefined();
+    expect(stat.install).toBe("npm ci");
+    expect(stat.root).toBe("web");
   });
 });
 

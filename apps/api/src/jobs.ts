@@ -12,6 +12,7 @@ import {
 } from "./db";
 import { corsHeaders, json, optionsResponse } from "./http";
 import { sha256Hex, timingSafeEqual } from "./auth";
+import { jobRunnerAudience, verifyGithubActionsOidc } from "./github-oidc";
 import { liveSiteUrl } from "./site-url";
 import type { BuildPlan } from "./engine-kind";
 import { scrubProductSurface } from "./product-surface";
@@ -20,6 +21,32 @@ import { shaFromPlanJson, writeCachedRunFail } from "./run-fail-cache";
 
 const SSE_MS = 24_000;
 const SSE_TICK_MS = 800;
+
+/** Public GHA inputs — never a bearer token (workflow_dispatch is visible on public repos). */
+export function ghaDispatchInputs(input: {
+  kind: "next" | "static_build" | "vite" | "container";
+  jobId: string;
+  owner: string;
+  repo: string;
+  slug: string;
+  branch: string;
+  plan?: BuildPlan;
+}): Record<string, string> {
+  const inputs: Record<string, string> = {
+    job_id: input.jobId,
+    owner: input.owner,
+    repo: input.repo,
+    slug: input.slug,
+    branch: input.branch,
+  };
+  if (input.kind === "static_build" || input.kind === "vite") {
+    inputs.install = input.plan?.install || "npm install --legacy-peer-deps";
+    inputs.build = input.plan?.build || "npm run build";
+    inputs.output_dirs = (input.plan?.outputDirs || ["dist", "out", "build"]).join(",");
+    if (input.plan?.root) inputs.root = input.plan.root;
+  }
+  return inputs;
+}
 
 export async function dispatchRunBuildWorkflow(
   env: Env,
@@ -53,21 +80,7 @@ export async function dispatchRunBuildWorkflow(
     };
   }
   const workflows = isStatic ? ["run-static-build.yml", "run-vite.yml"] : ["run-next.yml"];
-  const plan = input.plan;
-  const inputs: Record<string, string> = {
-    job_id: input.jobId,
-    job_token: input.jobToken,
-    owner: input.owner,
-    repo: input.repo,
-    slug: input.slug,
-    branch: input.branch,
-  };
-  if (isStatic) {
-    inputs.install = plan?.install || "npm install --legacy-peer-deps";
-    inputs.build = plan?.build || "npm run build";
-    inputs.output_dirs = (plan?.outputDirs || ["dist", "out", "build"]).join(",");
-    if (plan?.root) inputs.root = plan.root;
-  }
+  const inputs = ghaDispatchInputs(input);
   let lastStatus = 0;
   let lastText = "";
   for (const workflow of workflows) {
@@ -75,7 +88,6 @@ export async function dispatchRunBuildWorkflow(
       workflow === "run-vite.yml"
         ? {
             job_id: inputs.job_id,
-            job_token: inputs.job_token,
             owner: inputs.owner,
             repo: inputs.repo,
             slug: inputs.slug,
@@ -203,11 +215,20 @@ function lastLine(tail: string | null): string {
 async function authorizeJobToken(
   env: Env,
   request: Request,
-  job: { jobTokenHash: string | null },
+  job: { id: string; jobTokenHash: string | null },
 ): Promise<boolean> {
   const auth = request.headers.get("authorization") || "";
   const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
-  if (!token || !job.jobTokenHash) return false;
+  if (!token) return false;
+  if (token.startsWith("eyJ")) {
+    const repo = (env.AFT_RUN_GITHUB_REPO || "vaibhavmule/aft.page").trim();
+    const root = env.ROOT_DOMAIN || "aft.page";
+    return verifyGithubActionsOidc(token, {
+      audience: jobRunnerAudience(`https://api.${root}`, job.id),
+      repo,
+    });
+  }
+  if (!job.jobTokenHash) return false;
   const hash = await sha256Hex(token);
   return timingSafeEqual(hash, job.jobTokenHash);
 }
