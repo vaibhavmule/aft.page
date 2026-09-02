@@ -5,7 +5,7 @@ import { getLatestRunJobBySlug, getSiteRow, setSiteRuntime } from "./db";
 export const CONTAINER_PUBLISH_PORT = 8080;
 
 /** Ops-only Express canary. Never on status.aft.page. */
-export const EXPRESS_FIXTURE_SLUG = "nodejs-getting-started-rose-rose";
+export const EXPRESS_FIXTURE_SLUG = "nodejs-getting-started-sand";
 
 /** Keep in sync with apps/run-container/src/origin.ts */
 export function sandboxIdForJob(jobId: string): string {

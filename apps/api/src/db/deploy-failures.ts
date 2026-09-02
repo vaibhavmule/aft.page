@@ -226,21 +226,32 @@ export async function pruneDeployFailures(env: Env): Promise<void> {
   const cutoff = new Date(
     Date.now() - FAILURE_RETENTION_DAYS * 24 * 60 * 60 * 1000,
   ).toISOString();
-  const { results } = await env.DB.prepare(
-    `SELECT id FROM deploy_failures WHERE created_at < ?`,
-  )
-    .bind(cutoff)
-    .all<{ id: string }>();
-  for (const row of results || []) {
-    try {
-      await deleteFailurePayload(env, row.id);
-    } catch {
-      /* keep pruning rows even if R2 delete fails */
+  // Page over expired ids instead of hydrating the whole table into the Worker.
+  const PRUNE_BATCH = 100;
+  let pruned = 0;
+  for (;;) {
+    const { results } = await env.DB.prepare(
+      `SELECT id FROM deploy_failures WHERE created_at < ? LIMIT ?`,
+    )
+      .bind(cutoff, PRUNE_BATCH)
+      .all<{ id: string }>();
+    const ids = results || [];
+    if (ids.length === 0) break;
+    for (const row of ids) {
+      try {
+        await deleteFailurePayload(env, row.id);
+      } catch {
+        /* keep pruning rows even if R2 delete fails */
+      }
     }
+    pruned += ids.length;
+    if (ids.length < PRUNE_BATCH) break;
   }
-  await env.DB.prepare(`DELETE FROM deploy_failures WHERE created_at < ?`)
-    .bind(cutoff)
-    .run();
+  if (pruned > 0) {
+    await env.DB.prepare(`DELETE FROM deploy_failures WHERE created_at < ?`)
+      .bind(cutoff)
+      .run();
+  }
 }
 
 export async function countFailuresSince(env: Env, sinceIso: string): Promise<number> {

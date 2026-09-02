@@ -17,8 +17,9 @@ describe("expiry deploy", () => {
     const out = await deployPasteExpires("<h1>quick</h1>", "exp-1h", "1h");
     expect(out.expiresAt).toBeTruthy();
     const ms = Date.parse(out.expiresAt) - Date.now();
-    expect(ms).toBeGreaterThan(55 * 60 * 1000);
-    expect(ms).toBeLessThan(65 * 60 * 1000);
+    // Server clock ≈ test clock; assert ~1h with slack instead of a tight window.
+    expect(ms).toBeGreaterThan(59 * 60 * 1000);
+    expect(ms).toBeLessThan(61 * 60 * 1000);
     expect(out.notice).toMatch(/expires/);
   });
 

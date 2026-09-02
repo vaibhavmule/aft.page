@@ -393,6 +393,26 @@ export async function clearStatusHistory(env: Env): Promise<void> {
   }
 }
 
+/** Keep 90 days of probe history; delete older rows in bounded cron passes. */
+const STATUS_RETENTION_DAYS = 90;
+const STATUS_PRUNE_BATCH = 2000;
+
+export async function pruneStatusChecks(env: Env): Promise<number> {
+  const cutoff = new Date(Date.now() - STATUS_RETENTION_DAYS * DAY_MS).toISOString();
+  let pruned = 0;
+  for (;;) {
+    const res = await env.DB.prepare(
+      `DELETE FROM status_checks WHERE checked_at < ? LIMIT ?`,
+    )
+      .bind(cutoff, STATUS_PRUNE_BATCH)
+      .run();
+    const changes = Number(res.meta.changes || 0);
+    pruned += changes;
+    if (changes < STATUS_PRUNE_BATCH) break;
+  }
+  return pruned;
+}
+
 export async function saveSnapshot(
   env: Env,
   snapshot: StatusSnapshot,
