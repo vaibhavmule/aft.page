@@ -262,7 +262,7 @@ export async function serveSite(
     if (isEphemeralContainerOrigin(upstreamUrl)) {
       const replay = request.clone();
       try {
-        res = await proxyUpstream(request, upstreamUrl, access.user);
+        res = await proxyUpstream(request, upstreamUrl, access.user, root);
       } catch {
         res = new Response("origin unreachable", { status: 530 });
       }
@@ -270,19 +270,19 @@ export async function serveSite(
         const next = await rebindContainerOrigin(env, slug);
         if (next) {
           await res.body?.cancel().catch(() => null);
-          res = await proxyUpstream(replay, next, access.user);
+          res = await proxyUpstream(replay, next, access.user, root);
           // ponytail: Quick Tunnel DNS can 530 for ~15–20s after mint. This loop waits up to 12s on the same hostname; first GET can still 530, the next GET on the stable *.aft.page URL recovers. Upgrade: probe origin before swapping KV.
           if (res.status === 530) {
             const deadline = Date.now() + 12_000;
             while (res.status === 530 && Date.now() < deadline) {
               await scheduler.wait(2000);
-              res = await proxyUpstream(request.clone(), next, access.user);
+              res = await proxyUpstream(request.clone(), next, access.user, root);
             }
           }
         }
       }
     } else {
-      res = await proxyUpstream(request, upstreamUrl, access.user);
+      res = await proxyUpstream(request, upstreamUrl, access.user, root);
     }
     const path = servePath(pathname);
     noteServe(env, request, slug, {

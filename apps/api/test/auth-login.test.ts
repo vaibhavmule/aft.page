@@ -25,6 +25,22 @@ describe("auth login", () => {
     expect(res.status).toBe(400);
   });
 
+  it("rejects HTML in email (XSS payload)", async () => {
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/auth/start`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: "https://aft.page",
+        },
+        body: JSON.stringify({
+          email: 'x<img src=x onerror=alert(1)>@evil.com',
+        }),
+      }),
+    );
+    expect(res.status).toBe(400);
+  });
+
   it("accepts start (email may fail without EMAIL binding)", async () => {
     const res = await call(
       new Request(`${API_ORIGIN}/v1/auth/start`, {

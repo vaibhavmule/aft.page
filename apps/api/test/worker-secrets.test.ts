@@ -18,6 +18,15 @@ describe("worker-secrets", () => {
     expect(workerScriptName("demo", null)).toBe("aft-u-demo");
   });
 
+  it("ignores another site's workers.dev hostname", () => {
+    expect(
+      workerScriptName("evil", "https://aft-u-victim.workers.dev"),
+    ).toBe("aft-u-evil");
+    expect(
+      workerScriptName("evil", "https://unrelated.workers.dev"),
+    ).toBe("aft-u-evil");
+  });
+
   it("knows when sync applies", () => {
     expect(needsWorkerSecretSync("next", "https://aft-u-x.workers.dev")).toBe(true);
     expect(needsWorkerSecretSync("static", "https://aft-u-x.workers.dev")).toBe(false);
