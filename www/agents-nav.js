@@ -54,7 +54,6 @@
 
   function primaryLinks(path) {
     const productHref = homeAnchor("#product", path);
-    const compareHref = homeAnchor("#compare", path);
     const pricingHref = homeAnchor("#pricing", path);
     const deployHref = path === "/" ? "#hero-drop" : "/drop";
     const agentsCurrent =
@@ -100,7 +99,7 @@
         </div>
       </div>
       <a href="/docs"${currentAttribute("/docs", path)}>Docs</a>
-      <a href="${compareHref}">Compare</a>
+      <a href="/compare"${currentAttribute("/compare", path)}>Compare</a>
       <a href="${pricingHref}">Pricing</a>
       <a href="/login" data-aft-auth="login">Log in</a>
       <a class="topnav-cta" href="${deployHref}"${currentAttribute("/drop", path)}>Deploy an app</a>
@@ -138,7 +137,6 @@
     document.querySelectorAll("[data-mobile-nav]").forEach((drawer) => drawer.remove());
 
     const productHref = homeAnchor("#product", path);
-    const compareHref = homeAnchor("#compare", path);
     const pricingHref = homeAnchor("#pricing", path);
     const deployHref = path === "/" ? "#hero-drop" : "/drop";
     const agentsCurrent =
@@ -179,7 +177,7 @@
             </div>
           </details>
           <a href="/docs"${currentAttribute("/docs", path)}>Docs</a>
-          <a href="${compareHref}">Compare</a>
+          <a href="/compare"${currentAttribute("/compare", path)}>Compare</a>
           <a href="${pricingHref}">Pricing</a>
         </nav>
         <div class="mobile-nav-actions">

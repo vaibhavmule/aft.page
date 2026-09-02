@@ -1,10 +1,12 @@
-# YC Fall 2026 — Aft (submitted)
+# YC Fall 2026 — Aft (rejected)
 
-> **STATUS: SUBMITTED 18 Aug 2026.** Portal: **In review**. Company: **Aft**. Batch: Fall 2026 (Oct–Dec, SF). Founder account: `vaibhavmule`.
+> **STATUS: REJECTED 29 Aug 2026.** No interview. Company: **Aft**. Batch: Fall 2026. Founder: `vaibhavmule`.
 >
-> Late application. On-time deadline was **27 Jul 2026, 8pm PT**; on-time decisions by **28 Aug**. Late apps are still read, with no promised date, fewer reviewing partners, and fewer remaining interview slots.
+> Submitted **17–18 Aug** (late; on-time deadline was 27 Jul). Decision email ~11.5 days later. Portal moved the file to **Previous**. Standard line: *“We're sorry to say that your startup was not selected for an interview.”* YC only gives written feedback after an interview — this email has none.
 >
-> Keep updating via the portal when something material changes. Do not bump empty. Do not email partners asking them to look at the file.
+> **Do not start the new application now.** Next cycle is already open: on-time **2 Nov 2026, 8pm PT**, decision by **11 Dec**. Apply on-time with proof (strangers deploying and returning). Same product story is fine; a rewrite without users is the same file.
+>
+> Archive below is what they actually read. Keep it.
 
 Internal archive of what went into [apply.ycombinator.com](https://www.ycombinator.com/apply). Video cue cards at the bottom if a Founder Video update is needed.
 

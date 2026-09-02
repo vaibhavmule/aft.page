@@ -14,10 +14,10 @@ Cursor `mcp_auth` timeout is **C**. aft.page was up. See [USE-CASE-PARAKH.md](..
 
 | URL | Audience | Job |
 | --- | --- | --- |
-| `https://status.aft.page` | public | Uptime probes (API process, MCP `/health`, website, hello) |
+| `https://status.aft.page` | public | Website, API, static hello, MCP. Not try-URL canaries (they sleep). |
 | `https://ops.aft.page` | founder (`OPS_EMAILS`) | Scoreboard + users/sites/domains + CF cost + failed deploys + feedback + retry + smoke + hijack audit + domain access + **[/distribute](https://ops.aft.page/distribute)** (plugin/CLI marketplace pipeline) |
 
-**Engine (Network + Stories + Run on ops):** Drop is static HTML/`dist/` only. MCP, CLI, and Run share detect → build → URL. Shipped runners: static, Vite, Next, container (ephemeral on Run for Express/Flask/etc). Drop/CLI upload of server source still returns `needs_container` (paste public GitHub on Run). `not_a_site` (db/redis/queue) remains an honest detect fail.
+**Engine (Network + Stories + Run on ops):** Drop is static HTML/`dist/` only. MCP, CLI, and Run share detect → build → URL. Shipped runners: static, Vite, Next. Container Run is an ephemeral try (Express/Flask/etc); ops watches one Express fixture, public status does not. Drop/CLI upload of server source still returns `needs_container` (paste public GitHub on Run). `not_a_site` (db/redis/queue) remains an honest detect fail.
 | `https://test--{case}.aft.page` | public canary (`noindex`) | Last smoke artifacts — not tenant inventory |
 | `https://test--fw-N.aft.page` | founder | Compat probe canaries (random GitHub → AFT) |
 | CF Workers Logs | you | Stacks / MCP JSON-RPC |

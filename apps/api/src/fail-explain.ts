@@ -61,6 +61,11 @@ export function explainDeployFailure(f: FailureExplainIn): FailureExplain {
           : "This is a database, cache, or queue — not a website.",
         fix: "Nothing to host. Point aft at a web app (static, Vite, or Next.js).",
       };
+    case "pick_root":
+      return {
+        why: "This repo has more than one app, and they are not a single frontend + API pair.",
+        fix: "Pick a folder on aft.page/run. A Vite/static UI plus Express/Flask API in frontend/ + backend/ runs as one URL. Needs a database? Claim, add secrets, then re-run.",
+      };
     case "no_index":
       return {
         why: "The deploy root has no index.html, so the live URL would 404.",

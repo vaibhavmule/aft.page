@@ -1,7 +1,7 @@
 # aft.page — Report Card
 # Graded against the "Cloud for Small Software" (YC RFS) playbook.
 # Grounded in: STRATEGY.md, plan.md, CAPABILITIES.md, SHARING.md, PRICING.md, EVIDENCE-PACK.md, BRAND.md.
-# Updated: 2026-08-08
+# Updated: 2026-08-26
 #
 # Two axes: BUILT (does the code exist) vs PROVEN (do real users do it).
 # Strong on built. Thin on proven.
@@ -92,7 +92,7 @@ but not wrongly so.
 [x] Reliability/speed > features once you have users (CF edge) — "once you have users" is the catch
 [~] Security/abuse as constant work — acknowledged; egress stub + abuse story thin
 [x] Watch incumbents + agent tools — sharp competitive map; treats CF as commoditizing static
-[x] Apply to YC — submitted 18 Aug 2026, In review (Fall 2026, late)
+[x] Apply to YC — Fall 2026 submitted 18 Aug, rejected 29 Aug (no interview). Next: 2 Nov with users.
 
 THE EVIDENCE PACK IS EMPTY. Every "Actual" column is blank. Your own plan:
 "weekly usage cannot wait" and "agents cannot send your 30 messages."
@@ -109,11 +109,9 @@ STRENGTHS (keep)
 ================================================================
 TOP 3 FIXES (priority order)
 ================================================================
-1. SHIP THE CURSOR AGENT PLUGIN this week (skill + existing MCP). #1 distribution lever.
-2. BUILD ONE-CLICK REMIX/FORK. Only named RFS hard-problem with zero coverage;
-   virality flywheel; cheap on existing ownership + versioning.
-3. FILL THE EVIDENCE PACK with real strangers: >=5 repeat deployers,
-   >=1 app shared+used by a non-friend, >=1 paid/LOI. Grade is capped until these exist.
+1. MAKE RUN STRANGER-HONEST (paste → URL or clear fail). Engine is honest; five trials still a scoreboard.
+2. SHIP CURSOR MARKETPLACE LISTING (plugin + MCP). Owned channel — #1 install path in 2026.
+3. SHOW HN / PH ($1k builds) — unblocked. Remix/fork stays next viral loop after try volume (RFS hole; not amp).
 
 ================================================================
 WATCH ITEMS

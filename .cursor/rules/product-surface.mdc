@@ -1,0 +1,36 @@
+---
+description: Never leak vendor internals (Wrangler, Cloudflare, OpenNext, Workers) on product surfaces.
+alwaysApply: true
+---
+
+# Product surface — no vendor guts
+
+On anything a **user, visitor, agent customer, or Run log** sees, AFT is just AFT.
+
+**Never say** on platform UI, website (except intentional `/vs/` competitor pages), CLI user copy, job `line`/`reason`/log tails, API error messages, MCP tool descriptions, or agent-facing advice:
+
+- Wrangler, OpenNext, `@opennextjs/*`, workers.dev
+- Cloudflare / Workers / Pages / R2 / D1 / Durable Objects (as *our* stack)
+- GHA, GitHub Actions, Sandbox SDK, “edge”, account IDs
+
+**Do say:** build, deploy, live URL, Next.js, static, installing, failed — product verbs and frameworks the *user’s* repo already claims.
+
+## Where this applies
+
+| Surface | Rule |
+| --- | --- |
+| Run job phases / streamed logs / fail reasons | Product language only; redact vendor tokens before PATCH |
+| `/v1/*` errors and check plan fields shown to clients | No vendor command lines |
+| `www/` product docs, MCP public docs | No OpenNext/Wrangler how-to |
+| CLI step titles and thrown errors | “Building…”, “Deploy failed” — not `wrangler deploy` |
+| Ops / internal STRATEGY / engineer README | OK to name vendors |
+
+## Exceptions
+
+- **`/vs/` and `/compare`** (and the quoteable blog post): naming Cloudflare Pages, Netlify, and Vercel is the point.
+- **Privacy / legal** subprocessors list: real legal names stay.
+- **Code comments, scripts, wrangler.jsonc, internal ops**: engineer surface — fine.
+
+## Default when unsure
+
+If Rohit (or any visitor) could read it on aft.page or in a Run log, strip the vendor word. Canonical intent: STRATEGY “Never expose Cloudflare complexity to the user.”

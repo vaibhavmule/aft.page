@@ -12,6 +12,9 @@ import {
   publicProbeError,
   runProbes,
   STATUS_PROBES,
+  OPS_ONLY_PROBES,
+  filterPublicSnapshot,
+  setStatusCheckHidden,
   type ProbeResult,
   type StatusSnapshot,
 } from "../src/status";
@@ -142,11 +145,38 @@ describe("status.aft.page host", () => {
     expect(html).toContain("System status");
     expect(html).toContain("All systems operational");
     expect(html).toContain("API");
+    expect(html).toContain("Hosted apps");
+    expect(html).not.toContain("Site serve");
     expect(html).toContain("uptime");
     expect(html).toContain("90 days ago");
     expect(html).toContain("Today");
     expect(html).not.toMatch(/https:\/\/example\.test\//);
     expect(html).not.toMatch(/\d+ ms/);
+  });
+
+  it("does not show a sleeping Express fixture on the public page", async () => {
+    const at = "2026-08-28T07:00:00.000Z";
+    await saveSnapshot(env, {
+      checkedAt: at,
+      overall: "major_outage",
+      components: [
+        probe({ id: "api", name: "API", ok: true, status: "operational" }),
+        probe({ id: "www", name: "Website", ok: true, status: "operational" }),
+        probe({ id: "sites", name: "Hosted apps", ok: true, status: "operational" }),
+        probe({ id: "mcp", name: "MCP", ok: true, status: "operational" }),
+        probe({
+          id: "express",
+          name: "Express fixture",
+          ok: false,
+          status: "major_outage",
+          error: "unexpected_status_502",
+        }),
+      ],
+    });
+    const html = await (await call(new Request("https://status.aft.page/"))).text();
+    expect(html).not.toContain("Express fixture");
+    expect(html).toContain("All systems operational");
+    expect(html).toContain("Hosted apps");
   });
 
   it("does not leak D1 dumps on the public page", async () => {
@@ -168,6 +198,8 @@ describe("status.aft.page host", () => {
 
     const html = await (await call(new Request("https://status.aft.page/"))).text();
     expect(html).toContain("Database unavailable (migration)");
+    expect(html).toContain("Hosted apps");
+    expect(html).not.toContain("Site serve");
     expect(html).not.toContain("D1_ERROR");
     expect(html).not.toContain("no such column");
 
@@ -178,6 +210,96 @@ describe("status.aft.page host", () => {
       true,
     );
     expect(body.recentFailures.some((f) => /D1_ERROR|no such column/.test(f.error))).toBe(false);
+  });
+
+  it("lists a public fail even when retired ids fill the last 12", async () => {
+    for (let i = 0; i < 12; i++) {
+      const at = `2026-08-20T12:${String(i).padStart(2, "0")}:00.000Z`;
+      await saveSnapshot(env, {
+        checkedAt: at,
+        overall: "major_outage",
+        components: [
+          probe({
+            id: "express",
+            name: "Express fixture",
+            ok: false,
+            status: "major_outage",
+            error: "sandbox asleep",
+            checkedAt: at,
+          }),
+        ],
+      });
+    }
+    const sitesAt = "2026-08-20T11:00:00.000Z";
+    await saveSnapshot(env, {
+      checkedAt: sitesAt,
+      overall: "major_outage",
+      components: [
+        probe({
+          id: "sites",
+          name: "Site serve",
+          ok: false,
+          status: "major_outage",
+          error: "hello down",
+          checkedAt: sitesAt,
+        }),
+      ],
+    });
+
+    const html = await (await call(new Request("https://status.aft.page/"))).text();
+    expect(html).toContain("Hosted apps");
+    expect(html).toContain("hello down");
+    expect(html).not.toContain("Express fixture");
+    expect(html).not.toContain("sandbox asleep");
+
+    const body = (await (
+      await call(new Request("https://status.aft.page/api.json"))
+    ).json()) as { recentFailures: { id: string; name: string; error: string }[] };
+    expect(body.recentFailures.some((f) => f.id === "sites" && f.name === "Hosted apps")).toBe(
+      true,
+    );
+    expect(body.recentFailures.some((f) => f.id === "express")).toBe(false);
+  });
+
+  it("hides a failure from the public list without dropping the D1 row", async () => {
+    const at = "2026-08-21T12:00:00.000Z";
+    await saveSnapshot(
+      env,
+      {
+        checkedAt: at,
+        overall: "major_outage",
+        components: [
+          probe({
+            id: "sites",
+            name: "Hosted apps",
+            ok: false,
+            status: "major_outage",
+            error: "hello down",
+            checkedAt: at,
+          }),
+        ],
+      },
+      { reset: true },
+    );
+    const row = await env.DB.prepare(
+      `SELECT id FROM status_checks WHERE checked_at = ? AND component_id = 'sites'`,
+    )
+      .bind(at)
+      .first<{ id: number }>();
+    expect(row?.id).toBeGreaterThan(0);
+    expect(await setStatusCheckHidden(env, row!.id, true)).toBe(true);
+
+    const body = (await (
+      await call(new Request("https://status.aft.page/api.json"))
+    ).json()) as { recentFailures: { id: string }[] };
+    expect(body.recentFailures.some((f) => f.id === "sites")).toBe(false);
+
+    const stored = await env.DB.prepare(
+      `SELECT ok, hidden FROM status_checks WHERE id = ?`,
+    )
+      .bind(row!.id)
+      .first<{ ok: number; hidden: number }>();
+    expect(stored).toEqual({ ok: 0, hidden: 1 });
   });
 
   it("serves machine-readable /api.json", async () => {
@@ -193,7 +315,7 @@ describe("status.aft.page host", () => {
           status: "degraded",
           httpStatus: 404,
         }),
-        probe({ id: "sites", name: "Site serve", ok: true, status: "operational" }),
+        probe({ id: "sites", name: "Hosted apps", ok: true, status: "operational" }),
       ],
     };
     await saveSnapshot(env, snapshot);
@@ -252,6 +374,20 @@ describe("status.aft.page host", () => {
         (p) => p.id === "sites" && p.siteSlug === "hello" && p.url === "https://hello.aft.page/",
       ),
     ).toBe(true);
+    expect(STATUS_PROBES.some((p) => p.id === "express")).toBe(false);
+    expect(STATUS_PROBES.some((p) => p.id === "aft_me")).toBe(false);
+    expect(OPS_ONLY_PROBES.some((p) => p.id === "express" && p.mode === "internal_site")).toBe(
+      true,
+    );
+    expect(
+      STATUS_PROBES.some(
+        (p) =>
+          p.id === "sites" &&
+          p.siteSlug === "hello" &&
+          /static hello/i.test(p.description) &&
+          /not container/i.test(p.description),
+      ),
+    ).toBe(true);
     expect(STATUS_PROBES.some((p) => p.id === "mcp" && p.mode === "internal_mcp")).toBe(
       true,
     );
@@ -260,6 +396,33 @@ describe("status.aft.page host", () => {
     expect(mcp?.ok).toBe(true);
     expect(mcp?.status).toBe("operational");
     expect(mcp?.url).toBe("https://mcp.aft.page/health");
+    expect(snap.components.some((c) => c.id === "express")).toBe(true);
+    const pub = filterPublicSnapshot(snap);
+    expect(pub.components.some((c) => c.id === "express")).toBe(false);
+    expect(pub.overall).toBe(snap.overall);
+  });
+
+  it("does not paint public overall from a down Express fixture", () => {
+    const snap: StatusSnapshot = {
+      checkedAt: "2026-08-29T06:00:00.000Z",
+      overall: "operational",
+      components: [
+        probe({ id: "api", name: "API", ok: true, status: "operational" }),
+        probe({ id: "www", name: "Website", ok: true, status: "operational" }),
+        probe({ id: "sites", name: "Hosted apps", ok: true, status: "operational" }),
+        probe({ id: "mcp", name: "MCP", ok: true, status: "operational" }),
+        probe({
+          id: "express",
+          name: "Express fixture",
+          ok: false,
+          status: "major_outage",
+          error: "sandbox asleep",
+        }),
+      ],
+    };
+    const pub = filterPublicSnapshot(snap);
+    expect(pub.overall).toBe("operational");
+    expect(pub.components.map((c) => c.id)).toEqual(["api", "www", "sites", "mcp"]);
   });
 
   it("does not serve status as a user site slug", async () => {

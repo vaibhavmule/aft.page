@@ -197,6 +197,14 @@ export async function finishRunJob(
       id,
     )
     .run();
+  if (patch.status === "live" || patch.status === "failed") {
+    try {
+      const { notifyRunJobDone } = await import("../run-notify");
+      await notifyRunJobDone(env, id);
+    } catch {
+      /* email is best-effort */
+    }
+  }
 }
 
 export async function getRunJob(

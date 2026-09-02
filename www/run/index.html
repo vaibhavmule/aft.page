@@ -6,7 +6,7 @@
     <title>Run — aft.page</title>
     <meta
       name="description"
-      content="Paste a public GitHub repo → live URL. Static, Vite, or Next.js. No account required."
+      content="Paste a public GitHub repo → live URL. Static, Vite, Next.js, or a frontend + API pair. No account required."
     />
     <link rel="canonical" href="https://aft.page/run/" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -45,6 +45,7 @@
       .run-shell { min-height: 100dvh; display: flex; flex-direction: column; }
       .run-bar {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
         justify-content: space-between;
         gap: 1rem;
@@ -107,24 +108,100 @@
         padding: 1rem 1.1rem;
         background: var(--panel);
       }
+      .build-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem 1rem;
+        margin-bottom: 0.75rem;
+      }
       .build-phase {
-        margin: 0 0 0.5rem;
+        margin: 0;
         font-family: var(--font-mono);
         font-size: 0.82rem;
       }
-      .build-log {
+      .view-toggle {
+        display: flex;
+        flex-wrap: wrap;
+        border: 1px solid var(--line);
+        border-radius: 0.35rem;
+        overflow: hidden;
+      }
+      .view-toggle button {
+        font: inherit;
+        font-size: 0.75rem;
+        padding: 0.35rem 0.7rem;
+        border: 0;
+        background: transparent;
+        color: var(--quiet);
+        cursor: pointer;
+      }
+      .view-toggle button[aria-pressed="true"] {
+        background: var(--ink);
+        color: var(--void);
+      }
+      .build-head-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .run-stop {
+        font: inherit;
+        font-size: 0.75rem;
+        padding: 0.35rem 0.7rem;
+        border: 1px solid var(--line);
+        border-radius: 0.35rem;
+        background: transparent;
+        color: var(--quiet);
+        cursor: pointer;
+      }
+      .run-stop:hover { color: var(--ink); }
+      .run-stop:disabled { opacity: 0.5; cursor: default; }
+      .turn-list {
+        list-style: none;
         margin: 0;
-        max-height: 14rem;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+      }
+      .turn-list li {
+        display: grid;
+        grid-template-columns: 0.55rem minmax(0, 1fr);
+        gap: 0.55rem;
+        align-items: start;
+        padding: 0.4rem 0.15rem;
+        color: var(--faint);
+        font-size: 0.88rem;
+      }
+      .turn-list .dot {
+        width: 0.55rem;
+        height: 0.55rem;
+        margin-top: 0.35rem;
+        border-radius: 50%;
+        background: var(--line-bright);
+        flex-shrink: 0;
+      }
+      .turn-list li.now { color: var(--ink); font-weight: 550; }
+      .turn-list li.now .dot { background: var(--ink); }
+      .turn-label { min-width: 0; word-break: break-word; }
+      .turn-guts {
+        margin: 0.4rem 0 0;
+        max-height: 10rem;
         overflow: auto;
         font-family: var(--font-mono);
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         line-height: 1.45;
         white-space: pre-wrap;
         word-break: break-word;
         background: var(--bg-inset);
-        border-radius: 0.4rem;
-        padding: 0.65rem 0.75rem;
+        border-radius: 0.35rem;
+        padding: 0.55rem 0.65rem;
+        color: var(--quiet);
       }
+      body[data-run-view="simple"] .turn-guts { display: none; }
       .msg {
         margin: 1rem 0 0;
         font-size: 0.9rem;
@@ -133,6 +210,8 @@
       .msg.err { color: var(--bad, #e55); }
       .msg.ok { color: var(--good); }
       .msg.pending { color: var(--quiet); }
+      .msg.docs-hint { margin-top: 0.35rem; }
+      .msg.docs-hint a { color: inherit; text-decoration: underline; }
       .live-row { margin-top: 1rem; }
       .live-card {
         margin-top: 1.25rem;
@@ -158,6 +237,23 @@
         color: var(--quiet);
         word-break: break-all;
       }
+      .root-picker {
+        margin-top: 1.25rem;
+        padding: 1rem 1.1rem;
+        border: 1px solid var(--line-bright);
+        border-radius: 0.65rem;
+        background: var(--panel);
+      }
+      .root-picker p {
+        margin: 0 0 0.75rem;
+        font-size: 0.9rem;
+        color: var(--quiet);
+      }
+      .root-choices {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+      }
       .visually-hidden {
         position: absolute;
         width: 1px;
@@ -181,7 +277,7 @@
       <main>
         <h1 class="run-title" id="run-title">Run a GitHub repo</h1>
         <p class="run-lede" id="run-lede">
-          Public repo → detect → live URL. Static is instant; Vite and Next.js build in the background.
+          Public repo → live URL. Static is instant; Vite, Next, and servers build in the background. A frontend/ + backend/ pair shares one URL. Needs a database? <a href="/docs/env/#try-db">Try URLs use sqlite only</a>. Claim, add <code>DATABASE_URL</code>, re-run.
         </p>
         <p class="repo-chip" id="repo-chip" hidden></p>
         <form class="git-row" id="git-form">
@@ -194,11 +290,27 @@
           />
           <button type="submit" class="btn" id="git-go">Run</button>
         </form>
+        <div class="root-picker" id="root-picker" hidden>
+          <p id="root-picker-lede">This repo has more than one app. Pick a folder to run.</p>
+          <div class="root-choices" id="root-choices"></div>
+        </div>
         <div class="build-panel" id="build-panel" hidden>
-          <p class="build-phase" id="build-phase">Queued</p>
-          <pre class="build-log" id="build-log" aria-live="polite"></pre>
+          <div class="build-head">
+            <p class="build-phase" id="build-phase">Queued</p>
+            <div class="build-head-actions">
+              <button type="button" class="run-stop" id="run-stop" hidden>Stop</button>
+              <div class="view-toggle" role="group" aria-label="Log view">
+                <button type="button" id="view-simple" aria-pressed="true">Simple</button>
+                <button type="button" id="view-detail" aria-pressed="false">Details</button>
+              </div>
+            </div>
+          </div>
+          <ol class="turn-list" id="turn-list" aria-live="polite"></ol>
         </div>
         <p class="msg pending" id="status" role="status" aria-live="polite"></p>
+        <p class="msg docs-hint" id="status-docs" hidden>
+          <a href="/docs/env/#try-db">Try URLs use sqlite only — docs</a>
+        </p>
         <div class="live-card" id="live-card" hidden>
           <p class="live-eyebrow">Live</p>
           <a class="btn" id="live-open" href="#" target="_blank" rel="noopener noreferrer">Open now</a>
@@ -206,6 +318,6 @@
         </div>
       </main>
     </div>
-    <script src="/run.js" defer></script>
+    <script type="module" src="/run.js?v=20260828-cachefail"></script>
   </body>
 </html>

@@ -1,6 +1,6 @@
 # aft.page — raise / programs
 
-Internal. Personal runway + quit rules: `../../../FOUNDER.md`. YC: [YC-APPLICATION.md](./YC-APPLICATION.md) (submitted 18 Aug 2026, In review).
+Internal. Personal runway + quit rules: `../../../FOUNDER.md`. YC: [YC-APPLICATION.md](./YC-APPLICATION.md) (Fall 2026 rejected 29 Aug; next on-time 2 Nov).
 
 **North star:** SF/US (South Park Commons, Vercel orbit, Naval-class angels). Bigger check, less dilution. Solo by design. Dubai optional later — not the raise city.
 
@@ -13,7 +13,7 @@ Source: [How we partner](https://surge.peakxv.com/how-we-invest) (checked 14 Aug
 | Their line | AFT read |
 | --- | --- |
 | **$500k–$5M** seed from Peak XV | Matches “bigger check, less dilution.” Floor is enough; do not take $5M to look serious. |
-| **No cohort windows** / apply year-round, rolling review | No calendar hostage. Apply when the two-person weekly-use gate is real ([STRATEGY.md](./STRATEGY.md)). |
+| **No cohort windows** / apply year-round, rolling review | No calendar hostage. Apply when you want — development mode, not a pretty-page wait. |
 | **Co-investors welcome** / open architecture | Does not force exclusivity. YC, Launchpad partner VCs, SPC, angels can still be in the round. |
 | **We stay in** / Peak XV follow-on | Long-term capital without a demo-day cliff. |
 | **Dedicated partner from day one** / always-on platform | Not a 12–24 week accelerator that ends at demo day. Fits solo: one partner, not 30-company split attention. |
@@ -26,7 +26,10 @@ Source: [How we partner](https://surge.peakxv.com/how-we-invest) (checked 14 Aug
 
 **What this is not:** Cloudflare credits, Workers Launchpad, Google credits. Those stay below. Surge is equity seed.
 
-**Status:** not applied. Do not apply on a pretty page. Gate = one useful app used weekly by two people (invite accepted, both return). Then apply at [surge.peakxv.com](https://surge.peakxv.com) (rolling). Side door: `contactus@peakxv.com` or Surge people on LinkedIn. Media is `pr@peakxv.com` — not for this.
+**Status:** not applied. Rolling apply is open. Development mode — no two-person
+weekly-use lock. Apply at [surge.peakxv.com](https://surge.peakxv.com) when
+you want. Side door: `contactus@peakxv.com` or Surge people on LinkedIn. Media
+is `pr@peakxv.com` — not for this.
 
 **Time:** they say no fixed commitment; the 8 weeks + SF Immersion is the visible block. Sep 2026 cohort is the next named one — miss it and the always-on path still exists.
 
@@ -53,7 +56,8 @@ Up to **$200k USD over 2 years** (up to **$350k if they class you as AI startup*
 - **8 Aug 2026 13:08** — Launchpad Cohort #7 apply emailed from `hello@aft.page` → `Workers-Launchpad@cloudflare.com` (web form `#form_workerslaunchpad` was broken). Superseded by form submit 13 Aug.
 - **8 Aug 2026** — Cloudflare Startups credits form started (company aft.page · https://aft.page · founded 2026 · India/Pune). Finish: connect Cloudflare account + submit.
 - **13 Aug 2026** — **Workers Launchpad form submitted** (hello@aft.page · account `44255ec64e0080b678670b53bf810d27` · https://aft.page · Pune). Immediate page ack, then email ack (below). Not accepted yet — quarterly review.
-- **18 Aug 2026** — **YC Fall 2026 submitted** (late). Portal: Aft · In review. On-time deadline was 27 Jul; on-time decisions by 28 Aug. No promised date for late. Do not bump. Progress update only on retained users / invite accept / video recut. [YC-APPLICATION.md](./YC-APPLICATION.md)
+- **18 Aug 2026** — **YC Fall 2026 submitted** (late).
+- **29 Aug 2026** — **YC Fall 2026 rejected** (no interview). Standard email. Portal: Previous. Next cycle open: on-time **2 Nov 8pm PT**, decision 11 Dec. Do not start the new app until strangers deploy and return. [YC-APPLICATION.md](./YC-APPLICATION.md)
 
 ## Email sent (archive)
 
@@ -90,5 +94,5 @@ Up to **$200k USD over 2 years** (up to **$350k if they class you as AI startup*
 - Cloudflare Startups $10k submit  
 - Launchpad: wait for CF reply / cohort decision (applied 13 Aug)  
 - SPC next Fellowship cycle (Fall 2026 deadline was Aug 2)  
-- YC Fall 2026: submitted 18 Aug, **In review**. There is no official fast-track. Do not bump or chase introductions; use a portal update only after material progress. [YC-APPLICATION.md](./YC-APPLICATION.md)
-- **Surge:** after the two-person weekly-use gate — rolling apply. Sep 2026 Immersion is a date, not a reason to apply early.
+- YC: Fall 2026 **rejected 29 Aug** (no interview). Next on-time **2 Nov**. Apply with usage proof, not a rewrite. [YC-APPLICATION.md](./YC-APPLICATION.md)
+- **Surge:** rolling apply, unblocked. Sep 2026 Immersion is a date, not a reason to wait.

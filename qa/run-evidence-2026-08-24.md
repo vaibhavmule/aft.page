@@ -33,15 +33,31 @@ Open: https://aft.page/run/mdn/todo-react
 
 Open: https://aft.page/run/mdn/beginner-html-site-scripted
 
-## C. Express container success (2026-08-26)
+## C. Express container success (2026-08-26, restored 2026-08-29)
 
 | Field | Value |
 | --- | --- |
 | Repo | `heroku/node-js-getting-started` |
 | Detection | `container` / Express (`npm start`, port 8080) |
-| Job | `run_fdaf6677d10d` |
-| Working URL | https://nodejs-getting-started-sky.aft.page |
-| Failure logs | none |
-| Second person | **yes** — anonymous GET 200 (home + in-app nav to How Heroku Works) |
+| Job (2026-08-26) | `run_fdaf6677d10d` |
+| Working URL (2026-08-26) | https://nodejs-getting-started-sky.aft.page (origin dead 2026-08-29; 530/502, sandbox gone) |
+| Job (2026-08-29 restore) | `run_0ae050b66742` |
+| Working URL (ops fixture) | https://nodejs-getting-started-rose-rose.aft.page (origin dead 2026-09-02; 530, sandbox gone) |
+| Job (2026-09-02 restores) | `run_3ddfe19ff6fb` (`-ink`, idled out), `run_d8ac0075a22e` (`-sand`, current) |
+| Working URL (ops fixture) | https://nodejs-getting-started-sand.aft.page (live, ops-only canary) |
+| Ownership | claimed by `hello@aft.page` (2026-09-02) — exempt from 30d anon GC, no `expires_at`. Container sandbox still idles (~30m) and needs a re-run when the tunnel dies for good. |
+| Failure logs | npm EBADENGINE warning; peer-install python one-liner SyntaxError (non-fatal); start still published |
+| Second person | **yes** — anonymous GET 200 (home) |
+| Origin rebind | [origin-rebind.md](./origin-rebind.md) — same hostname recovered after deliberate tunnel expire |
 
 Open: https://aft.page/run/heroku/node-js-getting-started
+
+## Known misses (2026-08-26)
+
+### Kartik `Odoo_HRMS` — split app, no root detect
+
+https://aft.page/run/kartik-suryawanshi/Odoo_HRMS — `no_index` at repo root (`frontend/` Vite + `backend/` Express + Postgres). UI can pick a folder. Frontend-only is a login SPA that still needs the API. Use a root-level Kartik repo instead: [Portfolio](https://aft.page/run/kartik-suryawanshi/Portfolio) (Vite) or [Buget_Tracker](https://aft.page/run/kartik-suryawanshi/Buget_Tracker) (static).
+
+### Rohit Django — pip missing in sandbox
+
+`Django-CRM-mastery-app-Project` and `QuickMart-MarketPlace-app` detect as `container` / Django, then `pip: command not found`. Fix: `python3 -m pip` + pip in the runner image.

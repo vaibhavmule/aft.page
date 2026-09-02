@@ -384,6 +384,7 @@ describe("paused private reserved hosts", () => {
     "mail",
     "ftp",
     "drop",
+    "code",
     "docs",
     "login",
     "dashboard",

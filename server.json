@@ -1,0 +1,20 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "page.aft/mcp",
+  "title": "aft.page",
+  "description": "Deploy HTML or dist/ to a live HTTPS URL. No account. Drop, MCP, or CLI.",
+  "version": "1.0.0",
+  "websiteUrl": "https://aft.page/mcp",
+  "repository": {
+    "url": "https://github.com/vaibhavmule/aft.page",
+    "source": "github",
+    "id": "1326207355",
+    "subfolder": "apps/mcp-worker"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.aft.page/mcp"
+    }
+  ]
+}

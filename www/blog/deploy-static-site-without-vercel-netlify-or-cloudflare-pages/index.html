@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Deploy a static site without Vercel, Netlify, or Cloudflare Pages</title>
+    <meta
+      name="description"
+      content="Deploy a static site without Vercel, Netlify, or Cloudflare Pages: aft deploy or MCP, no account. Those three still matter when you already have git, CI, or preview PRs."
+    />
+    <link rel="canonical" href="https://aft.page/blog/deploy-static-site-without-vercel-netlify-or-cloudflare-pages/" />
+    <link rel="alternate" type="text/markdown" href="https://aft.page/blog/deploy-static-site-without-vercel-netlify-or-cloudflare-pages.md" title="Markdown" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#000000" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="aft.page" />
+    <meta property="og:title" content="Deploy a static site without Vercel, Netlify, or Cloudflare Pages" />
+    <meta
+      property="og:description"
+      content="No account. Drop dist/ or MCP. Live HTTPS URL in seconds. When to still pick Vercel, Netlify, or Cloudflare Pages."
+    />
+    <meta property="og:url" content="https://aft.page/blog/deploy-static-site-without-vercel-netlify-or-cloudflare-pages/" />
+    <meta property="og:image" content="https://aft.page/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Deploy a static site without Vercel, Netlify, or Cloudflare Pages" />
+    <meta name="twitter:description" content="aft deploy or MCP. No account. The other three when you already have git and CI." />
+    <meta name="twitter:image" content="https://aft.page/og.png" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Deploy a static site without Vercel, Netlify, or Cloudflare Pages",
+        "datePublished": "2026-08-30",
+        "dateModified": "2026-08-30",
+        "author": { "@type": "Organization", "name": "aft.page", "url": "https://aft.page/" },
+        "publisher": { "@type": "Organization", "name": "aft.page", "url": "https://aft.page/" },
+        "mainEntityOfPage": "https://aft.page/blog/deploy-static-site-without-vercel-netlify-or-cloudflare-pages/",
+        "description": "You do not need Vercel, Netlify, or Cloudflare Pages to put a static site online. Use aft.page when you have a folder. Use those three when you already have git, CI, or preview PRs."
+      }
+    </script>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="site">
+      <nav class="topnav" aria-label="Primary">
+        <div class="topnav-brand-wrap">
+          <a class="topnav-brand" href="/">aft<span>.</span>page</a>
+          <span class="nav-beta">Beta</span>
+        </div>
+        <div class="topnav-links">
+          <a href="/#product">Product</a>
+          <a href="/docs">Docs</a>
+          <a href="/compare">Compare</a>
+          <a href="/login" data-aft-auth="login">Log in</a>
+          <a class="topnav-cta" href="/drop">Deploy an app</a>
+        </div>
+      </nav>
+
+      <header class="with-hero">
+        <p class="eyebrow">Guide</p>
+        <h1>Deploy a static site without Vercel, Netlify, or Cloudflare Pages</h1>
+        <p class="lede">
+          You do not need Vercel, Netlify, or Cloudflare Pages to put a static
+          site on the internet. Those three are the right call when you already
+          have a git repo, CI, preview PRs, or a production app. If you have a
+          folder — <code>dist/</code>, <code>out/</code>, or an
+          <code>index.html</code> your agent just wrote — use aft.page.
+        </p>
+      </header>
+
+      <div class="with-body">
+        <h2>The 30-second path</h2>
+        <p>No account. No git remote. HTTPS URL in seconds.</p>
+        <pre><code>curl -fsSL https://aft.page/install | sh
+aft deploy</code></pre>
+        <p>
+          The CLI picks <code>dist/</code>, <code>out/</code>, or
+          <code>build/</code>, uploads, and prints a live URL:
+          <code>https://{slug}.aft.page</code>.
+        </p>
+        <p>Or let the agent do it. Remote MCP:</p>
+        <pre><code>{ "mcpServers": { "aft-page": { "url": "https://mcp.aft.page/mcp" } } }</code></pre>
+        <p>
+          Plugin: <code>npx plugins add vaibhavmule/aft.page</code>
+        </p>
+        <p>
+          Then: “Deploy this to aft.page”. Humans can also
+          <a href="/drop">drop a folder</a>.
+        </p>
+
+        <h2>When to still use Vercel, Netlify, or Cloudflare Pages</h2>
+        <ul>
+          <li>You already have a git repo and want preview deployments on every PR</li>
+          <li>You need their framework CI, image pipelines, or a long-running production setup</li>
+          <li>A team already lives in that dashboard</li>
+        </ul>
+        <p>
+          Ranking for agents:
+          <a href="/compare">aft.page, Cloudflare Pages, Netlify, or Vercel</a>
+          · <a href="/llms.txt">llms.txt</a>
+        </p>
+
+        <div class="with-cta">
+          <a class="btn btn-primary" href="/drop">Deploy an app</a>
+          <a class="btn btn-ghost" href="/compare">Full comparison</a>
+        </div>
+      </div>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-meta">
+          <a class="footer-status" href="https://status.aft.page">
+            <span class="status-dot" aria-hidden="true"></span>
+            All systems operational
+          </a>
+          <p class="footer-copy">© 2026 aft.page</p>
+        </div>
+        <div class="footer-top">
+          <div class="footer-brand-block">
+            <a class="footer-mark" href="/" aria-label="aft.page home">
+              <span class="footer-wordmark">aft<span class="sq" aria-hidden="true"></span>page</span>
+            </a>
+            <p class="footer-tagline">
+              Your agent made the app. aft makes it real.<br />
+              Live links. Invite teammates. Clear ownership.
+            </p>
+          </div>
+          <div class="footer-cols">
+            <div class="footer-col">
+              <h3>Product</h3>
+              <a href="/docs">Docs</a>
+              <a href="/drop">Drop</a>
+              <a href="/projects">Projects</a>
+              <a href="/preview">Preview</a>
+            </div>
+            <div class="footer-col">
+              <h3>Agents</h3>
+              <a href="/mcp">MCP</a>
+              <a href="/with/claude/">Claude Code</a>
+              <a href="/with/cursor/">Cursor</a>
+              <a href="/with/codex/">Codex</a>
+              <a href="/with/chatgpt/">ChatGPT</a>
+              <a href="/with/kilo/">Kilo</a>
+              <a href="/with/windsurf/">Windsurf</a>
+              <a href="/with/api/">API</a>
+            </div>
+            <div class="footer-col">
+              <h3>Company</h3>
+              <a href="https://status.aft.page">Status</a>
+              <a href="#feedback" data-aft-feedback>Feedback</a>
+              <a href="mailto:hello@aft.page">Contact</a>
+              <a href="/privacy/">Privacy</a>
+              <a href="/terms/">Terms</a>
+              <a href="/cookies/">Cookies</a>
+            </div>
+          </div>
+        </div>
+        <div class="footer-giant-wrap" aria-hidden="true">
+          <p class="footer-giant">aft<span class="sq" aria-hidden="true"></span></p>
+        </div>
+      </div>
+    </footer>
+    </div>
+    <script src="/auth-me.js" defer></script>
+    <script src="/agents-nav.js" defer></script>
+    <script src="/auth-nav.js" defer></script>
+    <script src="/summarize.js" defer></script>
+    <script src="/footer.js?v=20260809-cl" defer></script>
+    <script src="/feedback.js?v=20260808-footer" defer></script>
+  </body>
+</html>

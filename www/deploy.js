@@ -20,6 +20,7 @@ const RESERVED_SLUGS = new Set([
   "login",
   "mcp",
   "drop",
+  "code",
   "cname",
   "aft",
   "aft-page",
@@ -558,15 +559,40 @@ async function copyDemoSnippet() {
 }
 
 if (heroDemo) {
+  /* —— CLI typewriter: play once, then leave the full snippet visible —— */
+  let cliTyped = false;
+  const cliCode = document.getElementById("demo-cli-code");
+  const cliLines = cliCode?.innerHTML.split("\n").filter(Boolean);
+  function typeCliDemo() {
+    if (cliTyped || !cliCode || !cliLines?.length) return;
+    cliTyped = true;
+    cliCode.setAttribute("data-typing", "1");
+    const full = cliCode.innerHTML;
+    cliCode.innerHTML = "";
+    let i = 0;
+    const step = () => {
+      if (i >= cliLines.length) {
+        cliCode.innerHTML = full;
+        cliCode.setAttribute("data-typing", "done");
+        return;
+      }
+      cliCode.innerHTML = cliLines.slice(0, ++i).join("\n") + "\n";
+      setTimeout(step, 320);
+    };
+    setTimeout(step, 350);
+  }
+
   const fromHash = demoTabFromHash();
   selectDemoTab(fromHash || "cli");
   if (fromHash && location.hash !== "#hero-drop") scrollHeroDemo();
+  if ((fromHash || "cli") === "cli") typeCliDemo();
 
   window.addEventListener("hashchange", () => {
     const name = demoTabFromHash();
     if (!name) return;
     selectDemoTab(name);
     if (location.hash !== "#hero-drop") scrollHeroDemo();
+    if (name === "cli") typeCliDemo();
   });
 
   heroDemo.addEventListener("click", (e) => {
@@ -574,6 +600,7 @@ if (heroDemo) {
     if (tab) {
       e.preventDefault();
       selectDemoTab(tab.dataset.demoTab, true);
+      if (tab.dataset.demoTab === "cli") typeCliDemo();
       return;
     }
     if (e.target.closest?.("[data-demo-copy]")) {

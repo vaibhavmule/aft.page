@@ -12,9 +12,24 @@ import {
 import { adviseDeploy, collectSnapshot } from "./preflight.js";
 import { loadState, readAftJsonSlug, saveState } from "./state.js";
 import { deployNextSsr } from "./next-deploy.js";
-import { isVerbose, note, ok, runCmd, runStep, say, stripVerboseFlags } from "./ui.js";
+import { isVerbose, note, ok, runCmd, runStep, say, stripVerboseFlags, ui } from "./ui.js";
 
 export { shouldSkip };
+
+export const DEPLOY_HELP = `${ui.bold("aft deploy")} — ship a live URL
+
+Usage:
+  aft deploy [dir]         Detect → build → upload → URL (defaults to current dir)
+  aft deploy --check [dir] Print preflight JSON, do NOT upload
+  aft deploy --slug <s>    Deploy to a specific site slug
+  aft deploy --expires <t> Quick-view link that self-destructs (e.g. 1h, 24h, 90s; max 7d). Anon deploys only.
+  aft deploy --verbose     Show full build logs
+  aft deploy --no-banner   Skip the startup banner
+
+Guards: refuses to upload a git repo root with 500+ files unless you pass an
+explicit output dir (e.g. aft deploy ./dist). Flags never deploy: --help / -h
+print this help and exit.
+`;
 
 const MAX_FILES = 500;
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
@@ -106,8 +121,13 @@ export async function ensureDeployable(
 export async function cmdDeploy(args) {
   const verbose = isVerbose(args);
   const filtered = stripVerboseFlags(args);
+  if (filtered.includes("--help") || filtered.includes("-h")) {
+    console.log(DEPLOY_HELP);
+    return;
+  }
   const dirArg = positionalDir(filtered);
   const slugFlag = flagValue(filtered, "--slug");
+  const expiresFlag = flagValue(filtered, "--expires");
   const checkOnly = filtered.includes("--check");
 
   if (checkOnly) {
@@ -176,8 +196,8 @@ export async function cmdDeploy(args) {
   }
 
   const path = slug
-    ? `/v1/deploy?slug=${encodeURIComponent(slug)}`
-    : "/v1/deploy";
+    ? `/v1/deploy?slug=${encodeURIComponent(slug)}${expiresFlag ? `&expires=${encodeURIComponent(expiresFlag)}` : ""}`
+    : `/v1/deploy${expiresFlag ? `?expires=${encodeURIComponent(expiresFlag)}` : ""}`;
   const headers = {};
   if (editToken) headers["x-aft-edit-token"] = editToken;
 
@@ -209,6 +229,7 @@ export async function cmdDeploy(args) {
   ok(body.url);
   console.log(body.url);
   if (body.claimUrl) note(`Claim: ${body.claimUrl}`);
+  if (body.expiresAt) note(`Expires: ${body.expiresAt}`);
   if (body.notice) note(body.notice);
 }
 

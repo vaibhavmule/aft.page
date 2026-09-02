@@ -2,7 +2,7 @@
 import type { Env } from "./env";
 import { hasAiBinding, runGatewayChat } from "./ai-gateway";
 import { resolveSessionUser } from "./auth";
-import { corsHeaders, json, optionsResponse } from "./http";
+import { corsHeaders, json, optionsResponse, isLoopbackRequest } from "./http";
 import { rateLimit } from "./rate-limit";
 
 export const CODE_TEMPLATES = ["todo", "contact", "tracker"] as const;
@@ -97,13 +97,6 @@ export async function handleCodeGenerate(
 
   const creds = Object.fromEntries(corsHeaders(origin, true));
 
-  const user = await resolveSessionUser(env, request);
-  if (!user) return json({ error: "unauthorized" }, 401, creds);
-
-  if (!(await rateLimit(env, `code:${user.id}`, 20, 3600))) {
-    return json({ error: "rate_limited" }, 429, creds);
-  }
-
   let body: { prompt?: unknown; template?: unknown } = {};
   try {
     body = (await request.json()) as typeof body;
@@ -113,6 +106,15 @@ export async function handleCodeGenerate(
 
   const template =
     typeof body.template === "string" ? body.template.trim().toLowerCase() : "";
+  const user = await resolveSessionUser(env, request);
+  const loopback = isLoopbackRequest(request);
+  const rlKey = user
+    ? `code:${user.id}`
+    : `code:anon:${request.headers.get("cf-connecting-ip") || "local"}`;
+  if (!(await rateLimit(env, rlKey, 20, 3600))) {
+    return json({ error: "rate_limited" }, 429, creds);
+  }
+
   if (template) {
     if (!isCodeTemplateId(template)) {
       return json({ error: "unknown_template" }, 400, creds);
@@ -127,6 +129,8 @@ export async function handleCodeGenerate(
       creds,
     );
   }
+
+  if (!user && !loopback) return json({ error: "unauthorized" }, 401, creds);
 
   const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
   if (prompt.length < 3) return json({ error: "empty_prompt" }, 400, creds);

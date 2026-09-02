@@ -105,4 +105,40 @@ describe("POST /v1/code/generate", () => {
     expect(body.source).toBe("template");
     expect(body.html).toContain("aft-todo");
   });
+
+  it("returns a todo template without a session", async () => {
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/code/generate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ template: "todo" }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { html: string; source: string };
+    expect(body.source).toBe("template");
+    expect(body.html).toContain("aft-todo");
+  });
+
+  it("requires a session for prompts on the production host", async () => {
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/code/generate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ prompt: "make a landing page" }),
+      }),
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it("skips session for prompts on wrangler loopback", async () => {
+    const res = await call(
+      new Request("http://127.0.0.1:8787/v1/code/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ prompt: "make a landing page" }),
+      }),
+    );
+    expect(res.status).not.toBe(401);
+  });
 });

@@ -284,6 +284,8 @@ export function detectFromSignals(s) {
   const pyWeb = firstNamed(PIP_WEB, (n) => pipHas(pip, n) || tomlDep(pip, n));
   if (pyWeb) return { kind: "container", stack: pyWeb };
 
+  if (s.hasMixExs) return { kind: "container", stack: "Phoenix" };
+
   const gemWeb = s.gemfile ? firstNamed(GEM_WEB, (n) => gemHas(s.gemfile, n)) : null;
   if (gemWeb) return { kind: "container", stack: gemWeb };
 
@@ -363,26 +365,39 @@ export function buildPlanFromSignals(s) {
     } else if (pkg?.scripts?.start) {
       start = "npm start";
     } else if (got.stack === "Django" || s.hasManagePy) {
-      start = "python manage.py runserver 0.0.0.0:8080";
+      start = "python3 manage.py runserver 0.0.0.0:8080";
+    } else if (got.stack === "Phoenix" || s.hasMixExs) {
+      start = "mix phx.server";
+    } else if (got.stack === "Rails") {
+      start = "bundle exec rails server -b 0.0.0.0 -p 8080";
+    } else if (got.stack === "Sinatra" || got.stack === "Hanami" || got.stack === "Grape") {
+      start = "bundle exec rackup -o 0.0.0.0 -p 8080";
     } else if (got.stack === "Flask") {
-      start = "flask run --host 0.0.0.0 --port 8080";
+      start = "python3 -m flask run --host 0.0.0.0 --port 8080";
     } else if (got.stack === "FastAPI") {
-      start = "uvicorn main:app --host 0.0.0.0 --port 8080";
+      start = "python3 -m uvicorn main:app --host 0.0.0.0 --port 8080";
     } else if (pkg?.scripts?.dev) {
       start = "npm run dev -- --host 0.0.0.0 --port 8080";
     }
     const install =
       got.stack === "Docker"
         ? undefined
-        : pkg && (pkg.dependencies || pkg.devDependencies || pkg.scripts)
-          ? "npm install --legacy-peer-deps"
-          : s.hasUvLock
-            ? "uv sync"
-            : s.requirementsTxt
-              ? "pip install -r requirements.txt"
-              : s.pyprojectToml
-                ? "pip install ."
-                : undefined;
+        : got.stack === "Phoenix" || s.hasMixExs
+          ? "mix local.hex --force && mix local.rebar --force && mix deps.get"
+          : got.stack === "Rails" ||
+              got.stack === "Sinatra" ||
+              got.stack === "Hanami" ||
+              got.stack === "Grape"
+            ? "bundle install"
+            : pkg && (pkg.dependencies || pkg.devDependencies || pkg.scripts)
+              ? "npm install --legacy-peer-deps"
+              : s.hasUvLock
+                ? "uv sync"
+                : s.requirementsTxt
+                  ? "python3 -m pip install -r requirements.txt"
+                  : s.pyprojectToml
+                    ? "python3 -m pip install ."
+                    : undefined;
     return {
       runtime: "container",
       stack: got.stack,
@@ -391,8 +406,9 @@ export function buildPlanFromSignals(s) {
       port,
       ...(got.stack === "Docker"
         ? {
-            build: "docker build -t aft-run .",
-            reason: "Dockerfile detected — use aft.page/run for Node/Python first; Docker images next.",
+            build: "docker build --network=host -t aft-run .",
+            start: "docker run --network=host --rm -e PORT=8080 -p 8080:8080 aft-run",
+            reason: "Dockerfile detected — use aft.page/run (DinD runner).",
           }
         : {
             reason: `${got.stack} — paste the public GitHub repo on aft.page/run (local CLI upload is static/Next only).`,
@@ -505,6 +521,7 @@ export async function detectProject(cwd) {
       (await exists(join(cwd, "vite.config.js"))) ||
       (await exists(join(cwd, "vite.config.mjs"))),
     hasManagePy: await exists(join(cwd, "manage.py")),
+    hasMixExs: await exists(join(cwd, "mix.exs")),
     requirementsTxt: await readText(cwd, "requirements.txt"),
     pyprojectToml: await readText(cwd, "pyproject.toml"),
     cargoToml: await readText(cwd, "Cargo.toml"),

@@ -84,7 +84,13 @@ import {
   BRAND_WORDMARK_CSS,
 } from "./brand";
 import { getFailurePayloadFile, listDeployFiles } from "./storage";
-import { buildPayload, type StatusPayload } from "./status";
+import {
+  buildPayload,
+  loadOpsStatusFailures,
+  setStatusCheckHidden,
+  type StatusCheckFailure,
+  type StatusPayload,
+} from "./status";
 import { listProbeHits, type ProbeHitRow } from "./site-logs";
 import {
   ANON_GC_WARN_DAYS,
@@ -117,6 +123,9 @@ const CF_LOGS_API =
   `https://dash.cloudflare.com/${CF_ACCOUNT}/workers/services/view/aft-page-api/production/observability/logs`;
 const CF_LOGS_MCP =
   `https://dash.cloudflare.com/${CF_ACCOUNT}/workers/services/view/aft-page-mcp/production/observability/logs`;
+const CF_LOGS_RUN =
+  `https://dash.cloudflare.com/${CF_ACCOUNT}/workers/services/view/aft-run-container/production/observability/logs`;
+const GHA_RUNS = "https://github.com/vaibhavmule/aft.page/actions";
 
 const PREVIEW_MAX = 64 * 1024;
 const PREVIEW_RE = /\.(html?|css|js|mjs|json|txt|svg|md)$/i;
@@ -131,6 +140,7 @@ export const OPS_HUB_PANELS = [
   "audit",
   "smoke",
   "failures",
+  "status-probes",
   "logs",
   "run",
   "sites",
@@ -163,6 +173,29 @@ export function parseOpsEmails(raw: string | undefined): string[] {
 
 export function isOpsEmail(env: Env, email: string): boolean {
   return parseOpsEmails(env.OPS_EMAILS).includes(email.trim().toLowerCase());
+}
+
+/** Founder / company / canary accounts — not a customer in the Users list. */
+export function isInternalUserEmail(email: string, env: Env): boolean {
+  const e = email.trim().toLowerCase();
+  if (!e) return false;
+  if (isOpsEmail(env, e)) return true;
+  const root = (env.ROOT_DOMAIN || "aft.page").toLowerCase();
+  if (e.endsWith("@" + root)) return true;
+  const at = e.lastIndexOf("@");
+  if (at < 1) return false;
+  const local = e.slice(0, at);
+  const domain = e.slice(at + 1);
+  const plus = local.indexOf("+");
+  if (plus < 1) return false;
+  return isOpsEmail(env, local.slice(0, plus) + "@" + domain);
+}
+
+export function parseOpsUserFilter(
+  raw: string | null | undefined,
+): "all" | "internal" | "external" {
+  if (raw === "all" || raw === "internal" || raw === "external") return raw;
+  return "external";
 }
 
 async function authorizeSmokeTrigger(request: Request, env: Env): Promise<boolean> {
@@ -208,12 +241,24 @@ export type TimeToUrlScore = {
 };
 
 export const CF_USAGE_KV_KEY = "ops:cf-usage";
+/** D1 quota snapshot (rows/read/write) — same KV as cf-usage, different key. */
+export const D1_USAGE_KV_KEY = "ops:d1-usage";
+export const D1_MAX_ROWS = 100_000_000;
+export const D1_WATCH_ROWS = 80_000_000;
 
 export type CfUsageSnap = {
   checkedAt: string;
   scripts: { name: string; requests: number; errors: number }[];
   requests: number;
   cpuMs: number;
+};
+
+export type D1Usage = {
+  checkedAt: string;
+  rows: number;
+  reads: number;
+  writes: number;
+  source: "graphql" | "kv";
 };
 
 export type WorkersCost = {
@@ -246,18 +291,20 @@ export type OpsPayload = {
   days: DayScore[];
   toFix: FixItem[];
   failures: DeployFailureRow[];
+  statusProbes: StatusCheckFailure[];
   failureCounts: { error: string; n: number }[];
   deploysByDay: { day: string; n: number }[];
   feedback: FeedbackRow[];
   waitlist: WaitlistSignupRow[];
   snapshot: OpsSnapshot;
   sites: (OpsSiteListRow & { viewsToday: number; views7d: number })[];
-  users: OpsUserRow[];
+  users: (OpsUserRow & { internal: boolean })[];
   domains: OpsDomainRow[];
   views: ViewRollup;
   timeToUrl: TimeToUrlScore;
   cost: WorkersCost;
   wfp: WfpTrigger;
+  d1: D1Usage | null;
   logs: { api: string; mcp: string };
   probes: ProbeHitRow[];
   runJobs: RunJobRow[];
@@ -347,8 +394,9 @@ function monthStartUtc(now = new Date()): string {
 }
 
 type GqlAdaptive = {
-  sum?: { requests?: number; errors?: number };
+  sum?: { requests?: number; errors?: number; rowsRead?: number; rowsWritten?: number };
   quantiles?: { cpuTimeP50?: number };
+  max?: { rowCount?: number };
 };
 
 async function readUsageSnap(env: Env): Promise<CfUsageSnap | null> {
@@ -454,6 +502,89 @@ async function resolveWorkersUsage(env: Env): Promise<{
   const snap = await readUsageSnap(env);
   if (!snap) return null;
   return { ...snap, source: "kv" };
+}
+
+async function readD1UsageSnap(env: Env): Promise<D1Usage | null> {
+  if (!env.STATUS) return null;
+  const raw = await env.STATUS.get(D1_USAGE_KV_KEY);
+  if (!raw) return null;
+  try {
+    const j = JSON.parse(raw) as Partial<D1Usage>;
+    if (typeof j.rows !== "number" || typeof j.reads !== "number" || typeof j.writes !== "number") {
+      return null;
+    }
+    return {
+      checkedAt: typeof j.checkedAt === "string" ? j.checkedAt : "",
+      rows: j.rows,
+      reads: j.reads,
+      writes: j.writes,
+      source: j.source === "kv" ? "kv" : "graphql",
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchD1Usage(token: string): Promise<Omit<D1Usage, "source"> | null> {
+  const start = monthStartUtc();
+  const end = new Date().toISOString();
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 2500);
+  try {
+    const res = await fetch("https://api.cloudflare.com/client/v4/graphql", {
+      method: "POST",
+      signal: ac.signal,
+      headers: {
+        authorization: `Bearer ${token}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        query: `query($accountTag: string!, $start: Time!, $end: Time!) {
+          viewer {
+            accounts(filter: { accountTag: $accountTag }) {
+              d1: d1QueriesAdaptive(limit: 1, filter: {
+                datetime_geq: $start, datetime_leq: $end
+              }) { sum { rowsRead rowsWritten } }
+              d1Rows: d1RowsAdaptive(limit: 1, filter: {
+                datetime_geq: $start, datetime_leq: $end
+              }) { max { rowCount } }
+            }
+          }
+        }`,
+        variables: { accountTag: CF_ACCOUNT, start, end },
+      }),
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as {
+      data?: {
+        viewer?: {
+          accounts?: Array<{ d1?: GqlAdaptive[]; d1Rows?: GqlAdaptive[] }>;
+        };
+      };
+    };
+    const acc = body.data?.viewer?.accounts?.[0];
+    if (!acc) return null;
+    const q = acc.d1?.[0];
+    const r = acc.d1Rows?.[0];
+    const reads = Number(q?.sum?.rowsRead ?? 0);
+    const writes = Number(q?.sum?.rowsWritten ?? 0);
+    const rows = Number(r?.max?.rowCount ?? 0);
+    return { rows, reads, writes, checkedAt: new Date().toISOString() };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function resolveD1Usage(env: Env): Promise<D1Usage | null> {
+  if (env.CF_API_TOKEN) {
+    const live = await fetchD1Usage(env.CF_API_TOKEN);
+    if (live) return { ...live, source: "graphql" };
+  }
+  const snap = await readD1UsageSnap(env);
+  if (!snap) return null;
+  return snap;
 }
 
 function isoAgo(ms: number): string {
@@ -762,6 +893,8 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
     visits,
     runJobs,
     runCounts,
+    statusProbes,
+    d1Usage,
   ] = await Promise.all([
     buildPayload(env),
     listDeployFailures(env, 50),
@@ -796,6 +929,8 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
     loadVisitsPayload(env, { range: "7d", scope: "all" }),
     listRunJobs(env, 50).catch(() => [] as RunJobRow[]),
     countRunJobsByStatus(env).catch(() => ({ live: 0, failed: 0, queued: 0 })),
+    loadOpsStatusFailures(env, 50),
+    resolveD1Usage(env),
   ]);
   const last24h = scoreWindow(successes24h, failures24h);
   const last7d = scoreWindow(successes7d, failures7d);
@@ -821,6 +956,7 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
       why: explainDeployFailure({ error: c.error }).why,
     })),
     failures,
+    statusProbes,
     failureCounts,
     deploysByDay,
     feedback,
@@ -830,7 +966,10 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
       const v = viewsForSlug(views, s.slug);
       return { ...s, viewsToday: v.today, views7d: v.d7 };
     }),
-    users,
+    users: users.map((u) => ({
+      ...u,
+      internal: isInternalUserEmail(u.email, env),
+    })),
     domains,
     views,
     timeToUrl: buildTimeToUrlScore(deployMs),
@@ -846,6 +985,7 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
       scripts: usage?.scripts ?? [],
     },
     wfp: decideWfpTrigger(snapshot.siteWorkers, priced.requestsUsd + priced.cpuUsd),
+    d1: d1Usage,
     logs: { api: CF_LOGS_API, mcp: CF_LOGS_MCP },
     probes,
     runJobs,
@@ -1017,6 +1157,22 @@ export async function handleOps(
     });
   }
 
+  if (url.pathname === "/api/status/hide" && request.method === "POST") {
+    let body: { id?: number; hidden?: boolean };
+    try {
+      body = (await request.json()) as { id?: number; hidden?: boolean };
+    } catch {
+      return json({ error: "invalid_json" }, 400);
+    }
+    const rowId = Number(body.id);
+    if (!Number.isInteger(rowId) || typeof body.hidden !== "boolean") {
+      return json({ error: "invalid_body" }, 400);
+    }
+    const ok = await setStatusCheckHidden(env, rowId, body.hidden);
+    if (!ok) return json({ error: "not_found" }, 404);
+    return json({ ok: true, id: rowId, hidden: body.hidden });
+  }
+
   const siteMatch = url.pathname.match(/^\/s\/([a-z0-9-]+)(\.json)?$/i);
   if (siteMatch) {
     if (request.method !== "GET" && request.method !== "HEAD") {
@@ -1156,7 +1312,15 @@ export async function handleOps(
   const panel = parseOpsHubPanel(url.pathname);
   if (panel) {
     const checklistDone = await loadChecklistDone(env);
-    const html = renderOpsHtml(payload, user.email, root, panel, checklistDone);
+    const html = renderOpsHtml(
+      payload,
+      user.email,
+      root,
+      panel,
+      checklistDone,
+      parseOpsUserFilter(url.searchParams.get("filter")),
+      url.searchParams.get("owner") || "",
+    );
     return new Response(request.method === "HEAD" ? null : html, {
       status: 200,
       headers: {
@@ -1320,7 +1484,7 @@ function renderNetworkDiagram(): string {
   const edge = (x: number, y: number, label: string) =>
     `<text x="${x}" y="${y}" fill="#52525b" font-size="10" font-family="ui-monospace,monospace">${escapeHtml(label)}</text>`;
   return `<figure class="net">
-  <svg class="net-svg" viewBox="0 0 760 390" role="img" aria-label="aft.page network">
+  <svg class="net-svg" viewBox="0 0 760 500" role="img" aria-label="aft.page network">
     <defs>
       <marker id="net-arr" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
         <path d="M0 0L7 3.5L0 7Z" fill="#52525b"/>
@@ -1332,35 +1496,42 @@ function renderNetworkDiagram(): string {
     ${box(30, 118, 210, 58, "mcp.aft.page", "API host → bind MCP", CF_LOGS_MCP)}
     ${box(275, 118, 210, 58, "api + *.aft.page", "engine → URL", CF_LOGS_API)}
     ${box(520, 118, 210, 58, "aft.page", "Cloudflare Pages", `${dash}/pages/view/aft-page`)}
-    ${box(55, 228, 130, 50, "D1", "sites · deploys", `${dash}/workers/d1/databases/49430d21-12f7-44dd-bd74-fb649148b34c`)}
-    ${box(215, 228, 130, 50, "R2", "file bytes", `${dash}/r2/default/buckets/aft-page-sites`)}
-    ${box(375, 228, 130, 50, "KV", "sessions · views", `${dash}/workers/kv/namespaces/3bc4889e9e974a2bbb09433c8b932870`)}
-    ${box(535, 228, 130, 50, "AE", "aft_page_metrics", `${dash}/workers/observability`)}
-    ${box(275, 322, 210, 52, "*.aft.page", "serve from R2", "/sites")}
+    ${box(30, 206, 210, 52, "GHA", "Vite · Next build", GHA_RUNS)}
+    ${box(275, 206, 210, 52, "Sandbox", "Express · Flask · nested UI", CF_LOGS_RUN)}
+    ${box(520, 206, 210, 52, "AI Gateway", "plan · sqlite ORM")}
+    ${box(55, 296, 130, 50, "D1", "sites · deploys", `${dash}/workers/d1/databases/49430d21-12f7-44dd-bd74-fb649148b34c`)}
+    ${box(215, 296, 130, 50, "R2", "file bytes", `${dash}/r2/default/buckets/aft-page-sites`)}
+    ${box(375, 296, 130, 50, "KV", "sessions · views", `${dash}/workers/kv/namespaces/3bc4889e9e974a2bbb09433c8b932870`)}
+    ${box(535, 296, 130, 50, "AE", "aft_page_metrics", `${dash}/workers/observability`)}
+    ${box(275, 392, 210, 52, "*.aft.page", "R2 or process proxy", "/sites")}
     <g fill="none" stroke="#52525b" stroke-width="1.25" marker-end="url(#net-arr)">
       <path d="M135 68V118"/>
       <path d="M380 68V118"/>
       <path d="M625 68C560 90 430 105 380 118"/>
       <path d="M240 147H275"/>
       <path d="M520 147H485"/>
-      <path d="M330 176L120 228"/>
-      <path d="M360 176L280 228"/>
-      <path d="M400 176L440 228"/>
-      <path d="M430 176L600 228"/>
-      <path d="M280 278V322"/>
+      <path d="M380 176V206"/>
+      <path d="M330 166C200 180 135 196 135 206"/>
+      <path d="M430 166C560 180 625 196 625 206"/>
+      <path d="M135 258V296"/>
+      <path d="M380 258V296"/>
+      <path d="M280 346V392"/>
     </g>
     ${edge(145, 98, "/mcp")}
     ${edge(288, 98, "POST /v1/deploy")}
     ${edge(635, 98, "/v1/repo")}
     ${edge(248, 142, "bind")}
     ${edge(500, 85, "drop · login")}
-    ${edge(200, 202, "meta")}
-    ${edge(300, 202, "bytes")}
-    ${edge(410, 202, "sess")}
-    ${edge(530, 202, "write")}
-    ${edge(268, 308, "serve")}
+    ${edge(148, 192, "build")}
+    ${edge(390, 192, "container")}
+    ${edge(640, 192, "plan")}
+    ${edge(148, 284, "meta")}
+    ${edge(300, 284, "bytes")}
+    ${edge(410, 284, "sess")}
+    ${edge(530, 284, "write")}
+    ${edge(268, 378, "serve")}
   </svg>
-  <figcaption>Product counts (D1) refresh every 8s. Cloudflare request/CPU is GraphQL adaptive analytics — minutes late, not a stream. No Worker API exposes a live usage socket.</figcaption>
+  <figcaption>Product counts (D1) refresh every 8s. Cloudflare request/CPU is GraphQL adaptive analytics — minutes late, not a stream. No Worker API exposes a live usage socket. Sandbox is try-URL process (sqlite ORM; pg needs DATABASE_URL). D1 here is platform meta, not app data.</figcaption>
 </figure>`;
 }
 
@@ -1373,7 +1544,8 @@ function renderList(title: string, lines: string[]): string {
 function renderStories(): string {
   return `${renderList("Engine", [
     "MCP, CLI, and Run share one path: detect → build (pass/fail) → URL.",
-    "Runners shipped: static (no-op), Vite (npm run build → dist/), Next, container (ephemeral Express/Flask/etc on Run).",
+    "Runners shipped: static, Vite/Next (GHA). Container Run is an ephemeral try URL (Express/Flask/Django, nested frontend+backend). Ops watches one Express fixture; public status does not.",
+    "Try URL sqlite only for Django/SQLAlchemy engine switch. pg/mysql2 fail: claim, add DATABASE_URL. D1 is Code, not Run.",
     "Drop/CLI upload of server source still refuses needs_container — paste the public GitHub on Run instead.",
     "DB / Redis / queue-only (Celery, Bull, Prisma with no web) fail not_a_site.",
     "Do not host a fake index.html for those stacks.",
@@ -1438,7 +1610,7 @@ function renderStories(): string {
     "Billing checkout, company SSO, public plugin store UI.",
     "MCP does not do secrets / invites / billing.",
     "Connector is expenses:read only.",
-    "No Docker / Cloudflare Containers — Python, Rails, Go, Rust, Express fail honestly.",
+    "Dockerfile DinD runner (SandboxDind) for Dockerfile repos. Rails / Ruby invent start shipped; Neon Postgres try later.",
     "Drop does not build. Vite/Next builds are CLI, MCP (agent-side), or GitHub Run.",
   ])}`;
 }
@@ -1554,6 +1726,26 @@ async function loadOpsSiteDetail(env: Env, slug: string, root: string) {
   };
 }
 
+function renderStatusProbes(rows: StatusCheckFailure[]): string {
+  if (rows.length === 0) {
+    return `<p class="empty">No probe failures in D1.</p>`;
+  }
+  return `<table data-status-probes><thead><tr>
+    <th>When</th><th>Id</th><th>Name</th><th>Error</th><th></th>
+  </tr></thead><tbody>${rows
+    .map((r) => {
+      const label = r.hidden ? "Unhide" : "Hide";
+      return `<tr>
+        <td>${escapeHtml(r.checkedAt)}</td>
+        <td><code>${escapeHtml(r.id)}</code></td>
+        <td>${escapeHtml(r.name)}</td>
+        <td class="why">${escapeHtml(r.error || "—")}</td>
+        <td><button type="button" data-status-hide="${r.rowId}" data-hidden="${r.hidden ? "1" : "0"}">${label}</button></td>
+      </tr>`;
+    })
+    .join("")}</tbody></table>`;
+}
+
 function renderProbeHits(rows: ProbeHitRow[]): string {
   if (rows.length === 0) {
     return `<p class="empty">No scanner probes in 7 days.</p>`;
@@ -1577,8 +1769,14 @@ function renderProbeHits(rows: ProbeHitRow[]): string {
 function renderSitesTable(
   sites: (OpsSiteListRow & { viewsToday: number; views7d: number })[],
   root: string,
+  owner = "",
 ): string {
-  if (sites.length === 0) return `<p class="empty">No sites yet.</p>`;
+  const ownerLc = owner.trim().toLowerCase();
+  if (sites.length === 0) {
+    return ownerLc
+      ? `<p class="empty">No sites for <code>${escapeHtml(ownerLc)}</code>. <a href="/sites">All sites</a></p>`
+      : `<p class="empty">No sites yet.</p>`;
+  }
   const now = Date.now();
   const rows = sites
     .map((s) => {
@@ -1604,7 +1802,9 @@ function renderSitesTable(
               gcDays <= 0 ? "GC now" : `GC ${gcDays}d`
             }</span>`
           : escapeHtml(s.lastServedAt || "—");
-      return `<tr data-claimed="${claimed}" data-active="${active}" data-served24="${served24}" data-gc="${gcWarn ? "1" : "0"}"${gcTitle}>
+      const rowOwner = (s.ownerEmail || "").toLowerCase();
+      const hide = ownerLc && rowOwner !== ownerLc ? ' style="display:none"' : "";
+      return `<tr data-claimed="${claimed}" data-active="${active}" data-served24="${served24}" data-gc="${gcWarn ? "1" : "0"}" data-owner="${escapeHtml(rowOwner)}"${gcTitle}${hide}>
         <td><a href="/s/${escapeHtml(s.slug)}"><code>${escapeHtml(s.slug)}</code></a></td>
         <td>${escapeHtml(s.ownerEmail || "unclaimed")}</td>
         <td>${escapeHtml(s.visibility)}</td>
@@ -1620,7 +1820,10 @@ function renderSitesTable(
       </tr>`;
     })
     .join("");
-  return `<div class="filters" data-site-filters>
+  const ownerNote = ownerLc
+    ? `<p class="empty">Owner <code>${escapeHtml(ownerLc)}</code>. <a href="/sites">All sites</a></p>`
+    : "";
+  return `${ownerNote}<div class="filters" data-site-filters>
       <button type="button" data-filter="all" aria-current="true">All</button>
       <button type="button" data-filter="claimed">Claimed</button>
       <button type="button" data-filter="unclaimed">Unclaimed</button>
@@ -1634,8 +1837,13 @@ function renderSitesTable(
     </tr></thead><tbody>${rows}</tbody></table>`;
 }
 
-function renderUsersTable(users: OpsUserRow[]): string {
+function renderUsersTable(
+  users: (OpsUserRow & { internal: boolean })[],
+  filter: "all" | "internal" | "external" = "external",
+): string {
   if (users.length === 0) return `<p class="empty">No users yet.</p>`;
+  const internalN = users.filter((u) => u.internal).length;
+  const externalN = users.length - internalN;
   const rows = users
     .map((u) => {
       const access = u.customDomains || "none";
@@ -1643,16 +1851,25 @@ function renderUsersTable(users: OpsUserRow[]): string {
         access === "requested"
           ? `<button type="button" data-approve-domains="${escapeHtml(u.id)}">Approve</button>`
           : "";
-      return `<tr>
+      const kind = u.internal ? "internal" : "external";
+      const hide = filter !== "all" && kind !== filter ? ' style="display:none"' : "";
+      const sitesHref = `/sites?owner=${encodeURIComponent(u.email)}`;
+      return `<tr data-kind="${kind}"${hide}>
         <td>${escapeHtml(u.email)}</td>
-        <td>${u.sites}</td>
+        <td><a href="${escapeHtml(sitesHref)}" aria-label="Sites for ${escapeHtml(u.email)}">${u.sites}</a></td>
         <td>${escapeHtml(access)}</td>
         <td>${escapeHtml(u.createdAt)}</td>
         <td>${approve}</td>
       </tr>`;
     })
     .join("");
-  return `<table data-users><thead><tr>
+  const cur = (v: string) => (filter === v ? ' aria-current="true"' : "");
+  return `<div class="filters" data-user-filters>
+      <button type="button" data-user-filter="all"${cur("all")}>All</button>
+      <button type="button" data-user-filter="internal"${cur("internal")}>Internal <span class="n">${internalN}</span></button>
+      <button type="button" data-user-filter="external"${cur("external")}>External <span class="n">${externalN}</span></button>
+    </div>
+    <table data-users><thead><tr>
     <th>Email</th><th>Sites</th><th>Domains</th><th>Joined</th><th></th>
   </tr></thead><tbody>${rows}</tbody></table>`;
 }
@@ -1952,14 +2169,18 @@ function renderRunSection(
           : j.status === "queued"
             ? `<span class="pill warn">${escapeHtml(j.phase || "queued")}</span>`
             : `<span class="pill fail">${escapeHtml(j.error || "failed")}</span>`;
-      const logLine = (j.logTail || "").trim().split("\n").pop() || "";
+      const tail = (j.logTail || "").trim();
+      const logLine = tail.split("\n").pop() || "";
+      const logCell = tail
+        ? `<details><summary>${escapeHtml(logLine.slice(0, 100) || j.id)}</summary><pre class="job-log">${escapeHtml(tail)}</pre></details>`
+        : "—";
       return `<tr>
         <td>${escapeHtml(j.finishedAt || j.createdAt)}</td>
         <td>${repo}</td>
         <td>${escapeHtml(j.kind)}</td>
         <td>${pill}</td>
         <td>${escapeHtml(j.reason || "—")}</td>
-        <td>${escapeHtml(logLine.slice(0, 120) || "—")}</td>
+        <td>${logCell}</td>
         <td>${live}</td>
         <td>${j.ms ?? "—"}</td>
         <td>${escapeHtml(j.trigger)}</td>
@@ -2068,6 +2289,8 @@ function renderOpsHtml(
   root: string,
   activePanel: OpsHubPanel = "overview",
   checklistDone: Map<string, { done: boolean; note: string }> = new Map(),
+  userFilter: "all" | "internal" | "external" = "external",
+  siteOwner = "",
 ): string {
   const health = payload.health;
   const s = payload.snapshot;
@@ -2172,6 +2395,8 @@ function renderOpsHtml(
     th { color: var(--faint); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
     td.why { color: var(--quiet); max-width: 28rem; }
     td.note { white-space: pre-wrap; max-width: 36rem; word-break: break-word; }
+    details summary { cursor: pointer; }
+    pre.job-log { white-space: pre-wrap; font-size: 0.75rem; max-height: 16rem; overflow: auto; margin: 0.4rem 0 0; font-family: var(--font-mono); }
     table a { text-decoration: underline; text-underline-offset: 2px; }
     table button { font: inherit; font-size: 0.78rem; padding: 0.2rem 0.55rem; border: 1px solid var(--line); border-radius: 0.3rem; background: transparent; color: var(--ink); cursor: pointer; }
     .day-chart { border: 1px solid var(--line); border-radius: 0.4rem; background: var(--panel); padding: 0.75rem 1rem 0.85rem; }
@@ -2276,10 +2501,11 @@ function renderOpsHtml(
         <a href="/smoke"${activePanel === "smoke" ? ' aria-current="page"' : ""}>Smoke <span class="n" data-live="smokeN">${payload.smoke?.cases.length ?? 0}</span></a>
         <a href="/run"${activePanel === "run" ? ' aria-current="page"' : ""}>Run <span class="n">${payload.runJobs.length}</span></a>
         <a href="/failures"${activePanel === "failures" ? ' aria-current="page"' : ""}>Failures <span class="n">${payload.failures.length}</span></a>
+        <a href="/status-probes"${activePanel === "status-probes" ? ' aria-current="page"' : ""}>Status <span class="n">${payload.statusProbes.length}</span></a>
         <a href="/logs"${activePanel === "logs" ? ' aria-current="page"' : ""}>Logs <span class="n">${payload.probes.length}</span></a>
         <span class="nav-g">Inventory</span>
         <a href="/sites"${activePanel === "sites" ? ' aria-current="page"' : ""}>Sites <span class="n" data-live="sites">${s.sites}</span></a>
-        <a href="/users"${activePanel === "users" ? ' aria-current="page"' : ""}>Users <span class="n" data-live="users">${s.users}</span></a>
+        <a href="/users?filter=external"${activePanel === "users" ? ' aria-current="page"' : ""}>Users <span class="n" data-live="users">${s.users}</span></a>
         <a href="/domains"${activePanel === "domains" ? ' aria-current="page"' : ""}>Domains <span class="n" data-live="domains">${s.domains}</span></a>
         <a href="/feedback"${activePanel === "feedback" ? ' aria-current="page"' : ""}>Feedback <span class="n">${payload.feedback.length}</span></a>
         <span class="nav-g">Map</span>
@@ -2373,7 +2599,7 @@ function renderOpsHtml(
           <div class="stat-grid">
             <a class="card card-link" href="/sites"><strong data-live="sites">${s.sites}</strong><span>sites</span></a>
             <a class="card card-link" href="/sites?filter=claimed"><strong data-live="claimed">${s.claimed}</strong><span>claimed</span></a>
-            <a class="card card-link" href="/users"><strong data-live="users">${s.users}</strong><span>users</span></a>
+            <a class="card card-link" href="/users?filter=external"><strong data-live="users">${s.users}</strong><span>users</span></a>
             <a class="card card-link" href="/domains"><strong data-live="domains">${s.domains}</strong><span>domains</span></a>
             <a class="card card-link" href="/sites?filter=served24h"><strong data-live="active24h">${s.active24h}</strong><span>served 24h</span></a>
             <a class="card card-link" href="/sites"><strong data-live="views7d">${payload.views.d7}</strong><span>views 7d</span></a>
@@ -2390,6 +2616,35 @@ function renderOpsHtml(
           </div>
           <h3>Cloudflare cost (MTD)</h3>
           <div class="score">
+            <div class="card">
+              <h3>D1 quota</h3>
+              <div class="nums">
+                <div><strong>${
+                  payload.d1
+                    ? `${Math.round(payload.d1.rows).toLocaleString("en-US")}`
+                    : "—"
+                }</strong><span>rows / ${Math.round(D1_MAX_ROWS / 1e6)}M cap</span></div>
+                <div><strong>${
+                  payload.d1
+                    ? payload.d1.reads.toLocaleString("en-US")
+                    : "—"
+                }</strong><span>rows read MTD</span></div>
+                <div><strong>${
+                  payload.d1
+                    ? payload.d1.writes.toLocaleString("en-US")
+                    : "—"
+                }</strong><span>rows written MTD</span></div>
+              </div>
+              <p class="cost-note">${
+                payload.d1
+                  ? `as of ${escapeHtml(payload.d1.checkedAt)}${
+                      payload.d1.rows > D1_WATCH_ROWS
+                        ? ` · ⚠ ${Math.round((payload.d1.rows / D1_MAX_ROWS) * 100)}% of D1 row cap — watch`
+                        : ""
+                    }${payload.d1.source === "kv" ? " (KV snapshot)" : ""}`
+                  : "D1 usage snapshot not loaded yet."
+              }</p>
+            </div>
             <div class="card">
               <h3>Estimated</h3>
               <div class="nums">
@@ -2445,6 +2700,11 @@ function renderOpsHtml(
           <p class="empty">Click the error code → why / files / retry. <code>needs_container</code> on Drop/upload means use Run with a public GitHub URL; <code>not_a_site</code> is an honest detect fail.</p>
           ${rows}
         </section>
+        <section class="panel${activePanel === "status-probes" ? " is-active" : ""}" id="status-probes">
+          <h2>Status probes</h2>
+          <p class="empty">Public status is API, website, static hello, MCP. Express fixture and other try-URL canaries stay here — Hide only drops a row from the public list.</p>
+          ${renderStatusProbes(payload.statusProbes)}
+        </section>
         <section class="panel${activePanel === "logs" ? " is-active" : ""}" id="logs">
           <h2>Probes</h2>
           <p class="empty">Scanner hits from owner site_logs (path + country, no IP). Last 7 days.</p>
@@ -2460,12 +2720,12 @@ function renderOpsHtml(
           <h3>Traffic</h3>
           ${renderVisitsSection(payload.visits)}
           <h3>Inventory</h3>
-          ${renderSitesTable(payload.sites, root)}
+          ${renderSitesTable(payload.sites, root, siteOwner)}
         </section>
         <section class="panel${activePanel === "users" ? " is-active" : ""}" id="users">
           <h2>Users</h2>
           <p class="empty">Requested custom domains sort first. Approve here.</p>
-          ${renderUsersTable(payload.users)}
+          ${renderUsersTable(payload.users, userFilter)}
           <h3 id="waitlist">Waitlist</h3>
           <p class="empty">Homepage email capture. Not accounts.</p>
           ${renderWaitlistTable(payload.waitlist)}
@@ -2523,7 +2783,8 @@ function renderOpsHtml(
         if (tabs.indexOf(name) < 0) name = "overview";
         document.querySelectorAll(".hub-nav a").forEach(function (a) {
           var navHref = a.getAttribute("href") || "";
-          if (navHref === pathFor(name) || (name === "overview" && (navHref === "/" || navHref === "/overview"))) {
+          var navPath = navHref.split("?")[0].split("#")[0];
+          if (navPath === pathFor(name) || (name === "overview" && (navPath === "/" || navPath === "/overview"))) {
             a.setAttribute("aria-current", "page");
           } else a.removeAttribute("aria-current");
         });
@@ -2537,8 +2798,11 @@ function renderOpsHtml(
           search = noHash.indexOf("?") >= 0 ? "?" + noHash.split("?")[1] : "";
           hash = href.indexOf("#") >= 0 ? href.slice(href.indexOf("#")) : "";
         } else if (!push) {
-          search = name === "sites" ? location.search : "";
+          search = name === "sites" || name === "users" ? location.search : "";
           hash = location.hash || "";
+        }
+        if (name === "users" && !new URLSearchParams(search).get("filter")) {
+          search = (search ? search + "&" : "?") + "filter=external";
         }
         var next = pathFor(name) + search + hash;
         var here = location.pathname + location.search + location.hash;
@@ -2546,16 +2810,21 @@ function renderOpsHtml(
           if (push) history.pushState(null, "", next);
           else history.replaceState(null, "", next);
         }
-        applySiteFilter(name === "sites" ? new URLSearchParams(search).get("filter") || "all" : "all");
+        applySiteFilter(
+          name === "sites" ? new URLSearchParams(search).get("filter") || "all" : "all",
+          name === "sites" ? new URLSearchParams(search).get("owner") || "" : "",
+        );
+        applyUserFilter(name === "users" ? new URLSearchParams(search).get("filter") || "external" : "external");
         if (hash.length > 1) {
           var el = document.getElementById(hash.slice(1));
           if (el) el.scrollIntoView({ block: "start" });
         }
       }
-      function applySiteFilter(f) {
+      function applySiteFilter(f, owner) {
         var root = document.querySelector("[data-site-filters]");
         if (!root) return;
         if (!f || !root.querySelector('[data-filter="' + f + '"]')) f = "all";
+        owner = String(owner || "").trim().toLowerCase();
         root.querySelectorAll("[data-filter]").forEach(function (x) {
           if (x.getAttribute("data-filter") === f) x.setAttribute("aria-current", "true");
           else x.removeAttribute("aria-current");
@@ -2565,14 +2834,30 @@ function renderOpsHtml(
           var active = tr.getAttribute("data-active") === "1";
           var gc = tr.getAttribute("data-gc") === "1";
           var served24 = tr.getAttribute("data-served24") === "1";
+          var rowOwner = (tr.getAttribute("data-owner") || "").toLowerCase();
+          var ownerOk = !owner || rowOwner === owner;
           var showRow =
-            f === "all" ||
+            ownerOk &&
+            (f === "all" ||
             (f === "claimed" && claimed) ||
             (f === "unclaimed" && !claimed) ||
             (f === "inactive" && !active) ||
             (f === "gc" && gc) ||
-            (f === "served24h" && served24);
+            (f === "served24h" && served24));
           tr.style.display = showRow ? "" : "none";
+        });
+      }
+      function applyUserFilter(f) {
+        var root = document.querySelector("[data-user-filters]");
+        if (!root) return;
+        if (!f || !root.querySelector('[data-user-filter="' + f + '"]')) f = "all";
+        root.querySelectorAll("[data-user-filter]").forEach(function (x) {
+          if (x.getAttribute("data-user-filter") === f) x.setAttribute("aria-current", "true");
+          else x.removeAttribute("aria-current");
+        });
+        document.querySelectorAll("[data-users] tbody tr").forEach(function (tr) {
+          var kind = tr.getAttribute("data-kind") || "external";
+          tr.style.display = f === "all" || kind === f ? "" : "none";
         });
       }
       document.querySelector(".wrap").addEventListener("click", function (e) {
@@ -2612,8 +2897,24 @@ function renderOpsHtml(
           var b = e.target.closest("[data-filter]");
           if (!b) return;
           var f = b.getAttribute("data-filter") || "all";
-          applySiteFilter(f);
-          var next = "/sites" + (f !== "all" ? "?filter=" + encodeURIComponent(f) : "");
+          var owner = new URLSearchParams(location.search).get("owner") || "";
+          applySiteFilter(f, owner);
+          var q = [];
+          if (f !== "all") q.push("filter=" + encodeURIComponent(f));
+          if (owner) q.push("owner=" + encodeURIComponent(owner));
+          var next = "/sites" + (q.length ? "?" + q.join("&") : "");
+          if (location.pathname + location.search !== next) history.pushState(null, "", next);
+        });
+      }
+
+      var userFilters = document.querySelector("[data-user-filters]");
+      if (userFilters) {
+        userFilters.addEventListener("click", function (e) {
+          var b = e.target.closest("[data-user-filter]");
+          if (!b) return;
+          var f = b.getAttribute("data-user-filter") || "all";
+          applyUserFilter(f);
+          var next = "/users" + (f !== "all" ? "?filter=" + encodeURIComponent(f) : "");
           if (location.pathname + location.search !== next) history.pushState(null, "", next);
         });
       }
@@ -2899,6 +3200,25 @@ function renderOpsHtml(
             box.checked = !done;
           }
           box.disabled = false;
+        });
+      });
+      document.querySelectorAll("[data-status-hide]").forEach(function (btn) {
+        btn.addEventListener("click", async function () {
+          var id = Number(btn.getAttribute("data-status-hide"));
+          var hidden = btn.getAttribute("data-hidden") !== "1";
+          btn.disabled = true;
+          try {
+            var r = await fetch("/api/status/hide", {
+              method: "POST",
+              credentials: "same-origin",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ id: id, hidden: hidden }),
+            });
+            if (!r.ok) throw new Error("http " + r.status);
+            location.assign("/status-probes");
+          } catch (e) {
+            btn.disabled = false;
+          }
         });
       });
       setInterval(tick, 8000);

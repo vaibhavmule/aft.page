@@ -71,8 +71,9 @@ You cannot run 5,000 Next SSR apps on plain aft-owned Workers.
 | 5,000 | $25 + 4,000 × $0.02 ≈ **$105/mo** scripts | Scripts are cheap |
 | 5,000 + traffic | + request/CPU overage | Can dominate bill before script cost |
 
-**Runnable OSS at 5K:** plan **WfP before launch**, not at deploy #400. Mixed traffic:
-most OSS tries may be static (cheap); Next fraction drives Worker count.
+**Runnable OSS at 5K:** **WfP is in play now** (Code + Next script count), not
+at deploy #400. Mixed traffic: most OSS tries may be static (cheap); Next
+fraction drives Worker count.
 
 **Double-billing today:** platform Worker proxies to `aft-u-{slug}` = 2 inbound requests
 per hit. WfP dispatch fixes that at scale.
@@ -85,7 +86,7 @@ per hit. WfP dispatch fixes that at scale.
 | --- | --- |
 | `static` | Sync `index.html` (and assets) now |
 | `static_build` | Queue GHA `run-static-build` with plan install/build/outputDirs (Vite/Vue/Angular/CRA share this) |
-| `next` | Queue GHA `run-next` (OpenNext + default config; Next 15 or 16; older versions fail honestly) |
+| `next` | Queue GHA `run-next` (OpenNext + default config; Next **15.5.24+** or **16.3.3+**; older / known-vulnerable versions fail honestly) |
 | `container` | Queue Sandbox runner → process upstream → `*.aft.page` proxy ([CONTAINER.md](./CONTAINER.md)) |
 | `not_a_site` | Refuse (queue/db only) |
 
@@ -137,8 +138,9 @@ Untrusted repos: ephemeral job only, timeout, no outbound secrets to repo, delet
 - Static / `static_build` → R2
 - Next SSR → OpenNext + `aft-u-{slug}` + proxy ([OPENNEXT-ORCHESTRATION.md](./OPENNEXT-ORCHESTRATION.md))
   - Default OpenNext config uses **static-assets incremental cache** so prerendered pages (e.g. markdown blogs using `fs` at build time) do not re-run Node filesystem on the Worker.
-  - GHA Next runner caches npm from the cloned lockfile; cold builds can still be multi-minute. Next 14 and older fail honestly.
+  - GHA Next runner caches npm from the cloned lockfile; cold builds can still be multi-minute. Next 14 and unpatched 15.x / 16.x fail honestly (floor: 15.5.24 / 16.3.3).
 - Docker / Python web → `container` runner ([CONTAINER.md](./CONTAINER.md))
+- Nested UI+API (`frontend/` + `backend/` or equivalent) → one `*.aft.page` URL
 - OpenNext middleware gap → detect + skip or AWS fallback tier
 - DB: demo/UI-only now; D1/Turso full mode later
 
@@ -149,22 +151,30 @@ works. Owned channel is Agent Plugin / MCP; viral loop is README “Run on
 AFT.” See [STRATEGY.md](./STRATEGY.md) § Mode stack.
 
 **$1,000 USD** for that amp. Spend on Run compute (clone/build/deploy jobs,
-failed builds, timeouts). Not influencers, ads, or mass README PRs. No
-launch date — post when paste-repo → URL (or honest fail) works.
+failed builds, timeouts). Not influencers, ads, or mass README PRs. Engine
+bar is met (paste-repo → URL or honest fail). Show HN / PH is unblocked.
 
 ## Monetization
 
 Virality first. Price later. Free try → claim / private / domains / DB / limits paid.
+
+## Smart deploy
+
+AFT Run **is** the deploy agent (`AftRunAgent` on the container runner). Detect
+plan is a hint; the agent decides sqlite vs Postgres URI, hosts, and patches,
+verifies in Sandbox, then install → build → start → URL. Shape:
+[CONTAINER.md](./CONTAINER.md) § Smart deploy. Wave v1 = known container stacks.
+Sub-agents later. Do not build a separate harness or chat SKU.
 
 ## Ship order
 
 1. Honest Run job path (static / Vite / Next / container) → URL or fail reason
 2. MCP `deploy_repo` + Cursor Agent Plugin marketplace listing (owned channel)
 3. `/run/` paste UI + 30s demo clip
-4. Show HN → PH ($1k builds) when #1 is stranger-proof
+4. Show HN → PH ($1k builds) — unblocked
 5. Targeted “Run on AFT” README buttons (not mass PRs)
 6. Extension GitHub + `@aft` bot
-7. WfP before viral Next fraction hits the 500-script wall
+7. WfP — in play (Code + Next script cap), not wait-until-400
 8. Remix/clone after try volume exists
 
 ## Related

@@ -11,7 +11,7 @@ import {
 } from "./db";
 import type { AuditRunResult } from "./audit";
 import type { SmokeRunResult } from "./smoke";
-import type { StatusSnapshot } from "./status";
+import { filterPublicSnapshot, type StatusSnapshot } from "./status";
 
 const KV_PREFIX = "ops:alert:";
 export const OPS_ALERT_DEBOUNCE_S = 30 * 60;
@@ -176,9 +176,10 @@ export async function alertIfStatusMajor(
   env: Env,
   snapshot: StatusSnapshot,
 ): Promise<boolean> {
-  if (snapshot.overall !== "major_outage") return false;
+  const publicSnap = filterPublicSnapshot(snapshot);
+  if (publicSnap.overall !== "major_outage") return false;
   const root = env.ROOT_DOMAIN || "aft.page";
-  const bad = snapshot.components
+  const bad = publicSnap.components
     .filter((c) => !c.ok)
     .map((c) => `${c.id} ${c.httpStatus ?? "—"} ${c.error || ""}`.trim())
     .join("\n");
@@ -188,7 +189,7 @@ export async function alertIfStatusMajor(
     subject: `[aft.page] status major_outage`,
     text: [
       snapshot.checkedAt,
-      bad || snapshot.overall,
+      bad || publicSnap.overall,
       "",
       `https://status.${root}/`,
     ].join("\n"),

@@ -27,6 +27,17 @@ const SLUG_ADJECTIVES = [
   "clear",
 ] as const;
 
+/** Folder names that show up as package.json "name" in split apps. */
+const WEAK_SLUG_HINTS = new Set([
+  "frontend",
+  "backend",
+  "server",
+  "client",
+  "web",
+  "app",
+  "src",
+]);
+
 export function isValidSlug(slug: string): boolean {
   return /^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$/.test(slug);
 }
@@ -45,6 +56,8 @@ export function slugFromHint(raw: string): string | undefined {
     .replace(/-+$/g, "");
   if (!slug || slug.length < 2) return undefined;
   if (RESERVED_SLUGS.has(slug)) return undefined;
+  // Nested package.json names like "backend" are folders, not site names.
+  if (WEAK_SLUG_HINTS.has(slug)) return undefined;
   if (!isValidSlug(slug)) return undefined;
   return slug;
 }

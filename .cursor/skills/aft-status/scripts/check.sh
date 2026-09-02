@@ -69,5 +69,9 @@ for f in fails[:5]:
     print("  %s %s %s" % (f.get("checkedAt"), f.get("name"), f.get("error")))
 '
 
-echo
-echo "ops.aft.page needs founder login — open it or paste /api.json. Do not treat 302→login as down."
+hr "ops D1 (wrangler --remote)"
+echo "ops.aft.page HTML 302→login is the cookie gate. Scoreboard is D1, not that curl."
+if ! python3 "$here/ops-d1.py" "$ROOT/aft.page/apps/api"; then
+  echo "D1 query failed (wrangler login?). Do not guess T2U / users. Paste ops /api.json or fix wrangler."
+fi
+echo "CF cost is not in D1."

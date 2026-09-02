@@ -19,6 +19,7 @@ import {
   setFailureHasPayload,
   clearSiteEditTokenHash,
   setSiteEditTokenHash,
+  setSiteExpiresAt,
   setSiteRuntime,
   upsertCapabilityRequest,
   upsertSiteRow,
@@ -48,6 +49,25 @@ import { sourceTreeRefuse } from "./engine-kind";
 export { sanitizeHtmlDocument } from "./upload";
 
 type UploadFile = { path: string; bytes: ArrayBuffer; contentType: string };
+
+/** Anon quick-view self-destruct. Bounded so it can't be used for abuse. */
+export const EXPIRY_MAX_SEC = 7 * 24 * 60 * 60;
+export const EXPIRY_DEFAULT_SEC = 60 * 60;
+
+/** Parse `?expires=` (e.g. "1h", "24h", "90s", "3600"). null = no expiry. */
+export function parseExpires(raw: string | null): { sec: number } | null {
+  if (!raw) return null;
+  const s = raw.trim().toLowerCase();
+  if (!s) return null;
+  const m = s.match(/^(\d+)(s|m|h|d)?$/);
+  if (!m) return null;
+  const n = Number.parseInt(m[1]!, 10);
+  const unit = m[2] || "s";
+  const mult = unit === "d" ? 86400 : unit === "h" ? 3600 : unit === "m" ? 60 : 1;
+  const sec = n * mult;
+  if (!Number.isFinite(sec) || sec <= 0 || sec > EXPIRY_MAX_SEC) return null;
+  return { sec };
+}
 
 export function deployRequestId(request: Request): string {
   return request.headers.get("cf-ray") || `aft_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
@@ -278,6 +298,26 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
     const sessionUser = await resolveSessionUser(env, request);
     const { manifest, runtime, unlimited, maxFiles, maxFile, maxTotal } =
       limitsForFiles(env, files, querySlug, [sessionUser?.email]);
+
+    const expiresParam = url.searchParams.get("expires");
+    if (expiresParam) {
+      if (sessionUser) {
+        return done(deployJson(request, { error: "expires_claimed", hint: "Expiry is only for anonymous (unclaimed) quick-view deploys." }, 400), {
+          error: "expires_claimed",
+        });
+      }
+      const parsed = parseExpires(expiresParam);
+      if (!parsed) {
+        return done(
+          deployJson(
+            request,
+            { error: "invalid_expires", hint: "Use e.g. ?expires=1h (max 7d)." },
+            400,
+          ),
+          { error: "invalid_expires" },
+        );
+      }
+    }
     // Query wins; aft.json slug/name next; else <title>/<h1> from index.html.
     const preferred =
       querySlug ||
@@ -359,6 +399,9 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
 
     const upstreamUrl = manifest?.upstream ?? null;
     const mainModule = manifest?.main ?? null;
+    const expiresAt = expiresParam
+      ? new Date(Date.now() + (parseExpires(expiresParam)?.sec ?? EXPIRY_DEFAULT_SEC) * 1000).toISOString()
+      : null;
     const meta: SiteMeta = {
       deployId,
       createdAt,
@@ -367,11 +410,13 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
       upstreamUrl,
       mainModule,
       badge: manifest?.badge !== false,
+      expiresAt,
     };
     await env.SITES.put(`site:${slug}`, JSON.stringify(meta));
 
     const editToken = sessionUser ? "" : randomToken("aft_edit_");
     await upsertSiteRow(env, slug, deployId, sessionUser?.id ?? null);
+    if (expiresAt) await setSiteExpiresAt(env, slug, expiresAt);
     await setSiteRuntime(env, slug, {
       runtime,
       upstreamUrl,
@@ -409,12 +454,20 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
         files: files.length,
         bytes: total,
         runtime,
+        ...(expiresAt
+          ? {
+              expiresAt,
+              notice: `This quick-view link expires ${new Date(expiresAt).toISOString()} and will then 404.`,
+            }
+          : {}),
         ...(editToken
           ? {
               editToken,
               preview: liveSiteUrl(slug, root, { token: editToken }),
               claimUrl: claimSiteUrl(slug, root, editToken),
-              notice: ANON_IDLE_NOTICE,
+              ...(expiresAt
+                ? {}
+                : { notice: ANON_IDLE_NOTICE }),
             }
           : { preview: liveUrl }),
         owned,

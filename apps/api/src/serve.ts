@@ -10,6 +10,7 @@ import {
   deployExists,
   getLatestRunJobBySlug,
   getSiteRow,
+  markSiteExpired,
   touchLastServed,
   type RunJobPhase,
 } from "./db";
@@ -21,6 +22,11 @@ import { isJunkPath } from "./junk-path";
 import { queueOwnerLog } from "./site-logs";
 import { renderSiteOgImage, siteOgImagePath } from "./og-image";
 import { proxyUpstream } from "./runtimes/proxy";
+import {
+  isEphemeralContainerOrigin,
+  rebindContainerOrigin,
+  tunnelOriginDead,
+} from "./container-origin";
 import { canAccessSite, privateDeniedHtml } from "./sharing";
 import { getObject } from "./storage";
 import { deployPreviewHost, isSmokeSlug, liveSiteHost } from "./site-url";
@@ -158,9 +164,39 @@ export async function serveSite(
     runtime?: string;
     upstreamUrl?: string | null;
     badge?: boolean;
+    expiresAt?: string | null;
   };
 
   const siteRow = await getSiteRow(env, slug);
+
+  // Anon quick-view self-destruct. Past the deadline (or swept): stop serving,
+  // keep the D1 row for audit, free the slug for reuse.
+  const expiresAt = meta.expiresAt ?? siteRow?.expiresAt ?? null;
+  const expired =
+    siteRow?.expired === true ||
+    (expiresAt != null && Date.parse(expiresAt) <= Date.now());
+  if (expired) {
+    if (!siteRow?.expired) {
+      await markSiteExpired(env, slug).catch(() => null);
+      await env.SITES.delete(`site:${slug}`).catch(() => null);
+    }
+    noteServe(env, request, slug, {
+      httpStatus: 404,
+      path: servePath(pathname),
+      persist: false,
+    });
+    const headers = new Headers({
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
+      "x-aft-slug": slug,
+      "x-aft-expired": "1",
+      "x-aft-expires-at": expiresAt || "",
+    });
+    for (const [name, value] of corsHeaders(null, false)) {
+      headers.set(name, value);
+    }
+    return new Response(siteExpiredHtml(slug, root), { status: 404, headers });
+  }
 
   if (pinDeployId && !(await deployExists(env, slug, pinDeployId))) {
     noteServe(env, request, slug, {
@@ -222,7 +258,32 @@ export async function serveSite(
 
   if (!pinDeployId && upstreamUrl && (runtime === "worker" || runtime === "next")) {
     void touchLastServed(env, slug);
-    const res = await proxyUpstream(request, upstreamUrl, access.user);
+    let res: Response;
+    if (isEphemeralContainerOrigin(upstreamUrl)) {
+      const replay = request.clone();
+      try {
+        res = await proxyUpstream(request, upstreamUrl, access.user);
+      } catch {
+        res = new Response("origin unreachable", { status: 530 });
+      }
+      if (tunnelOriginDead(res.status)) {
+        const next = await rebindContainerOrigin(env, slug);
+        if (next) {
+          await res.body?.cancel().catch(() => null);
+          res = await proxyUpstream(replay, next, access.user);
+          // ponytail: Quick Tunnel DNS can 530 for ~15–20s after mint. This loop waits up to 12s on the same hostname; first GET can still 530, the next GET on the stable *.aft.page URL recovers. Upgrade: probe origin before swapping KV.
+          if (res.status === 530) {
+            const deadline = Date.now() + 12_000;
+            while (res.status === 530 && Date.now() < deadline) {
+              await scheduler.wait(2000);
+              res = await proxyUpstream(request.clone(), next, access.user);
+            }
+          }
+        }
+      }
+    } else {
+      res = await proxyUpstream(request, upstreamUrl, access.user);
+    }
     const path = servePath(pathname);
     noteServe(env, request, slug, {
       httpStatus: res.status,
@@ -235,7 +296,13 @@ export async function serveSite(
         httpStatus: res.status,
       });
     }
-    return res;
+    const headers = new Headers(res.headers);
+    headers.set("x-aft-slug", slug);
+    return new Response(res.body, {
+      status: res.status,
+      statusText: res.statusText,
+      headers,
+    });
   }
 
   if (pathname.startsWith("/api/")) {
@@ -780,6 +847,31 @@ p{color:var(--quiet);margin:0 0 1rem}p strong{color:var(--ink)}
   <h1>This site is paused</h1>
   <p><strong>${slug}.${root}</strong> has been deactivated by its owner. Its files are still safe — it just isn’t serving right now.</p>
   <p class="hint">Are you the owner? Reactivate it from your <a href="https://${root}/projects">projects</a>.</p>
+</main>
+</body></html>`;
+}
+
+/** Anon quick-view link that self-destructed. Files are gone; D1 row kept. */
+export function siteExpiredHtml(slug: string, root: string): string {
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="robots" content="noindex"/><meta name="theme-color" content="${BRAND.void}"/><title>Link expired — aft.page</title>
+${BRAND_FONT_LINKS}
+<style>
+${BRAND_CSS_VARS}
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 var(--font-sans);color:var(--ink);background:var(--void);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.25rem;-webkit-font-smoothing:antialiased}
+main{width:min(24rem,100%);text-align:center}
+${BRAND_WORDMARK_CSS}
+.brand{display:inline-block;margin:0 0 1.5rem;font-size:1.15rem}
+.badge{display:inline-block;margin:0 0 1rem;padding:.2rem .6rem;border:1px solid var(--line-bright);border-radius:999px;font-size:.72rem;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--quiet)}
+h1{font-size:1.25rem;margin:0 0 .5rem;font-weight:600}
+p{color:var(--quiet);margin:0 0 1rem}p strong{color:var(--ink)}
+.hint{margin-top:1.25rem;font-size:.85rem;color:var(--faint)}.hint a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+</style></head><body>
+<main>
+  <a class="brand" href="https://${root}/">aft<span>.</span>page</a>
+  <div class="badge">Expired</div>
+  <h1>This link has expired</h1>
+  <p><strong>${slug}.${root}</strong> was a temporary quick-view link and is no longer available.</p>
+  <p class="hint">Make something new on <a href="https://${root}/">aft.page</a>.</p>
 </main>
 </body></html>`;
 }

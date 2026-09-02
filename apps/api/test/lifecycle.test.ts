@@ -275,3 +275,19 @@ describe("projects", () => {
     expect(row?.ownerEmail).toBe("owner-shared@example.com");
   });
 });
+
+describe("site rerun", () => {
+  it("404s when the slug was not a GitHub Run", async () => {
+    const { slug } = await deployPaste("<h1>static</h1>", "rerun-static");
+    const cookie = await ownSite(slug, "rerun@example.com");
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/sites/${slug}/rerun`, {
+        method: "POST",
+        headers: { cookie, origin: "https://aft.page" },
+      }),
+    );
+    expect(res.status).toBe(404);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toBe("no_run_job");
+  });
+});

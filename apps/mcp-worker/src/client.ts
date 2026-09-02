@@ -16,6 +16,7 @@ export type DeployResult = {
   claimUrl?: string;
   owned?: boolean;
   notice?: string;
+  expiresAt?: string;
 };
 
 export type DeployError = {
@@ -168,12 +169,15 @@ export async function deployFiles(
   api: ApiTransport,
   slug?: string,
   editToken?: string,
+  expires?: string,
 ): Promise<DeployResult> {
   slug = slug || slugFromFiles(files);
   const method = deployMethod(slug, editToken);
-  const url = slug
-    ? `${api.apiBase}/v1/deploy?slug=${encodeURIComponent(slug)}`
-    : `${api.apiBase}/v1/deploy`;
+  const qs = new URLSearchParams();
+  if (slug) qs.set("slug", slug);
+  if (expires) qs.set("expires", expires);
+  const q = qs.toString();
+  const url = `${api.apiBase}/v1/deploy${q ? `?${q}` : ""}`;
   const res = await api.fetch(url, {
     method,
     headers: deployHeaders("application/json", editToken),

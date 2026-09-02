@@ -104,15 +104,15 @@
                 "name": "Is aft.page free?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Yes — free to go live during beta, including claim, private invite, and per-site secrets. Personal is 30 days free, then $19/month. Team and Enterprise are one conversation at hello@aft.page. Billing has not started; waitlist members hear before anything is charged."
+                  "text": "Going live is free during beta, and claiming your URL to keep it is free too. Private apps, invite-by-email sharing, and per-site secrets are part of Personal ($19/mo after 30 days free). Team and Enterprise are one conversation at hello@aft.page. Billing has not started; waitlist members hear before anything is charged."
                 }
               },
               {
                 "@type": "Question",
-                "name": "How is aft.page different from a typical cloud host?",
+                "name": "How is aft.page different from Cloudflare Pages, Netlify, or Vercel?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Those are built for Big Software: repositories, builds, and cloud accounts. aft is the publishing and permission layer for small software that one person or a small team uses — an instant URL, invite-by-email sharing, clear ownership, and secrets, without the ceremony."
+                  "text": "Deploy a static site: aft.page, Cloudflare Pages, Netlify, or Vercel. aft.page — no account, drop dist/ or MCP, live HTTPS URL in seconds. Cloudflare Pages, Netlify, and Vercel — better when you already have a git repo, CI, preview PRs, or a big production setup."
                 }
               },
               {
@@ -194,21 +194,15 @@
                 <a href="/with/claude/">Claude Code</a>
                 <a href="/with/codex/">Codex</a>
                 <a href="/with/cursor/">Cursor</a>
-                <a href="/with/openclaw/">OpenClaw</a>
-                <a href="/with/replit/">Replit</a>
-                <a href="/with/lovable/">Lovable</a>
-                <a href="/with/vercel/">Vercel</a>
-                <a href="/with/windsurf/">Windsurf</a>
-                <a href="/with/hermes/">Hermes</a>
-                <a href="/with/kilo/">Kilo</a>
-                <a href="/with/aws/">AWS</a>
                 <a href="/with/chatgpt/">ChatGPT</a>
+                <a href="/mcp">MCP</a>
                 <a href="/with/api/">API</a>
+                <a href="/docs">All integrations</a>
             </div>
           </div>
         </div>
         <a href="/docs">Docs</a>
-        <a href="#compare">Compare</a>
+        <a href="/compare">Compare</a>
         <a href="#pricing">Pricing</a>
         <a href="/login" data-aft-auth="login">Log in</a>
         <a class="topnav-cta" href="#hero-drop">Deploy an app</a>
@@ -274,7 +268,7 @@
             </div>
           </details>
           <a href="/docs">Docs</a>
-          <a href="#compare">Compare</a>
+          <a href="/compare">Compare</a>
           <a href="#pricing">Pricing</a>
         </nav>
 
@@ -398,7 +392,9 @@
             >
               <pre class="hero-demo-code"><code id="demo-cli-code"><span class="hero-demo-ps">%</span> curl -fsSL <a href="https://aft.page/install">https://aft.page/install</a> | sh
 <span class="hero-demo-ps">%</span> aft deploy
-# → <a class="hero-demo-liveurl" href="https://hello.aft.page">hello.aft.page</a></code></pre>
+<span class="hero-demo-out">✓</span> 3 files · 2.1s
+# → <a class="hero-demo-liveurl" href="https://hello.aft.page">hello.aft.page</a>
+<span class="hero-demo-expiry">quick view — this link expires in 1h</span></code></pre>
             </div>
 
             <div
@@ -516,18 +512,10 @@
               data-demo-panel="mcp"
               hidden
             >
-              <pre class="hero-demo-code"><code id="demo-mcp-code"><span class="hero-demo-ps">%</span> # Agents today: MCP or CLI
-<span class="hero-demo-ps">%</span> <a href="https://mcp.aft.page/mcp">https://mcp.aft.page/mcp</a>
-<span class="hero-demo-ps">%</span> <a href="https://aft.page/install">curl -fsSL https://aft.page/install | sh</a> &amp;&amp; aft deploy
-
-deploy({
-  html: "&lt;!DOCTYPE html&gt;&lt;title&gt;Hello&lt;/title&gt;&lt;h1&gt;Live from MCP&lt;/h1&gt;",
-  preferred_slug: "hello"
-})
-# → <a class="hero-demo-liveurl" href="https://hello.aft.page">hello.aft.page</a>
-
-<span class="hero-demo-ps">%</span> # Humans: Drop or CLI · Agents: MCP, plugin, CLI
-<span class="hero-demo-ps">%</span> <a href="https://aft.page/drop/">aft.page/drop</a> · <a href="https://aft.page/run/">aft.page/run</a> · <a href="https://aft.page/plugins">aft.page/plugins</a></code></pre>
+              <pre class="hero-demo-code"><code id="demo-mcp-code"><span class="hero-demo-ps">%</span> # Any MCP client — Claude, Cursor, Codex, ChatGPT
+<span class="hero-demo-ps">%</span> mcp add aft -- <a href="https://mcp.aft.page/mcp">https://mcp.aft.page/mcp</a>
+<span class="hero-demo-ps">%</span> # then ask your agent: "deploy this and give me the link"
+# → <a class="hero-demo-liveurl" href="https://hello.aft.page">hello.aft.page</a></code></pre>
             </div>
 
             <div
@@ -668,10 +656,10 @@ deploy({
       <section class="paths" id="start" aria-labelledby="start-title">
         <div class="paths-head">
           <p class="section-tag">Get started</p>
-          <h2 class="section-title" id="start-title">Ways in.</h2>
+          <h2 class="section-title" id="start-title">Ways in</h2>
           <p class="section-lede">
-            Agents: MCP, plugin, CLI, or cURL. Humans: Drop, Run (GitHub), or CLI.
-            Same live URL.
+            Agents: MCP, plugin, CLI. Humans: Drop, Run (GitHub), Code. Same
+            live URL.
           </p>
         </div>
         <ol class="path-row">
@@ -728,15 +716,15 @@ deploy({
             </a>
           </li>
           <li>
-            <a href="#hero-curl">
+            <a href="/code/">
               <span class="path-num">005</span>
               <svg class="path-ico" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4 12h13" />
-                <path d="M13 7l5 5-5 5" />
+                <rect x="5" y="7" width="14" height="10" />
+                <path d="M8 12h5" />
               </svg>
-              <h3>cURL</h3>
-              <p class="path-cmd">POST /v1/deploy</p>
-              <p>HTML in. Live URL back.</p>
+              <h3>Code</h3>
+              <p class="path-cmd">aft.page/code</p>
+              <p>Prompt → static site → live URL.</p>
             </a>
           </li>
           <li>
@@ -752,6 +740,9 @@ deploy({
             </a>
           </li>
         </ol>
+        <p class="paths-more">
+          Scripting? <a href="#hero-curl">cURL → POST /v1/deploy</a>.
+        </p>
       </section>
 
       <section class="bands" id="product" aria-label="Product">
@@ -830,16 +821,6 @@ deploy({
         </article>
       </section>
 
-      <section class="reprise" aria-label="aft.page">
-        <div class="reprise-giant-wrap" aria-hidden="true">
-          <p class="reprise-giant">aft<span class="sq"></span></p>
-        </div>
-        <p class="reprise-line">
-          <span>agent</span><span class="flow-arrow">→</span><span>deploy</span><span class="flow-arrow">→</span><span class="flow-live">live URL</span>
-          <span class="reprise-sep">·</span>no account, no build step, no cloud console.
-        </p>
-      </section>
-
       <section class="compare" id="compare" aria-labelledby="compare-title">
         <p class="section-tag">Comparison</p>
         <h2 class="section-title" id="compare-title">
@@ -886,6 +867,8 @@ deploy({
           </div>
         </div>
         <p class="compare-more">
+          Deploy a static site:
+          <a href="/compare">aft.page, Cloudflare Pages, Netlify, or Vercel</a>.
           Longer write-ups:
           <a href="/vs/vercel/">typical app host</a>
           ·
@@ -921,7 +904,7 @@ deploy({
             <ul class="price-list">
               <li>A public link you can share</li>
               <li>Drop files or deploy from your agent</li>
-              <li>Claim, invite, private, secrets</li>
+              <li>Claim your URL to keep it</li>
               <li>500 files · 25 MB each · 100 MB total</li>
             </ul>
           </article>
@@ -995,20 +978,22 @@ deploy({
           <details class="faq-item">
             <summary>Is aft.page free?</summary>
             <p>
-              Yes — free to go live during beta, including claim, private
-              invite, and per-site secrets. Personal is 30 days free, then
-              $19/month. Team and Enterprise are one conversation. We will
-              email the waitlist before charging anyone.
+              Yes — going live is free during beta, and claiming your URL to
+              keep it is free too. Private apps, invite-by-email sharing, and
+              per-site secrets are part of Personal ($19/mo after 30 days free).
+              Team and Enterprise are one conversation. We will email the
+              waitlist before charging anyone.
             </p>
           </details>
           <details class="faq-item">
-            <summary>How is aft.page different from a typical cloud host?</summary>
+            <summary>How is aft.page different from Cloudflare Pages, Netlify, or Vercel?</summary>
             <p>
-              Those are built for Big Software: repositories, builds, and cloud
-              accounts. aft is the publishing and permission layer for small
-              software that one person or a small team uses — an instant URL,
-              invite-by-email sharing, clear ownership, and secrets, without the
-              ceremony.
+              Deploy a static site: aft.page, Cloudflare Pages, Netlify, or
+              Vercel. aft.page — no account, drop dist/ or MCP, live HTTPS URL
+              in seconds. Cloudflare Pages, Netlify, and Vercel — better when
+              you already have a git repo, CI, preview PRs, or a big production
+              setup.
+              <a href="/compare">Full comparison</a>.
             </p>
           </details>
           <details class="faq-item">
@@ -1169,7 +1154,7 @@ deploy({
     <script src="./agents-nav.js" defer></script>
     <script src="./auth-nav.js" defer></script>
     <script src="/summarize.js?v=20260808-mobile4" defer></script>
-    <script src="/footer.js?v=20260823-pricing-talk" defer></script>
+    <script src="/footer.js?v=20260829-code" defer></script>
     <script src="/feedback.js?v=20260809-pill" defer></script>
   </body>
 </html>

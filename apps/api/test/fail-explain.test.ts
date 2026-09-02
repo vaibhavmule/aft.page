@@ -28,6 +28,12 @@ describe("explainDeployFailure", () => {
     expect(ex.why.toLowerCase()).toMatch(/database|queue|cache/);
   });
 
+  it("tells split apps to pick or run the pair", () => {
+    const ex = explainDeployFailure({ error: "pick_root" });
+    expect(ex.why.toLowerCase()).toMatch(/more than one app/);
+    expect(ex.fix.toLowerCase()).toMatch(/claim/);
+  });
+
   it("surfaces internal hint", () => {
     const ex = explainDeployFailure({
       error: "internal",

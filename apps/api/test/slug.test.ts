@@ -70,6 +70,12 @@ describe("slug allocation", () => {
     ).toBe("include-xi-intelligence-that-sells-systems-that");
   });
 
+  it("ignores generic nested package names", () => {
+    expect(slugFromHint("backend")).toBeUndefined();
+    expect(slugFromHint("frontend")).toBeUndefined();
+    expect(slugFromHint("Odoo_HRMS")).toBe("odoo-hrms");
+  });
+
   it("uses a long marketing title on deploy instead of a random slug", async () => {
     const html =
       '<!doctype html><html><head><title>Include XI — Intelligence that sells. Systems that scale.</title></head><body><h1>Hi</h1></body></html>';
@@ -93,7 +99,7 @@ describe("slug allocation", () => {
   });
 
   it("rejects reserved names instead of hijacking them", async () => {
-    for (const reserved of ["www", "api", "admin", "ai", "cron", "cname"]) {
+    for (const reserved of ["www", "api", "admin", "ai", "cron", "cname", "code"]) {
       const res = await call(pasteHtml(page("nope"), reserved));
       expect(res.status).toBe(400);
       expect(await res.json()).toMatchObject({ error: "reserved_slug" });

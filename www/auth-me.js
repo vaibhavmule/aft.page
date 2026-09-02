@@ -6,9 +6,19 @@
   const API = "https://api.aft.page";
   const CACHE_KEY = "aft.me";
   const CACHE_TTL_MS = 5 * 60 * 1000;
+  const LOCAL_USER = { id: "local", email: "dev@localhost" };
 
   /** @type {Promise<{ id: string, email: string } | null> | null} */
   let inflight = null;
+
+  function isLocalDev() {
+    try {
+      const h = global.location.hostname;
+      return h === "localhost" || h === "127.0.0.1";
+    } catch {
+      return false;
+    }
+  }
 
   function readCache() {
     try {
@@ -53,6 +63,7 @@
   }
 
   function fetchMe() {
+    if (isLocalDev()) return Promise.resolve(LOCAL_USER);
     if (inflight) return inflight;
     inflight = (async () => {
       try {
@@ -86,6 +97,7 @@
    * @returns {Promise<{ id: string, email: string } | null>}
    */
   function getMe(opts) {
+    if (isLocalDev()) return Promise.resolve(LOCAL_USER);
     const force = Boolean(opts && opts.force);
     if (!force) {
       const cached = readCache();
@@ -98,6 +110,7 @@
   }
 
   function peekMe() {
+    if (isLocalDev()) return LOCAL_USER;
     return readCache()?.user ?? null;
   }
 
@@ -112,6 +125,7 @@
 
   /** Redirect to login. Optional `next` path (defaults to current URL). */
   function goLogin(next) {
+    if (isLocalDev()) return;
     const dest = typeof next === "string" && next ? next : loginNext();
     global.location.replace(`/login?next=${encodeURIComponent(dest)}`);
   }
@@ -121,6 +135,7 @@
    * @param {{ next?: string, timeoutMs?: number }} [opts]
    */
   async function requireLogin(opts = {}) {
+    if (isLocalDev()) return LOCAL_USER;
     const next = opts.next;
     const timeoutMs = opts.timeoutMs ?? 8000;
     const cached = peekMe();
@@ -144,5 +159,13 @@
     }
   }
 
-  global.aftAuth = { getMe, peekMe, clearMe, fetchMe, goLogin, requireLogin };
+  global.aftAuth = {
+    getMe,
+    peekMe,
+    clearMe,
+    fetchMe,
+    goLogin,
+    requireLogin,
+    isLocalDev,
+  };
 })(typeof window !== "undefined" ? window : globalThis);

@@ -14,6 +14,7 @@ import {
   listSitesByMember,
   countSitesByOwner,
   approveCapabilities,
+  getLatestRunJobBySlug,
   type CapabilityDoc,
 } from "./db";
 import { loadViewRollup, viewsForSlug } from "./metrics";
@@ -32,6 +33,7 @@ import {
 } from "./storage";
 import { corsHeaders, json, privateJson } from "./http";
 import { attachDeployPreviewUrls, liveSiteUrl } from "./site-url";
+import { executeRepoJob } from "./repo";
 
 const DEFAULT_PAGE_SIZE = 20;
 const SOURCE_PREVIEW_MAX = 256 * 1024;
@@ -104,6 +106,11 @@ export async function handleLifecycleRoute(
   }
   if (secretMatch && request.method === "DELETE") {
     return deleteSecret(request, env, secretMatch[1]!, secretMatch[2]!, origin);
+  }
+
+  const rerunMatch = url.pathname.match(/^\/v1\/sites\/([a-z0-9-]+)\/rerun$/);
+  if (rerunMatch && request.method === "POST") {
+    return rerunSite(request, env, rerunMatch[1]!, origin);
   }
 
   return null;
@@ -643,4 +650,57 @@ async function deleteSecret(
     200,
     extra,
   );
+}
+
+async function rerunSite(
+  request: Request,
+  env: Env,
+  slug: string,
+  origin: string | null,
+): Promise<Response> {
+  const extra = Object.fromEntries(corsHeaders(origin, true));
+  const auth = await authorizeDeployUpdate(env, request, slug);
+  if (!auth.ok) return json({ error: auth.error }, auth.status, extra);
+  const prior = await getLatestRunJobBySlug(env, slug);
+  if (!prior?.url) {
+    return json(
+      {
+        error: "no_run_job",
+        reason: "This site was not created from a GitHub Run.",
+      },
+      404,
+      extra,
+    );
+  }
+  const job = await executeRepoJob(env, prior.url, {
+    trigger: "rerun",
+    slug,
+    request,
+  });
+  if (job.status === "queued") {
+    return json(
+      {
+        ok: true,
+        jobId: job.id,
+        status: "queued",
+        slug: job.slug,
+        owner: job.owner,
+        repo: job.repo,
+      },
+      202,
+      extra,
+    );
+  }
+  if (job.status !== "live") {
+    return json(
+      {
+        error: job.error,
+        reason: job.reason,
+        jobId: job.id,
+      },
+      job.httpStatus && job.httpStatus >= 400 ? job.httpStatus : 422,
+      extra,
+    );
+  }
+  return json({ ok: true, slug: job.slug, url: job.siteUrl, jobId: job.id }, 200, extra);
 }

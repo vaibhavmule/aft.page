@@ -1,12 +1,12 @@
 ---
-description: Founder mode — no freeze, distribution built in, Run launch budget
+description: Founder mode — distribution (Run), no freeze, Run launch budget
 alwaysApply: true
 ---
 
-# Development mode (founder rules)
+# Distribution mode (founder rules)
 
-1. **No freeze. No parking as a reason not to build.** We are in development mode. Do not block work with freeze, park, wait-until-proof, or calendar launch dates. Sequence is still Drop → Deploy → Run (distribution) → Code — that is capacity, not a freeze.
+1. **The job is Run as the distribution door, plus Code and WfP in play.** Paste repo → URL still ships. Do not detour into new SKUs, IaaS, or wait-until-proof. No freeze. No parking as a reason not to ship Run or Code. No calendar launch dates. Sequence is still Drop → Deploy → Run → Code — current capacity is Run + Plugin listing + Code + WfP.
 
-2. **$1,000 USD** for Show HN + Product Hunt of **AFT Run**. Spend on Run compute/builds (jobs, failed builds, timeouts). Not influencers, ads, or README spam. No launch date — ship when paste-repo → URL works.
+2. **Distribution stack** (do not reorder casually): Engine (Run honest) → Owned channel (Agent Plugin / MCP / Cursor Marketplace) → Cite path (AEO) → Viral ("Run on AFT" README) → Amp (Show HN → PH + global social jabs). Jab ~15 majors (IG, LI, X, Shorts, TikTok, FB, Reddit + CN/KR/JP/VN/RU locals) — throttle losers, never delete IG/LI. **$1,000 USD** amp spend goes to Run builds, not paid social. Show HN is unblocked (paste-repo → URL or honest fail already works). Board: `docs/gtm.txt` § Channel jabs.
 
-Distribution is a product door (**Run**), not a later campaign. Canonical: `docs/STRATEGY.md` § Mode, `docs/RUN.md` § Launch budget.
+Distribution is a product door (**Run**), not a later campaign. Canonical: `docs/STRATEGY.md` § Mode, `docs/RUN.md` § Launch budget, `docs/gtm.txt`.

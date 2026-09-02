@@ -9,6 +9,7 @@ import {
   estimateWorkersPaid,
   fillDayWindow,
   formatT2u,
+  isInternalUserEmail,
   isOpsEmail,
   parseOpsEmails,
   parseOpsHubPanel,
@@ -62,6 +63,7 @@ describe("ops hub paths", () => {
     expect(parseOpsHubPanel("/visits")).toBe(null);
     expect(parseOpsHubPanel("/distribute")).toBe("distribute");
     expect(parseOpsHubPanel("/run")).toBe("run");
+    expect(parseOpsHubPanel("/status-probes")).toBe("status-probes");
     expect(parseOpsHubPanel("/nope")).toBe(null);
   });
 });
@@ -244,6 +246,13 @@ describe("ops allowlist", () => {
     ]);
     expect(isOpsEmail(env, "ops@example.com")).toBe(true);
     expect(isOpsEmail(env, "stranger@example.com")).toBe(false);
+    expect(isInternalUserEmail("ops@example.com", env)).toBe(true);
+    expect(isInternalUserEmail("hello@aft.page", env)).toBe(true);
+    expect(isInternalUserEmail("smoke@aft.page", env)).toBe(true);
+    expect(isInternalUserEmail("saeedkassim540@gmail.com", env)).toBe(false);
+    expect(isInternalUserEmail("anashbabe88@gmail.com", env)).toBe(false);
+    expect(isInternalUserEmail("vaibhavmule135+aft-viewer@gmail.com", env)).toBe(true);
+    expect(isInternalUserEmail("vaibhavmule135+aft-editor@gmail.com", env)).toBe(true);
   });
 });
 
@@ -303,6 +312,7 @@ describe("ops.aft.page host", () => {
     )
       .bind("wl-ops", "early@example.com", "marketing", "2026-08-01T00:00:00.000Z")
       .run();
+    await findOrCreateUser(env, "saeedkassim540@gmail.com");
     const cookie = await sessionCookie("ops@example.com");
     const htmlRes = await call(
       new Request("https://ops.aft.page/", { headers: { cookie } }),
@@ -341,8 +351,19 @@ describe("ops.aft.page host", () => {
     expect(html).toContain("Drop is static only");
     expect(html).toContain("needs_container");
     expect(html).toContain("not_a_site");
+    expect(html).toContain("nested frontend+backend");
+    expect(html).toContain("Ops watches one Express fixture");
+    expect(html).toContain("public status does not");
+    expect(html).toContain("Express fixture and other try-URL canaries stay here");
+    expect(html).toContain("pg/mysql2 fail");
+    expect(html).not.toContain("No Docker / Cloudflare Containers — Python, Rails, Go, Rust, Express fail honestly.");
     expect(html).toContain("MCP / CLI");
     expect(html).toContain("engine → URL");
+    expect(html).toContain("Sandbox");
+    expect(html).toContain("https://github.com/vaibhavmule/aft.page/actions");
+    expect(html).toContain("sqlite ORM");
+    expect(html).toContain("R2 or process proxy");
+    expect(html).toContain("aft-run-container");
     expect(html).toContain("Same engine as MCP/CLI");
     expect(html).toContain('id="distribute"');
     expect(html).toContain('id="todos"');
@@ -368,7 +389,16 @@ describe("ops.aft.page host", () => {
     expect(html).toContain("data-live=\"sites\"");
     expect(html).toContain('id="users"');
     expect(html).toContain('id="domains"');
-    expect(html).toContain('href="/users"');
+    expect(html).toContain('href="/users?filter=external"');
+    expect(html).toContain("data-user-filters");
+    expect(html).toContain('data-user-filter="external" aria-current="true"');
+    expect(html).toContain('data-kind="internal"');
+    expect(html).toContain('data-kind="external"');
+    expect(html).toContain("/sites?owner=");
+    expect(html).toContain('href="/status-probes"');
+    expect(html).toContain('id="status-probes"');
+    expect(html).toContain("Status probes");
+    expect(html).toContain("/api/status/hide");
     expect(html).toContain("Time to URL");
     expect(html).toContain("data-live=\"t2uP5024\"");
     expect(html).toContain('id="smoke"');
@@ -405,6 +435,17 @@ describe("ops.aft.page host", () => {
     );
     expect(sitesRes.status).toBe(200);
     expect(await sitesRes.text()).toContain('id="sites"');
+
+    const ownedRes = await call(
+      new Request(
+        "https://ops.aft.page/sites?owner=saeedkassim540@gmail.com",
+        { headers: { cookie } },
+      ),
+    );
+    expect(ownedRes.status).toBe(200);
+    const ownedHtml = await ownedRes.text();
+    expect(ownedHtml).toContain("saeedkassim540@gmail.com");
+    expect(ownedHtml).toContain("All sites");
 
     const visitsRedirect = await call(
       new Request("https://ops.aft.page/visits", {
@@ -676,5 +717,60 @@ describe("ops.aft.page host", () => {
       }),
     );
     expect(forbidden.status).toBe(403);
+  });
+
+  it("hides a status probe fail from the public list", async () => {
+    const at = "2026-08-22T12:00:00.000Z";
+    await saveSnapshot(
+      env,
+      {
+        checkedAt: at,
+        overall: "major_outage",
+        components: [
+          {
+            id: "sites",
+            name: "Hosted apps",
+            description: "hello.aft.page",
+            url: "https://hello.aft.page/",
+            ok: false,
+            status: "major_outage",
+            httpStatus: 500,
+            latencyMs: 10,
+            error: "hello down",
+            checkedAt: at,
+          },
+        ],
+      },
+      { reset: true },
+    );
+    const cookie = await sessionCookie("ops@example.com");
+    const page = await call(
+      new Request("https://ops.aft.page/status-probes", { headers: { cookie } }),
+    );
+    expect(page.status).toBe(200);
+    const html = await page.text();
+    expect(html).toContain("Hosted apps");
+    expect(html).toContain("hello down");
+    expect(html).toContain("data-status-hide");
+
+    const row = await env.DB.prepare(
+      `SELECT id FROM status_checks WHERE checked_at = ? AND component_id = 'sites'`,
+    )
+      .bind(at)
+      .first<{ id: number }>();
+    const hide = await call(
+      new Request("https://ops.aft.page/api/status/hide", {
+        method: "POST",
+        headers: { cookie, "content-type": "application/json" },
+        body: JSON.stringify({ id: row!.id, hidden: true }),
+      }),
+    );
+    expect(hide.status).toBe(200);
+    expect(await hide.json()).toMatchObject({ ok: true, hidden: true });
+
+    const publicBody = (await (
+      await call(new Request("https://status.aft.page/api.json"))
+    ).json()) as { recentFailures: { id: string }[] };
+    expect(publicBody.recentFailures.some((f) => f.id === "sites")).toBe(false);
   });
 });

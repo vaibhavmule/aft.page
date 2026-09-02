@@ -224,6 +224,53 @@ describe("invites", () => {
     const twice = await call(new Request(acceptUrl, { redirect: "manual" }));
     expect(twice.status).toBeGreaterThanOrEqual(400);
   });
+
+  it("invalid invite token returns HTML error page, not JSON", async () => {
+    const acceptUrl = `${API_ORIGIN}/v1/invites/accept?token=invalid_token_xyz`;
+    const res = await call(new Request(acceptUrl, { redirect: "manual" }));
+    
+    expect(res.status).toBe(400);
+    expect(res.headers.get("content-type")).toContain("text/html");
+    
+    const html = await res.text();
+    expect(html).toContain("<!DOCTYPE html>");
+    expect(html).toContain("Invite expired");
+    expect(html).toContain("aft<span>.</span>page");
+    expect(html).not.toContain('{"error"');
+  });
+
+  it("reused invite token returns HTML error page, not JSON", async () => {
+    const { slug } = await deployPaste("<h1>html-error</h1>", "invite-html");
+    const { userId } = await ownSite(slug, "owner-html@example.com");
+    await setSiteVisibility(env, slug, "private");
+
+    const token = randomToken("aft_inv_");
+    const tokenHash = await sha256Hex(`${env.AUTH_SECRET}:invite:${token}`);
+    await createSiteInvite(env, {
+      id: crypto.randomUUID().replace(/-/g, ""),
+      slug,
+      email: "html-test@example.com",
+      role: "view",
+      tokenHash,
+      invitedBy: userId,
+      expiresAt: new Date(Date.now() + 86400000).toISOString(),
+    });
+
+    const acceptUrl = `${API_ORIGIN}/v1/invites/accept?token=${encodeURIComponent(token)}`;
+    const once = await call(new Request(acceptUrl, { redirect: "manual" }));
+    expect(once.status).toBe(302);
+
+    const twice = await call(new Request(acceptUrl, { redirect: "manual" }));
+    expect(twice.status).toBe(400);
+    expect(twice.headers.get("content-type")).toContain("text/html");
+    
+    const html = await twice.text();
+    expect(html).toContain("<!DOCTYPE html>");
+    expect(html).toContain("Invite expired");
+    expect(html).toContain("aft<span>.</span>page");
+    expect(html).toContain(`${slug}.aft.page`);
+    expect(html).not.toContain('{"error"');
+  });
 });
 
 describe("viewer vs editor ACL", () => {

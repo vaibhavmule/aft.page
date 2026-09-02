@@ -2,6 +2,7 @@
 
 Canonical brief: [`../vision.txt`](../vision.txt), [`../rfs.txt`](../rfs.txt).
 Craft notes: [`DESIGN-INSPIRATION.txt`](./DESIGN-INSPIRATION.txt).
+Agent UI spec (tokens, type, components, do/don't): [`DESIGN.md`](./DESIGN.md).
 
 ## What we are
 
@@ -163,6 +164,7 @@ Latest receipts: [`brand-board-2026-08-08.md`](./brand-board-2026-08-08.md),
 
 | Asset | Path |
 | --- | --- |
+| Agent UI spec | `docs/DESIGN.md` |
 | Tokens + website layout | `www/styles.css` |
 | App / dashboard chrome | `www/app.css` |
 | Worker brand constants | `apps/api/src/brand.ts` |

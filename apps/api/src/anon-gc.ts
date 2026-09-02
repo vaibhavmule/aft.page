@@ -1,6 +1,6 @@
 import type { Env } from "./env";
 import { LOGIN_MAGIC_SLUG } from "./auth";
-import { deleteSite, ensureDb } from "./db";
+import { deleteSite, ensureDb, markSiteExpired } from "./db";
 import { deleteSiteObjects } from "./storage";
 
 export const ANON_IDLE_DELETE_DAYS = 30;
@@ -11,6 +11,7 @@ export const ANON_GC_WARN_DAYS = 7;
 
 const DELETE_BATCH = 10;
 const UNPAUSE_BATCH = 50;
+const EXPIRY_BATCH = 100;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Unowned tenant sites only. `_login` is a sentinel; `test--*` is smoke/audit. */
@@ -113,4 +114,60 @@ export async function sweepUnusedAnonSites(
   }
 
   return { deleted, unpaused };
+}
+
+/**
+ * Soft-expire anon quick-view links past their deadline: stop serving (404),
+ * free the slug, keep the D1 row (expired=1) for audit. Rows with expired=1
+ * are excluded from later anon idle GC so the record survives.
+ */
+export async function sweepExpiredSites(
+  env: Env,
+  nowMs = Date.now(),
+): Promise<{ expired: number; deleted: number }> {
+  await ensureDb(env);
+  const nowIso = new Date(nowMs).toISOString();
+
+  const { results } = await env.DB.prepare(
+    `SELECT slug FROM sites
+     WHERE owner_user_id IS NULL
+       AND slug != ?
+       AND slug NOT LIKE 'test--%'
+       AND COALESCE(expired, 0) = 0
+       AND expires_at IS NOT NULL
+       AND expires_at <= ?
+     LIMIT ?`,
+  )
+    .bind(LOGIN_MAGIC_SLUG, nowIso, EXPIRY_BATCH)
+    .all<{ slug: string }>();
+
+  let expired = 0;
+  let deleted = 0;
+  for (const row of results || []) {
+    try {
+      await markSiteExpired(env, row.slug, nowIso);
+      expired += 1;
+    } catch {
+      continue;
+    }
+    try {
+      await deleteSiteObjects(env, row.slug);
+      deleted += 1;
+    } catch {
+      /* keep D1 expired row even if storage cleanup misses */
+    }
+  }
+
+  if (expired || deleted) {
+    console.log(
+      JSON.stringify({
+        level: "info",
+        event: "site_expiry_sweep",
+        expired,
+        deleted,
+      }),
+    );
+  }
+
+  return { expired, deleted };
 }

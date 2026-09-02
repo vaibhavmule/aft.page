@@ -97,7 +97,7 @@ if needed, then uploads ready files.
 | Vite / React / Vue | `npm run build` → **`dist/` only** |
 | CRA / Rsbuild | `npm run build` → `build/` or `dist/` |
 | Next static export (`output: 'export'`) | `npm run build` → **`out/`** |
-| Next SSR (local repo) | Hosted CLI `aft deploy` (OpenNext + wrangler) |
+| Next SSR (local repo) | Hosted CLI `aft deploy` |
 | Next / Vite / static (public GitHub) | MCP `deploy_repo` or aft.page/run |
 
 Never upload `src/`, `node_modules`, or `.next/`.

@@ -880,6 +880,26 @@ strong {
   text-decoration-color: color-mix(in srgb, var(--term-prompt) 45%, transparent) !important;
 }
 
+.hero-demo-out {
+  color: #4ade80;
+  font-weight: 700;
+  margin-right: 0.1ch;
+}
+
+.hero-demo-expiry {
+  color: #a1a1aa;
+  font-size: 0.72rem;
+}
+
+/* Typewriter: hide the caret until the CLI demo has finished typing. */
+.hero-demo-code[data-typing]::after {
+  animation: none;
+}
+
+.hero-demo-code[data-typing="done"]::after {
+  animation: term-caret 1.05s steps(1, end) infinite;
+}
+
 .hero-demo-code a.hero-demo-liveurl:hover {
   color: #9fdfc8 !important;
 }
@@ -1591,12 +1611,26 @@ strong {
   margin-bottom: 2.5rem;
 }
 
+.paths-more {
+  margin: 0;
+  padding: 1rem clamp(1.25rem, 3vw, 2.25rem) 2rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.88rem;
+  color: var(--quiet);
+}
+
+.paths-more a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
 .path-row {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   border-top: 1px solid var(--line);
 }
 
@@ -1864,66 +1898,6 @@ a.band-stage-url:hover {
   font-family: var(--font-mono);
   font-size: 0.72rem;
   color: var(--beacon);
-}
-
-/* —— Reprise: mid-page echo of the footer's stern mark. Rhythm break
-   between the capability/path sections and the comparison table. —— */
-.reprise {
-  position: relative;
-  margin: 1rem 0 0;
-  padding: 3.5rem 0 3rem;
-  text-align: center;
-  overflow: hidden;
-}
-
-.reprise-giant-wrap {
-  pointer-events: none;
-  user-select: none;
-}
-
-.reprise-giant {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(3.5rem, 15vw, 8rem);
-  font-weight: 600;
-  letter-spacing: -0.05em;
-  line-height: 0.85;
-  color: transparent;
-  background: linear-gradient(
-    185deg,
-    color-mix(in srgb, var(--ink) 22%, transparent) 0%,
-    color-mix(in srgb, var(--ink) 8%, transparent) 55%,
-    transparent 90%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-}
-
-.reprise-giant .sq {
-  display: inline-block;
-  width: 0.2em;
-  height: 0.2em;
-  margin-left: 0.02em;
-  border-radius: 0.02em;
-  vertical-align: 0.06em;
-  background: color-mix(in srgb, var(--ink) 16%, transparent);
-}
-
-.reprise-line {
-  margin: 0.85rem 0 0;
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  color: var(--faint);
-  letter-spacing: 0.02em;
-}
-
-.reprise-line .flow-arrow {
-  margin: 0 0.4rem;
-}
-
-.reprise-sep {
-  margin: 0 0.55rem;
-  color: var(--line-bright);
 }
 
 /* —— Comparison —— */
@@ -4206,6 +4180,27 @@ a.band-stage-url:hover {
 .with-body {
   width: min(720px, calc(100% - 2.5rem));
   margin: 0 auto 4rem;
+}
+
+.with-body h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 2.5rem 0 0.75rem;
+}
+
+.with-body pre {
+  margin: 0 0 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--bg-inset);
+  overflow-x: auto;
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.with-body pre code {
+  color: var(--ink);
 }
 
 .with-steps {

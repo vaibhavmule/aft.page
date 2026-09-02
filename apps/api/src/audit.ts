@@ -682,14 +682,16 @@ async function persistAuditRun(env: Env, result: AuditRunResult): Promise<void> 
 
 async function sweepAuditSites(env: Env): Promise<void> {
   const slugs = new Set<string>();
+  // Bound the D1 read: audit slugs are a small, prefixed set.
   const { results } = await env.DB.prepare(
-    `SELECT slug FROM sites WHERE slug LIKE ?`,
+    `SELECT slug FROM sites WHERE slug LIKE ? LIMIT 500`,
   )
     .bind(`${AUDIT_SLUG_PREFIX}%`)
     .all<{ slug: string }>();
   for (const row of results || []) slugs.add(row.slug);
 
   let cursor: string | undefined;
+  let listed = 0;
   do {
     const listing = await env.SITES.list({
       prefix: `site:${AUDIT_SLUG_PREFIX}`,
@@ -700,6 +702,9 @@ async function sweepAuditSites(env: Env): Promise<void> {
       if (slug.startsWith(AUDIT_SLUG_PREFIX)) slugs.add(slug);
     }
     cursor = listing.list_complete ? undefined : listing.cursor;
+    // Never sweep more than 500 audit slugs in one cron pass.
+    listed += listing.keys.length;
+    if (listed >= 500) cursor = undefined;
   } while (cursor);
 
   for (const slug of slugs) {

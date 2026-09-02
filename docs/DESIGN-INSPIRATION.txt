@@ -62,3 +62,5 @@ aft stern mark: `aft.` below chrome only; no hover / neon on the watermark.
 Black #000 / raised #0a0a0a. White ink. Zinc borders.
 White CTA on black. Green only for live/success.
 Geist Sans + Geist Mono. No Fraunces. No beacon orange.
+
+Agent-facing restatement (do not invent a new palette): DESIGN.md.

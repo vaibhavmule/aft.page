@@ -49,6 +49,8 @@ export type SiteMeta = {
   upstreamUrl?: string | null;
   mainModule?: string | null;
   badge?: boolean;
+  /** Anon quick-view self-destruct. Absent = permanent (subject to anon GC). */
+  expiresAt?: string | null;
 };
 
 // Product caps. CF Workers request body is 100 MiB — JSON/base64 can 413 first.
@@ -78,6 +80,7 @@ export const RESERVED_SLUGS = new Set([
   "mcp",
   "sales",
   "drop",
+  "code",
   "cname",
   "aft",
   "aft-page",
