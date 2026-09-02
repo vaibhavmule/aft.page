@@ -10,6 +10,16 @@ export { Sandbox } from "@cloudflare/sandbox";
 export class SandboxDind extends SandboxBase {}
 export { AftRunAgent };
 
+/**
+ * Job-control endpoints (/v1/run, /v1/rebind) are only reachable from the API
+ * Worker's service binding (run-container.internal). The public custom domain
+ * and *.workers.dev hosts stay up for /health and the sandbox proxy only —
+ * otherwise anyone could enqueue a Sandbox job or destroy a live tunnel.
+ */
+export function isInternalRunHost(host: string): boolean {
+  return host.toLowerCase() === "run-container.internal";
+}
+
 async function rebindTunnel(
   env: Env,
   sandboxId: string,
@@ -47,6 +57,12 @@ export default {
 
     if (url.pathname === "/health") {
       return Response.json({ ok: true, service: "run-container" });
+    }
+
+    const internalOnly =
+      url.pathname === "/v1/rebind" || (url.pathname === "/v1/run" && request.method === "POST");
+    if (internalOnly && !isInternalRunHost(url.hostname)) {
+      return Response.json({ error: "not_found" }, { status: 404 });
     }
 
     if (url.pathname === "/v1/rebind" && request.method === "POST") {
