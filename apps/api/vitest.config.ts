@@ -79,6 +79,9 @@ export default defineConfig(async () => {
     ],
     test: {
       setupFiles: ["./test/apply-migrations.ts"],
+      // Pin parallelism so slow machines don't time out Miniflare isolates.
+      maxWorkers: 4,
+      sequence: { concurrent: false },
     },
   };
 });

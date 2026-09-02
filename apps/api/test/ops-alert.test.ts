@@ -204,7 +204,7 @@ describe("ops alert", () => {
           id: "express",
           name: "Express fixture",
           description: "Container Run",
-          url: "https://nodejs-getting-started-rose-rose.aft.page/",
+          url: "https://nodejs-getting-started-sand.aft.page/",
           ok: false,
           status: "major_outage",
           httpStatus: 530,

@@ -241,12 +241,24 @@ export type TimeToUrlScore = {
 };
 
 export const CF_USAGE_KV_KEY = "ops:cf-usage";
+/** D1 quota snapshot (rows/read/write) — same KV as cf-usage, different key. */
+export const D1_USAGE_KV_KEY = "ops:d1-usage";
+export const D1_MAX_ROWS = 100_000_000;
+export const D1_WATCH_ROWS = 80_000_000;
 
 export type CfUsageSnap = {
   checkedAt: string;
   scripts: { name: string; requests: number; errors: number }[];
   requests: number;
   cpuMs: number;
+};
+
+export type D1Usage = {
+  checkedAt: string;
+  rows: number;
+  reads: number;
+  writes: number;
+  source: "graphql" | "kv";
 };
 
 export type WorkersCost = {
@@ -292,6 +304,7 @@ export type OpsPayload = {
   timeToUrl: TimeToUrlScore;
   cost: WorkersCost;
   wfp: WfpTrigger;
+  d1: D1Usage | null;
   logs: { api: string; mcp: string };
   probes: ProbeHitRow[];
   runJobs: RunJobRow[];
@@ -381,8 +394,9 @@ function monthStartUtc(now = new Date()): string {
 }
 
 type GqlAdaptive = {
-  sum?: { requests?: number; errors?: number };
+  sum?: { requests?: number; errors?: number; rowsRead?: number; rowsWritten?: number };
   quantiles?: { cpuTimeP50?: number };
+  max?: { rowCount?: number };
 };
 
 async function readUsageSnap(env: Env): Promise<CfUsageSnap | null> {
@@ -488,6 +502,89 @@ async function resolveWorkersUsage(env: Env): Promise<{
   const snap = await readUsageSnap(env);
   if (!snap) return null;
   return { ...snap, source: "kv" };
+}
+
+async function readD1UsageSnap(env: Env): Promise<D1Usage | null> {
+  if (!env.STATUS) return null;
+  const raw = await env.STATUS.get(D1_USAGE_KV_KEY);
+  if (!raw) return null;
+  try {
+    const j = JSON.parse(raw) as Partial<D1Usage>;
+    if (typeof j.rows !== "number" || typeof j.reads !== "number" || typeof j.writes !== "number") {
+      return null;
+    }
+    return {
+      checkedAt: typeof j.checkedAt === "string" ? j.checkedAt : "",
+      rows: j.rows,
+      reads: j.reads,
+      writes: j.writes,
+      source: j.source === "kv" ? "kv" : "graphql",
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchD1Usage(token: string): Promise<Omit<D1Usage, "source"> | null> {
+  const start = monthStartUtc();
+  const end = new Date().toISOString();
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 2500);
+  try {
+    const res = await fetch("https://api.cloudflare.com/client/v4/graphql", {
+      method: "POST",
+      signal: ac.signal,
+      headers: {
+        authorization: `Bearer ${token}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        query: `query($accountTag: string!, $start: Time!, $end: Time!) {
+          viewer {
+            accounts(filter: { accountTag: $accountTag }) {
+              d1: d1QueriesAdaptive(limit: 1, filter: {
+                datetime_geq: $start, datetime_leq: $end
+              }) { sum { rowsRead rowsWritten } }
+              d1Rows: d1RowsAdaptive(limit: 1, filter: {
+                datetime_geq: $start, datetime_leq: $end
+              }) { max { rowCount } }
+            }
+          }
+        }`,
+        variables: { accountTag: CF_ACCOUNT, start, end },
+      }),
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as {
+      data?: {
+        viewer?: {
+          accounts?: Array<{ d1?: GqlAdaptive[]; d1Rows?: GqlAdaptive[] }>;
+        };
+      };
+    };
+    const acc = body.data?.viewer?.accounts?.[0];
+    if (!acc) return null;
+    const q = acc.d1?.[0];
+    const r = acc.d1Rows?.[0];
+    const reads = Number(q?.sum?.rowsRead ?? 0);
+    const writes = Number(q?.sum?.rowsWritten ?? 0);
+    const rows = Number(r?.max?.rowCount ?? 0);
+    return { rows, reads, writes, checkedAt: new Date().toISOString() };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function resolveD1Usage(env: Env): Promise<D1Usage | null> {
+  if (env.CF_API_TOKEN) {
+    const live = await fetchD1Usage(env.CF_API_TOKEN);
+    if (live) return { ...live, source: "graphql" };
+  }
+  const snap = await readD1UsageSnap(env);
+  if (!snap) return null;
+  return snap;
 }
 
 function isoAgo(ms: number): string {
@@ -797,6 +894,7 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
     runJobs,
     runCounts,
     statusProbes,
+    d1Usage,
   ] = await Promise.all([
     buildPayload(env),
     listDeployFailures(env, 50),
@@ -832,6 +930,7 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
     listRunJobs(env, 50).catch(() => [] as RunJobRow[]),
     countRunJobsByStatus(env).catch(() => ({ live: 0, failed: 0, queued: 0 })),
     loadOpsStatusFailures(env, 50),
+    resolveD1Usage(env),
   ]);
   const last24h = scoreWindow(successes24h, failures24h);
   const last7d = scoreWindow(successes7d, failures7d);
@@ -886,6 +985,7 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
       scripts: usage?.scripts ?? [],
     },
     wfp: decideWfpTrigger(snapshot.siteWorkers, priced.requestsUsd + priced.cpuUsd),
+    d1: d1Usage,
     logs: { api: CF_LOGS_API, mcp: CF_LOGS_MCP },
     probes,
     runJobs,
@@ -2516,6 +2616,35 @@ function renderOpsHtml(
           </div>
           <h3>Cloudflare cost (MTD)</h3>
           <div class="score">
+            <div class="card">
+              <h3>D1 quota</h3>
+              <div class="nums">
+                <div><strong>${
+                  payload.d1
+                    ? `${Math.round(payload.d1.rows).toLocaleString("en-US")}`
+                    : "—"
+                }</strong><span>rows / ${Math.round(D1_MAX_ROWS / 1e6)}M cap</span></div>
+                <div><strong>${
+                  payload.d1
+                    ? payload.d1.reads.toLocaleString("en-US")
+                    : "—"
+                }</strong><span>rows read MTD</span></div>
+                <div><strong>${
+                  payload.d1
+                    ? payload.d1.writes.toLocaleString("en-US")
+                    : "—"
+                }</strong><span>rows written MTD</span></div>
+              </div>
+              <p class="cost-note">${
+                payload.d1
+                  ? `as of ${escapeHtml(payload.d1.checkedAt)}${
+                      payload.d1.rows > D1_WATCH_ROWS
+                        ? ` · ⚠ ${Math.round((payload.d1.rows / D1_MAX_ROWS) * 100)}% of D1 row cap — watch`
+                        : ""
+                    }${payload.d1.source === "kv" ? " (KV snapshot)" : ""}`
+                  : "D1 usage snapshot not loaded yet."
+              }</p>
+            </div>
             <div class="card">
               <h3>Estimated</h3>
               <div class="nums">

@@ -18,7 +18,7 @@ describe("container origin helpers", () => {
     expect(tunnelOriginDead(502)).toBe(true);
     expect(tunnelOriginDead(500)).toBe(false);
     expect(sandboxIdForJob("run_abc123")).toBe("run-run-abc123");
-    expect(EXPRESS_FIXTURE_SLUG).toBe("nodejs-getting-started-rose-rose");
+    expect(EXPRESS_FIXTURE_SLUG).toBe("nodejs-getting-started-sand");
   });
 
   it("rebinds a live container origin through the runner", async () => {

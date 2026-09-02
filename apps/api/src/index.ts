@@ -33,6 +33,7 @@ import { handleOps, isOpsHost } from "./ops";
 import {
   handleStatus,
   isStatusHost,
+  pruneStatusChecks,
   runStatusChecks,
 } from "./status";
 import { pruneDeployFailures } from "./db";
@@ -122,6 +123,7 @@ export default {
         await pruneSiteLogs(env);
         await pruneSmokeRuns(env);
         await pruneAuditRuns(env);
+        await pruneStatusChecks(env);
         await sweepUnusedAnonSites(env);
         await sweepExpiredSites(env);
       })().catch((err) => {

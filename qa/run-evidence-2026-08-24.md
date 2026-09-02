@@ -42,7 +42,10 @@ Open: https://aft.page/run/mdn/beginner-html-site-scripted
 | Job (2026-08-26) | `run_fdaf6677d10d` |
 | Working URL (2026-08-26) | https://nodejs-getting-started-sky.aft.page (origin dead 2026-08-29; 530/502, sandbox gone) |
 | Job (2026-08-29 restore) | `run_0ae050b66742` |
-| Working URL (ops fixture) | https://nodejs-getting-started-rose-rose.aft.page |
+| Working URL (ops fixture) | https://nodejs-getting-started-rose-rose.aft.page (origin dead 2026-09-02; 530, sandbox gone) |
+| Job (2026-09-02 restores) | `run_3ddfe19ff6fb` (`-ink`, idled out), `run_d8ac0075a22e` (`-sand`, current) |
+| Working URL (ops fixture) | https://nodejs-getting-started-sand.aft.page (live, ops-only canary) |
+| Ownership | claimed by `hello@aft.page` (2026-09-02) — exempt from 30d anon GC, no `expires_at`. Container sandbox still idles (~30m) and needs a re-run when the tunnel dies for good. |
 | Failure logs | npm EBADENGINE warning; peer-install python one-liner SyntaxError (non-fatal); start still published |
 | Second person | **yes** — anonymous GET 200 (home) |
 | Origin rebind | [origin-rebind.md](./origin-rebind.md) — same hostname recovered after deliberate tunnel expire |
