@@ -89,6 +89,10 @@
 /llms.html
   Cache-Control: public, max-age=60
 
+/og-run.png
+  Content-Type: image/png
+  Cache-Control: public, max-age=86400
+
 # Keep CSS/JS short-lived so website deploys aren't stuck behind 4h edge cache
 /styles.css
   Cache-Control: public, max-age=0, must-revalidate

@@ -8,6 +8,7 @@
  * (aft.page / *.pages.dev), not tenant *.aft.page.
  */
 import { isJunkPath } from "./junk-path.js";
+import { OG_RUN_PNG_BASE64 } from "./og-run-png-data.js";
 
 const HSTS = "max-age=15552000; includeSubDomains";
 
@@ -26,12 +27,29 @@ function isRunPath(pathname) {
   return pathname === "/run" || pathname.startsWith("/run/");
 }
 
+function runOgPngResponse() {
+  const binary = Uint8Array.from(atob(OG_RUN_PNG_BASE64), (c) => c.charCodeAt(0));
+  return withHsts(
+    new Response(binary, {
+      status: 200,
+      headers: {
+        "content-type": "image/png",
+        "cache-control": "public, max-age=86400",
+        "x-aft-og": "run",
+      },
+    }),
+  );
+}
+
 export async function onRequest(context) {
   const url = new URL(context.request.url);
   if (url.pathname === "/security.txt") {
     return withHsts(
       Response.redirect(new URL("/.well-known/security.txt", url.origin), 301),
     );
+  }
+  if (url.pathname === "/og-run.png") {
+    return runOgPngResponse();
   }
   if (isJunkPath(url.pathname)) {
     return withHsts(

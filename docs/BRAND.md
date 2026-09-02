@@ -172,7 +172,8 @@ Latest receipts: [`brand-board-2026-08-08.md`](./brand-board-2026-08-08.md),
 | Brand board (Approve / Kill) | `www/brand-board.html` |
 | Footer board (Approve / Kill) | `www/footer-board.html` |
 | Board decisions | `docs/brand-board-2026-08-08.md`, `docs/footer-board-2026-08-09.md` |
-| OG | `www/og-source.html` → `og.png` |
+| OG (home) | `www/og-source.html` → `og.png` |
+| OG (Run) | `www/og-run-source.html` → served at `/og-run.png` via Pages middleware (`functions/og-run-png-data.js`) |
 | Preview shell | `www/preview/` |
 | Vision | `vision.txt` |
 | Strategy | `docs/STRATEGY.md` |
