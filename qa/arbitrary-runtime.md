@@ -80,6 +80,14 @@ Self-healing runtime = **ensureRuntime** (install missing toolchain) + invent st
 ### Incidents fixed this round
 
 1. **lite → standard-1** — ruby/elixir bake OOMed tunnels on 256MiB.
-2. **Fail-cache v8** — do not cache `Tunnel recovery` / clone-path fails.
+2. **Fail-cache v9** — do not cache `Tunnel recovery` / clone-path / transient fails (v8 was the first bump for this class; v9 keeps `clone landed|unexpected path|tunnel recovery|could not get a public url` out of the cache).
 3. **DinD `mkdir /workspace`** — musl dind base lacked it.
 4. **`__aftDockerLive` on Sandbox Proxy** — ad-hoc prop read truthy → skipped language path (clone→Publishing→tunnel). Use local `dockerLive` boolean.
+
+## Results — 2026-09-02 (re-check)
+
+The 2026-08-30 round's *code* fixes are all on main and deployed (standard-1, fail-cache v9, DinD `/workspace`, local `dockerLive`, skip-first-invent when plan has install+start — verified in `run-container/src/deploy.ts` and `run-fail-cache.ts`). Live URLs from that round have since idled out (ephemeral sandbox `sleepAfter: 30m`): `nodejs-getting-started-sage` and `-sand` both return 502/530 on re-probe — same expected ephemeral behavior as the ops fixture; re-run the job to restore. The Rails `need-pg` honest-fail result (`run_a72c182d5dbe`, `try-db=need-pg`, not missing-start) is recorded and still the expected outcome until Neon.
+
+## Decision — 2026-09-02
+
+**Corpus round closed; do not continue the corpus until proof exists.** The "Next on the corpus" items (tiny Dockerfile happy path, Rails+sqlite3 live, Phoenix need-pg, Neon try-db) are **parked**. Rationale: 0/5 stranger trials recorded; todo.txt/p0.txt/stranger-trial.md all gate further Run/container spend behind proof. Neon is a paid build — not before a stranger reaches a URL. Re-open this file only when: (a) the fixture auto-restore exists and the canary stays green without manual re-runs, or (b) ≥1 stranger trial is recorded and the corpus is the blocker for trial #2. The one permitted follow-up is operational: auto-restore the Express fixture when it has been dead N consecutive probes.
