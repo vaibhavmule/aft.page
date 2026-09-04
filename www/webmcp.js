@@ -209,11 +209,27 @@
     });
   }
 
+  /**
+   * Convenience for demos / snippets: invoke a registered tool by name with a
+   * plain input object. Resolves to the stringified result (per spec,
+   * executeTool resolves to a DOMString).
+   */
+  async function invoke(name, input) {
+    if (!isSupported()) throw new Error("WebMCP is not available in this browser.");
+    const tools = await document.modelContext.getTools();
+    const tool = (tools || []).find((t) => t.name === name);
+    if (!tool) throw new Error(`Tool not registered: ${name}`);
+    return document.modelContext.executeTool(tool, input == null ? {} : input);
+  }
+
   window.aftWebmcp = {
     isSupported,
     enabled,
     registerTools,
     confirm,
     validateName,
+    invoke,
   };
+  // Friendly handle for copy-paste snippets: await window.__aftWebMCP.invoke(...)
+  window.__aftWebMCP = { invoke };
 })();

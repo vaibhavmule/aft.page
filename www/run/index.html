@@ -326,5 +326,33 @@
       </main>
     </div>
     <script type="module" src="/run.js?v=20260828-cachefail"></script>
+    <script src="/webmcp.js" defer></script>
+    <script src="/webmcp-deploy.js" defer></script>
+    <script>
+      // Expose the Run repo-deploy flow as a WebMCP tool when a WebMCP-capable
+      // client is present. Same POST /v1/repo/deploy the Run UI calls; the call
+      // still requires the same-origin confirmation.
+      (function () {
+        function boot() {
+          const aftWebmcp = window.aftWebmcp;
+          const deploy = window.aftWebmcpDeploy;
+          if (!aftWebmcp || !aftWebmcp.isSupported() || !deploy) return;
+          const ctx = { confirm: (o) => aftWebmcp.confirm(o) };
+          aftWebmcp
+            .registerTools(deploy.runTools(ctx), { readOnlyHint: false })
+            .catch(() => {});
+        }
+        if (window.aftWebmcp) boot();
+        else {
+          const t = setInterval(() => {
+            if (window.aftWebmcp && window.aftWebmcpDeploy) {
+              clearInterval(t);
+              boot();
+            }
+          }, 50);
+          setTimeout(() => clearInterval(t), 3000);
+        }
+      })();
+    </script>
   </body>
 </html>

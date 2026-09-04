@@ -3,216 +3,197 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WebMCP demo — aft.page</title>
+    <title>WebMCP — aft.page speaks it</title>
     <meta name="robots" content="noindex" />
     <meta
       name="description"
-      content="aft.page exposes read-only WebMCP tools. See what a WebMCP-capable agent can do on this page."
+      content="aft.page speaks WebMCP. An agent can check platform status, read the docs, and publish a site for you, right on the page."
     />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="theme-color" content="#000000" />
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css"
-    />
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/aft-brand.css" />
     <style>
-      .webmcp-hero {
-        max-width: 52rem;
+      /* Local layer only. Tokens + primitives come from aft-brand.css
+         (void / panel / line / ink / quiet / good). Depth = hairlines. */
+      .webmcp-shell {
+        width: min(var(--page, 1180px), calc(100% - 2.5rem));
         margin: 0 auto;
-        padding: 3rem 1.25rem 2rem;
+        padding: 3rem 0 4rem;
       }
-      .webmcp-hero h1 {
-        font-size: 1.8rem;
-        letter-spacing: -0.02em;
-        margin: 0 0 0.5rem;
-      }
-      .webmcp-hero p.lede {
-        color: var(--quiet, #71717a);
-        max-width: 40rem;
-      }
+      .hero-line { border-bottom: 1px solid var(--line); padding-bottom: 2.5rem; margin-bottom: 1.5rem; }
+      .lede a { color: var(--ink); }
+      .status-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.75rem; }
       .status-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.45rem;
-        padding: 0.3rem 0.7rem;
-        border-radius: 999px;
-        border: 1px solid #e4e4e7;
-        font-size: 0.8rem;
-        font-weight: 600;
+        display: inline-flex; align-items: center; gap: 0.45rem;
+        padding: 0.35rem 0.75rem 0.35rem 0.6rem;
+        border: 1px solid var(--line-bright); border-radius: 999px;
+        background: var(--panel);
+        font-family: var(--font-mono); font-size: 0.72rem; font-weight: 500;
+        letter-spacing: 0.02em; color: var(--ink);
       }
-      .status-pill i {
-        width: 0.5rem;
-        height: 0.5rem;
-        border-radius: 50%;
-        background: #a1a1aa;
-      }
+      .status-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); flex-shrink: 0; }
+      .status-pill.on { border-color: color-mix(in srgb, var(--good) 45%, var(--line)); }
       .status-pill.on i {
-        background: #22c55e;
-      }
-      .panel {
-        border: 1px solid #e4e4e7;
-        border-radius: 10px;
-        padding: 1rem 1.1rem;
-        margin: 1rem 0;
-      }
-      .panel h2 {
-        font-size: 1.05rem;
-        margin: 0 0 0.6rem;
-      }
-      .tool-list {
-        display: grid;
-        gap: 0.5rem;
-      }
-      .tool-item {
-        border: 1px solid #e4e4e7;
-        border-radius: 8px;
-        padding: 0.6rem 0.75rem;
-      }
-      .tool-item code {
-        font-weight: 600;
-      }
-      .tool-item p {
-        margin: 0.2rem 0 0;
-        color: #52525b;
-        font-size: 0.875rem;
-      }
-      .row {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-        align-items: center;
-      }
-      select,
-      input[type="text"] {
-        padding: 0.4rem 0.5rem;
-        border: 1px solid #d4d4d8;
-        border-radius: 6px;
-        font: inherit;
-      }
-      pre.result {
-        background: #0a0a0a;
-        color: #e4e4e7;
-        border-radius: 8px;
-        padding: 0.75rem;
-        overflow: auto;
-        font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
-        white-space: pre-wrap;
-        word-break: break-word;
-        margin: 0.6rem 0 0;
-      }
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.45rem 0.85rem;
-        border-radius: 6px;
-        border: 1px solid #111;
-        background: #111;
-        color: #fff;
-        font: inherit;
-        font-weight: 600;
-        cursor: pointer;
-        text-decoration: none;
-      }
-      .btn.ghost {
-        background: #fff;
-        color: #111;
-      }
-      .muted {
-        color: #71717a;
-        font-size: 0.85rem;
+        background: var(--good);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--good) 20%, transparent);
+        animation: aft-pulse 2.2s ease-in-out infinite;
       }
       .note {
-        background: #fafafa;
-        border-left: 3px solid #d4d4d8;
-        padding: 0.6rem 0.8rem;
-        border-radius: 0 6px 6px 0;
-        font-size: 0.875rem;
+        display: flex; gap: 0.6rem; align-items: flex-start;
+        margin: 0 0 1.5rem; padding: 0.8rem 1rem;
+        border: 1px solid var(--line); border-left: 2px solid var(--warn);
+        border-radius: 0 0.5rem 0.5rem 0;
+        background: var(--panel); color: var(--quiet); font-size: 0.9rem;
+      }
+      .panel {
+        border: 1px solid var(--line); border-radius: 0.5rem;
+        background: var(--panel); margin: 1.5rem 0; overflow: hidden;
+      }
+      .panel-h {
+        display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem;
+        padding: 1.1rem 1.25rem 0.4rem; flex-wrap: wrap;
+      }
+      .panel-h h2 { margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: -0.02em; }
+      .panel-h .hint {
+        font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.06em;
+        text-transform: uppercase; color: var(--faint);
+      }
+      .tool-list { padding: 0.5rem 1.25rem 1.25rem; display: grid; gap: 0; }
+      .tool-item { padding: 0.85rem 0; border-bottom: 1px solid var(--line); }
+      .tool-item:last-child { border-bottom: none; }
+      .tool-item .row1 { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+      .tool-item code { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 600; color: var(--ink); }
+      .tool-item .desc { margin: 0.35rem 0 0; color: var(--quiet); font-size: 0.875rem; line-height: 1.5; max-width: 68ch; }
+      .tag {
+        display: inline-flex; align-items: center;
+        font-family: var(--font-mono); font-size: 0.62rem; font-weight: 500;
+        letter-spacing: 0.08em; text-transform: uppercase;
+        padding: 0.12rem 0.45rem; border-radius: 999px;
+        border: 1px solid var(--line-bright); color: var(--faint);
+      }
+      .tag.read-only { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, var(--line)); }
+      .tag.act { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); }
+      .snippet-panel pre, pre.result {
+        margin: 0.75rem 1.25rem 1.25rem; padding: 1rem 1.1rem;
+        background: var(--inset, #050505); color: #d4d4d8;
+        border: 1px solid var(--line); border-radius: 0.375rem;
+        font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6;
+        overflow: auto; white-space: pre-wrap; word-break: break-word;
+      }
+      .snippet-panel pre .cmt { color: var(--faint); }
+      .execute-body { padding: 0.5rem 1.25rem 1.25rem; }
+      .row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+      .field-inline {
+        display: flex; align-items: center; flex: 1 1 14rem; min-width: 9rem;
+        background: var(--inset); border: 1px solid var(--line-bright); border-radius: 0.375rem;
+        padding: 0 0.7rem;
+      }
+      .field-inline:focus-within { outline: 2px solid var(--ink); outline-offset: 2px; }
+      .field-inline select, .field-inline input {
+        border: 0; background: transparent; color: var(--ink);
+        font: 500 0.85rem/1 var(--font-mono); padding: 0.7rem 0; min-width: 0;
+      }
+      .field-inline select { flex: 0 0 auto; }
+      .field-inline input { flex: 1 1 auto; width: 100%; }
+      .field-inline select:focus, .field-inline input:focus { outline: none; }
+      .btn-copy {
+        background: transparent; border: 1px solid var(--line-bright); color: var(--ink);
+        font: 500 0.8rem/1 var(--font-sans); padding: 0.45rem 0.8rem; border-radius: 0.375rem; cursor: pointer;
+        margin: 0 1.25rem 0.5rem 0;
+      }
+      .btn-copy:hover { border-color: var(--ink); }
+      .btn-run {
+        background: var(--cta, #fff); color: var(--cta-ink, #000); border: 1px solid var(--cta, #fff);
+        font: 600 0.85rem/1 var(--font-sans); padding: 0.6rem 1rem; border-radius: 0.375rem; cursor: pointer;
+      }
+      .btn-run:hover { background: var(--cta-hover, #e4e4e7); }
+      pre.result { margin: 0.85rem 0 0; }
+      @media (max-width: 760px) {
+        .webmcp-shell { width: min(100% - 1.25rem, var(--page)); padding: 2rem 0 3rem; }
+        .field-inline { flex: 1 1 100%; }
       }
     </style>
   </head>
   <body>
-    <div class="site">
-      <nav class="topnav" aria-label="Primary">
-        <div class="topnav-brand-wrap">
-          <a class="topnav-brand" href="/">aft<span>.</span>page</a>
-          <span class="nav-beta">Beta</span>
-        </div>
-        <div class="topnav-links">
-          <a href="/mcp">MCP</a>
-          <a href="/docs">Docs</a>
-          <a href="/plugins">Plugins</a>
-        </div>
-      </nav>
+    <nav class="topnav" aria-label="Primary">
+      <a class="wordmark" href="/">aft<span class="sq" aria-hidden="true"></span>page</a>
+      <span class="beta">Beta</span>
+      <div class="topnav-links">
+        <a href="/drop">Deploy</a>
+        <a href="/run">Run</a>
+        <a href="/mcp">MCP</a>
+        <a href="/docs">Docs</a>
+      </div>
+    </nav>
 
-      <main class="webmcp-hero">
-        <h1>WebMCP demo</h1>
+    <main class="webmcp-shell">
+      <div class="hero-line">
+        <p class="kicker">WebMCP</p>
+        <h1 class="h1">This page speaks WebMCP.</h1>
         <p class="lede">
-          This page registers <strong>read-only</strong> tools with
-          <code>document.modelContext</code> (the W3C WebMCP API). In a WebMCP-capable
-          client — ChatGPT's in-app browser, or Chrome with WebMCP enabled — an agent
-          can call them instead of scraping the page.
+          An agent can check platform status, look up docs, and publish a site for you, right
+          here. On <a href="/drop/">/drop/</a> it can publish a page or files. On
+          <a href="/run/">/run/</a> it can run a GitHub repo. Consequential actions always
+          stop for your confirmation.
         </p>
 
-        <div class="row" style="margin: 1rem 0">
-          <span class="status-pill" id="support-pill"><i></i> Checking support…</span>
-          <span class="status-pill" id="tools-pill"><i></i> 0 tools</span>
+        <div class="status-row">
+          <span class="status-pill" id="support-pill"><i aria-hidden="true"></i> Checking connection</span>
+          <span class="status-pill" id="tools-pill"><i aria-hidden="true"></i> 0 tools</span>
         </div>
+      </div>
 
-        <div class="note">
-          To test: open this page in <strong>Chrome</strong> with
-          <code>chrome://flags/#enable-webmcp-testing</code> enabled, or in
-          <strong>ChatGPT's in-app browser</strong> (WebMCP supported out of the box).
-          Load the tools below, then ask the agent to use e.g.
-          <code>get_aft_page_status</code>.
+      <div class="note" id="unsupported-note" hidden>
+        <span>WebMCP isn't available in this browser yet. To see it live, open this page in
+        <strong>ChatGPT's in-app browser</strong> (supported out of the box) or
+        <strong>Chrome</strong> with <code>chrome://flags/#enable-webmcp-testing</code> enabled.</span>
+      </div>
+
+      <section class="panel" id="tools-panel" hidden>
+        <div class="panel-h">
+          <h2>What an agent can do here</h2>
+          <span class="hint" id="tools-count"></span>
         </div>
+        <div class="tool-list" id="tool-list"></div>
+      </section>
 
-        <section class="panel">
-          <h2>1 · Load tools</h2>
-          <p class="muted" style="margin-top: 0">
-            Registering is the action that exposes tools to the agent. It requires your
-            consent (or <code>?demo=1</code>).
-          </p>
+      <section class="panel snippet-panel" id="magic-panel" hidden>
+        <div class="panel-h">
+          <h2>Try a little agent magic</h2>
+          <button type="button" class="btn-copy copy-btn" id="copy-btn">Copy</button>
+        </div>
+        <pre id="snippet"><span class="cmt">// Ask an agent, or paste this yourself:</span>
+await window.__aftWebMCP.invoke("get_aft_page_status", {});</pre>
+      </section>
+
+      <section class="panel" id="execute-panel" hidden>
+        <div class="panel-h">
+          <h2>Test execute</h2>
+          <span class="hint">Call a read-only tool and see the result</span>
+        </div>
+        <div class="execute-body">
           <div class="row">
-            <button type="button" class="btn" id="load-btn">Load demo tools</button>
-            <span class="muted" id="load-state"></span>
-          </div>
-        </section>
-
-        <section class="panel">
-          <h2>2 · Registered tools</h2>
-          <div class="tool-list" id="tool-list">
-            <p class="muted">No tools loaded yet.</p>
-          </div>
-        </section>
-
-        <section class="panel">
-          <h2>3 · Test execute</h2>
-          <p class="muted" style="margin-top: 0">
-            Call a loaded tool with sample input and see the stringified result.
-          </p>
-          <div class="row">
-            <select id="tool-select" aria-label="Tool"></select>
-            <input
-              type="text"
-              id="tool-input"
-              placeholder='JSON input, e.g. {"slug":"hello"}'
-              style="flex: 1 1 16rem"
-            />
-            <button type="button" class="btn ghost" id="run-btn">Run</button>
+            <span class="field-inline">
+              <select id="tool-select" aria-label="Tool"></select>
+            </span>
+            <span class="field-inline">
+              <input
+                type="text"
+                id="tool-input"
+                placeholder='JSON input, e.g. {"slug":"hello"}'
+                aria-label="JSON input"
+              />
+            </span>
+            <button type="button" class="btn-run" id="run-btn">Run</button>
           </div>
           <pre class="result" id="result" aria-live="polite">—</pre>
-        </section>
-      </main>
-    </div>
+        </div>
+      </section>
+    </main>
 
     <script src="/webmcp.js"></script>
     <script src="/webmcp-tools.js"></script>
+    <script src="/webmcp-deploy.js"></script>
     <script>
       (function () {
         "use strict";
@@ -220,48 +201,77 @@
         var tools = window.aftWebmcpTools;
         var supportPill = document.getElementById("support-pill");
         var toolsPill = document.getElementById("tools-pill");
-        var loadBtn = document.getElementById("load-btn");
-        var loadState = document.getElementById("load-state");
+        var toolsPanel = document.getElementById("tools-panel");
+        var toolsCount = document.getElementById("tools-count");
         var listEl = document.getElementById("tool-list");
+        var magicPanel = document.getElementById("magic-panel");
+        var executePanel = document.getElementById("execute-panel");
+        var unsupportedNote = document.getElementById("unsupported-note");
         var selectEl = document.getElementById("tool-select");
         var inputEl = document.getElementById("tool-input");
         var runBtn = document.getElementById("run-btn");
         var resultEl = document.getElementById("result");
-
+        var copyBtn = document.getElementById("copy-btn");
+        var snippetEl = document.getElementById("snippet");
         var registeredTools = [];
-        var demoAuto = new URLSearchParams(location.search).has("demo");
+        var KNOWN = {}; // name -> { desc, readOnly }
 
-        function setPill(pill, label, on) {
+        // Seed descriptions from the tool definitions so the list reads well even
+        // before getTools() returns.
+        (tools.publicTools() || []).forEach(function (t) {
+          KNOWN[t.name] = { desc: t.description || "", readOnly: true };
+        });
+        // Seed the deploy tools too (registered on /drop/ + /run/ when present).
+        var deployMod = window.aftWebmcpDeploy;
+        if (deployMod) {
+          var ctx = { confirm: function () { return Promise.resolve(false); } };
+          deployMod.dropTools(ctx).forEach(function (t) {
+            KNOWN[t.name] = { desc: t.description || "", readOnly: false };
+          });
+          deployMod.runTools(ctx).forEach(function (t) {
+            KNOWN[t.name] = { desc: t.description || "", readOnly: false };
+          });
+        }
+
+        function setPill(pill, label, on, pulse) {
           pill.lastChild.textContent = " " + label;
           pill.classList.toggle("on", Boolean(on));
+          var dot = pill.querySelector("i");
+          if (dot) dot.classList.toggle("dot-pulse", Boolean(pulse));
+        }
+
+        function toolItem(t) {
+          var item = document.createElement("div");
+          item.className = "tool-item";
+          var row1 = document.createElement("div");
+          row1.className = "row1";
+          var code = document.createElement("code");
+          code.textContent = t.name;
+          row1.appendChild(code);
+          var meta = KNOWN[t.name] || {};
+          var tag = document.createElement("span");
+          if (!meta.readOnly) {
+            tag.className = "tag act";
+            tag.textContent = "action";
+          } else {
+            tag.className = "tag read-only";
+            tag.textContent = "read only";
+          }
+          row1.appendChild(tag);
+          var desc = document.createElement("p");
+          desc.className = "desc";
+          desc.textContent = t.description || meta.desc || "";
+          item.appendChild(row1);
+          item.appendChild(desc);
+          return item;
         }
 
         function renderList() {
           listEl.replaceChildren();
-          if (!registeredTools.length) {
-            var p = document.createElement("p");
-            p.className = "muted";
-            p.textContent = "No tools loaded yet.";
-            listEl.appendChild(p);
-            return;
-          }
           registeredTools.forEach(function (t) {
-            var item = document.createElement("div");
-            item.className = "tool-item";
-            var code = document.createElement("code");
-            code.textContent = t.name;
-            item.appendChild(code);
-            if (t.title) {
-              var title = document.createElement("span");
-              title.className = "muted";
-              title.textContent = " — " + t.title;
-              item.appendChild(title);
-            }
-            var desc = document.createElement("p");
-            desc.textContent = t.description || "";
-            item.appendChild(desc);
-            listEl.appendChild(item);
+            listEl.appendChild(toolItem(t));
           });
+          toolsCount.textContent = registeredTools.length + (registeredTools.length === 1 ? " tool" : " tools");
         }
 
         function renderSelect() {
@@ -276,9 +286,7 @@
 
         async function refreshTools() {
           try {
-            var mc = document.modelContext;
-            var got = (await mc.getTools()) || [];
-            // Dedupe by name + keep the stable registration order.
+            var got = (await document.modelContext.getTools()) || [];
             var seen = Object.create(null);
             registeredTools = got.filter(function (t) {
               if (seen[t.name]) return false;
@@ -286,29 +294,13 @@
               return true;
             });
             setPill(toolsPill, registeredTools.length + (registeredTools.length === 1 ? " tool" : " tools"), true);
+            toolsPanel.hidden = false;
+            magicPanel.hidden = false;
+            executePanel.hidden = false;
             renderList();
             renderSelect();
           } catch (err) {
-            setPill(toolsPill, "unavailable", false);
-            console.warn("[webmcp-demo] getTools failed:", err);
-          }
-        }
-
-        async function loadTools() {
-          if (!aftWebmcp.isSupported()) {
-            loadState.textContent = "document.modelContext is not available in this browser.";
-            return;
-          }
-          loadBtn.disabled = true;
-          loadState.textContent = "Registering…";
-          try {
-            var n = await aftWebmcp.registerTools(tools.publicTools(), {
-              readOnlyHint: true,
-            });
-            loadState.textContent = n + " registered.";
-          } catch (err) {
-            loadState.textContent = "Failed to register: " + (err && err.message ? err.message : err);
-            loadBtn.disabled = false;
+            console.warn("[webmcp] getTools failed:", err);
           }
         }
 
@@ -317,13 +309,9 @@
           var name = selectEl.value;
           var raw = inputEl.value.trim() || "{}";
           var inputObj;
-          try {
-            inputObj = JSON.parse(raw);
-          } catch (_) {
-            resultEl.textContent = "Input must be valid JSON.";
-            return;
-          }
-          resultEl.textContent = "Running…";
+          try { inputObj = JSON.parse(raw); }
+          catch (_) { resultEl.textContent = "Input must be valid JSON."; return; }
+          resultEl.textContent = "Running";
           try {
             var out = await document.modelContext.executeTool(
               registeredTools.find(function (t) { return t.name === name; }),
@@ -335,27 +323,26 @@
           }
         }
 
-        loadBtn.addEventListener("click", loadTools);
         runBtn.addEventListener("click", runTool);
+        copyBtn.addEventListener("click", function () {
+          var text = snippetEl.innerText || snippetEl.textContent || "";
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () {
+              copyBtn.textContent = "Copied";
+              setTimeout(function () { copyBtn.textContent = "Copy"; }, 1400);
+            }).catch(function () {});
+          }
+        });
 
-        // toolchange: re-registering (or another same-origin frame) updates the list.
         if (aftWebmcp.isSupported()) {
-          document.modelContext.ontoolchange = function () {
-            refreshTools();
-          };
-        }
-
-        if (aftWebmcp.isSupported()) {
-          setPill(supportPill, "Supported", true);
+          setPill(supportPill, "Native browser WebMCP is connected", true, true);
+          document.modelContext.ontoolchange = function () { refreshTools(); };
           refreshTools();
-          // Demo tools are read-only, so register automatically when WebMCP exists —
-          // an agent visiting this page can use them right away.
-          loadTools();
+          // Read-only tools: safe to auto-register when WebMCP exists.
+          aftWebmcp.registerTools(tools.publicTools(), { readOnlyHint: true }).catch(function () {});
         } else {
-          setPill(supportPill, "Not supported", false);
-          loadBtn.disabled = true;
-          loadState.textContent =
-            "This browser has no document.modelContext. Enable WebMCP (Chrome flag / origin trial) or use ChatGPT's in-app browser.";
+          setPill(supportPill, "WebMCP not available in this browser", false);
+          unsupportedNote.hidden = false;
         }
       })();
     </script>

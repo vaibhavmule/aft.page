@@ -139,5 +139,33 @@
     <script src="/auth-nav.js" defer></script>
     <script src="/summarize.js" defer></script>
     <script src="/feedback.js" defer></script>
+    <script src="/webmcp.js" defer></script>
+    <script src="/webmcp-deploy.js" defer></script>
+    <script>
+      // Expose the Drop publish flow as WebMCP tools when a WebMCP-capable
+      // client is present. Anonymous publish is the same action the Drop UI
+      // allows; every call still requires the same-origin confirmation.
+      (function () {
+        function boot() {
+          const aftWebmcp = window.aftWebmcp;
+          const deploy = window.aftWebmcpDeploy;
+          if (!aftWebmcp || !aftWebmcp.isSupported() || !deploy) return;
+          const ctx = { confirm: (o) => aftWebmcp.confirm(o) };
+          aftWebmcp
+            .registerTools(deploy.dropTools(ctx), { readOnlyHint: false })
+            .catch(() => {});
+        }
+        if (window.aftWebmcp) boot();
+        else {
+          const t = setInterval(() => {
+            if (window.aftWebmcp && window.aftWebmcpDeploy) {
+              clearInterval(t);
+              boot();
+            }
+          }, 50);
+          setTimeout(() => clearInterval(t), 3000);
+        }
+      })();
+    </script>
   </body>
 </html>

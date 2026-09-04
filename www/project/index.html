@@ -2675,8 +2675,69 @@
             },
           };
 
+          const publishTool = {
+            name: "publish_files",
+            title: "Publish files to this site",
+            description:
+              "Update this aft.page site with a new set of files (redeploy the current slug as the logged-in owner/editor). Pass files as [{ path, content }]; include index.html. Requires your confirmation in the page.",
+            annotations: { consequentialHint: true },
+            inputSchema: {
+              type: "object",
+              properties: {
+                files: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      path: { type: "string", description: "Relative path, e.g. index.html or assets/app.js" },
+                      content: { type: "string", description: "UTF-8 file content" },
+                    },
+                    required: ["path", "content"],
+                  },
+                  description: "Built files to publish. Max 500. Never include src/, node_modules, .next/.",
+                },
+              },
+              required: ["files"],
+            },
+            execute: async (input) => {
+              if (!can()) return { error: "You need edit access to this site." };
+              const files = Array.isArray(input?.files) ? input.files : [];
+              if (!files.length) return { error: "files is required." };
+              if (files.length > 500) return { error: "Too many files (max 500)." };
+              for (const f of files) {
+                const path = String((f && f.path) || "");
+                if (!path || path.includes("..") || path.startsWith("/") || path.includes("\\")) {
+                  return { error: `Invalid file path: ${path || "(empty)"}` };
+                }
+              }
+              const ok = await aftWebmcp.confirm({
+                title: "Publish files to this site?",
+                message: `Update ${slug}.aft.page with ${files.length} file${files.length === 1 ? "" : "s"}?\n\nThe live URL will update to this new deployment.`,
+                confirmLabel: "Publish",
+              });
+              if (!ok) return { declined: true, message: "Publish declined." };
+              const res = await fetch(
+                `${API}/v1/deploy?slug=${encodeURIComponent(slug)}`,
+                {
+                  method: "PATCH",
+                  credentials: "include",
+                  headers: { "content-type": "application/json" },
+                  body: JSON.stringify({ files }),
+                },
+              );
+              const body = await res.json().catch(() => ({}));
+              if (!res.ok || !body.url) {
+                return {
+                  error: body.reason || body.hint || body.message || body.error || `Publish failed (${res.status})`,
+                };
+              }
+              await refresh();
+              return { ok: true, url: body.url, slug, deployId: body.deployId };
+            },
+          };
+
           aftWebmcp
-            .registerTools([statusTool, deploysTool, rollbackTool], {
+            .registerTools([statusTool, deploysTool, rollbackTool, publishTool], {
               readOnlyHint: false,
             })
             .catch(() => {});
