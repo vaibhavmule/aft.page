@@ -172,6 +172,8 @@ User-deployed sites keep **their** design. Aft chrome does not restyle customer 
 
 Build with `:root` tokens already in `www/styles.css` (marketing/docs) or `www/app.css` (app). Copy the existing button/nav/pill recipes; do not restyle from a third-party DESIGN.md. Green only for live, success, and the wordmark period. Primary CTA copy is “Deploy an app.” If a change is brand-level (lockup, tokens, footer, favicon), it needs a board — do not ship from this file alone.
 
+For **external / one-off pages** (reports, proposals, dashboards, landings built outside this repo — by Claude Code, ChatGPT, Codex, MCP): load the public distilled export `https://aft.page/design.md` + stylesheet `https://aft.page/aft-brand.css`. This file remains the canonical source; `design.md` is the public distillation for agents that cannot read the repo.
+
 ---
 
 ## Sources of truth

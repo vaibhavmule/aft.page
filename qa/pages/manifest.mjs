@@ -17,6 +17,8 @@ export const PAGES = [
   { path: "/mcp.md", must: ["MCP"], mode: "fetch" },
   { path: "/llms.txt", must: ["aft"], mode: "fetch" },
   { path: "/llms.html", must: ["aft"] },
+  { path: "/design.md", must: ["aft.page", "aft-brand.css"], mode: "fetch" },
+  { path: "/aft-brand.css", must: ["--void"], mode: "fetch" },
   { path: "/drop/", must: ["Drop", "aft.page"] },
   { path: "/host-html/", must: ["aft.page"] },
   { path: "/share-html/", must: ["aft.page"] },

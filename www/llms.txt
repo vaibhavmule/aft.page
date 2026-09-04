@@ -99,6 +99,7 @@ Thin deploy adapter only (not a control plane):
 - [ai.json](https://aft.page/ai.json): Machine-parseable AI permissions
 - [identity.json](https://aft.page/identity.json): Structured identity
 - [brand.txt](https://aft.page/brand.txt): Naming and brand voice
+- [design.md](https://aft.page/design.md): Design guidance for agents building on-brand aft pages (reports, dashboards, proposals, landings) + public stylesheet (aft-brand.css)
 - [faq-ai.txt](https://aft.page/faq-ai.txt): FAQ for AI systems
 - [developer-ai.txt](https://aft.page/developer-ai.txt): Technical context for agents
 - [robots-ai.txt](https://aft.page/robots-ai.txt): AI crawler directives
