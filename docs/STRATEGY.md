@@ -150,6 +150,7 @@ through open protocols. Then Unix.
 | | Spec | AFT surface |
 | --- | --- | --- |
 | **MCP** | [modelcontextprotocol.io](https://modelcontextprotocol.io) | Thin remote server `https://mcp.aft.page/mcp` |
+| **WebMCP** | [W3C draft — document.modelContext](https://webmachinelearning.github.io/webmcp/) | Read-only in-page tools on aft.page's own surfaces (`/webmcp/` demo + docs). Injects nothing into user sites. |
 | **Skills** | [agentskills.io](https://agentskills.io) | [`apps/plugin/skills/deploy-to-aft/SKILL.md`](../apps/plugin/skills/deploy-to-aft/SKILL.md) |
 | **Plugins** | [agent-plugins.org](https://agent-plugins.org) | [`apps/plugin`](../apps/plugin) — `npx plugins add vaibhavmule/aft.page` |
 | **Unix** | — | Small programs that compose (`aft deploy`, curl, MCP tools). **libaft** ([`apps/sdk`](../apps/sdk)) embeds deploy into someone else's CLI, background agent, or software factory — local or cloud. |

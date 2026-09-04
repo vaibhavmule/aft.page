@@ -61,6 +61,7 @@ Claimed sites can be paused (reversible) or destroyed (irreversible) — see /do
 - Capabilities: https://aft.page/docs/capabilities/
 - Frameworks: https://aft.page/docs/frameworks/
 - MCP: https://aft.page/mcp.md
+- WebMCP (read-only in-page tools for browser agents): https://aft.page/webmcp.md · demo https://aft.page/webmcp/
 - Compare (aft.page, Cloudflare Pages, Netlify, Vercel): https://aft.page/compare.md
 - Open protocols: https://aft.page/plugins.md
 - Examples: https://github.com/vaibhavmule/aft.page/tree/main/examples

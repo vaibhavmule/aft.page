@@ -2,6 +2,9 @@
 # HSTS without includeSubDomains: visiting the marketing site must not HSTS tenants.
 # CSP: 'unsafe-inline' until pages move off inline <script>; jsdelivr = Geist + fflate.
 # frame-src: /preview embeds tenant *.aft.page (default-src 'self' would block the iframe).
+# WebMCP (document.modelContext) requires an origin-isolated document. The /webmcp/
+# demo opts in via Origin-Agent-Cluster. NOTE: origin isolation is one-way per
+# origin — do not add it broadly to all of www/ without a rollout plan.
 /*
   Strict-Transport-Security: max-age=15552000
   X-Content-Type-Options: nosniff
@@ -9,6 +12,9 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(), camera=()
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net data:; img-src 'self' data: blob:; connect-src 'self' https://api.aft.page https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; frame-src 'self' https://*.aft.page; form-action 'self' https://api.aft.page; upgrade-insecure-requests
+
+/webmcp/*
+  Origin-Agent-Cluster: ?1
 
 /.well-known/security.txt
   Content-Type: text/plain; charset=utf-8

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebMCP demo — aft.page</title>
+    <meta name="robots" content="noindex" />
+    <meta
+      name="description"
+      content="aft.page exposes read-only WebMCP tools. See what a WebMCP-capable agent can do on this page."
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      .webmcp-hero {
+        max-width: 52rem;
+        margin: 0 auto;
+        padding: 3rem 1.25rem 2rem;
+      }
+      .webmcp-hero h1 {
+        font-size: 1.8rem;
+        letter-spacing: -0.02em;
+        margin: 0 0 0.5rem;
+      }
+      .webmcp-hero p.lede {
+        color: var(--quiet, #71717a);
+        max-width: 40rem;
+      }
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.3rem 0.7rem;
+        border-radius: 999px;
+        border: 1px solid #e4e4e7;
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+      .status-pill i {
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 50%;
+        background: #a1a1aa;
+      }
+      .status-pill.on i {
+        background: #22c55e;
+      }
+      .panel {
+        border: 1px solid #e4e4e7;
+        border-radius: 10px;
+        padding: 1rem 1.1rem;
+        margin: 1rem 0;
+      }
+      .panel h2 {
+        font-size: 1.05rem;
+        margin: 0 0 0.6rem;
+      }
+      .tool-list {
+        display: grid;
+        gap: 0.5rem;
+      }
+      .tool-item {
+        border: 1px solid #e4e4e7;
+        border-radius: 8px;
+        padding: 0.6rem 0.75rem;
+      }
+      .tool-item code {
+        font-weight: 600;
+      }
+      .tool-item p {
+        margin: 0.2rem 0 0;
+        color: #52525b;
+        font-size: 0.875rem;
+      }
+      .row {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      select,
+      input[type="text"] {
+        padding: 0.4rem 0.5rem;
+        border: 1px solid #d4d4d8;
+        border-radius: 6px;
+        font: inherit;
+      }
+      pre.result {
+        background: #0a0a0a;
+        color: #e4e4e7;
+        border-radius: 8px;
+        padding: 0.75rem;
+        overflow: auto;
+        font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0.6rem 0 0;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.45rem 0.85rem;
+        border-radius: 6px;
+        border: 1px solid #111;
+        background: #111;
+        color: #fff;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+      }
+      .btn.ghost {
+        background: #fff;
+        color: #111;
+      }
+      .muted {
+        color: #71717a;
+        font-size: 0.85rem;
+      }
+      .note {
+        background: #fafafa;
+        border-left: 3px solid #d4d4d8;
+        padding: 0.6rem 0.8rem;
+        border-radius: 0 6px 6px 0;
+        font-size: 0.875rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="site">
+      <nav class="topnav" aria-label="Primary">
+        <div class="topnav-brand-wrap">
+          <a class="topnav-brand" href="/">aft<span>.</span>page</a>
+          <span class="nav-beta">Beta</span>
+        </div>
+        <div class="topnav-links">
+          <a href="/mcp">MCP</a>
+          <a href="/docs">Docs</a>
+          <a href="/plugins">Plugins</a>
+        </div>
+      </nav>
+
+      <main class="webmcp-hero">
+        <h1>WebMCP demo</h1>
+        <p class="lede">
+          This page registers <strong>read-only</strong> tools with
+          <code>document.modelContext</code> (the W3C WebMCP API). In a WebMCP-capable
+          client — ChatGPT's in-app browser, or Chrome with WebMCP enabled — an agent
+          can call them instead of scraping the page.
+        </p>
+
+        <div class="row" style="margin: 1rem 0">
+          <span class="status-pill" id="support-pill"><i></i> Checking support…</span>
+          <span class="status-pill" id="tools-pill"><i></i> 0 tools</span>
+        </div>
+
+        <div class="note">
+          To test: open this page in <strong>Chrome</strong> with
+          <code>chrome://flags/#enable-webmcp-testing</code> enabled, or in
+          <strong>ChatGPT's in-app browser</strong> (WebMCP supported out of the box).
+          Load the tools below, then ask the agent to use e.g.
+          <code>get_aft_page_status</code>.
+        </div>
+
+        <section class="panel">
+          <h2>1 · Load tools</h2>
+          <p class="muted" style="margin-top: 0">
+            Registering is the action that exposes tools to the agent. It requires your
+            consent (or <code>?demo=1</code>).
+          </p>
+          <div class="row">
+            <button type="button" class="btn" id="load-btn">Load demo tools</button>
+            <span class="muted" id="load-state"></span>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>2 · Registered tools</h2>
+          <div class="tool-list" id="tool-list">
+            <p class="muted">No tools loaded yet.</p>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>3 · Test execute</h2>
+          <p class="muted" style="margin-top: 0">
+            Call a loaded tool with sample input and see the stringified result.
+          </p>
+          <div class="row">
+            <select id="tool-select" aria-label="Tool"></select>
+            <input
+              type="text"
+              id="tool-input"
+              placeholder='JSON input, e.g. {"slug":"hello"}'
+              style="flex: 1 1 16rem"
+            />
+            <button type="button" class="btn ghost" id="run-btn">Run</button>
+          </div>
+          <pre class="result" id="result" aria-live="polite">—</pre>
+        </section>
+      </main>
+    </div>
+
+    <script src="/webmcp.js"></script>
+    <script src="/webmcp-tools.js"></script>
+    <script>
+      (function () {
+        "use strict";
+        var aftWebmcp = window.aftWebmcp;
+        var tools = window.aftWebmcpTools;
+        var supportPill = document.getElementById("support-pill");
+        var toolsPill = document.getElementById("tools-pill");
+        var loadBtn = document.getElementById("load-btn");
+        var loadState = document.getElementById("load-state");
+        var listEl = document.getElementById("tool-list");
+        var selectEl = document.getElementById("tool-select");
+        var inputEl = document.getElementById("tool-input");
+        var runBtn = document.getElementById("run-btn");
+        var resultEl = document.getElementById("result");
+
+        var registeredTools = [];
+        var demoAuto = new URLSearchParams(location.search).has("demo");
+
+        function setPill(pill, label, on) {
+          pill.lastChild.textContent = " " + label;
+          pill.classList.toggle("on", Boolean(on));
+        }
+
+        function renderList() {
+          listEl.replaceChildren();
+          if (!registeredTools.length) {
+            var p = document.createElement("p");
+            p.className = "muted";
+            p.textContent = "No tools loaded yet.";
+            listEl.appendChild(p);
+            return;
+          }
+          registeredTools.forEach(function (t) {
+            var item = document.createElement("div");
+            item.className = "tool-item";
+            var code = document.createElement("code");
+            code.textContent = t.name;
+            item.appendChild(code);
+            if (t.title) {
+              var title = document.createElement("span");
+              title.className = "muted";
+              title.textContent = " — " + t.title;
+              item.appendChild(title);
+            }
+            var desc = document.createElement("p");
+            desc.textContent = t.description || "";
+            item.appendChild(desc);
+            listEl.appendChild(item);
+          });
+        }
+
+        function renderSelect() {
+          selectEl.replaceChildren();
+          registeredTools.forEach(function (t) {
+            var opt = document.createElement("option");
+            opt.value = t.name;
+            opt.textContent = t.name;
+            selectEl.appendChild(opt);
+          });
+        }
+
+        async function refreshTools() {
+          try {
+            var mc = document.modelContext;
+            var got = (await mc.getTools()) || [];
+            // Dedupe by name + keep the stable registration order.
+            var seen = Object.create(null);
+            registeredTools = got.filter(function (t) {
+              if (seen[t.name]) return false;
+              seen[t.name] = true;
+              return true;
+            });
+            setPill(toolsPill, registeredTools.length + (registeredTools.length === 1 ? " tool" : " tools"), true);
+            renderList();
+            renderSelect();
+          } catch (err) {
+            setPill(toolsPill, "unavailable", false);
+            console.warn("[webmcp-demo] getTools failed:", err);
+          }
+        }
+
+        async function loadTools() {
+          if (!aftWebmcp.isSupported()) {
+            loadState.textContent = "document.modelContext is not available in this browser.";
+            return;
+          }
+          loadBtn.disabled = true;
+          loadState.textContent = "Registering…";
+          try {
+            var n = await aftWebmcp.registerTools(tools.publicTools(), {
+              readOnlyHint: true,
+            });
+            loadState.textContent = n + " registered.";
+          } catch (err) {
+            loadState.textContent = "Failed to register: " + (err && err.message ? err.message : err);
+            loadBtn.disabled = false;
+          }
+        }
+
+        async function runTool() {
+          if (!registeredTools.length) return;
+          var name = selectEl.value;
+          var raw = inputEl.value.trim() || "{}";
+          var inputObj;
+          try {
+            inputObj = JSON.parse(raw);
+          } catch (_) {
+            resultEl.textContent = "Input must be valid JSON.";
+            return;
+          }
+          resultEl.textContent = "Running…";
+          try {
+            var out = await document.modelContext.executeTool(
+              registeredTools.find(function (t) { return t.name === name; }),
+              inputObj,
+            );
+            resultEl.textContent = String(out);
+          } catch (err) {
+            resultEl.textContent = "executeTool failed: " + (err && err.message ? err.message : err);
+          }
+        }
+
+        loadBtn.addEventListener("click", loadTools);
+        runBtn.addEventListener("click", runTool);
+
+        // toolchange: re-registering (or another same-origin frame) updates the list.
+        if (aftWebmcp.isSupported()) {
+          document.modelContext.ontoolchange = function () {
+            refreshTools();
+          };
+        }
+
+        if (aftWebmcp.isSupported()) {
+          setPill(supportPill, "Supported", true);
+          refreshTools();
+          // Demo tools are read-only, so register automatically when WebMCP exists —
+          // an agent visiting this page can use them right away.
+          loadTools();
+        } else {
+          setPill(supportPill, "Not supported", false);
+          loadBtn.disabled = true;
+          loadState.textContent =
+            "This browser has no document.modelContext. Enable WebMCP (Chrome flag / origin trial) or use ChatGPT's in-app browser.";
+        }
+      })();
+    </script>
+  </body>
+</html>

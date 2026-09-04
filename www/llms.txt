@@ -58,6 +58,7 @@ aft.page does not provide:
 - [Changelog Markdown](https://api.aft.page/v1/changelog.md): Same changelog for agents
 - [MCP docs](https://aft.page/mcp.md): Agent tools, API, and config (Markdown)
 - [MCP docs HTML](https://aft.page/mcp): MCP reference for humans
+- [WebMCP](https://aft.page/webmcp.md): Read-only in-page tools for browser agents (document.modelContext) — demo at /webmcp/
 - [Drop](https://aft.page/drop/): Human upload UI
 - [Code](https://aft.page/code/): Prompt or template → static site
 - [Drop agent instructions](https://aft.page/drop/llms.txt): Agent-oriented Drop notes

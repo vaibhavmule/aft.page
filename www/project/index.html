@@ -2576,8 +2576,128 @@
         });
       })();
 
+      /* ---- WebMCP: expose dashboard tools to a WebMCP-capable agent. ---- */
+      (function initWebmcp() {
+        function boot() {
+          const aftWebmcp = window.aftWebmcp;
+          if (!aftWebmcp || !aftWebmcp.isSupported()) return;
+          // The dashboard is a management surface; agent tools are opt-in per session.
+          const q = new URLSearchParams(location.search);
+          if (!q.has("agent") && !q.has("webmcp")) return;
+          const can = () => Boolean(info && (info.owner || info.role === "edit"));
+
+          const statusTool = {
+            name: "get_site_status",
+            title: "Site status",
+            description:
+              "Returns the current deployment status for this aft.page site: live URL, current deploy id, runtime, expiry, and visibility. Read-only.",
+            inputSchema: { type: "object", properties: {} },
+            execute: async () => ({
+              slug,
+              url: info?.url || `https://${slug}.aft.page`,
+              deployId: info?.deployId || null,
+              runtime: info?.runtime || null,
+              expiresAt: info?.expiresAt || null,
+              owned: Boolean(info?.owner),
+              role: info?.role || null,
+            }),
+          };
+
+          const deploysTool = {
+            name: "list_deploys",
+            title: "List deploy history",
+            description:
+              "Returns rollback-able deploy history for this aft.page site (same list the dashboard shows). Read-only.",
+            inputSchema: { type: "object", properties: {} },
+            execute: async () => {
+              if (!can()) return { error: "You need edit access to this site." };
+              const res = await fetch(`${API}/v1/sites/${encodeURIComponent(slug)}/deploys`, {
+                credentials: "include",
+              });
+              if (!res.ok) return { error: `Couldn't load deploys (${res.status})` };
+              const body = await res.json().catch(() => ({}));
+              return Array.isArray(body?.deploys)
+                ? {
+                    currentDeployId: body.currentDeployId || info?.deployId || null,
+                    deploys: body.deploys.slice(0, 20).map((d) => ({
+                      id: d.id,
+                      createdAt: d.createdAt,
+                      source: d.source || null,
+                    })),
+                  }
+                : { error: "No deploy history" };
+            },
+          };
+
+          const rollbackTool = {
+            name: "rollback_site",
+            title: "Rollback this site",
+            description:
+              "Point this aft.page site at a prior deployId. Requires your confirmation in the page.",
+            annotations: { consequentialHint: true },
+            inputSchema: {
+              type: "object",
+              properties: {
+                deployId: {
+                  type: "string",
+                  description: "A prior deployId from list_deploys.",
+                },
+              },
+              required: ["deployId"],
+            },
+            execute: async (input) => {
+              if (!can()) return { error: "You need edit access to this site." };
+              const deployId = String(input?.deployId || "");
+              if (!deployId) return { error: "deployId is required." };
+              const ok = await aftWebmcp.confirm({
+                title: "Rollback site?",
+                message: `Point ${slug}.aft.page at deploy ${deployId}?\n\nThe live URL will change to that deployment.`,
+                confirmLabel: "Rollback",
+              });
+              if (!ok) return { declined: true, message: "Rollback declined." };
+              const res = await fetch(
+                `${API}/v1/sites/${encodeURIComponent(slug)}/rollback`,
+                {
+                  method: "POST",
+                  credentials: "include",
+                  headers: { "content-type": "application/json" },
+                  body: JSON.stringify({ deployId }),
+                },
+              );
+              const body = await res.json().catch(() => ({}));
+              if (!res.ok) {
+                return {
+                  error: body.hint || body.error || `Rollback failed (${res.status})`,
+                };
+              }
+              await refresh();
+              return { ok: true, slug, deployId: body.deployId || deployId };
+            },
+          };
+
+          aftWebmcp
+            .registerTools([statusTool, deploysTool, rollbackTool], {
+              readOnlyHint: false,
+            })
+            .catch(() => {});
+        }
+
+        // webmcp.js is defer-loaded below; boot once it exists.
+        if (window.aftWebmcp) boot();
+        else {
+          const t = setInterval(() => {
+            if (window.aftWebmcp) {
+              clearInterval(t);
+              boot();
+            }
+          }, 50);
+          setTimeout(() => clearInterval(t), 3000);
+        }
+      })();
+
       load();
     </script>
+    <script src="/webmcp.js" defer></script>
     <script src="/progress.js" defer></script>
     <script src="/auth-nav.js" defer></script>
     <script src="/feedback.js" defer></script>

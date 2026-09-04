@@ -7,6 +7,7 @@
 **This file (Markdown):** https://aft.page/mcp.md  
 **Agent index:** https://aft.page/llms.txt  
 **Agents today:** MCP below, or hosted CLI (`curl -fsSL https://aft.page/install | sh` → `aft deploy`)  
+**In-page tools (browser agents, read-only):** [WebMCP](/webmcp.md) — `document.modelContext`  
 **Humans:** [Drop](https://aft.page/drop/) or the same CLI  
 **Open protocols:** MCP · Skills · Plugins · Unix/libaft — https://aft.page/plugins.md  
 
