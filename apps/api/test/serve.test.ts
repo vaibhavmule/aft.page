@@ -559,3 +559,33 @@ describe("sign in with aft", () => {
     expect(denied.status).toBe(401);
   });
 });
+
+describe("a dead container is not counted as served", () => {
+  it("leaves last_served_at alone when the origin never answered", async () => {
+    // sweepUnusedAnonSites deletes unclaimed sites idle 30 days, where idle
+    // means "no successful serve". touchLastServed used to fire before the
+    // proxy attempt, so scanner traffic to a broken site reset that clock
+    // forever and it could never be collected — which is how 32 dead sites
+    // accumulated.
+    const created = await call(
+      uploadJson([{ path: "index.html", content: "<h1>x</h1>" }], "no-touch-dead"),
+    );
+    const { slug } = (await created.json()) as { slug: string };
+    const { setSiteRuntime, getSiteRow } = await import("../src/db");
+    await setSiteRuntime(env, slug, {
+      runtime: "worker",
+      upstreamUrl: "https://does-not-exist-aft-test.trycloudflare.com",
+      mainModule: null,
+    });
+
+    const before = (await getSiteRow(env, slug))?.lastServedAt ?? null;
+    const res = await fetchSite(slug);
+    // The dead origin is reported as a 503 "not running" page (not a bare 530)
+    // so the visitor gets an honest answer.
+    expect(res.status).toBe(503);
+    expect(res.headers.get("x-aft-origin")).toBe("dead");
+    const after = (await getSiteRow(env, slug))?.lastServedAt ?? null;
+
+    expect(after).toBe(before);
+  });
+});

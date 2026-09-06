@@ -257,7 +257,6 @@ export async function serveSite(
   const upstreamUrl = siteRow?.upstreamUrl || meta.upstreamUrl || null;
 
   if (!pinDeployId && upstreamUrl && (runtime === "worker" || runtime === "next")) {
-    void touchLastServed(env, slug);
     let res: Response;
     if (isEphemeralContainerOrigin(upstreamUrl)) {
       const replay = request.clone();
@@ -285,6 +284,35 @@ export async function serveSite(
       res = await proxyUpstream(request, upstreamUrl, access.user, root);
     }
     const path = servePath(pathname);
+    // A dead origin never answered, so the site was not "served": do not touch
+    // the 30-day idle clock in sweepUnusedAnonSites, and tell the visitor the
+    // container is not running instead of handing back a bare 530.
+    if (tunnelOriginDead(res.status)) {
+      await res.body?.cancel().catch(() => null);
+      noteServe(env, request, slug, {
+        httpStatus: 503,
+        path,
+      });
+      const headers = new Headers({
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "no-store",
+        "x-aft-slug": slug,
+        "x-aft-origin": "dead",
+      });
+      for (const [name, value] of corsHeaders(null, false)) {
+        headers.set(name, value);
+      }
+      return new Response(containerAsleepHtml(slug, root), {
+        status: 503,
+        headers,
+      });
+    }
+    // Only mark the site as served once the origin has actually answered —
+    // not while we are still trying (or after it failed). Firing before the
+    // proxy attempt used to reset the 30-day idle clock in
+    // sweepUnusedAnonSites even when a container was dead, so scanner traffic
+    // kept broken sites immortal and they could never be garbage collected.
+    void touchLastServed(env, slug);
     noteServe(env, request, slug, {
       httpStatus: res.status,
       path,
@@ -826,7 +854,34 @@ function siteNotFoundResponse(
   return new Response(siteNotFoundHtml(slug, root), { status: 404, headers });
 }
 
-/** Shown when a site is deactivated: files are safe, serving is paused. */
+/** A container-backed site whose origin is gone. The app has to be re-run to
+ * come back; the deploy record and files are untouched. A clear 503 beats a
+ * bare 530 after a proxy timeout.
+ */
+export function containerAsleepHtml(slug: string, root: string): string {
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="robots" content="noindex"/><meta name="theme-color" content="${BRAND.void}"/><title>App not running — aft.page</title>
+${BRAND_FONT_LINKS}
+<style>
+${BRAND_CSS_VARS}
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 var(--font-sans);color:var(--ink);background:var(--void);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.25rem;-webkit-font-smoothing:antialiased}
+main{width:min(26rem,100%);text-align:center}
+${BRAND_WORDMARK_CSS}
+.brand{display:inline-block;margin:0 0 1.5rem;font-size:1.15rem}
+.badge{display:inline-block;margin:0 0 1rem;padding:.2rem .6rem;border:1px solid var(--line-bright);border-radius:999px;font-size:.72rem;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--quiet)}
+h1{font-size:1.25rem;margin:0 0 .5rem;font-weight:600}
+p{color:var(--quiet);margin:0 0 1rem}p strong{color:var(--ink)}
+.hint{margin-top:1.25rem;font-size:.85rem;color:var(--faint)}.hint a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+</style></head><body>
+<main>
+  <a class="brand" href="https://${root}/">aft<span>.</span>page</a>
+  <div class="badge">Not running</div>
+  <h1>This app isn’t running</h1>
+  <p><strong>${slug}.${root}</strong> is a server app, and the container behind it has stopped. Nothing is lost — it needs to be run again to come back.</p>
+  <p class="hint">Are you the owner? Re-run it from your <a href="https://${root}/projects">projects</a>.</p>
+</main>
+</body></html>`;
+}
+
 export function sitePausedHtml(slug: string, root: string): string {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="robots" content="noindex"/><meta name="theme-color" content="${BRAND.void}"/><title>Site paused — aft.page</title>
 ${BRAND_FONT_LINKS}
