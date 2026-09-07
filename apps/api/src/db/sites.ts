@@ -14,10 +14,7 @@ export async function getSiteVisibility(
   return row?.visibility === "private" ? "private" : "public";
 }
 
-export async function getSiteRow(
-  env: Env,
-  slug: string,
-): Promise<{
+export type SiteRow = {
   slug: string;
   deployId: string;
   ownerUserId: string | null;
@@ -31,31 +28,30 @@ export async function getSiteRow(
   active: boolean;
   expiresAt: string | null;
   expired: boolean;
-} | null> {
-  await ensureDb(env);
-  const row = await env.DB.prepare(
-    `SELECT slug, deploy_id, owner_user_id, visibility, created_at, updated_at, last_served_at,
-            COALESCE(runtime, 'static') AS runtime, upstream_url, main_module,
-            COALESCE(active, 1) AS active, expires_at, COALESCE(expired, 0) AS expired
-     FROM sites WHERE slug = ?`,
-  )
-    .bind(slug)
-    .first<{
-      slug: string;
-      deploy_id: string;
-      owner_user_id: string | null;
-      visibility: string;
-      created_at: string;
-      updated_at: string;
-      last_served_at: string | null;
-      runtime: string;
-      upstream_url: string | null;
-      main_module: string | null;
-      active: number;
-      expires_at: string | null;
-      expired: number;
-    }>();
-  if (!row) return null;
+};
+
+type RawSiteRow = {
+  slug: string;
+  deploy_id: string;
+  owner_user_id: string | null;
+  visibility: string;
+  created_at: string;
+  updated_at: string;
+  last_served_at: string | null;
+  runtime: string;
+  upstream_url: string | null;
+  main_module: string | null;
+  active: number;
+  expires_at: string | null;
+  expired: number;
+};
+
+const SITE_ROW_SQL = `SELECT slug, deploy_id, owner_user_id, visibility, created_at, updated_at, last_served_at,
+          COALESCE(runtime, 'static') AS runtime, upstream_url, main_module,
+          COALESCE(active, 1) AS active, expires_at, COALESCE(expired, 0) AS expired
+   FROM sites WHERE slug = ?`;
+
+function mapSiteRow(row: RawSiteRow): SiteRow {
   return {
     slug: row.slug,
     deployId: row.deploy_id,
@@ -71,6 +67,67 @@ export async function getSiteRow(
     expiresAt: row.expires_at ?? null,
     expired: Number(row.expired) !== 0,
   };
+}
+
+/** Always the primary. Use for anything that decides a write. */
+export async function getSiteRow(
+  env: Env,
+  slug: string,
+): Promise<SiteRow | null> {
+  await ensureDb(env);
+  const row = await env.DB.prepare(SITE_ROW_SQL).bind(slug).first<RawSiteRow>();
+  return row ? mapSiteRow(row) : null;
+}
+
+export type SiteRowRead = {
+  row: SiteRow | null;
+  /** Where the query actually ran — null when D1 did not report it. */
+  servedByRegion: string | null;
+  servedByPrimary: boolean | null;
+  /** True when the Sessions path failed and this fell back to the primary. */
+  fellBack: boolean;
+};
+
+/**
+ * Serve-path read, via the D1 Sessions API so the nearest read replica can
+ * answer it. Unconstrained: the row decides access, and it may therefore be
+ * stale by the replication lag — a site just flipped to private can keep
+ * serving for that window. Writes are unaffected; they always hit the primary.
+ *
+ * Read replication is Beta, so a failure here falls back to a primary read
+ * rather than failing the request.
+ */
+export async function getSiteRowForServe(
+  env: Env,
+  slug: string,
+): Promise<SiteRowRead> {
+  await ensureDb(env);
+  try {
+    const session = env.DB.withSession();
+    const res = await session.prepare(SITE_ROW_SQL).bind(slug).all<RawSiteRow>();
+    const raw = res.results?.[0];
+    return {
+      row: raw ? mapSiteRow(raw) : null,
+      servedByRegion: res.meta?.served_by_region ?? null,
+      servedByPrimary: res.meta?.served_by_primary ?? null,
+      fellBack: false,
+    };
+  } catch (err) {
+    console.warn(
+      JSON.stringify({
+        level: "warn",
+        where: "d1_session_read",
+        slug,
+        message: err instanceof Error ? err.message : String(err),
+      }),
+    );
+    return {
+      row: await getSiteRow(env, slug),
+      servedByRegion: null,
+      servedByPrimary: null,
+      fellBack: true,
+    };
+  }
 }
 
 /** Soft-expire: keep the D1 row for audit, stop serving, free the slug. */

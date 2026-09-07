@@ -1,98 +1,16 @@
-import { classifyLog, headlineFor, scrubSurface } from "./run-log.mjs"
+import {
+  aliasRoot,
+  githubUrl,
+  headlineFor,
+  parseGithubInput,
+  parseRunPath,
+  runGithubRepo,
+  runPageUrl,
+  waitForSite,
+  watchJob,
+} from "./run-client.js"
 
 const API = "https://api.aft.page"
-
-const SKIP_OWNERS = new Set([
-  "about",
-  "apps",
-  "blog",
-  "explore",
-  "features",
-  "login",
-  "marketplace",
-  "new",
-  "orgs",
-  "pricing",
-  "settings",
-  "topics",
-  "trending",
-])
-
-function aliasRoot(raw) {
-  const s = String(raw || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "")
-  if (!s || s.includes("..")) return ""
-  const lower = s.toLowerCase()
-  if (lower === "front-end" || lower === "front_end") return "frontend"
-  if (lower === "back-end" || lower === "back_end") return "backend"
-  return s
-}
-
-function parseRunPath() {
-  const parts = location.pathname.replace(/\/+$/, "").split("/").filter(Boolean)
-  if (parts[0] !== "run" || parts.length < 3) return null
-  const owner = decodeURIComponent(parts[1] || "")
-  const repo = decodeURIComponent(parts[2] || "").replace(/\.git$/i, "")
-  if (!owner || !repo || SKIP_OWNERS.has(owner.toLowerCase())) return null
-  if (!/^[A-Za-z0-9_.-]+$/.test(owner) || !/^[A-Za-z0-9_.-]+$/.test(repo)) return null
-  const rest = parts.slice(3).map((p) => decodeURIComponent(p)).join("/")
-  const root = aliasRoot(rest)
-  return root ? { owner, repo, root } : { owner, repo }
-}
-
-function parseGithubInput(raw) {
-  const s = String(raw || "").trim()
-  if (!s) return null
-  if (/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(s)) {
-    const [owner, repo] = s.split("/")
-    return { owner, repo: repo.replace(/\.git$/i, "") }
-  }
-  try {
-    const u = new URL(s, "https://github.com")
-    if (u.hostname.replace(/^www\./i, "").toLowerCase() !== "github.com") return null
-    const parts = u.pathname.split("/").filter(Boolean)
-    if (parts.length < 2) return null
-    const owner = parts[0]
-    const repo = parts[1].replace(/\.git$/i, "")
-    if (SKIP_OWNERS.has(owner.toLowerCase())) return null
-    if (!/^[A-Za-z0-9_.-]+$/.test(owner) || !/^[A-Za-z0-9_.-]+$/.test(repo)) return null
-    return { owner, repo }
-  } catch {
-    return null
-  }
-}
-
-function githubUrl(ref) {
-  return `https://github.com/${ref.owner}/${ref.repo}`
-}
-
-function runPageUrl(ref) {
-  const base = `/run/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}`
-  const root = aliasRoot(ref.root)
-  if (!root) return base
-  return `${base}/${root.split("/").map(encodeURIComponent).join("/")}`
-}
-
-function liveOpenUrl(liveUrl, editToken, claimUrl) {
-  if (claimUrl) return claimUrl
-  if (!liveUrl) return null
-  const u = new URL(liveUrl)
-  if (editToken) u.searchParams.set("token", editToken)
-  return u.toString()
-}
-
-function askNotify() {
-  if (!("Notification" in window)) return
-  if (Notification.permission === "default") {
-    Notification.requestPermission().catch(() => {})
-  }
-}
-
-function notifyDone(title, body) {
-  if (!("Notification" in window) || Notification.permission !== "granted") return
-  try {
-    new Notification(title, { body: body || "", icon: "/favicon-32.png" })
-  } catch (_) {}
-}
 
 const FETCH_CREDS = { credentials: "include" }
 const VIEW_KEY = "aftRunView"
@@ -186,23 +104,26 @@ function showRepo(ref) {
     : `Running ${ref.owner}/${ref.repo}`
 }
 
-async function waitForSite(url, { timeoutMs = 45000, intervalMs = 1000 } = {}) {
-  const probe = new URL(url).origin + "/"
-  const deadline = Date.now() + timeoutMs
-  while (Date.now() < deadline) {
-    try {
-      const res = await fetch(probe, { cache: "no-store" })
-      if (res.ok) return true
-      // Build still running or KV catching up — keep waiting.
-      if (res.status === 202 || res.status === 404) {
-        await new Promise((resolve) => setTimeout(resolve, intervalMs))
-        continue
-      }
-      return false
-    } catch (_) {}
-    await new Promise((resolve) => setTimeout(resolve, intervalMs))
+function liveOpenUrl(liveUrl, editToken, claimUrl) {
+  if (claimUrl) return claimUrl
+  if (!liveUrl) return null
+  const u = new URL(liveUrl)
+  if (editToken) u.searchParams.set("token", editToken)
+  return u.toString()
+}
+
+function askNotify() {
+  if (!("Notification" in window)) return
+  if (Notification.permission === "default") {
+    Notification.requestPermission().catch(() => {})
   }
-  return false
+}
+
+function notifyDone(title, body) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return
+  try {
+    new Notification(title, { body: body || "", icon: "/favicon-32.png" })
+  } catch (_) {}
 }
 
 async function showLive(liveUrl, editToken) {
@@ -224,7 +145,7 @@ async function showLive(liveUrl, editToken) {
   notifyDone("Live on aft.page", dest)
 }
 
-async function watchJob(data) {
+async function watchJobUi(data) {
   const panel = document.getElementById("build-panel")
   const phaseEl = document.getElementById("build-phase")
   const listEl = document.getElementById("turn-list")
@@ -251,8 +172,7 @@ async function watchJob(data) {
   setStatus(`Building ${kindLabel} for ${repoLabel}…`, "pending")
   phaseEl.textContent = headlineFor("queued", "queued", [])
   let settled = false
-  let lastTail = ""
-  let es
+  const controller = new AbortController()
 
   const hideStop = () => {
     if (!stopBtn) return
@@ -260,60 +180,17 @@ async function watchJob(data) {
     stopBtn.disabled = false
   }
 
-  const paint = (snap) => {
-    if (typeof snap.logTail === "string" && snap.logTail) lastTail = snap.logTail
-    else if (snap.line) {
-      const line = scrubSurface(snap.line)
-      if (line) lastTail = lastTail ? `${lastTail}\n${line}` : line
-    }
-    const turns = classifyLog(lastTail)
-    renderTurns(turns)
-    phaseEl.textContent = headlineFor(snap.phase, snap.status, turns)
-  }
-
-  const finishLive = async (snap) => {
-    settled = true
-    hideStop()
-    phaseEl.textContent = "Going live…"
-    await showLive(snap.url, snap.editToken)
-    phaseEl.textContent = headlineFor("live", "live", classifyLog(lastTail))
-  }
-
-  const applySnap = async (snap) => {
-    if (settled || !snap || snap.error === "not_found") return
-    paint(snap)
-    if (snap.status === "live" && snap.url) {
-      await finishLive(snap)
-      return
-    }
-    if (snap.status === "failed") {
-      settled = true
-      hideStop()
-      phaseEl.textContent = "Failed"
-      const why = scrubSurface(snap.reason || snap.error || "Build failed.") || "Build failed."
-      setStatus(why, "err")
-      if (snap.logTail) {
-        lastTail = snap.logTail
-        const turns = classifyLog(lastTail).filter(
-          (t) => t.simple !== why && t.detail !== why && t.guts !== why,
-        )
-        renderTurns(turns)
-      }
-      notifyDone("Run failed", why)
-    }
-  }
-
-  const handleStop = async () => {
+  const onStop = async () => {
     if (settled || !stopBtn) return
+    settled = true
     stopBtn.disabled = true
+    controller.abort()
     try {
       await fetch(`${API}/v1/jobs/${encodeURIComponent(data.jobId)}/stop`, {
         method: "POST",
         credentials: "include",
       })
     } catch (_) {}
-    settled = true
-    if (es) es.close()
     hideStop()
     phaseEl.textContent = "Stopped"
     setStatus("Stopped. Change the repo and Run again.", "pending")
@@ -321,33 +198,40 @@ async function watchJob(data) {
     gitUrl.select()
   }
 
-  es = new EventSource(`${API}/v1/jobs/${encodeURIComponent(data.jobId)}/events`, {
-    withCredentials: true,
-  })
-  es.onmessage = (ev) => {
-    try {
-      applySnap(JSON.parse(ev.data)).catch(() => {})
-    } catch (_) {}
-  }
-  stopBtn?.addEventListener("click", handleStop)
+  stopBtn?.addEventListener("click", onStop)
 
-  const deadline = Date.now() + 12 * 60 * 1000
-  while (!settled && Date.now() < deadline) {
-    try {
-      const r = await fetch(`${API}/v1/jobs/${encodeURIComponent(data.jobId)}`, FETCH_CREDS)
-      const snap = await r.json().catch(() => ({}))
-      await applySnap(snap)
-    } catch (_) {}
-    if (settled) break
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-  }
-  es.close()
-  stopBtn?.removeEventListener("click", handleStop)
-  hideStop()
-  if (!settled) {
-    setStatus("Build timed out. Try again or pick a smaller repo.", "err")
-    notifyDone("Run timed out", "Try again or pick a smaller repo.")
-  }
+  await watchJob(data.jobId, {
+    signal: controller.signal,
+    onSnap: (snap, turns) => {
+      phaseEl.textContent = headlineFor(snap.phase, snap.status, turns)
+    },
+    onLive: async (snap, turns) => {
+      settled = true
+      hideStop()
+      phaseEl.textContent = "Going live…"
+      await showLive(snap.url, snap.editToken)
+      phaseEl.textContent = headlineFor("live", "live", turns)
+    },
+    onFail: (snap, turns, why) => {
+      settled = true
+      hideStop()
+      phaseEl.textContent = "Failed"
+      setStatus(why, "err")
+      const cleanTurns = turns.filter(
+        (t) => t.simple !== why && t.detail !== why && t.guts !== why,
+      )
+      renderTurns(cleanTurns)
+      notifyDone("Run failed", why)
+    },
+    onTimeout: async () => {
+      if (settled) return
+      settled = true
+      hideStop()
+      setStatus("Build timed out. Try again or pick a smaller repo.", "err")
+      notifyDone("Run timed out", "Try again or pick a smaller repo.")
+    },
+  })
+  if (settled) stopBtn?.removeEventListener("click", onStop)
 }
 
 function hideRootPicker() {
@@ -391,41 +275,21 @@ async function runRepo(ref, { pushState = false, root } = {}) {
   hideRootPicker()
   if (pushState) history.replaceState(null, "", runPageUrl(at))
 
-  for (let attempt = 0; attempt < 2; attempt++) {
-    setStatus(attempt ? "Retrying…" : "Checking repo…", "pending")
-    try {
-      const res = await fetch(`${API}/v1/repo/deploy`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "content-type": "application/json", "X-Aft-Client": "web" },
-        body: JSON.stringify({ url: githubUrl(at), ...(folder ? { root: folder } : {}) }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (res.status === 202 && data.jobId) {
-        await watchJob(data)
-        return
-      }
-      if (res.ok && data.url) {
-        await showLive(data.url, data.editToken)
-        return
-      }
-      if (data.error === "pick_root" && Array.isArray(data.roots) && data.roots.length) {
-        showRootPicker(ref, data.roots)
-        return
-      }
-      const rateLimited =
-        data.error === "rate_limited" ||
-        /rate-limited/i.test(String(data.reason || ""))
-      if (rateLimited && attempt === 0) {
-        await new Promise((resolve) => setTimeout(resolve, 3000))
-        continue
-      }
-      setStatus(data.reason || data.message || data.error || `Run failed (${res.status})`, "err")
-      return
-    } finally {
-      go.disabled = false
-    }
+  const res = await runGithubRepo(at.owner, at.repo, at.root)
+  if (res.status === "queued") {
+    await watchJobUi(res)
+    return
   }
+  if (res.status === "ok") {
+    await showLive(res.url, res.editToken)
+    return
+  }
+  if (res.status === "pick_root") {
+    showRootPicker(res.ref, res.roots)
+    return
+  }
+  setStatus(res.reason, "err")
+  go.disabled = false
 }
 
 document.getElementById("view-simple").addEventListener("click", handleViewSimple)
@@ -442,5 +306,5 @@ document.getElementById("git-form").addEventListener("submit", (e) => {
   runRepo(ref, { pushState: true })
 })
 
-const fromPath = parseRunPath()
+const fromPath = parseRunPath(location.pathname)
 if (fromPath) runRepo(fromPath, { pushState: true, root: fromPath.root })

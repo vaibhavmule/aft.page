@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>aft.page — Deploy as easily as you build</title>
+    <title>aft.page — Go live like you share a Doc</title>
     <meta
       name="description"
-      content="A cloud for small software. Drop your files or use your agent. Live link. No account."
+      content="A cloud for small software. Drop your files or let your agent send them. Live link. No account. The same URL when you update."
     />
     <link rel="canonical" href="https://aft.page/" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -15,13 +15,10 @@
     <meta name="theme-color" content="#000000" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="aft.page" />
-    <meta
-      property="og:title"
-      content="aft.page — Deploy as easily as you build"
-    />
+    <meta property="og:title" content="aft.page — Go live like you share a Doc" />
     <meta
       property="og:description"
-      content="A cloud for small software. Drop your files or use your agent. Live link. No account."
+      content="A cloud for small software. Drop your files or let your agent send them. Live link. No account."
     />
     <meta property="og:url" content="https://aft.page/" />
     <meta property="og:image" content="https://aft.page/og.png" />
@@ -29,16 +26,16 @@
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="aft.page — deploy as easily as you build"
+      content="aft.page — go live like you share a Doc"
     />
     <meta name="twitter:card" content="summary_large_image" />
     <meta
       name="twitter:title"
-      content="aft.page — Deploy as easily as you build"
+      content="aft.page — Go live like you share a Doc"
     />
     <meta
       name="twitter:description"
-      content="A cloud for small software. Drop files or use your agent. No account."
+      content="Drop files or use your agent. Live link. No account."
     />
     <meta name="twitter:image" content="https://aft.page/og.png" />
     <script type="application/ld+json">
@@ -68,7 +65,7 @@
             "url": "https://aft.page/",
             "applicationCategory": "DeveloperApplication",
             "operatingSystem": "Web",
-            "description": "Deploy as easily as you build. Drop your files or let your agent send them. Live link. No account.",
+            "description": "Go live like you share a Doc. Drop your files or let your agent send them. Live link. No account.",
             "offers": {
               "@type": "AggregateOffer",
               "priceCurrency": "USD",
@@ -85,66 +82,34 @@
             "mainEntity": [
               {
                 "@type": "Question",
-                "name": "What is aft.page?",
+                "name": "Is aft.page really free right now?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "aft is a cloud for small software — a live link you can share. Drop your files or let your agent deploy. No account."
+                  "text": "Yes. Going live is free during beta, and claiming your URL to keep it is free too. Private apps, invite-by-email sharing, and per-site secrets are part of Personal — $19/mo after 30 days free. We will email the waitlist before charging anyone."
                 }
               },
               {
                 "@type": "Question",
-                "name": "Do I need an account to deploy?",
+                "name": "What can I put on aft.page?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "No. Anonymous deploy gives you a live shareable URL immediately. You only sign in when you want to claim the app, update it, make it private, or invite people."
+                  "text": "Single HTML documents, or multi-file static sites and SPAs (include an index.html). Limits: 500 files, 25 MB per file, 100 MB total. If your software needs a server that runs code, that is the roadmap, not today."
                 }
               },
               {
                 "@type": "Question",
-                "name": "Is aft.page free?",
+                "name": "Why not Vercel, Netlify, or Cloudflare Pages?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Going live is free during beta, and claiming your URL to keep it is free too. Private apps, invite-by-email sharing, and per-site secrets are part of Personal ($19/mo after 30 days free). Team and Enterprise are one conversation at hello@aft.page. Billing has not started; waitlist members hear before anything is charged."
+                  "text": "Those are right when you already have a git repo, CI, preview PRs, or a production team. If you have agent output or a dist/ folder and want a live HTTPS URL in seconds with no account, that is the job aft.page exists for."
                 }
               },
               {
                 "@type": "Question",
-                "name": "How is aft.page different from Cloudflare Pages, Netlify, or Vercel?",
+                "name": "Who owns the link?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Deploy a static site: aft.page, Cloudflare Pages, Netlify, or Vercel. aft.page — no account, drop dist/ or MCP, live HTTPS URL in seconds. Cloudflare Pages, Netlify, and Vercel — better when you already have a git repo, CI, preview PRs, or a big production setup."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "How do AI agents deploy to aft.page?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Any agent that speaks MCP can use the remote server at https://mcp.aft.page/mcp with the deploy, aft_deploys, aft_rollback, and aft_health tools, or call the API directly."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "Can I make an app private or invite people?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Yes. Claim a deploy, then keep it public, make it private, or invite specific people by email — and revoke access anytime."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "Can I use my own domain?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Yes after you claim. Open the project Domains tab, request access, then CNAME your hostname to cname.aft.page. HTTPS issues from there. Your aft.page link stays."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "What can I deploy, and what are the limits?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Single HTML documents or multi-file static sites and SPAs (include index.html). Limits: 500 files, 25 MB per file, and 100 MB total."
+                  "text": "Anyone can deploy anonymously and get a link. Claim it and it is yours: same URL on every update, rollback, private access, invite by email. Unclaimed sites are deleted after 30 days idle."
                 }
               }
             ]
@@ -161,673 +126,406 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260813-plugin" />
+    <link rel="stylesheet" href="/styles.css?v=20260905-home-rewrite" />
   </head>
   <body data-aft-drop-auto="1">
+    <!--
+      Minimal semantic nav: agents-nav.js replaces this with the canonical
+      desktop rail + mobile drawer at runtime. Kept as the no-script fallback.
+    -->
     <nav class="topnav topnav-rail" aria-label="Primary">
       <div class="topnav-inner">
-      <div class="topnav-brand-wrap">
-        <a class="topnav-brand" href="/">aft<span>.</span>page</a>
-        <span class="nav-beta">Beta</span>
-      </div>
-      <div class="topnav-links">
-        <a href="#product">Product</a>
-        <div class="nav-mega" data-nav-mega>
-          <button type="button" class="nav-mega-trigger" aria-expanded="false" aria-controls="nav-agents-panel-index" id="nav-agents-trigger-index">
-            Agents
-            <svg class="nav-mega-chevron" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5L6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-          <div class="nav-mega-panel" id="nav-agents-panel-index" role="region" aria-label="Agents menu" hidden>
-            <div class="nav-mega-col">
-              <p class="nav-mega-label">Get started</p>
-              <a href="/docs">
-                <span class="nav-mega-title">Documentation</span>
-                <span class="nav-mega-desc">What we support, deploy, secrets.</span>
-              </a>
-              <a href="/drop">
-                <span class="nav-mega-title">Drop files</span>
-                <span class="nav-mega-desc">Folder or zip → live URL.</span>
-              </a>
-            </div>
-            <div class="nav-mega-col nav-mega-list">
-                <p class="nav-mega-label">Integrations</p>
-                <a href="/with/claude/">Claude Code</a>
-                <a href="/with/codex/">Codex</a>
-                <a href="/with/cursor/">Cursor</a>
-                <a href="/with/chatgpt/">ChatGPT</a>
-                <a href="/mcp">MCP</a>
-                <a href="/with/api/">API</a>
-                <a href="/docs">All integrations</a>
-            </div>
-          </div>
+        <div class="topnav-brand-wrap">
+          <a class="topnav-brand" href="/">aft<span>.</span>page</a>
+          <span class="nav-beta">Beta</span>
         </div>
-        <a href="/docs">Docs</a>
-        <a href="/compare">Compare</a>
-        <a href="#pricing">Pricing</a>
-        <a href="/login" data-aft-auth="login">Log in</a>
-        <a class="topnav-cta" href="#hero-drop">Deploy an app</a>
-        </div>
-      <button
-        type="button"
-        class="mobile-nav-toggle"
-        aria-label="Open menu"
-        aria-controls="mobile-nav-drawer"
-        aria-expanded="false"
-        data-mobile-nav-open
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M5 8h14M5 16h14" />
-        </svg>
-      </button>
-      </div>
-    </nav>
-
-    <div
-      class="mobile-nav-drawer"
-      id="mobile-nav-drawer"
-      data-mobile-nav
-      role="dialog"
-      aria-modal="true"
-      aria-label="Site menu"
-      hidden
-    >
-      <div class="mobile-nav-shell">
-        <div class="mobile-nav-head">
-          <div class="topnav-brand-wrap">
-            <a class="topnav-brand" href="/">aft<span>.</span>page</a>
-            <span class="nav-beta">Beta</span>
-          </div>
-          <button
-            type="button"
-            class="mobile-nav-close"
-            aria-label="Close menu"
-            data-mobile-nav-close
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M6 6l12 12M18 6 6 18" />
-            </svg>
-          </button>
-        </div>
-
-        <nav class="mobile-nav-links" aria-label="Mobile primary">
+        <div class="topnav-links">
           <a href="#product">Product</a>
-          <details class="mobile-nav-agents">
-            <summary>
-              Agents
-              <svg viewBox="0 0 16 16" aria-hidden="true">
-                <path d="m3 6 5 5 5-5" />
-              </svg>
-            </summary>
-            <div class="mobile-nav-agents-list">
-              <a href="/with/claude/">Claude Code</a>
-              <a href="/with/cursor/">Cursor</a>
-              <a href="/with/codex/">Codex</a>
-              <a href="/with/chatgpt/">ChatGPT</a>
-              <a href="/mcp">MCP</a>
-              <a href="/docs">All integrations</a>
-            </div>
-          </details>
           <a href="/docs">Docs</a>
           <a href="/compare">Compare</a>
           <a href="#pricing">Pricing</a>
-        </nav>
-
-        <div class="mobile-nav-actions">
           <a href="/login" data-aft-auth="login">Log in</a>
-          <a class="btn btn-primary" href="#hero-drop">Deploy an app</a>
+          <a class="topnav-cta" href="#hero-drop">Deploy an app</a>
         </div>
+        <button
+          type="button"
+          class="mobile-nav-toggle"
+          aria-label="Open menu"
+          aria-controls="mobile-nav-drawer"
+          aria-expanded="false"
+          data-mobile-nav-open
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 8h14M5 16h14" />
+          </svg>
+        </button>
       </div>
-    </div>
+    </nav>
 
-    <header class="hero">
-      <div class="hero-atmosphere" aria-hidden="true"></div>
-      <div class="hero-grain" aria-hidden="true"></div>
-      <div class="hero-frame">
-        <div class="hero-copy">
+    <header class="home-hero" id="top">
+      <div class="home-hero-grid">
+        <div class="home-hero-copy">
           <a class="hero-pill" href="#hero-drop">
             <i class="hero-pill-dot" aria-hidden="true"></i>
-            No account or credit card required
+            No account · no card · no queue
           </a>
-          <h1 class="hero-title">
-            You built it. Now go live.
+          <h1 class="home-hero-title">
+            Go live like you share a <span class="home-hero-live">Doc.</span>
           </h1>
-          <p class="support">
-            A cloud for small software.
-            Drop your files or let your agent send them. Live link. No account.
+          <p class="home-hero-lede">
+            Your agent made the app. aft makes it a <strong>URL</strong>. No repo
+            wiring, no build pipeline, no billing page — the ceremony big clouds
+            need is for software bigger than yours.
           </p>
           <p class="hero-durable">
-            Same link when you update. Roll back or take it down anytime.
+            One link that stays yours: same URL on every update, rollback in a
+            click, gone the moment you say so.
           </p>
           <div class="cta">
             <a class="btn btn-primary" href="#hero-drop">Deploy an app</a>
-            <a class="btn btn-ghost" href="#product">See how it works</a>
+            <a class="btn btn-ghost" href="#race">See the two ways</a>
           </div>
           <p class="hero-flow" aria-hidden="true">
-            <span>agent</span><span class="flow-arrow">→</span><span>deploy</span
+            <span>agent</span><span class="flow-arrow">→</span><span>aft</span
             ><span class="flow-arrow">→</span
             ><span class="flow-live">live URL</span>
           </p>
         </div>
 
-        <div class="hero-product" id="hero-drop">
-          <div class="hero-demo" data-hero-demo>
-            <div class="hero-demo-chrome">
-              <div class="hero-demo-traffic" aria-hidden="true">
-                <i></i><i></i><i></i>
-              </div>
-              <div
-                class="hero-demo-tabs"
-                role="tablist"
-                aria-label="Deploy demo"
+        <div class="home-race" id="race" aria-label="Two ways to a live URL">
+          <div class="home-race-head">
+            <span>Two ways to a live URL</span>
+            <span class="home-race-live"><i aria-hidden="true"></i> live</span>
+          </div>
+
+          <div class="home-lane home-lane-old">
+            <div class="home-lane-label">
+              <span>The usual way</span>
+              <span class="home-lane-time">≈ 40 min</span>
+            </div>
+            <div class="home-lane-steps">
+              <span class="home-chip">create account</span>
+              <span class="home-step-sep">→</span>
+              <span class="home-chip">connect repo</span>
+              <span class="home-step-sep">→</span>
+              <span class="home-chip">add billing</span>
+              <span class="home-step-sep">→</span>
+              <span class="home-chip">pick region</span>
+              <span class="home-step-sep">→</span>
+              <span class="home-chip">wait for CI</span>
+            </div>
+            <p class="home-lane-out"># → still building…</p>
+            <p class="home-lane-note">
+              Built for teams that run always-on. You're not one.
+            </p>
+          </div>
+
+          <div class="home-lane home-lane-aft">
+            <div class="home-lane-label">
+              <span>aft</span>
+              <span class="home-lane-time">≈ 2 s</span>
+            </div>
+            <div class="home-lane-steps">
+              <span class="home-chip home-chip-go">✓ drop or agent call</span>
+              <span class="home-step-sep">→</span>
+              <span class="home-chip home-chip-go">✓ live URL</span>
+            </div>
+            <p class="home-lane-out">
+              # →
+              <a class="home-lane-url" href="https://hello.aft.page"
+                >hello.aft.page</a
               >
-                <button
-                  type="button"
-                  class="hero-demo-tab"
-                  role="tab"
-                  id="demo-tab-cli"
-                  aria-controls="demo-panel-cli"
-                  aria-selected="true"
-                  data-demo-tab="cli"
-                >
-                  CLI
-                </button>
-                <button
-                  type="button"
-                  class="hero-demo-tab"
-                  role="tab"
-                  id="demo-tab-drop"
-                  aria-controls="demo-panel-drop"
-                  aria-selected="false"
-                  tabindex="-1"
-                  data-demo-tab="drop"
-                >
-                  Drop
-                </button>
-                <button
-                  type="button"
-                  class="hero-demo-tab"
-                  role="tab"
-                  id="demo-tab-mcp"
-                  aria-controls="demo-panel-mcp"
-                  aria-selected="false"
-                  tabindex="-1"
-                  data-demo-tab="mcp"
-                >
-                  MCP
-                </button>
-                <button
-                  type="button"
-                  class="hero-demo-tab"
-                  role="tab"
-                  id="demo-tab-curl"
-                  aria-controls="demo-panel-curl"
-                  aria-selected="false"
-                  tabindex="-1"
-                  data-demo-tab="curl"
-                >
-                  cURL
-                </button>
-              </div>
-              <button
-                type="button"
-                class="hero-demo-copy"
-                data-demo-copy
-                title="Copy snippet"
-              >
-                <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
-                  <rect x="5.5" y="5.5" width="8" height="8" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.4"/>
-                  <path d="M10.5 5.5V4.2A1.2 1.2 0 0 0 9.3 3H4.2A1.2 1.2 0 0 0 3 4.2v5.1A1.2 1.2 0 0 0 4.2 10.5H5.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
-                </svg>
-                <span class="sr-only">Copy snippet</span>
-              </button>
-              <p class="hero-demo-title" aria-hidden="true">aft — -zsh — 80×24</p>
-            </div>
-
-            <div
-              class="hero-demo-panel"
-              role="tabpanel"
-              id="demo-panel-cli"
-              aria-labelledby="demo-tab-cli"
-              data-demo-panel="cli"
-            >
-              <pre class="hero-demo-code"><code id="demo-cli-code"><span class="hero-demo-ps">%</span> curl -fsSL <a href="https://aft.page/install">https://aft.page/install</a> | sh
-<span class="hero-demo-ps">%</span> aft deploy
-<span class="hero-demo-out">✓</span> 3 files · 2.1s
-# → <a class="hero-demo-liveurl" href="https://hello.aft.page">hello.aft.page</a>
-<span class="hero-demo-expiry">quick view — this link expires in 1h</span></code></pre>
-            </div>
-
-            <div
-              class="hero-demo-panel"
-              role="tabpanel"
-              id="demo-panel-drop"
-              aria-labelledby="demo-tab-drop"
-              data-demo-panel="drop"
-              hidden
-            >
-              <form class="drop-surface hero-drop-surface" id="paste-form">
-                <div
-                  class="drop-zone hero-drop"
-                  id="paste-drop"
-                  role="region"
-                  aria-label="Drop a folder or zip"
-                >
-                  <input
-                    type="file"
-                    id="folder-input"
-                    webkitdirectory
-                    directory
-                    multiple
-                    hidden
-                  />
-                  <input
-                    type="file"
-                    id="file-input"
-                    accept=".zip,application/zip,application/x-zip-compressed"
-                    hidden
-                  />
-
-                  <div class="drop-zone-idle" id="drop-idle">
-                    <span class="hero-drop-mark" aria-hidden="true">
-                      <svg viewBox="0 0 24 24" width="22" height="22">
-                        <path
-                          d="M12 3v10m0 0 3.5-3.5M12 13 8.5 9.5M5 16.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1.5"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="1.6"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                        />
-                      </svg>
-                    </span>
-                    <h2 id="paste-drop-title">
-                      Drop a folder or ZIP → get a live URL
-                    </h2>
-                    <p class="drop-zone-lede">
-                      Static files or a built dist/. Next and Vite source:
-                      <a href="/run/">aft.page/run</a> or
-                      <a href="/install">aft deploy</a>. No account required.
-                    </p>
-                    <div class="drop-zone-actions">
-                      <button
-                        type="button"
-                        class="btn btn-primary"
-                        data-browse="folder"
-                      >
-                        Browse folders
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-primary"
-                        data-browse="zip"
-                      >
-                        Browse zips
-                      </button>
-                    </div>
-                  </div>
-
-                  <div class="drop-zone-status" id="drop-busy" hidden>
-                    <p
-                      class="paste-status"
-                      id="paste-status"
-                      role="status"
-                      aria-live="polite"
-                    ></p>
-                    <ul class="paste-files" id="file-list" hidden></ul>
-                    <button
-                      type="submit"
-                      class="btn btn-primary"
-                      id="paste-submit"
-                      hidden
-                    >
-                      Get live URL
-                    </button>
-                  </div>
-
-                  <div class="drop-zone-result" id="paste-result" hidden>
-                    <p class="drop-live-label">Live</p>
-                    <a
-                      id="paste-url"
-                      href="#"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    ></a>
-                    <p class="drop-claim-hint">
-                      Unclaimed sites are deleted after 30 days idle. Visit,
-                      update, or claim to keep.
-                    </p>
-                    <button type="button" class="btn btn-ghost" id="drop-again">
-                      Drop another
-                    </button>
-                  </div>
-                </div>
-              </form>
-            </div>
-
-            <div
-              class="hero-demo-panel"
-              role="tabpanel"
-              id="demo-panel-mcp"
-              aria-labelledby="demo-tab-mcp"
-              data-demo-panel="mcp"
-              hidden
-            >
-              <pre class="hero-demo-code"><code id="demo-mcp-code"><span class="hero-demo-ps">%</span> # Any MCP client — Claude, Cursor, Codex, ChatGPT
-<span class="hero-demo-ps">%</span> mcp add aft -- <a href="https://mcp.aft.page/mcp">https://mcp.aft.page/mcp</a>
-<span class="hero-demo-ps">%</span> # then ask your agent: "deploy this and give me the link"
-# → <a class="hero-demo-liveurl" href="https://hello.aft.page">hello.aft.page</a></code></pre>
-            </div>
-
-            <div
-              class="hero-demo-panel"
-              role="tabpanel"
-              id="demo-panel-curl"
-              aria-labelledby="demo-tab-curl"
-              data-demo-panel="curl"
-              hidden
-            >
-              <pre class="hero-demo-code"><code id="demo-curl-code"><span class="hero-demo-ps">%</span> curl -sS -X POST "<a href="https://api.aft.page/v1/deploy">https://api.aft.page/v1/deploy</a>" \
-  -H "content-type: text/html; charset=utf-8" \
-  -d '&lt;!DOCTYPE html&gt;&lt;title&gt;Hello&lt;/title&gt;&lt;h1&gt;Live from curl&lt;/h1&gt;'
-# → <a class="hero-demo-liveurl" href="https://hello.aft.page">hello.aft.page</a></code></pre>
-            </div>
+            </p>
+            <p class="home-lane-note">
+              <strong>No account.</strong> Claim it later to keep it.
+            </p>
           </div>
         </div>
       </div>
 
-      <div class="proof-band">
-        <ul class="proof-strip" aria-label="Works with">
-          <li><a href="/with/claude/">Claude Code</a></li>
-          <li><a href="/with/cursor/">Cursor</a></li>
-          <li><a href="/with/codex/">Codex</a></li>
-          <li><a href="/with/chatgpt/">ChatGPT</a></li>
-          <li><a href="/with/kilo/">Kilo</a></li>
-          <li><a href="/with/windsurf/">Windsurf</a></li>
-          <li><a href="/drop">Drop</a></li>
-          <li><a href="/run/">Run</a></li>
-        </ul>
+      <!-- Live product: real drop surface (deploy.js drives the ids below). -->
+      <div class="home-dropzone" id="hero-drop">
+        <form class="drop-surface" id="paste-form">
+          <div
+            class="drop-zone home-dropzone-zone"
+            id="paste-drop"
+            role="region"
+            aria-label="Drop a folder or zip"
+          >
+            <input
+              type="file"
+              id="folder-input"
+              webkitdirectory
+              directory
+              multiple
+              hidden
+            />
+            <input
+              type="file"
+              id="file-input"
+              accept=".zip,application/zip,application/x-zip-compressed"
+              hidden
+            />
+
+            <div class="drop-zone-idle home-dropzone-idle" id="drop-idle">
+              <span class="home-dropzone-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22">
+                  <path
+                    d="M12 3v10m0 0 3.5-3.5M12 13 8.5 9.5M5 16.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1.5"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
+              <h2 id="paste-drop-title">Drop a folder or ZIP → get a live URL</h2>
+              <p class="home-dropzone-lede">
+                Static files or a built dist/. Agents: MCP or
+                <a href="/install">aft deploy</a>. No account required.
+              </p>
+              <div class="drop-zone-actions home-dropzone-actions">
+                <button type="button" class="btn btn-primary" data-browse="folder">
+                  Browse folders
+                </button>
+                <button type="button" class="btn btn-primary" data-browse="zip">
+                  Browse zips
+                </button>
+              </div>
+            </div>
+
+            <div class="drop-zone-status home-dropzone-status" id="drop-busy" hidden>
+              <p
+                class="paste-status"
+                id="paste-status"
+                role="status"
+                aria-live="polite"
+              ></p>
+              <ul class="paste-files" id="file-list" hidden></ul>
+              <button
+                type="submit"
+                class="btn btn-primary"
+                id="paste-submit"
+                hidden
+              >
+                Get live URL
+              </button>
+            </div>
+
+            <div class="drop-zone-result home-dropzone-result" id="paste-result" hidden>
+              <p class="drop-live-label">Live</p>
+              <a
+                id="paste-url"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+              ></a>
+              <p class="drop-claim-hint">
+                Unclaimed sites are deleted after 30 days idle. Visit, update, or
+                claim to keep.
+              </p>
+              <button type="button" class="btn btn-ghost" id="drop-again">
+                Drop another
+              </button>
+            </div>
+          </div>
+        </form>
       </div>
     </header>
 
-    <main>
-      <div class="rail">
-      <section class="ship" id="ship" aria-labelledby="ship-title">
-        <p class="section-tag">Capabilities</p>
-        <h2 class="section-title" id="ship-title">What you can ship</h2>
-        <p class="section-lede">
-          Agent output becomes a live app you can open, share, and keep — without
-          a cloud account.
-        </p>
-        <ol class="cap-cards">
-          <li>
-            <a href="#hero-drop">
-              <div class="cap-preview" aria-hidden="true">
-                <svg viewBox="0 0 240 170" fill="none">
-                  <rect x="28" y="38" width="168" height="112" rx="14" fill="currentColor" opacity=".1" transform="rotate(-6 28 38)"/>
-                  <rect x="40" y="28" width="168" height="112" rx="14" fill="currentColor" opacity=".16" transform="rotate(-2.2 40 28)"/>
-                  <rect x="50" y="18" width="168" height="112" rx="14" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-width="1.6"/>
-                  <circle cx="68" cy="38" r="3.6" fill="currentColor" opacity=".25"/>
-                  <circle cx="80" cy="38" r="3.6" fill="currentColor" opacity=".45"/>
-                  <circle cx="92" cy="38" r="3.6" fill="currentColor" opacity=".75"/>
-                  <rect x="108" y="32" width="94" height="12" rx="6" fill="currentColor" opacity=".12"/>
-                  <circle cx="116" cy="38" r="2.4" fill="var(--good)"/>
-                  <rect x="68" y="58" width="132" height="9" rx="4.5" fill="currentColor" opacity=".22"/>
-                  <rect x="68" y="74" width="98" height="8" rx="4" fill="currentColor" opacity=".12"/>
-                  <rect x="68" y="90" width="116" height="8" rx="4" fill="currentColor" opacity=".12"/>
-                  <rect x="68" y="106" width="78" height="8" rx="4" fill="currentColor" opacity=".12"/>
-                  <rect x="68" y="122" width="56" height="16" rx="8" fill="currentColor" opacity=".42"/>
-                </svg>
-              </div>
-              <div class="cap-meta">
-                <h3>Deploy</h3>
-                <span>ships today</span>
-              </div>
-              <p>
-                Drop a folder or let your agent call MCP. Live
-                URL in seconds. No account.
-              </p>
-            </a>
-          </li>
-          <li>
-            <a href="#share">
-              <div class="cap-preview" aria-hidden="true">
-                <svg viewBox="0 0 240 170" fill="none">
-                  <rect x="24" y="18" width="192" height="134" rx="16" fill="currentColor" fill-opacity=".05" stroke="currentColor" stroke-width="1.5"/>
-                  <rect x="40" y="36" width="160" height="48" rx="12" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-width="1.3"/>
-                  <circle cx="64" cy="60" r="14" fill="currentColor" opacity=".12"/>
-                  <circle cx="64" cy="55" r="5.5" fill="currentColor" opacity=".4"/>
-                  <path d="M52 68 Q64 76 76 68" stroke="currentColor" stroke-width="1.4" opacity=".35" fill="none"/>
-                  <rect x="88" y="50" width="58" height="9" rx="4.5" fill="currentColor" opacity=".3"/>
-                  <rect x="88" y="66" width="46" height="7" rx="3.5" fill="currentColor" opacity=".14"/>
-                  <rect x="162" y="50" width="26" height="16" rx="8" fill="currentColor" opacity=".18"/>
-                  <rect x="40" y="96" width="160" height="48" rx="12" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-width="1.3"/>
-                  <circle cx="64" cy="120" r="14" fill="currentColor" opacity=".12"/>
-                  <circle cx="64" cy="115" r="5.5" fill="currentColor" opacity=".4"/>
-                  <path d="M52 128 Q64 136 76 128" stroke="currentColor" stroke-width="1.4" opacity=".35" fill="none"/>
-                  <rect x="88" y="110" width="52" height="9" rx="4.5" fill="currentColor" opacity=".3"/>
-                  <rect x="88" y="126" width="40" height="7" rx="3.5" fill="currentColor" opacity=".14"/>
-                  <rect x="162" y="110" width="26" height="16" rx="8" fill="currentColor" opacity=".18"/>
-                </svg>
-              </div>
-              <div class="cap-meta">
-                <h3>Share</h3>
-                <span>after claim</span>
-              </div>
-              <p>
-                Public when you want. Private when it’s internal. Invite by
-                email; revoke without redeploying.
-              </p>
-            </a>
-          </li>
-          <li>
-            <a href="#keep">
-              <div class="cap-preview" aria-hidden="true">
-                <svg viewBox="0 0 240 170" fill="none">
-                  <rect x="36" y="28" width="168" height="28" rx="8" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-width="1.3" opacity=".55"/>
-                  <rect x="48" y="38" width="18" height="8" rx="2" fill="currentColor" opacity=".28"/>
-                  <rect x="72" y="38" width="96" height="8" rx="2" fill="currentColor" opacity=".16"/>
-                  <rect x="36" y="64" width="168" height="28" rx="8" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-width="1.3" opacity=".75"/>
-                  <rect x="48" y="74" width="18" height="8" rx="2" fill="currentColor" opacity=".35"/>
-                  <rect x="72" y="74" width="96" height="8" rx="2" fill="currentColor" opacity=".2"/>
-                  <rect x="36" y="100" width="168" height="42" rx="8" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="1.5"/>
-                  <circle cx="54" cy="121" r="3" fill="var(--good)"/>
-                  <rect x="66" y="117" width="108" height="8" rx="2" fill="currentColor" opacity=".4"/>
-                  <path d="M168 114 L176 122 L192 104" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>
-                </svg>
-              </div>
-              <div class="cap-meta">
-                <h3>Keep</h3>
-                <span>same URL</span>
-              </div>
-              <p>
-                Same URL when you update. Roll back or remove anytime. Claim to
-                own it.
-              </p>
-            </a>
-          </li>
-        </ol>
-        <p class="ship-limits">
-          Drop: static files. GitHub: <a href="/run/">aft.page/run</a>.
-          Builds: <a href="/install">aft deploy</a>. 500 files · 25&nbsp;MB each ·
-          100&nbsp;MB total. Claim to keep ownership.
-        </p>
-      </section>
+    <div class="proof-band">
+      <ul class="proof-strip" aria-label="Works with">
+        <li><a href="/with/claude/">Claude Code</a></li>
+        <li><a href="/with/cursor/">Cursor</a></li>
+        <li><a href="/with/codex/">Codex</a></li>
+        <li><a href="/with/chatgpt/">ChatGPT</a></li>
+        <li><a href="/mcp">MCP</a></li>
+        <li><a href="/drop">Drop</a></li>
+        <li><a href="/run/">Run</a></li>
+      </ul>
+    </div>
 
-      <section class="paths" id="start" aria-labelledby="start-title">
-        <div class="paths-head">
-          <p class="section-tag">Get started</p>
-          <h2 class="section-title" id="start-title">Ways in</h2>
+    <main id="product">
+      <article class="home-band" id="share">
+        <div class="home-band-copy">
+          <p class="band-kicker">Hand it out</p>
+          <h2 class="home-band-title">
+            Private when it's yours. Public when you say so.
+          </h2>
+          <p class="band-lede">
+            Share a link like a Doc, not like a deployment. Invite exactly the
+            people you mean to, by email. Change their access, revoke it, close
+            the door — nothing redeploys, nothing breaks, nobody sees the
+            plumbing.
+          </p>
+          <a
+            class="btn btn-ghost"
+            href="https://hello.aft.page"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Open a live example</a
+          >
+        </div>
+        <div class="home-band-visual" aria-hidden="true">
+          <div class="home-stage">
+            <p class="band-stage-label">Share</p>
+            <ul class="home-acl">
+              <li><span>alex@company.com</span><em class="home-role-edit">edit</em></li>
+              <li><span>ops@company.com</span><em class="home-role-view">view</em></li>
+            </ul>
+            <p class="band-stage-meta">
+              add · change · revoke — same URL the whole time
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <article class="home-band home-band-flip" id="keep">
+        <div class="home-band-copy">
+          <p class="band-kicker">Keep it</p>
+          <h2 class="home-band-title">The link outlives the hype.</h2>
+          <p class="band-lede">
+            Software made for a week shouldn't bill you for a year. Update
+            whenever and the URL holds. Roll back the second a change's wrong.
+            When it's over, it's over — no orphaned infrastructure, no surprise
+            invoice.
+          </p>
+          <a class="btn btn-ghost" href="#ways">Ship something</a>
+        </div>
+        <div class="home-band-visual" aria-hidden="true">
+          <div class="home-stage">
+            <p class="band-stage-label">Lifecycle</p>
+            <ul class="home-vers">
+              <li>
+                <span class="home-v">v3</span
+                ><span class="home-vurl">hello.aft.page</span
+                ><em class="home-vnow">● live</em>
+              </li>
+              <li>
+                <span class="home-v">v2</span
+                ><span class="home-vurl">rollback point</span
+                ><em class="home-vold">kept</em>
+              </li>
+              <li>
+                <span class="home-v">v1</span
+                ><span class="home-vurl">first deploy</span
+                ><em class="home-vold">kept</em>
+              </li>
+            </ul>
+            <p class="band-stage-meta">
+              ship · update · roll back · stop when done
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <section class="home-ways" id="ways">
+        <div class="home-ways-head">
+          <p class="section-tag">Ways in</p>
+          <h2 class="section-title">Bring whatever made your app.</h2>
           <p class="section-lede">
-            Agents: MCP, plugin, CLI. Humans: Drop, Run (GitHub), Code. Same
+            An agent, a terminal, a folder, a repo, a prompt. aft meets the
+            software where it already is — and every door opens onto the same
             live URL.
           </p>
         </div>
-        <ol class="path-row">
+        <ol class="path-row home-path-row">
           <li>
-            <a href="#hero-mcp">
+            <a href="/mcp">
               <span class="path-num">001</span>
               <svg class="path-ico" viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="4" y="4" width="5" height="5" />
-                <rect x="15" y="4" width="5" height="5" />
-                <rect x="4" y="15" width="5" height="5" />
-                <rect x="15" y="15" width="5" height="5" />
+                <rect x="4" y="4" width="5" height="5" /><rect
+                  x="15"
+                  y="4"
+                  width="5"
+                  height="5"
+                /><rect x="4" y="15" width="5" height="5" /><rect
+                  x="15"
+                  y="15"
+                  width="5"
+                  height="5"
+                />
               </svg>
               <h3>MCP</h3>
               <p class="path-cmd">mcp.aft.page/mcp</p>
-              <p>Point your agent. Deploy and rollback.</p>
+              <p>If your agent made it, your agent ships it.</p>
             </a>
           </li>
           <li>
-            <a href="#hero-cli">
+            <a href="/install">
               <span class="path-num">002</span>
               <svg class="path-ico" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M5 8l5 4-5 4" />
-                <path d="M12 16h7" />
+                <path d="M5 8l5 4-5 4" /><path d="M12 16h7" />
               </svg>
               <h3>CLI</h3>
               <p class="path-cmd">aft deploy</p>
-              <p>Install once. Ship from the terminal.</p>
+              <p>Install once. Ship from then on.</p>
             </a>
           </li>
           <li>
-            <a href="#hero-drop">
+            <a href="/drop">
               <span class="path-num">003</span>
               <svg class="path-ico" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 4v10" />
-                <path d="M8 10l4 4 4-4" />
-                <path d="M5 18h14" />
+                <path d="M12 4v10" /><path d="M8 10l4 4 4-4" /><path
+                  d="M5 18h14"
+                />
               </svg>
               <h3>Drop</h3>
               <p class="path-cmd">aft.page/drop</p>
-              <p>Folder or zip. No account.</p>
+              <p>A folder or a zip. That's the whole flow.</p>
             </a>
           </li>
           <li>
             <a href="/run/">
               <span class="path-num">004</span>
               <svg class="path-ico" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M6 6h12v5H6z" />
-                <path d="M6 13h5v5H6z" />
-                <path d="M13 13h5v5h-5z" />
+                <path d="M6 6h12v5H6z" /><path d="M6 13h5v5H6z" /><path
+                  d="M13 13h5v5h-5z"
+                />
               </svg>
               <h3>Run</h3>
               <p class="path-cmd">aft.page/run/owner/repo</p>
-              <p>Public GitHub repo → live URL.</p>
+              <p>A public repo in, one URL out.</p>
             </a>
           </li>
           <li>
             <a href="/code/">
               <span class="path-num">005</span>
               <svg class="path-ico" viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="5" y="7" width="14" height="10" />
-                <path d="M8 12h5" />
+                <rect x="5" y="7" width="14" height="10" /><path d="M8 12h5" />
               </svg>
               <h3>Code</h3>
               <p class="path-cmd">aft.page/code</p>
-              <p>Prompt → static site → live URL.</p>
+              <p>Say what it should do. Get a site.</p>
             </a>
           </li>
           <li>
             <a href="/plugins">
               <span class="path-num">006</span>
               <svg class="path-ico" viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="5" y="5" width="14" height="14" />
-                <path d="M12 9v6M9 12h6" />
+                <rect x="5" y="5" width="14" height="14" /><path
+                  d="M12 9v6M9 12h6"
+                />
               </svg>
               <h3>Plugin</h3>
               <p class="path-cmd">npx plugins add vaibhavmule/aft.page</p>
-              <p>Skill + MCP. Open protocols — then Unix.</p>
+              <p>Skill + MCP for agents that want both.</p>
             </a>
           </li>
         </ol>
         <p class="paths-more">
-          Scripting? <a href="#hero-curl">cURL → POST /v1/deploy</a>.
+          Scripting? <a href="/compare">cURL → POST /v1/deploy</a>. Limits: 500
+          files · 25 MB each · 100 MB total.
         </p>
       </section>
 
-      <section class="bands" id="product" aria-label="Product">
-        <article class="band band-solo">
-          <div class="band-copy">
-            <p class="band-kicker">Live in seconds</p>
-            <h2 class="band-title">Agent output becomes a live link</h2>
-            <p class="band-lede">
-              Same URL whether you ship via
-              <a href="#hero-mcp">MCP</a>,
-              <a href="#hero-curl">cURL</a>, or
-              <a href="#hero-drop">Drop</a>. GitHub repos via
-              <a href="/run/">Run</a>. Copy a snippet above—or open a
-              claimed example at
-              <a
-                href="https://hello.aft.page"
-                target="_blank"
-                rel="noopener noreferrer"
-                >hello.aft.page</a
-              >.
-            </p>
-            <a class="btn btn-ghost" href="#hero-mcp">See the snippets</a>
-          </div>
-        </article>
-
-        <article class="band band-flip" id="share">
-          <div class="band-copy">
-            <p class="band-kicker">Share like a Doc</p>
-            <h2 class="band-title">Invite by email. Revoke when done.</h2>
-            <p class="band-lede">
-              Public when you want. Private when it’s internal. Add a teammate
-              by email; remove access without redeploying. Company SSO is on the
-              roadmap.
-            </p>
-            <a
-              class="btn btn-ghost"
-              href="https://hello.aft.page"
-              target="_blank"
-              rel="noopener noreferrer"
-              >View a live example</a
-            >
-          </div>
-          <div class="band-visual" aria-hidden="true">
-            <div class="band-stage band-stage-share">
-              <p class="band-stage-label">share</p>
-              <ul class="band-invite">
-                <li>alex@company.com <span>edit</span></li>
-                <li>ops@company.com <span>view</span></li>
-              </ul>
-              <p class="band-stage-meta">invite · revoke · same URL</p>
-            </div>
-          </div>
-        </article>
-
-        <article class="band" id="keep">
-          <div class="band-copy">
-            <p class="band-kicker">Same URL while it matters</p>
-            <h2 class="band-title">Update, roll back, or stop.</h2>
-            <p class="band-lede">
-              Your URL stays the same when you update the app—and you can roll
-              back or remove it anytime. No permanent infrastructure work for
-              software that might only matter for a week.
-            </p>
-            <a class="btn btn-ghost" href="#hero-drop">Deploy an app</a>
-          </div>
-          <div class="band-visual" aria-hidden="true">
-            <div class="band-stage">
-              <ol class="band-flow">
-                <li><span>01</span> Ship the UI</li>
-                <li><span>02</span> Claim &amp; invite</li>
-                <li><span>03</span> Share the link</li>
-                <li><span>04</span> Revoke or stop</li>
-              </ol>
-            </div>
-          </div>
-        </article>
-      </section>
-
-      <section class="compare" id="compare" aria-labelledby="compare-title">
-        <p class="section-tag">Comparison</p>
-        <h2 class="section-title" id="compare-title">
-          Why agent users pick aft
-        </h2>
+      <section class="home-cmp" id="compare">
+        <p class="section-tag">Compare</p>
+        <h2 class="section-title">The ceremony isn't a feature.</h2>
         <p class="section-lede">
-          A URL and a share — without the rest of the ceremony.
+          Every control panel a big platform adds is work you don't need. Here's
+          the ledger.
         </p>
         <div class="compare-table" role="table" aria-label="Traditional cloud vs aft">
           <div class="compare-row compare-head" role="row">
@@ -866,24 +564,14 @@
             <div class="compare-aft">Small software · agent users</div>
           </div>
         </div>
-        <p class="compare-more">
-          Deploy a static site:
-          <a href="/compare">aft.page, Cloudflare Pages, Netlify, or Vercel</a>.
-          Longer write-ups:
-          <a href="/vs/vercel/">typical app host</a>
-          ·
-          <a href="/vs/cloudflare-drop/">file drop</a>
-          ·
-          <a href="/vs/github-pages/">static hosting</a>
-        </p>
       </section>
 
-      <section class="pricing" id="pricing" aria-labelledby="pricing-title">
+      <section class="home-price" id="pricing">
         <p class="section-tag">Pricing</p>
-        <h2 class="section-title" id="pricing-title">Free to go live.</h2>
+        <h2 class="section-title">Free is the whole free tier.</h2>
         <p class="section-lede">
-          Personal is 30 days free, then $19. Team and Enterprise — one
-          conversation.
+          Personal is $19 after 30 free days — when billing starts. It hasn't
+          yet.
         </p>
         <div class="price-grid">
           <article class="price-card">
@@ -892,8 +580,8 @@
               <span class="price-badge">Now</span>
             </div>
             <p class="price-desc">
-              Get a public link. No account. Claim it to keep, invite, or add
-              secrets.
+              A live link the second it's built. Claim it whenever, keep it
+              forever.
             </p>
             <div class="price-figure">
               <span class="price-amt">$0</span>
@@ -914,19 +602,19 @@
               <span class="price-badge">Soon</span>
             </div>
             <p class="price-desc">
-              Just you. 30 days free, then $19 a month. Viewers never pay.
+              For the private things only you and a few people use.
             </p>
             <div class="price-figure">
               <span class="price-amt">$19</span>
               <span class="price-per">after 30<br />days free</span>
             </div>
-            <a class="btn btn-primary" href="#early-access">Join waitlist</a>
+            <a class="btn btn-primary" href="#waitlist">Join waitlist</a>
             <p class="price-includes">When billing starts</p>
             <ul class="price-list">
               <li>30 days free, then $19/month</li>
               <li>Private apps for one person</li>
               <li>Higher limits, secrets, rollback</li>
-              <li>Viewers don’t need an account</li>
+              <li>Viewers don't need an account</li>
             </ul>
           </article>
           <article class="price-card">
@@ -934,14 +622,16 @@
               <h3>Team &amp; Enterprise</h3>
               <span class="price-badge">Design partners</span>
             </div>
-            <p class="price-desc">
-              Invite ACL, IP allowlist, SSO, or the connector. We quote you.
-            </p>
+            <p class="price-desc">Access control, SSO, and a human being to quote you.</p>
             <div class="price-figure">
               <span class="price-amt">Talk</span>
               <span class="price-per">to<br />us</span>
             </div>
-            <a class="btn btn-ghost" href="mailto:hello@aft.page?subject=aft%20Team%20or%20Enterprise">Contact</a>
+            <a
+              class="btn btn-ghost"
+              href="mailto:hello@aft.page?subject=aft%20Team%20or%20Enterprise"
+              >Contact</a
+            >
             <p class="price-includes">On the call</p>
             <ul class="price-list">
               <li>Private apps + invite ACL</li>
@@ -953,146 +643,105 @@
         </div>
       </section>
 
-      <section class="faq" id="faq" aria-labelledby="faq-title">
+      <section class="home-faq" id="faq">
         <p class="section-tag">FAQ</p>
-        <h2 class="section-title" id="faq-title">Questions, answered</h2>
-        <p class="section-lede">
-          What aft.page is, who it's for, and how it works — in plain language.
-        </p>
+        <h2 class="section-title">The questions people actually ask.</h2>
         <div class="faq-list">
           <details class="faq-item">
-            <summary>What is aft.page?</summary>
+            <summary>Is it really free right now?</summary>
             <p>
-              aft is a cloud for small software — a live link you can share. Drop
-              your files or let your agent deploy. No account.
+              Yes. Going live is free during beta, and claiming your URL to keep
+              it is free too. Private apps, invite-by-email sharing, and
+              per-site secrets are part of Personal — $19/mo after 30 days free.
+              We will email the waitlist before charging anyone.
             </p>
           </details>
           <details class="faq-item">
-            <summary>Do I need an account to deploy?</summary>
+            <summary>What can I put on aft?</summary>
             <p>
-              No. Anonymous deploy gives you a live shareable URL immediately. You
-              only sign in when you want to claim the app, update it, make it
-              private, or invite people.
+              Single HTML documents, or multi-file static sites and SPAs (include
+              an index.html). Limits: 500 files, 25 MB per file, 100 MB total.
+              If your software needs a server that runs code, that's the roadmap
+              — not today.
             </p>
           </details>
           <details class="faq-item">
-            <summary>Is aft.page free?</summary>
+            <summary>Why not Vercel, Netlify, or Cloudflare Pages?</summary>
             <p>
-              Yes — going live is free during beta, and claiming your URL to
-              keep it is free too. Private apps, invite-by-email sharing, and
-              per-site secrets are part of Personal ($19/mo after 30 days free).
-              Team and Enterprise are one conversation. We will email the
-              waitlist before charging anyone.
+              Those are right when you already have a git repo, CI, preview PRs,
+              or a production team. If you have agent output or a dist/ folder
+              and want a live HTTPS URL in seconds with no account, that's the
+              job aft exists for.
             </p>
           </details>
           <details class="faq-item">
-            <summary>How is aft.page different from Cloudflare Pages, Netlify, or Vercel?</summary>
+            <summary>Who owns the link?</summary>
             <p>
-              Deploy a static site: aft.page, Cloudflare Pages, Netlify, or
-              Vercel. aft.page — no account, drop dist/ or MCP, live HTTPS URL
-              in seconds. Cloudflare Pages, Netlify, and Vercel — better when
-              you already have a git repo, CI, preview PRs, or a big production
-              setup.
-              <a href="/compare">Full comparison</a>.
-            </p>
-          </details>
-          <details class="faq-item">
-            <summary>How do AI agents deploy to aft.page?</summary>
-            <p>
-              Any agent that speaks MCP can use the remote server at
-              https://mcp.aft.page/mcp with the <code>deploy</code>,
-              <code>aft_deploys</code>, <code>aft_rollback</code>, and
-              <code>aft_health</code> tools,
-              or call the API directly.
-            </p>
-          </details>
-          <details class="faq-item">
-            <summary>Can I make an app private or invite people?</summary>
-            <p>
-              Yes. Claim a deploy, then keep it public, make it private, or invite
-              specific people by email — and revoke access anytime.
-            </p>
-          </details>
-          <details class="faq-item">
-            <summary>Can I use my own domain?</summary>
-            <p>
-              Yes after you claim. Project → Domains, request access, then CNAME
-              to <code>cname.aft.page</code>. HTTPS issues from there. Your
-              aft.page link stays.
-            </p>
-          </details>
-          <details class="faq-item">
-            <summary>What can I deploy, and what are the limits?</summary>
-            <p>
-              Single HTML documents or multi-file static sites and SPAs (include
-              index.html). Limits: 500 files, 25 MB per file, and 100 MB total.
+              Anyone can deploy anonymously and get a link. Claim it and it's
+              yours: same URL on every update, rollback, private access, invite
+              by email. Unclaimed sites are deleted after 30 days idle.
             </p>
           </details>
         </div>
       </section>
 
-      <section class="ready" aria-labelledby="ready-title">
-        <h2 id="ready-title">You built it. Go live.</h2>
-        <p>Drop your files or let your agent deploy. No account.</p>
-        <div class="cta">
-          <a class="btn btn-primary" href="#hero-drop">Deploy an app</a>
-          <a class="btn btn-ghost" href="#start">See how to start</a>
-        </div>
-      </section>
-
-      <section class="waitlist" id="early-access" aria-labelledby="waitlist-title">
-        <div class="waitlist-copy">
-          <p class="eyebrow">PRICING · BILLING NOT LIVE</p>
-          <h2 id="waitlist-title">Prices are listed. Charging isn’t.</h2>
-          <p>
-            Free now. Personal is 30 days free, then $19. Team and Enterprise
-            — one email. Join the waitlist before billing starts.
-          </p>
-        </div>
-        <form class="waitlist-form" id="waitlist-form" novalidate>
-          <div class="waitlist-fields">
-            <label class="sr-only" for="waitlist-email">Work email</label>
-            <input
-              id="waitlist-email"
-              name="email"
-              type="email"
-              inputmode="email"
-              autocomplete="email"
-              maxlength="254"
-              placeholder="you@company.com"
-              aria-describedby="waitlist-note waitlist-status"
-              required
-            />
-            <div class="waitlist-trap" aria-hidden="true">
-              <label for="waitlist-company">Company website</label>
-              <input
-                id="waitlist-company"
-                name="company"
-                type="text"
-                tabindex="-1"
-                autocomplete="off"
-              />
-            </div>
-            <button type="submit" class="btn btn-primary" id="waitlist-submit">
-              Join waitlist
-            </button>
+      <section class="home-wait" id="waitlist">
+        <div class="home-wait-card">
+          <div class="home-wait-copy">
+            <p class="eyebrow">Waitlist</p>
+            <h2 class="home-wait-title">
+              Billing hasn't started. You'll hear it from us first.
+            </h2>
+            <p>
+              Free during beta. $19 a month after 30 free days, whenever charging
+              actually begins. No retroactive bills, no surprise invoices.
+            </p>
           </div>
-          <p class="waitlist-note" id="waitlist-note">
-            Pricing &amp; product updates only. No spam. Unsubscribe anytime.
-            <a href="/privacy/">Privacy details.</a>
-          </p>
-          <p
-            class="waitlist-status"
-            id="waitlist-status"
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-          ></p>
-        </form>
+          <form class="waitlist-form" id="waitlist-form" novalidate>
+            <div class="waitlist-fields">
+              <label class="sr-only" for="waitlist-email">Work email</label>
+              <input
+                id="waitlist-email"
+                name="email"
+                type="email"
+                inputmode="email"
+                autocomplete="email"
+                maxlength="254"
+                placeholder="you@company.com"
+                aria-describedby="waitlist-note waitlist-status"
+                required
+              />
+              <div class="waitlist-trap" aria-hidden="true">
+                <label for="waitlist-company">Company website</label>
+                <input
+                  id="waitlist-company"
+                  name="company"
+                  type="text"
+                  tabindex="-1"
+                  autocomplete="off"
+                />
+              </div>
+              <button type="submit" class="btn btn-primary" id="waitlist-submit">
+                Join waitlist
+              </button>
+            </div>
+            <p class="waitlist-note" id="waitlist-note">
+              Pricing &amp; product updates only. No spam. Unsubscribe anytime.
+              <a href="/privacy/">Privacy details.</a>
+            </p>
+            <p
+              class="waitlist-status"
+              id="waitlist-status"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            ></p>
+          </form>
+        </div>
       </section>
-      </div>
     </main>
 
+    <!-- Canonical footer fallback: footer.js replaces this at runtime. -->
     <footer class="site-footer">
       <div class="footer-inner">
         <div class="footer-meta">
@@ -1108,7 +757,7 @@
               <span class="footer-wordmark">aft<span class="sq" aria-hidden="true"></span>page</span>
             </a>
             <p class="footer-tagline">
-              You built it. aft puts it online.<br />
+              Software's done. The link is the last mile.<br />
               Live links. Invite people. Same URL when you update.
             </p>
           </div>
@@ -1128,8 +777,6 @@
               <a href="/with/cursor/">Cursor</a>
               <a href="/with/codex/">Codex</a>
               <a href="/with/chatgpt/">ChatGPT</a>
-              <a href="/with/kilo/">Kilo</a>
-              <a href="/with/windsurf/">Windsurf</a>
               <a href="/with/api/">API</a>
             </div>
             <div class="footer-col">
@@ -1153,8 +800,8 @@
     <script src="./auth-me.js" defer></script>
     <script src="./agents-nav.js" defer></script>
     <script src="./auth-nav.js" defer></script>
-    <script src="/summarize.js?v=20260808-mobile4" defer></script>
-    <script src="/footer.js?v=20260829-code" defer></script>
-    <script src="/feedback.js?v=20260809-pill" defer></script>
+    <script src="/summarize.js?v=20260905-home-rewrite" defer></script>
+    <script src="/footer.js?v=20260905-home-rewrite" defer></script>
+    <script src="/feedback.js?v=20260905-home-rewrite" defer></script>
   </body>
 </html>

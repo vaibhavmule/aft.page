@@ -502,6 +502,7 @@ const DEMO_HASH = {
   mcp: "hero-mcp",
   curl: "hero-curl",
   drop: "hero-drop",
+  run: "hero-run",
   cli: "hero-cli",
 };
 
@@ -509,6 +510,7 @@ function demoTabFromHash(hash = location.hash) {
   const h = hash.replace(/^#/, "").toLowerCase();
   if (h === "hero-drop" || h === "drop") return "drop";
   if (h === "hero-curl" || h === "curl") return "curl";
+  if (h === "hero-run" || h === "run") return "run";
   if (h === "hero-cli" || h === "cli") return "cli";
   if (h === "hero-mcp" || h === "mcp") return "mcp";
   if (h === "hero-demo") return "cli";
@@ -529,7 +531,7 @@ function selectDemoTab(name, syncHash) {
   for (const panel of demoPanels) {
     panel.hidden = panel.dataset.demoPanel !== name;
   }
-  if (demoCopyBtn) demoCopyBtn.hidden = name === "drop";
+  if (demoCopyBtn) demoCopyBtn.hidden = name === "drop" || name === "run";
   if (syncHash) {
     const next = DEMO_HASH[name];
     if (next && location.hash.replace(/^#/, "") !== next) {

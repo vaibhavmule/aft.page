@@ -1,3 +1,4 @@
+import { waitUntil } from "cloudflare:workers";
 /**
  * Public status.aft.page — probe store + HTML / JSON surface.
  */
@@ -25,6 +26,12 @@ export type ProbeDef = {
   expect: "health_json" | "http_ok";
   /** Skip edge fetch — check inside this Worker (avoids 522 self-fetch). */
   mode: "internal_api" | "internal_site" | "internal_mcp" | "external";
+  /**
+   * Shown on the public page, but excluded from the overall roll-up and from
+   * paging. For a surface people should be able to see the state of without it
+   * declaring the whole platform down.
+   */
+  informational?: boolean;
   /** Slug for internal_site probes. */
   siteSlug?: string;
   /** Pathname for internal_site probes (default `/`). */
@@ -79,6 +86,12 @@ export type StatusPayload = {
 };
 
 const LATEST_KEY = "latest";
+/** Probes run every 5 minutes; the TTL is only a backstop for a stuck key. */
+const PAYLOAD_CACHE_TTL_SEC = 600;
+const PAYLOAD_CACHE_PREFIX = "payload:";
+function payloadCacheKey(days: number, checkedAt: string): string {
+  return `${PAYLOAD_CACHE_PREFIX}${days}:${checkedAt}`;
+}
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_STRIP_DAYS = 90;
 const DEFAULT_FAILURE_LIMIT = 12;
@@ -117,23 +130,41 @@ export const STATUS_PROBES: ProbeDef[] = [
     expect: "health_json",
     mode: "internal_mcp",
   },
-];
-
-/** Founder canaries. Cron still probes them; public status never shows them. */
-export const OPS_ONLY_PROBES: ProbeDef[] = [
   {
+    // Public since 2026-09-05, informational. Every container-backed site was
+    // down for about a week while this page read "All systems operational",
+    // because the only probe covering them was ops-only.
+    //
+    // informational: a container fixture sleeping is normal and must not paint
+    // the platform red or page anyone — that was the original reason this was
+    // hidden. Showing it without alarming keeps both.
+    //
+    // The id stays "express": it carries the existing uptime history, and a
+    // second id against the same URL would just double the checks.
     id: "express",
-    name: "Express fixture",
-    description: `Container Run (${EXPRESS_FIXTURE_SLUG})`,
+    name: "Server apps",
+    description: "Apps that run a server, not just files",
     url: `https://${EXPRESS_FIXTURE_SLUG}.aft.page/`,
     expect: "http_ok",
     mode: "internal_site",
     siteSlug: EXPRESS_FIXTURE_SLUG,
+    informational: true,
   },
 ];
 
+/** Founder canaries. Cron still probes them; public status never shows them. */
+export const OPS_ONLY_PROBES: ProbeDef[] = [];
+
 const ALL_PROBES: ProbeDef[] = [...STATUS_PROBES, ...OPS_ONLY_PROBES];
 const PUBLIC_PROBE_IDS = new Set(STATUS_PROBES.map((p) => p.id));
+/** Public, but never counted in `overall` and never paged on. */
+const INFORMATIONAL_PROBE_IDS = new Set(
+  STATUS_PROBES.filter((p) => p.informational).map((p) => p.id),
+);
+
+export function isInformationalProbe(id: string): boolean {
+  return INFORMATIONAL_PROBE_IDS.has(id);
+}
 
 function overlayProbeLabels<T extends { id: string; name: string; description: string; url: string }>(
   c: T,
@@ -151,7 +182,11 @@ export function filterPublicSnapshot(snapshot: StatusSnapshot): StatusSnapshot {
   return {
     ...snapshot,
     components,
-    overall: overallFromComponents(components),
+    // Informational components are shown but do not decide the headline, and
+    // alertIfStatusMajor keys off this same `overall`, so they never page.
+    overall: overallFromComponents(
+      components.filter((c) => !INFORMATIONAL_PROBE_IDS.has(c.id)),
+    ),
   };
 }
 
@@ -629,13 +664,20 @@ function toPublicPayload(payload: StatusPayload): StatusPayload {
   const components = payload.components.filter((c) => PUBLIC_PROBE_IDS.has(c.id));
   return {
     ...payload,
-    overall: overallFromComponents(components),
+    // Second roll-up, and it has to agree with filterPublicSnapshot: an
+    // informational component is shown but never decides the headline.
+    overall: overallFromComponents(
+      components.filter((c) => !INFORMATIONAL_PROBE_IDS.has(c.id)),
+    ),
     components: components.map((c) => ({
       ...overlayProbeLabels(c),
       error: c.ok ? null : publicProbeError(c.error),
     })),
+    // Informational components show their own state and uptime strip, but are
+    // kept out of the failure feed: one sleeping fixture fails every 5 minutes
+    // and would permanently crowd out real failures.
     recentFailures: payload.recentFailures
-      .filter((f) => PUBLIC_PROBE_IDS.has(f.id))
+      .filter((f) => PUBLIC_PROBE_IDS.has(f.id) && !INFORMATIONAL_PROBE_IDS.has(f.id))
       .map((f) => ({
         ...overlayProbeLabels(f),
         error: publicProbeError(f.error),
@@ -647,7 +689,10 @@ export async function loadRecentFailures(
   env: Env,
   limit = DEFAULT_FAILURE_LIMIT,
 ): Promise<ProbeResult[]> {
-  const ids = STATUS_PROBES.map((p) => p.id);
+  // Informational probes are excluded here rather than after the query: they
+  // fail every cycle while asleep, so leaving them in would consume the LIMIT
+  // and hide genuine failures.
+  const ids = STATUS_PROBES.filter((p) => !p.informational).map((p) => p.id);
   const placeholders = ids.map(() => "?").join(",");
   const rows = await env.DB.prepare(
     `SELECT component_id, component_name, component_description, url, ok, status,
@@ -745,7 +790,32 @@ export async function setStatusCheckHidden(
   )
     .bind(hidden ? 1 : 0, rowId)
     .run();
-  return (res.meta.changes || 0) > 0;
+  const changed = (res.meta.changes || 0) > 0;
+  // This changes what the public payload shows without changing checkedAt, so
+  // the snapshot-keyed cache would otherwise keep serving the hidden failure
+  // until the next probe.
+  if (changed) await purgePayloadCache(env);
+  return changed;
+}
+
+/**
+ * Drop every cached payload. Called when something changes what the page shows
+ * without advancing the snapshot timestamp. Rare (ops-only), and the key space
+ * is a handful of entries, so a list + delete is fine.
+ */
+export async function purgePayloadCache(env: Env): Promise<void> {
+  const kv = statusKv(env);
+  if (!kv) return;
+  try {
+    let cursor: string | undefined;
+    do {
+      const listing = await kv.list({ prefix: PAYLOAD_CACHE_PREFIX, cursor });
+      await Promise.all(listing.keys.map((k) => kv.delete(k.name)));
+      cursor = listing.list_complete ? undefined : listing.cursor;
+    } while (cursor);
+  } catch {
+    /* the TTL will clear it soon enough */
+  }
 }
 
 /** @deprecated Prefer loadDayStrip — kept for unit tests over in-memory snapshots. */
@@ -815,6 +885,24 @@ export async function buildPayload(
     await saveSnapshot(env, latest);
   }
   latest = filterPublicSnapshot(latest);
+
+  // Keyed on the snapshot timestamp, so a new probe invalidates it exactly
+  // rather than on a timer. Between probes every request is a KV read instead
+  // of (1 + 2 x components) aggregates over 90 days of status_checks — that
+  // fan-out was the bulk of this database's rows_read.
+  const cacheKey = payloadCacheKey(days, latest.checkedAt);
+  const kv = statusKv(env);
+  if (kv) {
+    const hit = await kv.get(cacheKey).catch(() => null);
+    if (hit) {
+      try {
+        return JSON.parse(hit) as StatusPayload;
+      } catch {
+        /* fall through and rebuild */
+      }
+    }
+  }
+
   const [history, failures, ...componentUptime] = await Promise.all([
     loadDayStrip(env, days),
     loadRecentFailures(env),
@@ -827,7 +915,7 @@ export async function buildPayload(
     history: componentUptime[i]?.history ?? [],
   }));
 
-  return {
+  const payload: StatusPayload = {
     service: "aft.page",
     overall: latest.overall,
     checkedAt: latest.checkedAt,
@@ -836,6 +924,23 @@ export async function buildPayload(
     history,
     recentFailures: failures,
   };
+
+  if (kv) {
+    const write = kv
+      .put(cacheKey, JSON.stringify(payload), {
+        expirationTtl: PAYLOAD_CACHE_TTL_SEC,
+      })
+      .catch(() => {
+        /* a cache miss next time is not worth failing the page for */
+      });
+    try {
+      waitUntil(write);
+    } catch {
+      void write;
+    }
+  }
+
+  return payload;
 }
 
 export async function runStatusChecks(

@@ -40,6 +40,7 @@ import {
   setSiteActive,
   setSiteVisibility,
   upsertSiteMember,
+  type SiteRow,
   type SiteVisibility,
 } from "./db";
 import { corsHeaders, json, originMayActOnSlug, privateJson } from "./http";
@@ -585,33 +586,63 @@ async function acceptInvite(
   });
 }
 
+export type SiteAccess = {
+  allowed: boolean;
+  role: "owner" | "edit" | "view" | null;
+  authenticated: boolean;
+  user: { id: string; email: string } | null;
+};
+
 /** Who may view a private site (or any site when checking access). */
 export async function canAccessSite(
   env: Env,
   request: Request,
   slug: string,
-): Promise<{
-  allowed: boolean;
-  role: "owner" | "edit" | "view" | null;
-  authenticated: boolean;
-  user: { id: string; email: string } | null;
-}> {
+): Promise<SiteAccess> {
   const user = await resolveSessionUser(env, request);
   const visibility = await getSiteVisibility(env, slug);
   if (visibility === "public") {
-    return {
-      allowed: true,
-      role: null,
-      authenticated: Boolean(user),
-      user,
-    };
+    return { allowed: true, role: null, authenticated: Boolean(user), user };
   }
+  return accessForPrivateSite(env, slug, user, undefined);
+}
 
+/**
+ * Same decision as `canAccessSite`, for callers that already loaded the row
+ * (serve path). `row` is the `getSiteRow` result — `null` means no such site,
+ * which reads as public, matching `getSiteVisibility`'s missing-row default.
+ * Saves one D1 read on every request, and a second one for owners.
+ */
+export async function canAccessSiteRow(
+  env: Env,
+  request: Request,
+  slug: string,
+  row: Pick<SiteRow, "visibility" | "ownerUserId"> | null,
+): Promise<SiteAccess> {
+  const user = await resolveSessionUser(env, request);
+  if (!row || row.visibility === "public") {
+    return { allowed: true, role: null, authenticated: Boolean(user), user };
+  }
+  return accessForPrivateSite(env, slug, user, row.ownerUserId);
+}
+
+/**
+ * Private-site membership check. `ownerUserId` is `undefined` when the caller
+ * has not loaded the row (costs a D1 read), or the value (possibly `null`)
+ * when it has.
+ */
+async function accessForPrivateSite(
+  env: Env,
+  slug: string,
+  user: { id: string; email: string } | null,
+  ownerUserId: string | null | undefined,
+): Promise<SiteAccess> {
   if (!user) {
     return { allowed: false, role: null, authenticated: false, user: null };
   }
 
-  const ownerId = await getSiteOwnerId(env, slug);
+  const ownerId =
+    ownerUserId === undefined ? await getSiteOwnerId(env, slug) : ownerUserId;
   if (ownerId && ownerId === user.id) {
     return { allowed: true, role: "owner", authenticated: true, user };
   }

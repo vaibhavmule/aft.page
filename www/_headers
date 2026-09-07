@@ -3,9 +3,10 @@
 # CSP: 'unsafe-inline' until pages move off inline <script>; jsdelivr = Geist + fflate.
 # frame-src: /preview embeds tenant *.aft.page (default-src 'self' would block the iframe).
 # WebMCP (document.modelContext) requires an origin-isolated document. The
-# /webmcp/, /drop/, and /run/ surfaces opt in so browser agents can register +
-# call tools there. NOTE: origin isolation is one-way per origin — these paths
-# share the aft.page apex origin, so once isolated they stay isolated.
+# /webmcp/, /drop/, /run/, and /project/ surfaces opt in so browser agents can
+# register + call tools there. NOTE: origin isolation is one-way per origin —
+# these paths share the aft.page apex origin, so once isolated they stay
+# isolated.
 /*
   Strict-Transport-Security: max-age=15552000
   X-Content-Type-Options: nosniff
@@ -23,6 +24,9 @@
 /run/*
   Origin-Agent-Cluster: ?1
 
+/project/*
+  Origin-Agent-Cluster: ?1
+
 /.well-known/security.txt
   Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=86400
@@ -30,6 +34,11 @@
 /.well-known/mcp-registry-auth
   Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=300
+
+/.well-known/mcp.json
+  Content-Type: application/json; charset=utf-8
+  Cache-Control: public, max-age=3600
+  Access-Control-Allow-Origin: *
 
 /docs.md
   Content-Type: text/markdown; charset=utf-8
@@ -98,6 +107,12 @@
 /identity.json
   Content-Type: application/json; charset=utf-8
   Cache-Control: public, max-age=60
+
+# Generated from apps/api/src/ai-discovery.ts — see openapi.check.mjs.
+/openapi.json
+  Content-Type: application/json; charset=utf-8
+  Cache-Control: public, max-age=3600
+  Access-Control-Allow-Origin: *
 
 /llms.html
   Cache-Control: public, max-age=60

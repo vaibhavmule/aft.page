@@ -13,6 +13,28 @@ Two-person weekly use still matters for GTM ([STRATEGY.md](./STRATEGY.md)).
 China/EU work is the **first growth queue** — not a parallel company this week,
 not “wait until a Shanghai VP mails.”
 
+## First real signal (2026-09-06)
+
+Not a plan — what the user table says. Of the **17 external accounts** (ops →
+Users → External, first 12 Aug, 14 of them 28 Aug – 5 Sep, all inbound):
+addresses include **`qq.com` (6 claimed sites)**, an **Austrian `.at`**, and
+several Indian / South Asian gmails. Nobody in that list was recruited.
+
+Read it as weak evidence, not a mandate:
+
+- Email TLD is not geography, and 17 rows is not a distribution. Confirm with
+  ops → Sites → Traffic (`serve` by country) before moving any rung.
+- It is consistent with the thesis above: demand is not US-first, and the
+  mainland account arrived **without** a Chinese agent integration, a zh-CN
+  homepage, or China Network — i.e. rung 0 already leaks users.
+- It does **not** yet justify rung 1–3 spend. A `qq.com` signup with six sites
+  is a reason to ask that person what they built and whether the URL opens for
+  them reliably (see [EVIDENCE-PACK.md](./EVIDENCE-PACK.md) § Next), not a
+  reason to start zh-CN copy this week.
+
+The rung that this actually unblocks is the **script** below: there is finally a
+real name to send it to.
+
 ## Ambition
 
 **China:** every agent in mainland (Kimi, Trae, Lingma, Doubao, …) should

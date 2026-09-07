@@ -1,7 +1,10 @@
 /**
  * aftWebmcp — guard + registration helper for the W3C WebMCP draft API
  * (document.modelContext). Registers tools on the NATIVE API only; no polyfill.
- * No-ops cleanly where the API does not exist so pages degrade gracefully.
+ * No-ops cleanly where the API does not exist so pages degrade gracefully:
+ * callers gate on isSupported(), which is the only opt-in — there is no query
+ * flag. The API is exposed solely in origin-isolated documents, so a surface
+ * that registers tools must also send Origin-Agent-Cluster: ?1 (see _headers).
  *
  * Spec: https://webmachinelearning.github.io/webmcp/
  */
@@ -21,16 +24,6 @@
         typeof mc.getTools === "function" &&
         typeof mc.executeTool === "function",
     );
-  }
-
-  /** True when the caller opted in via ?webmcp=1 (demo page may pass its own flag). */
-  function enabled() {
-    if (!isSupported()) return false;
-    try {
-      return new URLSearchParams(window.location.search).has("webmcp");
-    } catch (_) {
-      return false;
-    }
   }
 
   /**
@@ -224,7 +217,6 @@
 
   window.aftWebmcp = {
     isSupported,
-    enabled,
     registerTools,
     confirm,
     validateName,

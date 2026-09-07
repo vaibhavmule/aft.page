@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>aft.page — the friendly cloud for small software</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/newsreader/index.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/instrument-sans/index.css"
+    />
+    <style>
+      :root {
+        color-scheme: light;
+        --paper: #f6f4ee;
+        --paper-deep: #edeae1;
+        --card: #fcfbf8;
+        --ink: #191713;
+        --ink-soft: #4d4942;
+        --ink-faint: #7a756a;
+        --rule: #dcd7cb;
+        --rule-strong: #c4beb0;
+        --live: #1a7f4b;
+        --live-bright: #23a55a;
+        --live-wash: #e3f2e9;
+        --stamp: #131311;
+        --stamp-ink: #f2efe8;
+        --stamp-muted: #a8a69d;
+        --font-serif: "Newsreader Variable", "Newsreader", Georgia, "Times New Roman", serif;
+        --font-sans: "Instrument Sans Variable", "Instrument Sans", system-ui, sans-serif;
+        --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        font-family: var(--font-sans);
+        font-size: 1.0625rem;
+        line-height: 1.6;
+        color: var(--ink);
+        background: var(--paper);
+        -webkit-font-smoothing: antialiased;
+        overflow-x: clip;
+      }
+      a { color: inherit; text-decoration: none; }
+      ::selection { background: var(--live-wash); color: var(--ink); }
+      .mono { font-family: var(--font-mono); }
+      .wrap { width: min(1160px, calc(100% - 3rem)); margin: 0 auto; }
+
+      /* top nav — light, hairline */
+      .topnav { width: min(1160px, calc(100% - 3rem)); margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 2rem; padding: 1.5rem 0; }
+      .brand { display: inline-flex; align-items: baseline; gap: 0.08em; font-family: var(--font-serif); font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em; color: var(--ink); }
+      .brand .dot { color: var(--live); }
+      .brand .beta { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); border: 1px solid var(--rule-strong); padding: 0.12rem 0.4rem; border-radius: 999px; margin-left: 0.5rem; vertical-align: middle; }
+      .nav-links { display: flex; align-items: center; gap: 1.6rem; font-size: 0.98rem; color: var(--ink-soft); }
+      .nav-links a:hover { color: var(--ink); }
+      .nav-cta { display: inline-flex; align-items: center; gap: 0.4rem; background: var(--ink); color: var(--paper) !important; padding: 0.55rem 1.1rem; border-radius: 999px; font-weight: 600; font-size: 0.95rem; }
+
+      /* hero */
+      .hero { padding: clamp(3rem, 7vw, 5.5rem) 0 clamp(2.5rem, 5vw, 4rem); border-bottom: 1px solid var(--rule); }
+      .kicker { display: inline-flex; align-items: center; gap: 0.5rem; margin: 0 0 1.5rem; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); border: 1px solid var(--rule-strong); padding: 0.4rem 0.8rem; border-radius: 999px; background: var(--card); }
+      .kicker i { width: 0.4rem; height: 0.4rem; border-radius: 50%; background: var(--live); }
+      h1.display {
+        margin: 0; font-family: var(--font-serif); font-weight: 500; letter-spacing: -0.03em;
+        font-size: clamp(3rem, 8vw, 6.2rem); line-height: 0.98; max-width: 18ch; color: var(--ink);
+      }
+      h1.display em { font-style: italic; color: var(--live); }
+      .hero .sub { margin: 1.6rem 0 0; max-width: 46ch; font-size: 1.3rem; line-height: 1.5; color: var(--ink-soft); }
+      .hero .sub strong { color: var(--ink); font-weight: 600; }
+      .hero .note { margin: 0.9rem 0 0; font-size: 1rem; color: var(--ink-faint); }
+      .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.9rem 1.4rem; margin-top: 2.2rem; }
+      .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.95rem 1.7rem; border-radius: 999px; font-weight: 600; font-size: 1.05rem; border: 1px solid transparent; cursor: pointer; }
+      .btn-primary { background: var(--ink); color: var(--paper); }
+      .btn-primary:hover { background: var(--live); }
+      .btn-ghost { border-color: var(--rule-strong); color: var(--ink); }
+      .btn-ghost:hover { border-color: var(--ink); }
+      .flowline { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 2rem; font-family: var(--font-mono); font-size: 0.85rem; color: var(--ink-faint); }
+      .flowline .ar { color: var(--rule-strong); }
+      .flowline .go { color: var(--live); font-weight: 600; }
+
+      /* hero visual: two cards — the race (dark stamp) + the drop (live wash) */
+      .hero-visual { margin-top: clamp(2.5rem, 5vw, 4rem); display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 1rem; align-items: stretch; }
+
+      .race { background: var(--stamp); color: var(--stamp-ink); border-radius: 1.25rem; padding: 1.6rem 1.7rem 1.5rem; box-shadow: 0 30px 60px rgba(25, 23, 19, 0.25); }
+      .race-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.12); font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--stamp-muted); }
+      .race-live { display: inline-flex; align-items: center; gap: 0.45rem; color: #4ade80; }
+      .race-live i { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: #4ade80; }
+      .lane { padding: 1.1rem 0 0.9rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+      .lane:last-child { border-bottom: none; }
+      .lane-label { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; font-weight: 600; font-size: 1.02rem; color: var(--stamp-ink); }
+      .lane-time { font-family: var(--font-mono); font-size: 0.95rem; }
+      .lane-old .lane-time { color: var(--stamp-muted); text-decoration: line-through; }
+      .lane-aft .lane-time { color: #4ade80; }
+      .lane-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin-top: 0.7rem; font-family: var(--font-mono); font-size: 0.74rem; }
+      .lane-steps .chip { border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 6px; padding: 0.28rem 0.5rem; color: var(--stamp-muted); white-space: nowrap; }
+      .lane-aft .lane-steps .chip { color: var(--stamp-ink); border-color: rgba(255, 255, 255, 0.3); }
+      .lane-aft .lane-steps .chip.go { border-color: rgba(74, 222, 128, 0.5); color: #4ade80; }
+      .lane-steps .sep { color: rgba(255, 255, 255, 0.25); }
+      .lane-out { margin: 0.8rem 0 0; font-family: var(--font-mono); font-size: 0.86rem; color: var(--stamp-muted); }
+      .lane-aft .lane-out { color: var(--stamp-ink); }
+      .lane-aft .lane-out a { color: #4ade80; text-decoration: underline; text-underline-offset: 0.15em; }
+      .lane-note { margin: 0.5rem 0 0; font-size: 0.88rem; color: var(--stamp-muted); }
+      .lane-aft .lane-note { color: var(--stamp-muted); }
+      .lane-aft .lane-note strong { color: #4ade80; }
+
+      .dropcard { background: var(--live-wash); border: 1px solid #cde7d6; border-radius: 1.25rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem 1.75rem; gap: 0.4rem; }
+      .dropcard .mark { display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 50%; background: var(--card); color: var(--live); margin-bottom: 0.4rem; box-shadow: 0 6px 16px rgba(26, 127, 75, 0.12); }
+      .dropcard h3 { margin: 0; font-family: var(--font-serif); font-size: 1.6rem; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); }
+      .dropcard p { margin: 0.3rem auto 0; max-width: 26ch; font-size: 0.95rem; color: var(--ink-soft); }
+      .dropcard .row { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin-top: 1rem; }
+      .dropcard .mini { border: 1px solid var(--live); color: var(--live); background: transparent; border-radius: 999px; padding: 0.5rem 1rem; font-weight: 600; font-size: 0.9rem; }
+      .dropcard .mini:hover { background: var(--live); color: #fff; }
+      .dropcard .hl { font-family: var(--font-mono); font-size: 0.72rem; color: var(--live); margin-top: 0.5rem; }
+
+      /* proof strip — light hairline */
+      .proof { border-bottom: 1px solid var(--rule); }
+      .proof ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, 1fr); }
+      .proof a { display: flex; align-items: center; justify-content: center; min-height: 4rem; padding: 0.5rem; font-size: 0.92rem; font-weight: 600; color: var(--ink-faint); border-right: 1px solid var(--rule); }
+      .proof li:last-child a { border-right: none; }
+      .proof a:hover { color: var(--ink); background: var(--card); }
+
+      section.block { border-bottom: 1px solid var(--rule); padding: clamp(4rem, 8vw, 6.5rem) 0; }
+      .eyebrow { display: flex; align-items: center; gap: 0.7rem; margin: 0 0 0.8rem; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--live); }
+      .eyebrow::before { content: ""; width: 1.6rem; height: 1px; background: var(--live); }
+      h2.h { margin: 0; font-family: var(--font-serif); font-weight: 500; letter-spacing: -0.02em; font-size: clamp(2.2rem, 4.6vw, 3.4rem); line-height: 1.05; max-width: 24ch; }
+      .lede { margin: 1.1rem 0 0; max-width: 46ch; font-size: 1.15rem; color: var(--ink-soft); }
+
+      /* capabilities — editorial numbered list */
+      .cap-list { list-style: none; margin: 3rem 0 0; padding: 0; }
+      .cap-list li { display: grid; grid-template-columns: 4rem minmax(0, 1fr) minmax(0, 0.8fr); gap: 2rem; padding: 1.6rem 0; border-top: 1px solid var(--rule-strong); align-items: start; }
+      .cap-list .no { font-family: var(--font-serif); font-style: italic; font-size: 1.4rem; color: var(--ink-faint); }
+      .cap-list h3 { margin: 0 0 0.4rem; font-size: 1.6rem; font-weight: 650; letter-spacing: -0.01em; font-family: var(--font-serif); font-weight: 600; }
+      .cap-list h3 .st { font-family: var(--font-mono); font-size: 0.68rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--live); vertical-align: middle; margin-left: 0.4rem; }
+      .cap-list p { margin: 0; color: var(--ink-soft); max-width: 44ch; }
+      .cap-list .proof-note { justify-self: end; text-align: right; font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink-faint); }
+
+      /* share band */
+      .band { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(2rem, 6vw, 5rem); align-items: center; }
+      .band .copy .btn { margin-top: 1.6rem; }
+      .acl { list-style: none; margin: 0; padding: 1.6rem 1.8rem; background: var(--card); border: 1px solid var(--rule-strong); border-radius: 1rem; box-shadow: 0 20px 40px rgba(25, 23, 19, 0.06); }
+      .acl li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.9rem 0; border-bottom: 1px solid var(--rule); font-family: var(--font-mono); font-size: 1rem; }
+      .acl li:last-child { border-bottom: none; }
+      .acl .tag { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); border: 1px solid var(--rule); border-radius: 999px; padding: 0.2rem 0.6rem; }
+      .acl .tag.edit { color: var(--live); border-color: var(--live); }
+      .acl-meta { margin: 0.8rem 0 0; text-align: center; font-size: 0.9rem; color: var(--ink-faint); }
+
+      .vers { list-style: none; margin: 0; padding: 0; background: var(--card); border: 1px solid var(--rule-strong); border-radius: 1rem; box-shadow: 0 20px 40px rgba(25, 23, 19, 0.06); padding: 1rem 1.6rem; }
+      .vers li { display: grid; grid-template-columns: 2.6rem minmax(0, 1fr) auto; gap: 1rem; align-items: center; padding: 0.8rem 0; border-bottom: 1px solid var(--rule); font-family: var(--font-mono); font-size: 0.92rem; }
+      .vers li:last-child { border-bottom: none; }
+      .vers .v { color: var(--ink-faint); }
+      .vers .url { color: var(--ink); }
+      .vers .st { font-size: 0.64rem; letter-spacing: 0.08em; text-transform: uppercase; }
+      .vers .st.now { color: var(--live); font-weight: 600; }
+      .vers .st.old { color: var(--ink-faint); }
+
+      /* ways — pill doors */
+      .doors { list-style: none; margin: 3rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+      .doors a { display: flex; flex-direction: column; gap: 0.5rem; padding: 1.6rem 1.5rem; background: var(--card); border: 1px solid var(--rule); border-radius: 1.25rem; height: 100%; }
+      .doors a:hover { border-color: var(--live); box-shadow: 0 16px 32px rgba(26, 127, 75, 0.08); transform: translateY(-2px); }
+      .doors .no { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-faint); }
+      .doors h3 { margin: 0.4rem 0 0; font-size: 1.35rem; font-weight: 650; font-family: var(--font-serif); font-weight: 600; letter-spacing: -0.01em; }
+      .doors code { font-family: var(--font-mono); font-size: 0.82rem; color: var(--live); overflow-wrap: anywhere; }
+      .doors p { margin: 0.2rem 0 0; color: var(--ink-soft); font-size: 0.95rem; }
+
+      /* compare — clean table */
+      .cmp-wrap { margin-top: 2.5rem; border: 1px solid var(--rule-strong); border-radius: 1rem; overflow: hidden; background: var(--card); }
+      table.cmp { width: 100%; border-collapse: collapse; }
+      .cmp th, .cmp td { text-align: left; padding: 1rem 1.4rem; border-bottom: 1px solid var(--rule); font-size: 1rem; }
+      .cmp thead th { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); background: var(--paper-deep); }
+      .cmp td { color: var(--ink-soft); }
+      .cmp td:first-child { color: var(--ink); font-weight: 600; }
+      .cmp tr:last-child td { border-bottom: none; }
+      .cmp .aft { color: var(--live) !important; font-weight: 600; background: var(--live-wash); }
+
+      /* pricing — warm cards */
+      .price-grid { list-style: none; margin: 3rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; align-items: stretch; }
+      .price-card { display: flex; flex-direction: column; padding: 2rem 1.8rem; background: var(--card); border: 1px solid var(--rule); border-radius: 1.5rem; }
+      .price-card.hot { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+      .price-card h3 { margin: 0; font-size: 1.25rem; font-weight: 650; }
+      .price-card .d { margin: 0.5rem 0 0; font-size: 0.98rem; opacity: 0.85; line-height: 1.5; }
+      .price-card.hot .d { color: var(--stamp-muted); opacity: 1; }
+      .price-amt { margin-top: 1.4rem; font-family: var(--font-serif); font-size: 3.2rem; font-weight: 500; letter-spacing: -0.03em; line-height: 1; }
+      .price-per { display: block; margin-top: 0.3rem; font-size: 0.9rem; color: var(--ink-faint); }
+      .price-card.hot .price-per { color: var(--stamp-muted); }
+      .price-card .btn { width: 100%; margin: 1.4rem 0 1.2rem; }
+      .price-card.hot .btn-primary { background: var(--paper); color: var(--ink); }
+      .price-card.hot .btn-primary:hover { background: #fff; }
+      .price-card.hot .btn-ghost { border-color: rgba(255, 255, 255, 0.4); color: var(--paper); }
+      .price-card ul { list-style: none; margin: 0; padding: 1.2rem 0 0; border-top: 1px solid var(--rule); display: flex; flex-direction: column; gap: 0.55rem; }
+      .price-card.hot ul { border-color: rgba(255, 255, 255, 0.15); }
+      .price-card ul li { position: relative; padding-left: 1.4rem; font-size: 0.95rem; }
+      .price-card ul li::before { content: "✓"; position: absolute; left: 0; color: var(--live); font-weight: 700; }
+      .price-card.hot ul li::before { color: #4ade80; }
+
+      /* faq */
+      .faq-list { margin-top: 2.5rem; border-top: 1px solid var(--rule-strong); }
+      .faq-item { border-bottom: 1px solid var(--rule); }
+      .faq-item summary { list-style: none; cursor: pointer; padding: 1.4rem 0.25rem; display: flex; align-items: baseline; justify-content: space-between; gap: 1.5rem; font-size: 1.2rem; font-weight: 600; font-family: var(--font-serif); }
+      .faq-item summary::-webkit-details-marker { display: none; }
+      .faq-item summary::after { content: "+"; font-family: var(--font-sans); font-weight: 400; color: var(--live); font-size: 1.5rem; }
+      .faq-item[open] summary::after { content: "–"; }
+      .faq-item p { margin: 0; padding: 0 3rem 1.4rem 0.25rem; max-width: 64ch; color: var(--ink-soft); }
+
+      /* waitlist — ink panel */
+      .wait-panel { background: var(--ink); color: var(--paper); border-radius: 2rem; padding: clamp(2.5rem, 6vw, 4.5rem); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 3rem; align-items: center; }
+      .wait-panel .eyebrow { color: #4ade80; }
+      .wait-panel .eyebrow::before { background: #4ade80; }
+      .wait-panel h2 { color: var(--paper); margin: 0 0 0.8rem; font-family: var(--font-serif); font-weight: 500; letter-spacing: -0.02em; font-size: clamp(2rem, 3.6vw, 2.8rem); line-height: 1.1; }
+      .wait-panel .wsub { margin: 0; color: var(--stamp-muted); max-width: 40ch; }
+      .wl { display: flex; gap: 0.6rem; }
+      .wl input[type="email"] { flex: 1; min-width: 0; padding: 1rem 1.2rem; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 999px; background: rgba(255, 255, 255, 0.06); color: var(--paper); font: inherit; font-size: 1rem; }
+      .wl input[type="email"]::placeholder { color: var(--stamp-muted); }
+      .wl input[type="email"]:focus { outline: none; border-color: #4ade80; }
+      .wl .btn { background: var(--paper); color: var(--ink); }
+      .wl .btn:hover { background: #4ade80; color: #062b17; }
+      .wl-note { margin: 0.8rem 0 0; font-size: 0.85rem; color: var(--stamp-muted); }
+
+      footer { padding: 4rem 0 0; }
+      .foot-grid { display: grid; grid-template-columns: 1.6fr repeat(3, 1fr); gap: 2.5rem; padding: 0 0 3rem; border-bottom: 1px solid var(--rule); }
+      .foot-grid .brand { font-size: 1.5rem; }
+      .foot-grid p { margin: 0.8rem 0 0; color: var(--ink-faint); max-width: 26ch; font-size: 0.98rem; }
+      .foot-grid h4 { margin: 0 0 0.9rem; font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+      .foot-grid a { display: block; margin-bottom: 0.55rem; color: var(--ink-soft); font-size: 0.98rem; }
+      .foot-grid a:hover { color: var(--live); }
+      .foot-status { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.5rem 0; font-size: 0.9rem; color: var(--ink-faint); }
+      .foot-status .pill { display: inline-flex; align-items: center; gap: 0.5rem; font-family: var(--font-mono); font-size: 0.78rem; color: var(--live); }
+      .foot-status .pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--live); }
+
+      @media (max-width: 900px) {
+        .hero-visual, .band, .wait-panel { grid-template-columns: 1fr; }
+        .doors, .price-grid { grid-template-columns: 1fr; }
+        .cap-list li { grid-template-columns: 2.6rem 1fr; }
+        .cap-list .proof-note { display: none; }
+        .foot-grid { grid-template-columns: 1fr 1fr; }
+        .proof ul { grid-template-columns: repeat(4, 1fr); }
+        .nav-links a:not(.nav-cta) { display: none; }
+      }
+      @media (max-width: 560px) {
+        .proof ul { grid-template-columns: repeat(2, 1fr); }
+        .wl { flex-direction: column; }
+        .wl .btn { width: 100%; }
+      }
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { animation: none !important; transition: none !important; } }
+    </style>
+  </head>
+  <body>
+    <nav class="topnav">
+      <a class="brand" href="/">aft<span class="dot">.</span><span class="beta">Beta</span></a>
+      <div class="nav-links">
+        <a href="#share">Share</a>
+        <a href="#keep">Keep</a>
+        <a href="#ways">Ways in</a>
+        <a href="#compare">Compare</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">FAQ</a>
+        <a class="nav-cta" href="#drop">Deploy an app</a>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div class="wrap">
+        <p class="kicker"><i></i> No account · no card · no queue</p>
+        <h1 class="display">Small software deserves a <em>friendly</em> cloud.</h1>
+        <p class="sub">Your agent made the app. aft turns it into a <strong>live link</strong> in about two seconds — no repo wiring, no billing page, no always-on ceremony.</p>
+        <p class="note">Same URL on every update. Roll back in a click. Gone when you say so.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#drop">Deploy your app →</a>
+          <a class="btn btn-ghost" href="#ways">See the ways in</a>
+        </div>
+        <p class="flowline"><span>agent</span><span class="ar">→</span><span>aft</span><span class="ar">→</span><span class="go">live URL</span></p>
+      </div>
+
+      <div class="wrap hero-visual">
+        <div class="race" aria-label="Two ways to a live URL">
+          <div class="race-head"><span>The usual way vs aft</span><span class="race-live"><i></i> live</span></div>
+          <div class="lane lane-old">
+            <div class="lane-label"><span>The usual way</span><span class="lane-time">≈ 40 min</span></div>
+            <div class="lane-steps"><span class="chip">create account</span><span class="sep">→</span><span class="chip">connect repo</span><span class="sep">→</span><span class="chip">add billing</span><span class="sep">→</span><span class="chip">pick region</span><span class="sep">→</span><span class="chip">wait for CI</span></div>
+            <p class="lane-out"># → still building…</p>
+            <p class="lane-note">Built for teams that run always-on. You're not one.</p>
+          </div>
+          <div class="lane lane-aft">
+            <div class="lane-label"><span>aft</span><span class="lane-time">≈ 2 s</span></div>
+            <div class="lane-steps"><span class="chip go">✓ drop or agent call</span><span class="sep">→</span><span class="chip go">✓ live URL</span></div>
+            <p class="lane-out"># → <a href="https://hello.aft.page">hello.aft.page</a></p>
+            <p class="lane-note"><strong>No account.</strong> Claim it later to keep it.</p>
+          </div>
+        </div>
+
+        <div class="dropcard" id="drop">
+          <div class="mark"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v10m0 0 3.5-3.5M12 13 8.5 9.5M5 16.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1.5"/></svg></div>
+          <h3>Drop a folder, get a URL.</h3>
+          <p>Static files or a built dist/. That's the whole flow.</p>
+          <div class="row">
+            <button class="mini" type="button">Browse folders</button>
+            <button class="mini" type="button">Browse zips</button>
+          </div>
+          <p class="hl">agents: MCP · aft deploy · no account</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="proof">
+      <ul aria-label="Works with">
+        <li><a href="/with/claude/">Claude Code</a></li>
+        <li><a href="/with/cursor/">Cursor</a></li>
+        <li><a href="/with/codex/">Codex</a></li>
+        <li><a href="/with/chatgpt/">ChatGPT</a></li>
+        <li><a href="/mcp">MCP</a></li>
+        <li><a href="/drop">Drop</a></li>
+        <li><a href="/run/">Run</a></li>
+      </ul>
+    </div>
+
+    <section class="block" id="cap">
+      <div class="wrap">
+        <p class="eyebrow">What aft does</p>
+        <h2 class="h">Three things, done properly.</h2>
+        <p class="lede">Not a control plane. Not an infrastructure suite. Just the shape of putting software online and handing it to people.</p>
+        <ul class="cap-list">
+          <li>
+            <span class="no">(1)</span>
+            <div><h3>Deploy <span class="st">● ships today</span></h3><p>Drop a folder, let your agent call MCP, or paste a link. Static files and SPAs become a live HTTPS URL in seconds.</p></div>
+            <div class="proof-note">interface: drop · MCP · CLI · cURL<br />limits: 500 files · 25 MB each</div>
+          </li>
+          <li>
+            <span class="no">(2)</span>
+            <div><h3>Share</h3><p>Public when you want, private when it's internal. Invite people by email like a shared Doc — and revoke them just as easily, no redeploy.</p></div>
+            <div class="proof-note">access: invite · view · edit · revoke</div>
+          </li>
+          <li>
+            <span class="no">(3)</span>
+            <div><h3>Keep</h3><p>Your URL stays yours across every update. Roll back the moment something's wrong. When the project's over, take it down — no orphaned bills.</p></div>
+            <div class="proof-note">lifecycle: ship · update · rollback · stop</div>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="block" id="share" style="background:var(--card)">
+      <div class="wrap band">
+        <div class="copy">
+          <p class="eyebrow">Share it like a Doc</p>
+          <h2 class="h">Private when it's yours. Public when you say so.</h2>
+          <p class="lede">Invite exactly the people you mean to. Change their access, revoke it, close the door — nothing redeploys, nothing breaks, and nobody sees the plumbing.</p>
+          <a class="btn btn-ghost" href="https://hello.aft.page" target="_blank" rel="noopener noreferrer">Open a live example</a>
+        </div>
+        <div aria-hidden="true">
+          <ul class="acl">
+            <li><span>alex@company.com</span><span class="tag edit">edit</span></li>
+            <li><span>ops@company.com</span><span class="tag">view</span></li>
+            <li><span>you@company.com</span><span class="tag">owner</span></li>
+          </ul>
+          <p class="acl-meta">add · change · revoke — same URL the whole time</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="keep">
+      <div class="wrap band">
+        <div aria-hidden="true">
+          <ul class="vers">
+            <li><span class="v">v3</span><span class="url">hello.aft.page</span><span class="st now">● live</span></li>
+            <li><span class="v">v2</span><span class="url">rollback point</span><span class="st old">kept</span></li>
+            <li><span class="v">v1</span><span class="url">first deploy</span><span class="st old">kept</span></li>
+          </ul>
+        </div>
+        <div class="copy">
+          <p class="eyebrow">Keep the link</p>
+          <h2 class="h">The link outlives the hype.</h2>
+          <p class="lede">Software made for a week shouldn't bill you for a year. Update whenever and the URL holds. When it's over, it's over — no surprise invoice.</p>
+          <a class="btn btn-ghost" href="#drop">Ship something</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="ways" style="background:var(--card)">
+      <div class="wrap">
+        <p class="eyebrow">Ways in</p>
+        <h2 class="h">Bring whatever made your app.</h2>
+        <p class="lede">An agent, a terminal, a folder, a repo, a prompt. Every door opens onto the same live URL.</p>
+        <ul class="doors">
+          <li><a href="/mcp"><span class="no">001</span><h3>MCP</h3><code>mcp.aft.page/mcp</code><p>If your agent made it, your agent ships it.</p></a></li>
+          <li><a href="/install"><span class="no">002</span><h3>CLI</h3><code>aft deploy</code><p>Install once. Ship from then on.</p></a></li>
+          <li><a href="/drop"><span class="no">003</span><h3>Drop</h3><code>aft.page/drop</code><p>A folder or a zip. That's the whole flow.</p></a></li>
+          <li><a href="/run/"><span class="no">004</span><h3>Run</h3><code>aft.page/run/owner/repo</code><p>A public repo in, one URL out.</p></a></li>
+          <li><a href="/code/"><span class="no">005</span><h3>Code</h3><code>aft.page/code</code><p>Say what it should do. Get a site.</p></a></li>
+          <li><a href="/plugins"><span class="no">006</span><h3>Plugin</h3><code>npx plugins add vaibhavmule/aft.page</code><p>Skill + MCP for agents that want both.</p></a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="block" id="compare">
+      <div class="wrap">
+        <p class="eyebrow">Compare</p>
+        <h2 class="h">The ceremony isn't a feature.</h2>
+        <p class="lede">Every control panel a big platform adds is work you don't need. Here's the ledger.</p>
+        <div class="cmp-wrap">
+          <table class="cmp">
+            <thead><tr><th></th><th>Traditional cloud</th><th>aft</th></tr></thead>
+            <tbody>
+              <tr><td>Time to URL</td><td>Repo · build · account · wait</td><td class="aft">Seconds from agent output</td></tr>
+              <tr><td>Sharing</td><td>Public site or DIY auth</td><td class="aft">Invite by email · revoke anytime</td></tr>
+              <tr><td>Ownership</td><td>Scattered across tools</td><td class="aft">Claim · update · same URL</td></tr>
+              <tr><td>Custom domain</td><td>Platform DNS ceremony</td><td class="aft">Request access · CNAME to cname.aft.page</td></tr>
+              <tr><td>Lifecycle</td><td>Always-on by default</td><td class="aft">Ship · use · stop when done</td></tr>
+              <tr><td>Built for</td><td>Big Software teams</td><td class="aft">Small software · agent users</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="pricing" style="background:var(--card)">
+      <div class="wrap">
+        <p class="eyebrow">Pricing</p>
+        <h2 class="h">Free is the whole free tier.</h2>
+        <p class="lede">Personal is $19 after 30 free days — when billing starts. It hasn't yet.</p>
+        <ul class="price-grid">
+          <li class="price-card">
+            <h3>Free</h3>
+            <p class="d">A live link the second it's built. Claim it whenever, keep it forever.</p>
+            <div class="price-amt">$0</div><span class="price-per">during beta</span>
+            <a class="btn btn-ghost" href="#drop">Deploy an app</a>
+            <ul><li>A public link you can share</li><li>Drop files or deploy from your agent</li><li>Claim your URL to keep it</li><li>500 files · 25 MB each · 100 MB total</li></ul>
+          </li>
+          <li class="price-card hot">
+            <h3>Personal</h3>
+            <p class="d">For the private things only you and a few people use.</p>
+            <div class="price-amt">$19</div><span class="price-per">after 30 days free</span>
+            <a class="btn btn-primary" href="#wait">Join waitlist</a>
+            <ul><li>30 days free, then $19/month</li><li>Private apps for one person</li><li>Higher limits, secrets, rollback</li><li>Viewers don't need an account</li></ul>
+          </li>
+          <li class="price-card">
+            <h3>Team &amp; Enterprise</h3>
+            <p class="d">Access control, SSO, and a human being to quote you.</p>
+            <div class="price-amt">Talk</div><span class="price-per">to us</span>
+            <a class="btn btn-ghost" href="mailto:hello@aft.page?subject=aft%20Team%20or%20Enterprise">Contact</a>
+            <ul><li>Private apps + invite ACL</li><li>Per-site secrets, updates, rollback</li><li>IP allowlist / SSO as they ship</li><li>Connector or pilot if you deploy this week</li></ul>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="block" id="faq" style="border-bottom:none">
+      <div class="wrap">
+        <p class="eyebrow">FAQ</p>
+        <h2 class="h">The questions people actually ask.</h2>
+        <div class="faq-list">
+          <details class="faq-item"><summary>Is it really free right now?</summary><p>Yes. Going live is free during beta, and claiming your URL to keep it is free too. Private apps, invite-by-email sharing, and per-site secrets are part of Personal — $19/mo after 30 days free. We will email the waitlist before charging anyone.</p></details>
+          <details class="faq-item"><summary>What can I put on aft?</summary><p>Single HTML documents, or multi-file static sites and SPAs (include an index.html). Limits: 500 files, 25 MB per file, 100 MB total. If your software needs a server that runs code, that's the roadmap — not today.</p></details>
+          <details class="faq-item"><summary>Why not Vercel, Netlify, or Cloudflare Pages?</summary><p>Those are right when you already have a git repo, CI, preview PRs, or a production team. If you have agent output or a dist/ folder and want a live HTTPS URL in seconds with no account, that's the job aft exists for.</p></details>
+          <details class="faq-item"><summary>Who owns the link?</summary><p>Anyone can deploy anonymously and get a link. Claim it and it's yours: same URL on every update, rollback, private access, invite by email. Unclaimed sites are deleted after 30 days idle.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="wait" style="padding-top:0">
+      <div class="wrap">
+        <div class="wait-panel">
+          <div>
+            <p class="eyebrow">Waitlist</p>
+            <h2>Billing hasn't started. You'll hear it from us first.</h2>
+            <p class="wsub">Free during beta. $19 a month after 30 free days, whenever charging actually begins. No retroactive bills, no surprise invoices.</p>
+          </div>
+          <form class="wl" onsubmit="return false">
+            <input type="email" name="email" autocomplete="email" placeholder="you@company.com" aria-label="Work email" />
+            <button class="btn" type="submit">Join waitlist</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap">
+        <div class="foot-grid">
+          <div>
+            <a class="brand" href="/">aft<span class="dot">.</span></a>
+            <p>Software's done. The link is the last mile. Live links. Invite people. Same URL when you update.</p>
+          </div>
+          <div><h4>Product</h4><a href="/docs">Docs</a><a href="#pricing">Pricing</a><a href="/drop">Drop</a><a href="/projects">Projects</a><a href="/preview">Preview</a></div>
+          <div><h4>Agents</h4><a href="/mcp">MCP</a><a href="/with/claude/">Claude Code</a><a href="/with/cursor/">Cursor</a><a href="/with/codex/">Codex</a><a href="/with/api/">API</a></div>
+          <div><h4>Company</h4><a href="https://status.aft.page">Status</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="/cookies/">Cookies</a></div>
+        </div>
+        <div class="foot-status">
+          <span class="pill"><i></i> All systems operational</span>
+          <span>© 2026 aft.page — a friendly cloud for small software</span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

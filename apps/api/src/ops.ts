@@ -46,7 +46,9 @@ import {
   countRunJobsByStatus,
   scoreWindow,
   type DeployFailureRow,
+  type BrandDomainWatchRow,
   type FeedbackRow,
+  listBrandDomainWatch,
   type OpsDomainRow,
   type OpsSiteListRow,
   type OpsSnapshot,
@@ -279,6 +281,9 @@ export type WorkersCost = {
 export type OpsPayload = {
   service: string;
   health: StatusPayload;
+  /** Per-section data health: "ok" when loaded, "error" when the source failed.
+   *  Lets the renderer show a broken section as broken instead of a plausible zero. */
+  dataHealth: Record<string, "ok" | "error">;
   successes24h: number;
   failures24h: number;
   rate: number | null;
@@ -300,6 +305,7 @@ export type OpsPayload = {
   sites: (OpsSiteListRow & { viewsToday: number; views7d: number })[];
   users: (OpsUserRow & { internal: boolean })[];
   domains: OpsDomainRow[];
+  brandDomains: BrandDomainWatchRow[];
   views: ViewRollup;
   timeToUrl: TimeToUrlScore;
   cost: WorkersCost;
@@ -591,6 +597,27 @@ function isoAgo(ms: number): string {
   return new Date(Date.now() - ms).toISOString();
 }
 
+/**
+ * Resolve `p`, but on failure record it in `health` and return `fallback`.
+ * Keeps the ops page rendering while making a broken section read as broken
+ * (a `.data-err` note) instead of a plausible healthy zero.
+ */
+async function tracked<T>(
+  health: Record<string, "ok" | "error">,
+  key: string,
+  p: Promise<T>,
+  fallback: T,
+): Promise<T> {
+  try {
+    const v = await p;
+    health[key] = "ok";
+    return v;
+  } catch {
+    health[key] = "error";
+    return fallback;
+  }
+}
+
 function mergeSources(
   ok: { client: string; n: number }[],
   fail: { source: string; n: number }[],
@@ -863,6 +890,7 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
   const since24h = isoAgo(24 * 60 * 60 * 1000);
   const since7d = isoAgo(7 * 24 * 60 * 60 * 1000);
   const mtd = monthStartUtc();
+  const dataHealth: Record<string, "ok" | "error"> = {};
   const [
     health,
     failures,
@@ -895,6 +923,7 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
     runCounts,
     statusProbes,
     d1Usage,
+    brandDomains,
   ] = await Promise.all([
     buildPayload(env),
     listDeployFailures(env, 50),
@@ -912,7 +941,7 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
     countOpsSnapshot(env, since7d, mtd, since24h),
     listAllSites(env, 200),
     listOpsUsers(env, 200),
-    listOpsCustomDomains(env, 200),
+    tracked(dataHealth, "domains", listOpsCustomDomains(env, 200), [] as OpsDomainRow[]),
     resolveWorkersUsage(env),
     env.SITES ? loadViewRollup(env.SITES, 7) : Promise.resolve({
       today: 0,
@@ -920,17 +949,22 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
       bySlug: [],
     } satisfies ViewRollup),
     listDeployMsSince(env, since7d),
-    loadLatestSmokeRun(env).catch(() => null),
-    loadSmokeHistory(env, 7).catch(() => [] as SmokeRunSummary[]),
+    tracked(dataHealth, "smoke", loadLatestSmokeRun(env), null),
+    tracked(dataHealth, "smokeHistory", loadSmokeHistory(env, 7), [] as SmokeRunSummary[]),
     listProbeHits(env, since7d),
-    loadLatestAuditRun(env).catch(() => null),
-    loadAuditHistory(env, 7).catch(() => [] as AuditRunSummary[]),
+    tracked(dataHealth, "audit", loadLatestAuditRun(env), null),
+    tracked(dataHealth, "auditHistory", loadAuditHistory(env, 7), [] as AuditRunSummary[]),
     loadOrRunCfPractices(env),
     loadVisitsPayload(env, { range: "7d", scope: "all" }),
-    listRunJobs(env, 50).catch(() => [] as RunJobRow[]),
-    countRunJobsByStatus(env).catch(() => ({ live: 0, failed: 0, queued: 0 })),
+    tracked(dataHealth, "runJobs", listRunJobs(env, 50), [] as RunJobRow[]),
+    tracked(dataHealth, "runCounts", countRunJobsByStatus(env), {
+      live: 0,
+      failed: 0,
+      queued: 0,
+    }),
     loadOpsStatusFailures(env, 50),
     resolveD1Usage(env),
+    tracked(dataHealth, "brandDomains", listBrandDomainWatch(env), [] as BrandDomainWatchRow[]),
   ]);
   const last24h = scoreWindow(successes24h, failures24h);
   const last7d = scoreWindow(successes7d, failures7d);
@@ -939,6 +973,7 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
   const priced = estimateWorkersPaid(requests, cpuMs);
   return {
     service: "aft.page-ops",
+    dataHealth,
     health,
     successes24h,
     failures24h,
@@ -971,6 +1006,7 @@ async function buildOpsPayload(env: Env): Promise<OpsPayload> {
       internal: isInternalUserEmail(u.email, env),
     })),
     domains,
+    brandDomains,
     views,
     timeToUrl: buildTimeToUrlScore(deployMs),
     cost: {
@@ -1828,13 +1864,14 @@ function renderSitesTable(
       <button type="button" data-filter="claimed">Claimed</button>
       <button type="button" data-filter="unclaimed">Unclaimed</button>
       <button type="button" data-filter="served24h">Served 24h</button>
-      <button type="button" data-filter="inactive">Inactive</button>
+      <button type="button" data-filter="inactive" title="Sites you parked with the serve switch (active = no). None until you toggle one off.">Inactive</button>
       <button type="button" data-filter="gc" title="Unclaimed idle ≥${ANON_IDLE_DELETE_DAYS - ANON_GC_WARN_DAYS}d — hard-delete at ${ANON_IDLE_DELETE_DAYS}d">Deleting ≤${ANON_GC_WARN_DAYS}d</button>
     </div>
     <table data-sites><thead><tr>
       <th>Slug</th><th>Owner</th><th>Vis</th><th>Runtime</th><th>Active</th>
       <th>Deploys</th><th>Bytes</th><th>Fails</th><th>Views today</th><th>Views 7d</th><th>Last served</th><th></th>
-    </tr></thead><tbody>${rows}</tbody></table>`;
+    </tr></thead><tbody>${rows}</tbody></table>
+    <p class="empty" data-sites-empty hidden></p>`;
 }
 
 function renderUsersTable(
@@ -1911,6 +1948,42 @@ function renderDomainsTable(domains: OpsDomainRow[], root: string): string {
   return `<table data-domains><thead><tr>
     <th>Hostname</th><th>Slug</th><th>Owner</th><th>Status</th><th>SSL</th><th>Error</th><th></th>
   </tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+/** Visible "this section's data failed to load" note, instead of a plausible zero. */
+function sectionHealthNote(health: Record<string, "ok" | "error">, key: string): string {
+  return health[key] === "error"
+    ? `<p class="data-err">${key} data failed to load — see Workers Logs for the error.</p>`
+    : "";
+}
+
+function renderBrandDomains(rows: BrandDomainWatchRow[]): string {
+  if (rows.length === 0) {
+    return `<p class="empty">Not checked yet — the daily 09:00 UTC RDAP check will populate this.</p>`;
+  }
+  const pillFor = (s: BrandDomainWatchRow["status"]) =>
+    s === "available" ? "fail" : s === "registered" ? "ok" : "warn";
+  const body = rows
+    .map((r) => {
+      const expires = r.expiresAt ? r.expiresAt.slice(0, 10) : "—";
+      const changed = r.changedAt.slice(0, 10);
+      const checked = r.checkedAt.slice(0, 10);
+      const error = r.error ? `<td class="why">${escapeHtml(r.error)}</td>` : "<td></td>";
+      return `<tr>
+        <td><code>${escapeHtml(r.domain)}</code></td>
+        <td><span class="pill ${pillFor(r.status)}">${escapeHtml(r.status)}</span></td>
+        <td>${expires}</td>
+        <td>${escapeHtml(r.registrar || "—")}</td>
+        ${error}
+        <td>${checked}</td>
+        <td>${changed}</td>
+      </tr>`;
+    })
+    .join("");
+  return `<table data-brand-domains><thead><tr>
+    <th>Domain</th><th>Status</th><th>Expires</th><th>Registrar</th><th>Error</th><th>Checked</th><th>Changed</th>
+  </tr></thead><tbody>${body}</tbody></table>
+  <p class="empty">Fires daily 09:00 UTC via the API cron.</p>`;
 }
 
 function renderSiteHtml(
@@ -1992,24 +2065,30 @@ function renderSiteHtml(
     body { margin: 0; font-family: var(--font-sans); background: var(--void); color: var(--ink); line-height: 1.5; }
     a { color: inherit; }
     code { font-family: var(--font-mono); font-size: 0.85em; }
+    :focus-visible { outline: 2px solid #fafafa; outline-offset: 2px; }
     .wrap { width: min(900px, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 4rem; }
     ${BRAND_WORDMARK_CSS}
     .brand { font-size: 1.35rem; }
-    .top { display: flex; justify-content: space-between; margin-bottom: 2rem; }
+    .top { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; }
     .top a { color: var(--quiet); text-decoration: none; }
-    h1 { font-size: 1.4rem; letter-spacing: -0.03em; }
-    .panel { border: 1px solid var(--line); border-radius: 0.4rem; background: var(--panel); padding: 1rem 1.1rem; margin: 0 0 1rem; }
-    .panel h2 { margin: 0 0 0.5rem; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+    h1 { font-size: 1.4rem; letter-spacing: -0.03em; word-break: break-word; }
+    .panel { border: 1px solid var(--line); border-radius: 3px; background: var(--panel); padding: 1rem 1.1rem; margin: 0 0 1rem; overflow-x: auto; }
+    .panel h2 { margin: 0 0 0.5rem; font-size: 0.68rem; font-family: var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: #a1a1aa; }
     .panel p, .panel li { margin: 0 0 0.35rem; color: var(--quiet); }
     .panel a { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
     dl { display: grid; grid-template-columns: 8rem 1fr; gap: 0.35rem 0.75rem; margin: 0; }
-    dt { color: var(--faint); font-size: 0.8rem; }
+    dt { color: #a1a1aa; font-size: 0.8rem; }
     dd { margin: 0; word-break: break-all; }
-    .who { font-family: var(--font-mono); font-size: 0.75rem; color: var(--faint); }
+    .who { font-family: var(--font-mono); font-size: 0.75rem; color: #a1a1aa; }
     table.files { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.4rem; }
     table.files th, table.files td { text-align: left; padding: 0.3rem 0.35rem; border-bottom: 1px solid var(--line); }
-    table.files th { color: var(--faint); font-size: 0.72rem; text-transform: uppercase; }
+    table.files th { color: #a1a1aa; font-size: 0.72rem; text-transform: uppercase; font-family: var(--font-mono); }
     ul { padding-left: 1.1rem; margin: 0; }
+    @media (max-width: 640px) {
+      dl { grid-template-columns: 1fr; gap: 0.1rem 0; }
+      dt { margin-top: 0.5rem; }
+      .panel { padding: 0.85rem 0.9rem; }
+    }
   </style>
 </head>
 <body>
@@ -2362,121 +2441,214 @@ function renderOpsHtml(
   ${BRAND_FONT_LINKS}
   <style>
     ${BRAND_CSS_VARS}
+    /* Redesign tokens: a legible muted replaces the failed faint for text.
+       Roles: accent = live signal only; structural text rides ink/quiet. */
+    :root {
+      --muted: #a1a1aa;       /* 8:1 on void — replaces --faint for text */
+      --rail: #e4e4e7;        /* live rail — white, not green (green = live dot only) */
+      --focus: #fafafa;       /* focus ring */
+      --chip: #18181b;
+      --panel-2: #0e0e10;
+      --radius: 2px;          /* sharp, instrument edges */
+      --mono: "Geist Mono Variable","Geist Mono",ui-monospace,Menlo,monospace;
+    }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: var(--font-sans); background: var(--void); color: var(--ink); line-height: 1.5; }
+    body { margin: 0; font-family: var(--font-sans); background: var(--void); color: var(--ink); line-height: 1.5; font-size: 15px; }
     a { color: inherit; }
-    code { font-family: var(--font-mono); font-size: 0.82em; }
-    .wrap { width: min(1100px, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 4rem; }
+    code { font-family: var(--mono); font-size: 0.86em; }
+    ::selection { background: color-mix(in srgb, var(--ink) 18%, transparent); }
+    :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+    button, a, [role="button"], summary, label { touch-action: manipulation; }
+    /* Motion: opt-in, transform/opacity only, monitor-restrained. */
+    a, button, summary, .status-item, .card-link, label { transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease; }
+    a:active, button:active:not(:disabled), .card-link:active { transform: scale(0.98); }
+    .wrap { width: min(1280px, calc(100% - 2rem)); margin: 0 auto; padding: 1.25rem 0 4rem; }
     ${BRAND_WORDMARK_CSS}
-    .brand { font-size: 1.35rem; }
-    .top { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; align-items: center; }
-    .top-links { display: flex; gap: 1rem; color: var(--quiet); font-size: 0.9rem; }
+    .brand { font-size: 1.1rem; letter-spacing: -0.01em; }
+    .top { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 0.75rem; }
+    .top-links { display: flex; gap: 1.1rem; color: var(--muted); font-size: 0.82rem; font-family: var(--mono); }
     .top-links a { text-decoration: none; }
-    h1 { font-size: 1.6rem; letter-spacing: -0.03em; margin: 0 0 0.4rem; }
-    .lede { color: var(--quiet); margin: 0 0 0.35rem; }
-    .who { font-family: var(--font-mono); font-size: 0.75rem; color: var(--faint); margin: 0 0 1.25rem; }
-    .hub-shell { display: grid; grid-template-columns: 11.5rem minmax(0, 1fr); gap: 1.25rem 1.5rem; align-items: start; }
-    .hub-nav { display: flex; flex-direction: column; gap: 0.15rem; position: sticky; top: 1.25rem; }
-    .hub-nav .nav-g { font-size: 0.65rem; letter-spacing: 0.07em; text-transform: uppercase; color: var(--faint); padding: 0.75rem 0.65rem 0.15rem; }
-    .hub-nav .nav-g:first-child { padding-top: 0; }
-    .hub-nav a { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.45rem 0.65rem; border-radius: 4px; color: var(--quiet); text-decoration: none; font-size: 0.88rem; font-weight: 550; }
-    .hub-nav a:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 6%, transparent); }
-    .hub-nav a[aria-current="page"] { color: var(--ink); background: color-mix(in srgb, var(--ink) 10%, transparent); }
-    .hub-nav .n { font-variant-numeric: tabular-nums; font-size: 0.78rem; color: var(--faint); }
-    .hub-nav a[aria-current="page"] .n { color: var(--quiet); }
+    .top-links a:hover { color: var(--ink); }
+    h1 { font-size: 1.25rem; letter-spacing: -0.02em; margin: 0; font-weight: 650; }
+    .mast { margin: 0.4rem 0 1.1rem; }
+    .mast h1, .mast .lede, .mast .who { display: inline; }
+    .mast .lede { color: var(--muted); margin-left: 0.75rem; font-size: 0.85rem; }
+    .mast .who { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); margin-left: 0.75rem; }
+    .mast-status { margin-left: auto; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); }
+    .who { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); margin: 0.5rem 0 0; }
+    /* --- console layout: rail on the left of content, lanes not cards --- */
+    .hub-shell { display: grid; grid-template-columns: 13rem minmax(0, 1fr); gap: 0 1.5rem; align-items: start; }
+    .hub-nav { display: flex; flex-direction: column; gap: 0.05rem; position: sticky; top: 1rem; padding: 0.25rem 0.5rem 0.5rem 0; border-right: 1px solid var(--line); min-height: calc(100vh - 6rem); }
+    .hub-nav .nav-g { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding: 0.9rem 0.6rem 0.25rem; }
+    .hub-nav .nav-g:first-child { padding-top: 0.25rem; }
+    .hub-nav a { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; padding: 0.5rem 0.6rem; border-radius: 3px; color: var(--muted); text-decoration: none; font-size: 0.83rem; font-weight: 500; border-left: 2px solid transparent; min-height: 32px; }
+    .hub-nav a:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 5%, transparent); }
+    .hub-nav a:active { color: var(--ink); background: color-mix(in srgb, var(--ink) 12%, transparent); }
+    .hub-nav a[aria-current="page"] { color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); border-left-color: var(--rail); }
+    .hub-nav .n { font-variant-numeric: tabular-nums; font-size: 0.7rem; color: var(--muted); font-family: var(--mono); }
+    .hub-nav a[aria-current="page"] .n { color: var(--ink); }
     .hub-main .panel { display: none; }
     .hub-main .panel.is-active { display: block; }
-    h2 { font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); margin: 1.5rem 0 0.75rem; }
+    h2 { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 1.75rem 0 0.6rem; font-weight: 600; }
     .hub-main .panel > h2:first-child { margin-top: 0; }
+    .hub-main .panel h3 { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 1.25rem 0 0.5rem; font-weight: 600; }
     ul { padding-left: 1.2rem; }
-    .empty { color: var(--faint); }
-    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    th, td { text-align: left; padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
-    th { color: var(--faint); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
-    td.why { color: var(--quiet); max-width: 28rem; }
+    .empty { color: var(--muted); font-size: 0.82rem; }
+    [hidden] { display: none !important; }
+    .data-err { color: var(--bad); font-size: 0.82rem; margin: 0 0 0.75rem; font-family: var(--mono); }
+    .data-err::before { content: "! "; font-weight: 700; }
+    .act-err { display: inline-block; margin-left: 0.5rem; color: var(--bad); font-size: 0.76rem; font-family: var(--mono); }
+    /* --- tables: hairline rows, mono headers --- */
+    table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    th, td { text-align: left; padding: 0.42rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.68rem; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.06em; }
+    td.why { color: var(--muted); max-width: 28rem; }
     td.note { white-space: pre-wrap; max-width: 36rem; word-break: break-word; }
     details summary { cursor: pointer; }
-    pre.job-log { white-space: pre-wrap; font-size: 0.75rem; max-height: 16rem; overflow: auto; margin: 0.4rem 0 0; font-family: var(--font-mono); }
+    .ops-detail { border: 1px solid var(--line); border-radius: 3px; background: var(--panel-2); padding: 0.6rem 0.9rem; margin-top: 1rem; }
+    .ops-detail summary { font-family: var(--mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); cursor: pointer; }
+    .ops-detail summary:hover { color: var(--ink); }
+    .ops-detail[open] summary { margin-bottom: 0.5rem; }
+    .ops-detail .ops-detail-body { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 260ms cubic-bezier(0.2, 0, 0, 1), opacity 200ms ease; }
+    .ops-detail[open] .ops-detail-body { grid-template-rows: 1fr; opacity: 1; }
+    .ops-detail .ops-detail-inner { overflow: hidden; }
+    pre.job-log { white-space: pre-wrap; font-size: 0.74rem; max-height: 16rem; overflow: auto; margin: 0.4rem 0 0; font-family: var(--mono); }
     table a { text-decoration: underline; text-underline-offset: 2px; }
-    table button { font: inherit; font-size: 0.78rem; padding: 0.2rem 0.55rem; border: 1px solid var(--line); border-radius: 0.3rem; background: transparent; color: var(--ink); cursor: pointer; }
-    .day-chart { border: 1px solid var(--line); border-radius: 0.4rem; background: var(--panel); padding: 0.75rem 1rem 0.85rem; }
-    .day-legend { display: flex; align-items: center; gap: 0.45rem; font-size: 0.75rem; color: var(--quiet); margin-bottom: 0.6rem; }
-    .swatch { width: 0.55rem; height: 0.55rem; border-radius: 0.1rem; display: inline-block; }
-    .swatch.ok { background: var(--good); }
-    .swatch.fail { background: var(--bad); }
-    .day-cols { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.45rem; height: 11rem; align-items: stretch; }
-    .day-col { display: flex; flex-direction: column; align-items: center; min-width: 0; height: 100%; }
-    .day-n { font-variant-numeric: tabular-nums; font-size: 0.72rem; color: var(--quiet); min-height: 1rem; }
-    .day-track { flex: 1; width: 70%; max-width: 2.4rem; display: flex; flex-direction: column; justify-content: flex-end; min-height: 0; }
-    .day-stack { display: flex; flex-direction: column; width: 100%; min-height: 3px; border-radius: 0.15rem 0.15rem 0 0; overflow: hidden; }
-    .day-ok { background: var(--good); min-height: 2px; }
-    .day-fail { background: var(--bad); min-height: 2px; }
-    .day-zero { height: 2px; width: 100%; background: var(--line); }
-    .day-d { font-size: 0.7rem; color: var(--faint); margin-top: 0.35rem; font-variant-numeric: tabular-nums; }
-    .country-chart { border: 1px solid var(--line); border-radius: 0.4rem; background: var(--panel); padding: 0.75rem 1rem 0.85rem; }
-    .country-row { display: grid; grid-template-columns: 3.2rem 1fr 3.5rem; gap: 0.55rem; align-items: center; margin: 0.35rem 0; }
-    .country-code { font-family: var(--font-mono); font-size: 0.78rem; color: var(--quiet); }
-    .country-track { height: 0.55rem; background: var(--line); border-radius: 0.15rem; overflow: hidden; }
-    .country-bar { display: block; height: 100%; background: var(--good); border-radius: 0.15rem; min-width: 2px; }
-    .country-n { font-variant-numeric: tabular-nums; font-size: 0.78rem; color: var(--quiet); text-align: right; }
-    .score { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
+    table button { font: inherit; font-size: 0.76rem; padding: 0.28rem 0.55rem; border: 1px solid var(--line-bright); border-radius: 3px; background: transparent; color: var(--ink); cursor: pointer; }
+    table button:active { background: color-mix(in srgb, var(--ink) 14%, transparent); }
+    table button:disabled { opacity: 0.5; cursor: wait; }
+    /* --- panels/lanes --- */
+    .panel, .card, .info-card, .domain-group, .net, .day-chart, .country-chart { background: var(--panel-2); border: 1px solid var(--line); }
+    .score { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
     .score.crit { grid-template-columns: repeat(5, minmax(0, 1fr)); }
     .stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem; }
-    .stat-grid .card { padding: 0.7rem 0.8rem; }
-    .stat-grid strong { display: block; font-size: 1.25rem; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
-    .stat-grid span { color: var(--quiet); font-size: 0.75rem; }
-    .cost-note { color: var(--quiet); font-size: 0.82rem; margin: 0.5rem 0 0; }
+    .stat-grid .card { padding: 0.65rem 0.75rem; }
+    .stat-grid strong { display: block; font-size: 1.2rem; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+    .stat-grid span { color: var(--muted); font-size: 0.72rem; }
+    .status-strip { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+    .status-item { display: flex; flex-direction: column; gap: 0.2rem; background: var(--panel-2); padding: 0.65rem 0.7rem; text-decoration: none; color: inherit; min-height: 44px; }
+    .status-item:hover { background: var(--panel-raised); }
+    .status-item:active { background: color-mix(in srgb, var(--ink) 12%, transparent); }
+    .status-item strong { font-size: 1rem; font-weight: 650; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; line-height: 1.2; }
+    .status-item .si-sub { color: var(--muted); font-size: 0.7rem; font-family: var(--mono); }
+    .status-item .si-lab { color: var(--muted); font-size: 0.66rem; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.08em; }
+    .dot { width: 0.4rem; height: 0.4rem; border-radius: 50%; background: var(--muted); display: inline-block; }
+    .dot.on { background: var(--good); box-shadow: 0 0 6px color-mix(in srgb, var(--good) 60%, transparent); }
+    .dot.bad { background: var(--bad); box-shadow: 0 0 6px color-mix(in srgb, var(--bad) 60%, transparent); }
+    .dot.off { background: var(--muted); }
+    @keyframes aft-pulse { 0% { transform: scale(1); } 40% { transform: scale(1.5); } 100% { transform: scale(1); } }
+    .dot.pulse { animation: aft-pulse 600ms ease-out 1; }
+    @keyframes aft-flash { 0% { background-color: color-mix(in srgb, var(--good) 35%, transparent); } 100% { background-color: transparent; } }
+    .live-flash { animation: aft-flash 900ms ease-out 1; border-radius: 2px; }
+    .info-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+    .info-card { padding: 0.7rem 0.8rem; }
+    .cost-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem; }
+    .trend-pair { display: grid; grid-template-columns: 1.1fr 1fr; gap: 1.25rem; align-items: start; margin-top: 0.5rem; }
+    .trend-pair h3 { margin-top: 0; }
+    .info-card h3, .card h3, .domain-group h2 { margin: 0 0 0.4rem; font-size: 0.66rem; font-family: var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+    .domain-groups { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; align-items: start; }
+    .domain-group { padding: 0.8rem 0.9rem; min-width: 0; }
+    .domain-group h2 { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .grp-tag { font-size: 0.6rem; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.06em; padding: 0.06rem 0.35rem; border-radius: 2px; border: 1px solid var(--line-bright); color: var(--muted); font-weight: 500; }
+    .grp-note { color: var(--muted); font-size: 0.78rem; margin: 0 0 0.6rem; }
+    .grp-note b { color: var(--ink); font-weight: 600; }
+    .cost-note { color: var(--muted); font-size: 0.78rem; margin: 0.5rem 0 0; }
     .live { display: inline-flex; align-items: center; gap: 0.35rem; }
-    .live i { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--faint); display: inline-block; }
-    .live i[data-on] { background: var(--good); }
-    .net { margin: 0; padding: 0.75rem 0.85rem 0.65rem; border: 1px solid var(--line); border-radius: 0.4rem; background: var(--panel); }
+    .live i { width: 0.4rem; height: 0.4rem; border-radius: 50%; background: var(--muted); display: inline-block; }
+    .live i[data-on] { background: var(--good); box-shadow: 0 0 6px color-mix(in srgb, var(--good) 60%, transparent); }
+    .net { padding: 0.7rem 0.8rem 0.6rem; }
     .net-svg { width: 100%; height: auto; display: block; }
     .net-svg a { text-decoration: none; }
     .net-svg a:hover rect { stroke: var(--ink); }
-    .net figcaption { color: var(--quiet); font-size: 0.78rem; margin: 0.65rem 0.1rem 0.1rem; }
-    .stories, .todos { margin: 0 0 1rem; padding-left: 0; list-style: none; color: var(--quiet); }
+    .net figcaption { color: var(--muted); font-size: 0.76rem; margin: 0.6rem 0.1rem 0.1rem; }
+    .stories, .todos { margin: 0 0 1rem; padding-left: 0; list-style: none; color: var(--muted); }
     .stories { padding-left: 1.2rem; list-style: disc; }
-    .stories li, .todos li { margin: 0.35rem 0; }
-    .todos.check li { display: flex; flex-wrap: wrap; gap: 0.35rem 0.6rem; align-items: baseline; }
+    .stories li, .todos li { margin: 0.3rem 0; }
+    .todos.check li { display: flex; flex-wrap: wrap; gap: 0.3rem 0.6rem; align-items: baseline; }
     .todos.check label { display: flex; gap: 0.5rem; align-items: flex-start; cursor: pointer; color: var(--ink); flex: 1 1 14rem; }
-    .todos.check input { margin-top: 0.2rem; }
-    .todos.check .lab { font-weight: 500; }
-    .todos.check .hint { font-size: 0.8rem; color: var(--faint); flex: 1 1 100%; padding-left: 1.5rem; }
-    .todos .src { color: var(--faint); font-size: 0.75rem; }
-    .card { border: 1px solid var(--line); border-radius: 0.4rem; background: var(--panel); padding: 0.9rem 1rem; }
+    .todos.check input { margin-top: 0.2rem; accent-color: var(--good); }
+    .todos.check .lab { font-weight: 550; }
+    .todos.check .hint { font-size: 0.78rem; color: var(--muted); flex: 1 1 100%; padding-left: 1.5rem; }
+    .todos .src { color: var(--muted); font-size: 0.74rem; font-family: var(--mono); }
+    .card { padding: 0.8rem 0.9rem; }
     a.card-link { text-decoration: none; color: inherit; display: block; cursor: pointer; }
-    a.card-link:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
-    .filters { display: flex; gap: 0.35rem; margin: 0 0 0.75rem; flex-wrap: wrap; }
-    ol.top-views { margin: 0 0 1rem; padding-left: 1.2rem; color: var(--quiet); }
-    ol.top-views .faint { color: var(--faint); }
-    .filters button { font: inherit; font-size: 0.82rem; padding: 0.3rem 0.6rem; border: 1px solid var(--line); border-radius: 0.3rem; background: transparent; color: var(--quiet); cursor: pointer; }
-    .filters button[aria-current="true"] { color: var(--ink); background: color-mix(in srgb, var(--ink) 10%, transparent); }
-    .pill { display: inline-block; font-size: 0.78rem; font-weight: 600; padding: 0.1rem 0.45rem; border-radius: 0.25rem; }
-    .pill.ok { background: color-mix(in srgb, var(--good) 22%, transparent); }
-    .pill.warn { background: color-mix(in srgb, var(--warn) 22%, transparent); }
-    .pill.fail { background: color-mix(in srgb, var(--bad, #c44) 22%, transparent); }
-    .smoke-run { margin: 0 0 0.85rem; color: var(--quiet); font-size: 0.88rem; }
-    .hub-main .panel h3 { font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); margin: 1.25rem 0 0.55rem; }
-    dl.smoke-flight { display: grid; grid-template-columns: 11rem 1fr; gap: 0.35rem 0.75rem; margin: 0 0 0.85rem; }
-    dl.smoke-flight dt { color: var(--faint); font-size: 0.8rem; }
-    dl.smoke-flight dd { margin: 0; color: var(--quiet); }
+    a.card-link:hover { background: var(--panel-raised); }
+    a.card-link:active { background: color-mix(in srgb, var(--ink) 12%, transparent); }
+    .filters { display: flex; gap: 0.35rem; margin: 0 0 0.6rem; flex-wrap: wrap; }
+    ol.top-views { margin: 0 0 1rem; padding-left: 1.2rem; color: var(--muted); }
+    ol.top-views .faint { color: var(--muted); }
+    .filters button { font: inherit; font-size: 0.78rem; padding: 0.4rem 0.6rem; border: 1px solid var(--line); border-radius: 3px; background: transparent; color: var(--muted); cursor: pointer; font-family: var(--mono); }
+    .filters button:hover { color: var(--ink); border-color: var(--line-bright); }
+    .filters button:active { color: var(--ink); background: color-mix(in srgb, var(--ink) 14%, transparent); }
+    .filters button[aria-current="true"] { color: var(--ink); background: color-mix(in srgb, var(--ink) 12%, transparent); border-color: var(--line-bright); }
+    .pill { display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 0.08rem 0.4rem; border-radius: 2px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.03em; }
+    .pill.ok { background: color-mix(in srgb, var(--good) 16%, transparent); color: #4ade80; }
+    .pill.warn { background: color-mix(in srgb, var(--warn) 16%, transparent); color: #fde047; }
+    .pill.fail { background: color-mix(in srgb, var(--bad) 16%, transparent); color: #fda4af; }
+    .smoke-run { margin: 0 0 0.8rem; color: var(--muted); font-size: 0.85rem; }
+    dl.smoke-flight { display: grid; grid-template-columns: 11rem 1fr; gap: 0.3rem 0.75rem; margin: 0 0 0.8rem; }
+    dl.smoke-flight dt { color: var(--muted); font-size: 0.78rem; font-family: var(--mono); }
+    dl.smoke-flight dd { margin: 0; color: var(--muted); }
     table.smoke-hist { margin-top: 0.25rem; }
-    button.smoke-go { font: inherit; font-size: 0.85rem; padding: 0.35rem 0.7rem; border: 1px solid var(--line); border-radius: 0.3rem; background: transparent; color: var(--ink); cursor: pointer; }
-    button.smoke-go:disabled { opacity: 0.5; cursor: wait; }
-    .card h3 { margin: 0 0 0.4rem; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+    button.smoke-go { font: inherit; font-size: 0.82rem; padding: 0.42rem 0.7rem; border: 1px solid var(--line-bright); border-radius: 3px; background: transparent; color: var(--ink); cursor: pointer; min-height: 32px; }
+    button.smoke-go:hover { background: var(--panel-raised); }
+    button.smoke-go:active { background: color-mix(in srgb, var(--ink) 14%, transparent); }
+    button.smoke-go:disabled { opacity: 0.55; cursor: wait; }
     .nums { display: flex; gap: 1.25rem; font-variant-numeric: tabular-nums; flex-wrap: wrap; }
-    .nums strong { display: block; font-size: 1.5rem; letter-spacing: -0.03em; }
-    .nums span { color: var(--quiet); font-size: 0.8rem; }
+    .nums strong { display: block; font-size: 1.4rem; letter-spacing: -0.02em; }
+    .nums span { color: var(--muted); font-size: 0.76rem; }
     .fix { padding-left: 1.1rem; }
-    .fix li { margin: 0.35rem 0; }
+    .fix li { margin: 0.3rem 0; color: var(--muted); }
+    .fix li code { color: var(--ink); }
     .logs a { color: var(--ink); font-weight: 600; }
-    .cil { margin: 2rem 0 0; padding-top: 1rem; border-top: 1px solid var(--line); color: var(--faint); font-size: 0.78rem; }
-    .cil a { color: var(--quiet); }
+    .cil { margin: 2.25rem 0 0; padding-top: 0.75rem; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.76rem; font-family: var(--mono); }
+    .cil a { color: var(--ink); }
+    .day-chart, .country-chart { padding: 0.7rem 0.9rem 0.8rem; }
+    .day-legend { display: flex; align-items: center; gap: 0.45rem; font-size: 0.72rem; color: var(--muted); margin-bottom: 0.5rem; font-family: var(--mono); }
+    .swatch { width: 0.5rem; height: 0.5rem; border-radius: 1px; display: inline-block; }
+    .swatch.ok { background: var(--good); }
+    .swatch.fail { background: var(--bad); }
+    .day-cols { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.4rem; height: 10rem; align-items: stretch; }
+    .day-col { display: flex; flex-direction: column; align-items: center; min-width: 0; height: 100%; }
+    .day-n { font-variant-numeric: tabular-nums; font-size: 0.68rem; color: var(--muted); min-height: 1rem; font-family: var(--mono); }
+    .day-track { flex: 1; width: 70%; max-width: 2.4rem; display: flex; flex-direction: column; justify-content: flex-end; min-height: 0; }
+    .day-stack { display: flex; flex-direction: column; width: 100%; min-height: 3px; border-radius: 1px 1px 0 0; overflow: hidden; }
+    .day-ok { background: var(--good); min-height: 2px; }
+    .day-fail { background: var(--bad); min-height: 2px; }
+    .day-zero { height: 2px; width: 100%; background: var(--line); }
+    .day-d { font-size: 0.66rem; color: var(--muted); margin-top: 0.3rem; font-variant-numeric: tabular-nums; font-family: var(--mono); }
+    .country-chart { padding: 0.7rem 0.9rem 0.8rem; }
+    .country-row { display: grid; grid-template-columns: 3.2rem 1fr 3.5rem; gap: 0.5rem; align-items: center; margin: 0.3rem 0; }
+    .country-code { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); }
+    .country-track { height: 0.5rem; background: var(--line); border-radius: 1px; overflow: hidden; }
+    .country-bar { display: block; height: 100%; background: var(--good); border-radius: 1px; min-width: 2px; }
+    .country-n { font-variant-numeric: tabular-nums; font-size: 0.75rem; color: var(--muted); text-align: right; font-family: var(--mono); }
     @media (max-width: 800px) {
       .hub-shell { grid-template-columns: 1fr; }
-      .hub-nav { flex-direction: row; flex-wrap: wrap; position: static; }
+      .hub-nav { flex-direction: row; flex-wrap: wrap; position: static; border-right: none; border-bottom: 1px solid var(--line); padding: 0 0 0.5rem; min-height: 0; }
       .hub-nav .nav-g { display: none; }
       .score, .score.crit, .stat-grid { grid-template-columns: 1fr 1fr; }
+      .status-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .info-grid, .cost-grid { grid-template-columns: 1fr; }
+      .domain-groups, .trend-pair { grid-template-columns: 1fr; }
+      .mast h1, .mast .lede, .mast .who { display: block; margin-left: 0; }
+      .mast .lede { margin-top: 0.25rem; }
+      .hub-main { overflow-x: auto; }
+      .hub-main table { min-width: 640px; }
+    }
+    @media (max-width: 520px) {
+      .status-strip, .stat-grid, .score, .score.crit { grid-template-columns: 1fr 1fr; }
+      .filters { gap: 0.25rem; }
+      .filters button { padding: 0.3rem 0.45rem; font-size: 0.74rem; }
+      .top { flex-wrap: wrap; }
+      .mast-status { margin-left: 0; }
+      .nums { gap: 0.75rem; }
+      .nums strong { font-size: 1.2rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+      a:active, button:active:not(:disabled), .card-link:active { transform: none; }
+      .ops-detail .ops-detail-body { transition: none; opacity: 1; grid-template-rows: 1fr; }
     }
   </style>
 </head>
@@ -2484,14 +2656,17 @@ function renderOpsHtml(
   <div class="wrap">
     <header class="top">
       <a class="brand" href="https://aft.page/">aft<span>.</span>page</a>
-      <nav class="top-links">
+      <div class="mast-status"><span class="live"><i data-live-dot></i>D1 · 8s</span></div>
+      <nav class="top-links" aria-label="External">
         <a href="https://status.aft.page/">Status</a>
         <a href="/api.json">JSON</a>
       </nav>
     </header>
-    <h1>Ops</h1>
-    <p class="lede">Is it up. Can they ship. What’s broken. Drop is static. MCP, CLI, and Run share one engine.</p>
-    <p class="who">${escapeHtml(email)} · <span class="live"><i data-live-dot></i>D1 · 8s</span></p>
+    <div class="mast">
+      <h1>Ops</h1>
+      <p class="lede">Is it up. Can they ship. What’s broken. Drop is static. MCP, CLI, and Run share one engine.</p>
+      <p class="who">${escapeHtml(email)}</p>
+    </div>
 
     <div class="hub-shell">
       <nav class="hub-nav" aria-label="Ops sections">
@@ -2518,133 +2693,45 @@ function renderOpsHtml(
       </nav>
       <div class="hub-main">
         <section class="panel${activePanel === "overview" ? " is-active" : ""}" id="overview">
-          <h2>Critical</h2>
-          <div class="score crit">
-            <a class="card card-link" href="https://status.aft.page/">
-              <h3>Health</h3>
-              <div class="nums">
-                <div><strong><span class="pill ${healthOk ? "ok" : "fail"}">${escapeHtml(health.overall.replace(/_/g, " "))}</span></strong><span>status probes</span></div>
-              </div>
+          <h2>Status</h2>
+          <div class="status-strip">
+            <a class="status-item" href="https://status.aft.page/" data-live-href>
+              <span class="dot ${healthOk ? "on" : "bad"}"></span>
+              <span class="si-lab">Health</span>
+              <strong>${escapeHtml(health.overall.replace(/_/g, " "))}</strong>
             </a>
-            <a class="card card-link" href="/audit">
-              <h3>Hijack / audit</h3>
-              <div class="nums">
-                <div><strong><span class="pill ${payload.audit?.ok ? "ok" : "fail"}" data-live="auditOk">${payload.audit ? (payload.audit.ok ? "pass" : "fail") : "—"}</span></strong><span data-live="auditN">${payload.audit?.cases.length ?? 0}</span><span>cases</span></div>
-              </div>
+            <a class="status-item" href="/smoke">
+              <span class="dot ${payload.smoke?.ok ? "on" : payload.smoke ? "bad" : "off"}"></span>
+              <span class="si-lab">Deploys work</span>
+              <strong data-live="smokeOk">${payload.smoke ? (payload.smoke.ok ? "pass" : "fail") : "—"}</strong>
+              <span class="si-sub" data-live="smokeN">${payload.smoke?.cases.length ?? 0} smoke cases</span>
             </a>
-            <a class="card card-link" href="/smoke">
-              <h3>CIL / smoke</h3>
-              <div class="nums">
-                <div><strong><span class="pill ${payload.smoke?.ok ? "ok" : "fail"}" data-live="smokeOk">${payload.smoke ? (payload.smoke.ok ? "pass" : "fail") : "—"}</span></strong><span data-live="smokeN">${payload.smoke?.cases.length ?? 0}</span><span>cases</span></div>
-              </div>
+            <a class="status-item" href="/audit">
+              <span class="dot ${payload.audit?.ok ? "on" : payload.audit ? "bad" : "off"}"></span>
+              <span class="si-lab">Hijack / audit</span>
+              <strong data-live="auditOk">${payload.audit ? (payload.audit.ok ? "pass" : "fail") : "—"}</strong>
+              <span class="si-sub" data-live="auditN">${payload.audit?.cases.length ?? 0} cases</span>
             </a>
-            <a class="card card-link" href="/run">
-              <h3>Run (GitHub)</h3>
-              <div class="nums">
-                <div><strong>${payload.runCounts.live}</strong><span>live</span></div>
-                <div><strong>${payload.runCounts.failed}</strong><span>failed</span></div>
-                <div><strong>${payload.runCounts.queued}</strong><span>queued</span></div>
-              </div>
-            </a>
-            <a class="card card-link" href="/failures">
-              <h3>Deploy fails</h3>
-              <div class="nums">
-                <div><strong data-live="failn">${payload.failures.length}</strong><span>inbox</span></div>
-                <div><strong data-live="toFix">${payload.toFix.length}</strong><span>codes 7d</span></div>
-              </div>
-            </a>
-            <a class="card card-link" href="/logs">
-              <h3>Scanner</h3>
-              <div class="nums">
-                <div><strong><span class="pill ${junk200 ? "fail" : "ok"}">${junk200 || "ok"}</span></strong><span>${junk200 ? "junk 200s" : "no junk 200"}</span></div>
-              </div>
+            <a class="status-item" href="/failures">
+              <span class="dot ${payload.failures.length ? "bad" : "on"}"></span>
+              <span class="si-lab">Deploy fails</span>
+              <strong data-live="failn">${payload.failures.length}</strong>
+              <span class="si-sub" data-live="toFix">${payload.toFix.length} codes 7d</span>
             </a>
           </div>
-          <h3>What to fix (7d)</h3>
-          ${toFix}
-          <p class="empty">API probe = isolate alive, not D1/R2. Status has the four probes.</p>
-          <h2>Information</h2>
-          <div class="score">
-            <div class="card">
-              <h3>Time to URL</h3>
-              <div class="nums">
-                <div><strong data-live="t2uP5024">${escapeHtml(formatT2u(t2u.last24h.p50Ms))}</strong><span>p50 24h · n <span data-live="t2uN24">${t2u.last24h.n}</span></span></div>
-                <div><strong data-live="t2uP9524">${escapeHtml(formatT2u(t2u.last24h.p95Ms))}</strong><span>p95 24h</span></div>
-                <div><strong data-live="t2uP507">${escapeHtml(formatT2u(t2u.last7d.p50Ms))}</strong><span>p50 7d · n <span data-live="t2uN7">${t2u.last7d.n}</span></span></div>
-                <div><strong data-live="t2uP957">${escapeHtml(formatT2u(t2u.last7d.p95Ms))}</strong><span>p95 7d</span></div>
-              </div>
-            </div>
-            <div class="card">
-              <h3>Deploys 24h</h3>
-              <div class="nums">
-                <div><strong data-live="ok24">${payload.successes24h}</strong><span>ok</span></div>
-                <div><strong data-live="fail24">${payload.failures24h}</strong><span>fail</span></div>
-                <div><strong data-live="rate24">${escapeHtml(pct(payload.rate))}</strong><span>rate</span></div>
-              </div>
-            </div>
-            <div class="card">
-              <h3>Deploys 7d</h3>
-              <div class="nums">
-                <div><strong data-live="ok7">${payload.successes7d}</strong><span>ok</span></div>
-                <div><strong data-live="fail7">${payload.failures7d}</strong><span>fail</span></div>
-                <div><strong data-live="rate7">${escapeHtml(pct(payload.rate7d))}</strong><span>rate</span></div>
-              </div>
-            </div>
-          </div>
-          ${t2uDays}
-          <p class="empty">Machine clock: Worker → URL. Bar: p50 &lt; 3s · p95 &lt; 10s.</p>
-          <h3>Day strip</h3>
-          ${days}
-          <h3>Product</h3>
+          <h2>Business</h2>
           <div class="stat-grid">
             <a class="card card-link" href="/sites"><strong data-live="sites">${s.sites}</strong><span>sites</span></a>
             <a class="card card-link" href="/sites?filter=claimed"><strong data-live="claimed">${s.claimed}</strong><span>claimed</span></a>
             <a class="card card-link" href="/users?filter=external"><strong data-live="users">${s.users}</strong><span>users</span></a>
-            <a class="card card-link" href="/domains"><strong data-live="domains">${s.domains}</strong><span>domains</span></a>
             <a class="card card-link" href="/sites?filter=served24h"><strong data-live="active24h">${s.active24h}</strong><span>served 24h</span></a>
             <a class="card card-link" href="/sites"><strong data-live="views7d">${payload.views.d7}</strong><span>views 7d</span></a>
             <a class="card card-link" href="/sites"><strong data-live="deploysMtd">${s.deploysMtd}</strong><span>deploys MTD</span></a>
             <a class="card card-link" href="/users#waitlist"><strong data-live="waitlist">${s.waitlist}</strong><span>waitlist</span></a>
+            <a class="card card-link" href="/domains"><strong data-live="domains">${s.domains}</strong><span>domains</span></a>
           </div>
-          <div class="score">
-            <a class="card card-link" href="/cf">
-              <h3>CF practices</h3>
-              <div class="nums">
-                <div><strong><span class="pill ${payload.cfPractices.ok ? "ok" : "fail"}" data-live="cfOk">${payload.cfPractices.ok ? "pass" : "fail"}</span></strong><span data-live="cfN">${payload.cfPractices.cases.length}</span><span>checks · daily</span></div>
-              </div>
-            </a>
-          </div>
-          <h3>Cloudflare cost (MTD)</h3>
-          <div class="score">
-            <div class="card">
-              <h3>D1 quota</h3>
-              <div class="nums">
-                <div><strong>${
-                  payload.d1
-                    ? `${Math.round(payload.d1.rows).toLocaleString("en-US")}`
-                    : "—"
-                }</strong><span>rows / ${Math.round(D1_MAX_ROWS / 1e6)}M cap</span></div>
-                <div><strong>${
-                  payload.d1
-                    ? payload.d1.reads.toLocaleString("en-US")
-                    : "—"
-                }</strong><span>rows read MTD</span></div>
-                <div><strong>${
-                  payload.d1
-                    ? payload.d1.writes.toLocaleString("en-US")
-                    : "—"
-                }</strong><span>rows written MTD</span></div>
-              </div>
-              <p class="cost-note">${
-                payload.d1
-                  ? `as of ${escapeHtml(payload.d1.checkedAt)}${
-                      payload.d1.rows > D1_WATCH_ROWS
-                        ? ` · ⚠ ${Math.round((payload.d1.rows / D1_MAX_ROWS) * 100)}% of D1 row cap — watch`
-                        : ""
-                    }${payload.d1.source === "kv" ? " (KV snapshot)" : ""}`
-                  : "D1 usage snapshot not loaded yet."
-              }</p>
-            </div>
+          <h2>Cost (MTD)</h2>
+          <div class="cost-grid">
             <div class="card">
               <h3>Estimated</h3>
               <div class="nums">
@@ -2679,20 +2766,107 @@ function renderOpsHtml(
               </div>
               <p class="cost-note" data-live="wfpWhy">${escapeHtml(payload.wfp.why)} Static Drop is not this count. ADR-TEMP-ACCOUNTS.</p>
             </div>
+            <div class="card">
+              <h3>D1 quota</h3>
+              <div class="nums">
+                <div><strong>${
+                  payload.d1
+                    ? `${Math.round(payload.d1.rows).toLocaleString("en-US")}`
+                    : "—"
+                }</strong><span>rows / ${Math.round(D1_MAX_ROWS / 1e6)}M cap</span></div>
+                <div><strong>${
+                  payload.d1
+                    ? payload.d1.reads.toLocaleString("en-US")
+                    : "—"
+                }</strong><span>rows read MTD</span></div>
+                <div><strong>${
+                  payload.d1
+                    ? payload.d1.writes.toLocaleString("en-US")
+                    : "—"
+                }</strong><span>rows written MTD</span></div>
+              </div>
+              <p class="cost-note">${
+                payload.d1
+                  ? `as of ${escapeHtml(payload.d1.checkedAt)}${
+                      payload.d1.rows > D1_WATCH_ROWS
+                        ? ` · ⚠ ${Math.round((payload.d1.rows / D1_MAX_ROWS) * 100)}% of D1 row cap — watch`
+                        : ""
+                    }${payload.d1.source === "kv" ? " (KV snapshot)" : ""}`
+                  : "D1 usage snapshot not loaded yet."
+              }</p>
+            </div>
           </div>
-          <h3>By source (7d)</h3>
-          ${sources}
+          <h2>Needs attention</h2>
+          ${toFix}
+          <p class="empty">API probe = isolate alive, not D1/R2. Status has the four probes.</p>
+          <details class="ops-detail">
+            <summary>Operational detail: deploy trends, sources, CF practices</summary>
+            <div class="ops-detail-body"><div class="ops-detail-inner">
+            <h2>Trends</h2>
+            <div class="info-grid">
+              <div class="info-card">
+                <h3>Time to URL</h3>
+                <div class="nums">
+                  <div><strong data-live="t2uP5024">${escapeHtml(formatT2u(t2u.last24h.p50Ms))}</strong><span>p50 24h · n <span data-live="t2uN24">${t2u.last24h.n}</span></span></div>
+                  <div><strong data-live="t2uP9524">${escapeHtml(formatT2u(t2u.last24h.p95Ms))}</strong><span>p95 24h</span></div>
+                  <div><strong data-live="t2uP507">${escapeHtml(formatT2u(t2u.last7d.p50Ms))}</strong><span>p50 7d · n <span data-live="t2uN7">${t2u.last7d.n}</span></span></div>
+                  <div><strong data-live="t2uP957">${escapeHtml(formatT2u(t2u.last7d.p95Ms))}</strong><span>p95 7d</span></div>
+                </div>
+              </div>
+              <div class="info-card">
+                <h3>Deploys 24h</h3>
+                <div class="nums">
+                  <div><strong data-live="ok24">${payload.successes24h}</strong><span>ok</span></div>
+                  <div><strong data-live="fail24">${payload.failures24h}</strong><span>fail</span></div>
+                  <div><strong data-live="rate24">${escapeHtml(pct(payload.rate))}</strong><span>rate</span></div>
+                </div>
+              </div>
+              <div class="info-card">
+                <h3>Deploys 7d</h3>
+                <div class="nums">
+                  <div><strong data-live="ok7">${payload.successes7d}</strong><span>ok</span></div>
+                  <div><strong data-live="fail7">${payload.failures7d}</strong><span>fail</span></div>
+                  <div><strong data-live="rate7">${escapeHtml(pct(payload.rate7d))}</strong><span>rate</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="trend-pair">
+              <div>
+                <h3>Day strip</h3>
+                ${days}
+              </div>
+              <div>
+                <h3>Time to URL by day</h3>
+                ${t2uDays}
+                <p class="empty">Machine clock: Worker → URL. Bar: p50 &lt; 3s · p95 &lt; 10s.</p>
+              </div>
+            </div>
+            <h3>By source (7d)</h3>
+            ${sources}
+            <div class="score">
+              <a class="card card-link" href="/cf">
+                <h3>CF practices</h3>
+                <div class="nums">
+                  <div><strong><span class="pill ${payload.cfPractices.ok ? "ok" : "fail"}" data-live="cfOk">${payload.cfPractices.ok ? "pass" : "fail"}</span></strong><span data-live="cfN">${payload.cfPractices.cases.length}</span><span>checks · daily</span></div>
+                </div>
+              </a>
+            </div>
+            </div></div>
+          </details>
         </section>
         <section class="panel${activePanel === "audit" ? " is-active" : ""}" id="audit">
           <h2>Audit</h2>
+          ${sectionHealthNote(payload.dataHealth, "audit")}
           ${renderAuditSection(payload.audit, payload.auditHistory)}
         </section>
         <section class="panel${activePanel === "smoke" ? " is-active" : ""}" id="smoke">
           <h2>Smoke</h2>
+          ${sectionHealthNote(payload.dataHealth, "smoke")}
           ${renderSmokeSection(payload.smoke, payload.smokeHistory)}
         </section>
         <section class="panel${activePanel === "run" ? " is-active" : ""}" id="run">
           <h2>Run</h2>
+          ${sectionHealthNote(payload.dataHealth, "runJobs")}
           ${renderRunSection(payload.runJobs, payload.runCounts)}
         </section>
         <section class="panel${activePanel === "failures" ? " is-active" : ""}" id="failures">
@@ -2731,8 +2905,20 @@ function renderOpsHtml(
           ${renderWaitlistTable(payload.waitlist)}
         </section>
         <section class="panel${activePanel === "domains" ? " is-active" : ""}" id="domains">
-          <h2>Domains</h2>
-          ${renderDomainsTable(payload.domains, root)}
+          <div class="domain-groups">
+            <div class="domain-group">
+              <h2>Brand domains <span class="grp-tag">founder</span></h2>
+              <p class="grp-note">The two you may want to own. Public RDAP (registry) — Cloudflare can't see external registrations. When one shows <b>available</b>, move: register it or check Vercel's picker for a free-with-Pro year.</p>
+              ${sectionHealthNote(payload.dataHealth, "brandDomains")}
+              ${renderBrandDomains(payload.brandDomains)}
+            </div>
+            <div class="domain-group">
+              <h2>Customer domains <span class="grp-tag">tenant</span></h2>
+              <p class="grp-note">Custom hostnames customers attached to sites. Status + SSL progress. Adding one requires access — approve on the Users tab.</p>
+              ${sectionHealthNote(payload.dataHealth, "domains")}
+              ${renderDomainsTable(payload.domains, root)}
+            </div>
+          </div>
         </section>
         <section class="panel${activePanel === "feedback" ? " is-active" : ""}" id="feedback">
           <h2>Feedback</h2>
@@ -2829,6 +3015,14 @@ function renderOpsHtml(
           if (x.getAttribute("data-filter") === f) x.setAttribute("aria-current", "true");
           else x.removeAttribute("aria-current");
         });
+        var emptyMsgs = {
+          inactive: "No parked sites. Inactive means you toggled a site's serve switch off — visit a site and flip Active to park it.",
+          gc: "Nothing is in the 7-day delete window. Unclaimed sites are hard-deleted at 30 days idle; this filter shows the last 7.",
+          claimed: "No claimed sites yet (all anonymous).",
+          unclaimed: "No unclaimed sites — every site has an owner.",
+          served24h: "No site was served in the last 24h.",
+        };
+        var shown = 0;
         document.querySelectorAll("[data-sites] tbody tr").forEach(function (tr) {
           var claimed = tr.getAttribute("data-claimed") === "1";
           var active = tr.getAttribute("data-active") === "1";
@@ -2845,7 +3039,18 @@ function renderOpsHtml(
             (f === "gc" && gc) ||
             (f === "served24h" && served24));
           tr.style.display = showRow ? "" : "none";
+          if (showRow) shown += 1;
         });
+        var note = document.querySelector("[data-sites-empty]");
+        if (!note) return;
+        if (shown === 0) {
+          var why = emptyMsgs[f] || (owner ? "No sites for this owner." : "No sites match.");
+          if (owner && f !== "all") why = "No sites match this owner and filter.";
+          note.textContent = why;
+          note.hidden = false;
+        } else {
+          note.hidden = true;
+        }
       }
       function applyUserFilter(f) {
         var root = document.querySelector("[data-user-filters]");
@@ -3045,10 +3250,28 @@ function renderOpsHtml(
         var s = ms / 1000;
         return s >= 10 ? Math.round(s) + " s" : s.toFixed(1) + " s";
       }
-      function set(k, v) {
+      function set(k, v, flash) {
         document.querySelectorAll('[data-live="' + k + '"]').forEach(function (el) {
-          el.textContent = v;
+          if (el.textContent !== String(v)) {
+            el.textContent = v;
+            if (flash) {
+              el.classList.remove("live-flash");
+              void el.offsetWidth; /* restart the animation */
+              el.classList.add("live-flash");
+            }
+          }
         });
+      }
+      function pulseDot(sel) {
+        var el = document.querySelector(sel);
+        if (!el) return;
+        var item = el.closest(".status-item");
+        if (!item) return;
+        var dot = item.querySelector(".dot");
+        if (!dot) return;
+        dot.classList.remove("pulse");
+        void dot.offsetWidth;
+        dot.classList.add("pulse");
       }
       async function tick() {
         if (document.visibilityState === "hidden") return;
@@ -3081,25 +3304,27 @@ function renderOpsHtml(
           set("active24h", s.active24h);
           set("views7d", (p.views && p.views.d7) || 0);
           set("deploysMtd", s.deploysMtd);
-          set("toFix", (p.toFix || []).length);
+          set("toFix", (p.toFix || []).length, true);
           set("smokeN", (p.smoke && p.smoke.cases && p.smoke.cases.length) || 0);
           if (p.smoke) {
-            set("smokeOk", p.smoke.ok ? "pass" : "fail");
+            set("smokeOk", p.smoke.ok ? "pass" : "fail", true);
             set("smokeAt", p.smoke.finishedAt || "");
+            pulseDot('[data-live="smokeOk"]');
           }
           set("auditN", (p.audit && p.audit.cases && p.audit.cases.length) || 0);
           if (p.audit) {
-            set("auditOk", p.audit.ok ? "pass" : "fail");
+            set("auditOk", p.audit.ok ? "pass" : "fail", true);
             set("auditAt", p.audit.finishedAt || "");
+            pulseDot('[data-live="auditOk"]');
           }
           set("cfN", (p.cfPractices && p.cfPractices.cases && p.cfPractices.cases.length) || 0);
           if (p.cfPractices) {
-            set("cfOk", p.cfPractices.ok ? "pass" : "fail");
+            set("cfOk", p.cfPractices.ok ? "pass" : "fail", true);
           }
           var w = p.wfp;
           if (w) {
-            set("siteWorkers", w.siteWorkers);
-            set("wfpStatus", w.status);
+            set("siteWorkers", w.siteWorkers, true);
+            set("wfpStatus", w.status, true);
             set("wfpWhy", w.why + " Static Drop is not this count. ADR-TEMP-ACCOUNTS.");
             document.querySelectorAll('[data-live="wfpStatus"]').forEach(function (el) {
               el.className = "pill " + (w.status === "switch" ? "fail" : w.status === "watch" ? "warn" : "ok");
@@ -3109,6 +3334,16 @@ function renderOpsHtml(
           if (dot) dot.setAttribute("data-on", "");
         } catch (e) {}
       }
+      var flashErr = function (near, msg) {
+        if (!near) return;
+        var old = near.parentNode.querySelector(".act-err");
+        if (old) old.remove();
+        var e = document.createElement("span");
+        e.className = "act-err";
+        e.textContent = msg;
+        near.parentNode.appendChild(e);
+        setTimeout(function () { e.remove(); }, 4000);
+      };
       var usersTable = document.querySelector("[data-users]");
       if (usersTable) {
         usersTable.addEventListener("click", async function (e) {
@@ -3126,6 +3361,7 @@ function renderOpsHtml(
           } catch (err) {
             b.disabled = false;
             b.textContent = "Approve";
+            flashErr(b, "Approve failed — try again");
           }
         });
       }
@@ -3143,6 +3379,7 @@ function renderOpsHtml(
           } catch (e) {
             go.disabled = false;
             go.textContent = "Run now";
+            flashErr(go, "Smoke run failed — see Workers Logs");
           }
         });
       }
@@ -3158,6 +3395,7 @@ function renderOpsHtml(
           } catch (e) {
             rgo.disabled = false;
             rgo.textContent = "Try 10 public repos";
+            flashErr(rgo, "Sample run failed — try again");
           }
         });
       }
@@ -3173,6 +3411,7 @@ function renderOpsHtml(
           } catch (e) {
             ago.disabled = false;
             ago.textContent = "Run now";
+            flashErr(ago, "Audit run failed — see Workers Logs");
           }
         });
       }
@@ -3198,6 +3437,7 @@ function renderOpsHtml(
             });
           } catch (e) {
             box.checked = !done;
+            flashErr(box, "Save failed — try again");
           }
           box.disabled = false;
         });
@@ -3218,6 +3458,7 @@ function renderOpsHtml(
             location.assign("/status-probes");
           } catch (e) {
             btn.disabled = false;
+            flashErr(btn, "Update failed — try again");
           }
         });
       });
@@ -3251,14 +3492,14 @@ function renderFailureHtml(
           return `<tr${hit ? ' class="hit"' : ""}><td>${escapeHtml(f.path)}</td><td>${escapeHtml(formatBytes(f.bytes))}</td><td>${escapeHtml(f.type || "—")}</td><td>${links}</td></tr>`;
         })
         .join("")}</tbody></table>
-            <p style="margin-top:.75rem">Request <code>${escapeHtml(row.upload.contentType || "—")}</code>
+            <p class="mt-note">Request <code>${escapeHtml(row.upload.contentType || "—")}</code>
             · UA <code>${escapeHtml(row.upload.userAgent || "—")}</code></p>`
     : `<p>No file list on this row (failures recorded before upload capture, or the body was empty).</p>`;
 
   const retry = row.hasPayload
     ? `<form method="post" action="/f/${escapeHtml(row.id)}/retry">
         <button type="submit">Retry deploy</button>
-        <p class="who" style="margin:.5rem 0 0">Replays bytes from R2 as a new anonymous POST. Same limits — it will fail again until the product or the files change.</p>
+        <p class="who mt-note">Replays bytes from R2 as a new anonymous POST. Same limits — it will fail again until the product or the files change.</p>
       </form>`
     : `<p>No payload stored (auth-before-body or empty upload). Cannot retry from ops.</p>`;
 
@@ -3276,32 +3517,39 @@ function renderFailureHtml(
     body { margin: 0; font-family: var(--font-sans); background: var(--void); color: var(--ink); line-height: 1.5; }
     a { color: inherit; }
     code { font-family: var(--font-mono); font-size: 0.85em; }
+    :focus-visible { outline: 2px solid #fafafa; outline-offset: 2px; }
     .wrap { width: min(720px, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 4rem; }
     ${BRAND_WORDMARK_CSS}
     .brand { font-size: 1.35rem; }
-    .top { display: flex; justify-content: space-between; margin-bottom: 2rem; }
+    .top { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; }
     .top a { color: var(--quiet); text-decoration: none; }
-    h1 { font-size: 1.4rem; letter-spacing: -0.03em; }
-    .panel { border: 1px solid var(--line); border-radius: 0.4rem; background: var(--panel); padding: 1rem 1.1rem; margin: 0 0 1rem; }
-    .panel h2 { margin: 0 0 0.5rem; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+    h1 { font-size: 1.4rem; letter-spacing: -0.03em; word-break: break-word; }
+    .panel { border: 1px solid var(--line); border-radius: 3px; background: var(--panel); padding: 1rem 1.1rem; margin: 0 0 1rem; overflow-x: auto; }
+    .panel h2 { margin: 0 0 0.5rem; font-size: 0.68rem; font-family: var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: #a1a1aa; }
     .panel p { margin: 0; color: var(--quiet); }
     .panel a { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
     dl { display: grid; grid-template-columns: 8rem 1fr; gap: 0.35rem 0.75rem; margin: 0; }
-    dt { color: var(--faint); font-size: 0.8rem; }
+    dt { color: #a1a1aa; font-size: 0.8rem; }
     dd { margin: 0; word-break: break-all; }
-    .who { font-family: var(--font-mono); font-size: 0.75rem; color: var(--faint); }
+    .who { font-family: var(--font-mono); font-size: 0.75rem; color: #a1a1aa; }
     table.files { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.4rem; }
     table.files th, table.files td { text-align: left; padding: 0.3rem 0.35rem; border-bottom: 1px solid var(--line); }
-    table.files th { color: var(--faint); font-size: 0.72rem; text-transform: uppercase; }
-    table.files tr.hit td { color: var(--bad); font-weight: 600; }
-    button { font: inherit; background: var(--ink); color: var(--void); border: 0; border-radius: 0.3rem; padding: 0.45rem 0.9rem; cursor: pointer; }
+    table.files th { color: #a1a1aa; font-size: 0.72rem; text-transform: uppercase; font-family: var(--font-mono); }
+    ul { padding-left: 1.1rem; margin: 0; }
+    form button { font: inherit; font-size: 0.85rem; padding: 0.35rem 0.8rem; border: 1px solid var(--line-bright); border-radius: 3px; background: transparent; color: var(--ink); cursor: pointer; }
+    .mt-note { margin-top: 0.75rem !important; }
+    @media (max-width: 640px) {
+      dl { grid-template-columns: 1fr; gap: 0.1rem 0; }
+      dt { margin-top: 0.5rem; }
+      .panel { padding: 0.85rem 0.9rem; }
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header class="top">
       <a class="brand" href="https://aft.page/">aft<span>.</span>page</a>
-      <a href="/#failures">← all failures</a>
+      <a href="/failures">← all failures</a>
     </header>
     <h1><code>${escapeHtml(row.error)}</code></h1>
     <p class="who">${escapeHtml(email)} · ${escapeHtml(row.id)}</p>

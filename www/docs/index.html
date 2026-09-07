@@ -10,6 +10,7 @@
     />
     <link rel="canonical" href="https://aft.page/docs" />
     <link rel="alternate" type="text/markdown" href="https://aft.page/docs.md" title="Docs agent index (Markdown)" />
+    <link rel="alternate" type="application/rss+xml" href="https://aft.page/changelog.rss" title="aft.page changelog" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -169,8 +170,8 @@
           live URL — then claim, share, and manage.
         </p>
         <div class="docs-machine">
-          <a class="btn btn-primary" href="/docs/cli/">CLI guide</a>
-          <a class="btn btn-ghost" href="/mcp">MCP reference</a>
+          <a class="btn btn-primary" href="#start">Quick start</a>
+          <a class="btn btn-ghost" href="/docs/cli/">CLI guide</a>
           <a class="btn btn-ghost" href="/docs.md">Agent index</a>
         </div>
         <p class="docs-callout">
@@ -187,7 +188,7 @@
         <nav class="docs-toc" aria-label="Docs navigation">
           <p>Guides</p>
           <ol>
-            <li><a href="#support">What we support</a></li>
+            <li><a href="/docs/" aria-current="page">Docs home</a></li>
             <li><a href="#start">Quick start</a></li>
             <li><a href="/docs/cli/">CLI</a></li>
             <li><a href="/docs/claim/">Claim &amp; share</a></li>
@@ -195,6 +196,10 @@
             <li><a href="/docs/domains/">Custom domains</a></li>
             <li><a href="/docs/capabilities/">Capabilities</a></li>
             <li><a href="/docs/frameworks/">Frameworks</a></li>
+          </ol>
+          <p style="margin-top:1.25rem">Platform</p>
+          <ol>
+            <li><a href="#support">What we support</a></li>
             <li><a href="#logs">Logs</a></li>
             <li><a href="#source">Source</a></li>
             <li><a href="#limits">Limits</a></li>
@@ -203,6 +208,60 @@
         </nav>
 
         <article class="docs-body">
+          <section id="start">
+            <h2>Quick start</h2>
+            <p>
+              Agents today: MCP or CLI. Humans: Drop or CLI. Same result:
+              <code>https://{slug}.aft.page</code>.
+            </p>
+            <div class="docs-guide-grid">
+              <a class="docs-guide-card" href="/drop">
+                <span class="docs-guide-card-title">Drop</span>
+                <span class="docs-guide-card-desc">Folder or zip with <code>index.html</code> → a live URL in seconds. No account.</span>
+              </a>
+              <a class="docs-guide-card" href="/docs/cli/">
+                <span class="docs-guide-card-title">CLI</span>
+                <span class="docs-guide-card-desc"><code>curl -fsSL https://aft.page/install | sh</code> then <code>aft deploy</code> — no login to ship.</span>
+              </a>
+              <a class="docs-guide-card" href="/mcp">
+                <span class="docs-guide-card-title">MCP</span>
+                <span class="docs-guide-card-desc">Point any agent at <code>https://mcp.aft.page/mcp</code>; ask "Deploy this to aft.page".</span>
+              </a>
+              <a class="docs-guide-card" href="/docs/claim/">
+                <span class="docs-guide-card-title">Claim &amp; share</span>
+                <span class="docs-guide-card-desc">Keep the URL, invite teammates by email, make it private, rename, roll back.</span>
+              </a>
+              <a class="docs-guide-card" href="/docs/env/">
+                <span class="docs-guide-card-title">Secrets / env</span>
+                <span class="docs-guide-card-desc">Per-site vault after claim. Try URLs are <a href="/docs/env/#try-db">sqlite only</a>.</span>
+              </a>
+              <a class="docs-guide-card" href="/docs/domains/">
+                <span class="docs-guide-card-title">Custom domains</span>
+                <span class="docs-guide-card-desc">CNAME to <code>cname.aft.page</code> and get HTTPS on your own hostname.</span>
+              </a>
+              <a class="docs-guide-card" href="/docs/capabilities/">
+                <span class="docs-guide-card-title">Capabilities</span>
+                <span class="docs-guide-card-desc">Declare what an app needs (secrets, egress); an owner approves it on deploy.</span>
+              </a>
+              <a class="docs-guide-card" href="/plugins">
+                <span class="docs-guide-card-title">Plugin / Skill</span>
+                <span class="docs-guide-card-desc"><code>npx plugins add vaibhavmule/aft.page</code> — MCP, Skills, Plugins, Unix/libaft.</span>
+              </a>
+            </div>
+            <h3>API (one-shot)</h3>
+            <pre><code>curl -X POST https://api.aft.page/v1/deploy \
+  -H 'Content-Type: text/html' \
+  -H 'X-Aft-Client: curl' \
+  --data '&lt;h1&gt;Hello from aft.page&lt;/h1&gt;'</code></pre>
+            <p>
+              Multi-file: JSON <code>{ "files": [{ "path", "content" }] }</code>
+              or multipart. Optional <code>?slug=vite-hello</code>. A
+              collision gets a numeric suffix — an existing slug is never
+              overwritten by a new, unrelated deploy. Full schemas:
+              <a href="/mcp.md">/mcp.md</a>.
+            </p>
+          </section>
+
           <section id="support">
             <h2>What we support</h2>
             <p>
@@ -254,64 +313,6 @@
               static sites. Per-framework build steps, verified vs. untested
               frameworks, and what still needs a runtime we don't run yet:
               <a href="/docs/frameworks/">Frameworks guide</a>.
-            </p>
-          </section>
-
-          <section id="start">
-            <h2>Quick start</h2>
-            <p>
-              Agents today: MCP or CLI. Humans: Drop or CLI. Same result:
-              <code>https://{slug}.aft.page</code>.
-            </p>
-            <ul class="docs-guide-list">
-              <li>
-                <a href="/drop"><strong>Drop</strong></a> — folder or zip with
-                <code>index.html</code>.
-              </li>
-              <li>
-                <a href="/docs/cli/"><strong>CLI</strong></a> —
-                <code>curl -fsSL https://aft.page/install | sh</code> then
-                <code>aft deploy</code> (no login to ship).
-              </li>
-              <li>
-                <a href="/mcp"><strong>MCP</strong></a> — remote
-                <code>https://mcp.aft.page/mcp</code>; ask "Deploy this to
-                aft.page".
-              </li>
-              <li>
-                <a href="/plugins"><strong>Plugin / Skill</strong></a> —
-                <code>npx plugins add vaibhavmule/aft.page</code>. Open
-                protocols + Unix/libaft.
-              </li>
-              <li>
-                <a href="/docs/claim/"><strong>Claim &amp; share</strong></a> —
-                keep the URL, private invites, rename.
-              </li>
-              <li>
-                <a href="/docs/env/"><strong>Secrets / env</strong></a> —
-                vault after claim. Try URLs are
-                <a href="/docs/env/#try-db">sqlite only</a>.
-              </li>
-              <li>
-                <a href="/docs/domains/"><strong>Custom domains</strong></a> —
-                CNAME to <code>cname.aft.page</code> (beta invite).
-              </li>
-              <li>
-                <a href="/docs/capabilities/"><strong>Capabilities</strong></a> —
-                declare what an app needs; an owner approves it.
-              </li>
-            </ul>
-            <h3>API (one-shot)</h3>
-            <pre><code>curl -X POST https://api.aft.page/v1/deploy \
-  -H 'Content-Type: text/html' \
-  -H 'X-Aft-Client: curl' \
-  --data '&lt;h1&gt;Hello from aft.page&lt;/h1&gt;'</code></pre>
-            <p>
-              Multi-file: JSON <code>{ "files": [{ "path", "content" }] }</code>
-              or multipart. Optional <code>?slug=vite-hello</code>. A
-              collision gets a numeric suffix — an existing slug is never
-              overwritten by a new, unrelated deploy. Full schemas:
-              <a href="/mcp.md">/mcp.md</a>.
             </p>
           </section>
 

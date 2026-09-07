@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>aft.page — signal concept</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        --void: #000000;
+        --glass: rgba(31, 31, 31, 0.55);
+        --glass-2: rgba(255, 255, 255, 0.04);
+        --line: rgba(255, 255, 255, 0.1);
+        --line-strong: rgba(255, 255, 255, 0.22);
+        --ink: #ffffff;
+        --ink-dim: rgba(255, 255, 255, 0.7);
+        --ink-faint: rgba(255, 255, 255, 0.42);
+        --good: #22c55e;
+        --good-ink: #4ade80;
+        --sans: "Geist Variable", "Geist", system-ui, sans-serif;
+        --mono: "Geist Mono Variable", ui-monospace, monospace;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        font-family: var(--sans);
+        background: var(--void);
+        color: var(--ink);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: clip;
+      }
+      a { color: inherit; text-decoration: none; }
+      ::selection { background: rgba(74, 222, 128, 0.3); }
+
+      /* ===== dot-matrix backdrop ===== */
+      .signal-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+      .signal-bg canvas { width: 100%; height: 100%; display: block; }
+
+      /* ===== floating pill nav ===== */
+      .pillnav {
+        position: fixed;
+        top: 1.5rem;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 40;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: calc(100% - 2rem);
+        max-width: 720px;
+        padding: 0.7rem 1.1rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(18, 18, 18, 0.72);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+        transition: border-radius 0.25s ease;
+      }
+      .pillnav.open { border-radius: 1.25rem; }
+      .pillnav-row { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; width: 100%; }
+      .logo { display: grid; place-items: center; width: 2rem; height: 2rem; }
+      .logo i { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: var(--ink); opacity: 0.9; }
+      .logo i:nth-child(1) { transform: translate(-6px, -6px); }
+      .logo i:nth-child(2) { transform: translate(6px, -6px); }
+      .logo i:nth-child(3) { transform: translate(-6px, 6px); }
+      .logo i:nth-child(4) { transform: translate(6px, 6px); }
+      .pillnav .links { display: flex; align-items: center; gap: 1.4rem; }
+      .nl { position: relative; overflow: hidden; height: 1.25rem; font-size: 0.9rem; color: rgba(255,255,255,0.55); }
+      .nl .wrap2 { display: flex; flex-direction: column; transition: transform 0.3s ease; }
+      .nl:hover .wrap2 { transform: translateY(-50%); }
+      .nl span { display: block; height: 1.25rem; line-height: 1.25rem; }
+      .nl span:last-child { color: var(--ink); }
+      .nav-actions { display: flex; align-items: center; gap: 0.6rem; }
+      .ph-btn {
+        border-radius: 999px; border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6);
+        padding: 0.5rem 1.1rem; font-size: 0.85rem; font-weight: 500; cursor: pointer;
+      }
+      .ph-btn:hover { border-color: rgba(255,255,255,0.4); color: var(--ink); }
+      .pw-btn {
+        position: relative; border-radius: 999px; border: none; cursor: pointer;
+        padding: 0.5rem 1.2rem; font-size: 0.85rem; font-weight: 600; color: #000;
+        background: linear-gradient(180deg, #fff, #d8d8dc);
+      }
+      .pw-btn::before {
+        content: ""; position: absolute; inset: -0.5rem; border-radius: 999px;
+        background: rgba(255,255,255,0.25); filter: blur(10px); z-index: -1;
+        opacity: 0.7; transition: opacity 0.3s ease;
+      }
+      .pw-btn:hover::before { opacity: 1; }
+      .burger { display: none; background: none; border: 0; color: rgba(255,255,255,0.6); cursor: pointer; padding: 0.4rem; }
+      .pillnav-mobile {
+        display: none; width: 100%; flex-direction: column; align-items: center;
+        gap: 0.3rem; padding-top: 0.8rem; margin-top: 0.6rem; border-top: 1px solid rgba(255,255,255,0.08);
+        opacity: 0; pointer-events: none; max-height: 0; overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+      }
+      .pillnav.open .pillnav-mobile { opacity: 1; pointer-events: auto; max-height: 320px; }
+      .pillnav-mobile a { width: 100%; text-align: center; padding: 0.55rem; color: rgba(255,255,255,0.6); font-size: 0.95rem; }
+      .pillnav-mobile a:hover { color: var(--ink); }
+      .pillnav-mobile .row2 { display: flex; gap: 0.6rem; width: 100%; justify-content: center; padding: 0.4rem 0 0.2rem; }
+
+      @media (max-width: 760px) {
+        .pillnav .links, .pillnav .nav-actions { display: none; }
+        .burger { display: block; }
+        .pillnav-mobile { display: flex; }
+        .logo { position: static; }
+      }
+
+      /* ===== layout ===== */
+      .wrap { position: relative; z-index: 2; width: min(1120px, calc(100% - 2.5rem)); margin: 0 auto; }
+
+      /* ===== hero ===== */
+      .hero { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 9.5rem 0 4.5rem; }
+      .kicker {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        border: 1px solid var(--line); background: rgba(255,255,255,0.04);
+        border-radius: 999px; padding: 0.42rem 0.95rem;
+        font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.08em;
+        text-transform: uppercase; color: rgba(255,255,255,0.6);
+      }
+      .kicker i { width: 0.42rem; height: 0.42rem; border-radius: 50%; background: var(--good); box-shadow: 0 0 8px var(--good); }
+      h1.hero-title {
+        margin: 1.8rem 0 0; font-size: clamp(2.6rem, 7vw, 5.4rem); font-weight: 700;
+        letter-spacing: -0.04em; line-height: 0.98; max-width: 16ch;
+      }
+      h1.hero-title .ghost { color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.5); }
+      h1.hero-title .live { color: var(--good-ink); }
+      .hero-sub { margin: 1.6rem auto 0; max-width: 44ch; font-size: 1.25rem; font-weight: 300; color: rgba(255,255,255,0.7); }
+      .hero-sub b { color: var(--ink); font-weight: 600; }
+
+      /* paste-repo artifact */
+      .launch { margin: 2.6rem auto 0; width: min(620px, 100%); }
+      .launch-bar {
+        display: flex; align-items: center; gap: 0.5rem;
+        border: 1px solid rgba(255,255,255,0.14); border-radius: 999px;
+        background: rgba(20,20,20,0.7); backdrop-filter: blur(8px);
+        padding: 0.4rem 0.4rem 0.4rem 1.3rem;
+      }
+      .launch-bar .ps { font-family: var(--mono); color: var(--good-ink); font-weight: 600; }
+      .launch-bar input {
+        flex: 1; min-width: 0; background: transparent; border: 0; outline: none;
+        color: var(--ink); font-family: var(--mono); font-size: 1rem; padding: 0.4rem 0.3rem;
+      }
+      .launch-bar input::placeholder { color: rgba(255,255,255,0.28); }
+      .launch-go {
+        position: relative; flex-shrink: 0; width: 2.8rem; height: 2.8rem; border-radius: 50%;
+        border: 0; background: var(--ink); color: #000; cursor: pointer; font-size: 1.1rem;
+        display: grid; place-items: center; overflow: hidden;
+      }
+      .launch-go::before { content: ""; position: absolute; inset: -0.6rem; border-radius: 50%; background: rgba(255,255,255,0.2); filter: blur(8px); z-index: -1; }
+      .launch-go .ar { transition: transform 0.25s ease; }
+      .launch-go:hover .ar { transform: translateX(3px); }
+      .launch-out { margin: 1rem 0 0; font-family: var(--mono); font-size: 0.92rem; color: rgba(255,255,255,0.5); }
+      .launch-out .url { color: var(--good-ink); }
+      .launch-alt { margin-top: 0.6rem; font-size: 0.9rem; color: rgba(255,255,255,0.38); }
+      .launch-alt a { color: rgba(255,255,255,0.7); border-bottom: 1px solid rgba(255,255,255,0.25); }
+
+      .cta-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.8rem 1rem; margin-top: 2.4rem; }
+      .btn-pill { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; border-radius: 999px; padding: 0.95rem 2rem; font-weight: 600; font-size: 1.02rem; border: 1px solid transparent; cursor: pointer; }
+      .btn-white { background: linear-gradient(180deg, #fff, #e2e2e6); color: #000; }
+      .btn-white::before { content: ""; position: absolute; inset: -0.7rem; border-radius: 999px; background: rgba(255,255,255,0.18); filter: blur(14px); z-index: -1; }
+      .btn-white:hover::before { background: rgba(255,255,255,0.3); }
+      .btn-ghost-pill { border-color: rgba(255,255,255,0.18); color: var(--ink); background: rgba(255,255,255,0.04); }
+      .btn-ghost-pill:hover { border-color: rgba(255,255,255,0.45); }
+
+      .flowline { margin-top: 2rem; font-family: var(--mono); font-size: 0.82rem; color: rgba(255,255,255,0.38); display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
+      .flowline .go { color: var(--good-ink); }
+
+      /* works-with */
+      .proof { position: relative; z-index: 2; border-top: 1px solid rgba(255,255,255,0.07); border-bottom: 1px solid rgba(255,255,255,0.07); }
+      .proof ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem 2.2rem; padding: 1.3rem 0; }
+      .proof a { font-size: 0.92rem; font-weight: 500; color: rgba(255,255,255,0.45); }
+      .proof a:hover { color: var(--ink); }
+
+      /* sections */
+      section.block { position: relative; z-index: 2; border-bottom: 1px solid rgba(255,255,255,0.07); }
+      .sec { padding: clamp(4.5rem, 9vw, 7rem) 0; text-align: center; }
+      .eyebrow-code {
+        display: inline-flex; align-items: center; gap: 0.6rem;
+        font-family: var(--mono); font-size: 0.8rem; color: var(--good-ink);
+        background: rgba(74,222,128,0.06); border: 1px solid rgba(74,222,128,0.22);
+        padding: 0.35rem 0.9rem; border-radius: 999px;
+      }
+      h2.big { margin: 1.4rem auto 0; max-width: 20ch; font-size: clamp(2.2rem, 5vw, 3.8rem); font-weight: 700; letter-spacing: -0.035em; line-height: 1.02; }
+      .subline { margin: 1.3rem auto 0; max-width: 52ch; font-size: 1.12rem; font-weight: 300; color: rgba(255,255,255,0.65); }
+      .subline b { color: var(--ink); font-weight: 600; }
+
+      /* numbered promises */
+      .promises { list-style: none; margin: 3rem auto 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; max-width: 1000px; }
+      .promises li { text-align: left; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); border-radius: 1.4rem; padding: 1.6rem 1.5rem; }
+      .promises .no { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; color: var(--good-ink); }
+      .promises h3 { margin: 0.8rem 0 0.4rem; font-size: 1.18rem; font-weight: 600; }
+      .promises p { margin: 0; font-size: 0.92rem; color: rgba(255,255,255,0.55); line-height: 1.55; }
+
+      /* two ways race */
+      .race { margin: 3rem auto 0; max-width: 860px; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; text-align: left; }
+      .lane { border-radius: 1.4rem; padding: 1.5rem 1.6rem; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); }
+      .lane-old { opacity: 0.75; }
+      .lane-aft { border-color: rgba(74,222,128,0.3); background: rgba(74,222,128,0.05); }
+      .lane-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+      .lane-head b { font-weight: 600; }
+      .lane-time { font-family: var(--mono); font-size: 0.95rem; }
+      .lane-old .lane-time { color: rgba(255,255,255,0.35); text-decoration: line-through; }
+      .lane-aft .lane-time { color: var(--good-ink); }
+      .lane-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-top: 1rem; font-family: var(--mono); font-size: 0.74rem; }
+      .lane-steps .chip { border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 0.3rem 0.65rem; color: rgba(255,255,255,0.5); white-space: nowrap; }
+      .lane-aft .chip { color: rgba(255,255,255,0.8); border-color: rgba(74,222,128,0.35); }
+      .lane-steps .sep { color: rgba(255,255,255,0.25); }
+      .lane-out { margin: 1rem 0 0; font-family: var(--mono); font-size: 0.9rem; color: rgba(255,255,255,0.5); }
+      .lane-aft .lane-out { color: rgba(255,255,255,0.85); }
+      .lane-aft .lane-out .url { color: var(--good-ink); border-bottom: 1px solid rgba(74,222,128,0.4); }
+      .lane-note { margin: 0.5rem 0 0; font-size: 0.88rem; color: rgba(255,255,255,0.4); }
+      .race-foot { grid-column: 1 / -1; margin: 0.4rem 0 0; font-family: var(--mono); font-size: 0.82rem; color: rgba(255,255,255,0.3); text-align: center; }
+
+      /* live proof tiles */
+      .lives { list-style: none; margin: 3rem auto 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; max-width: 900px; }
+      .lives a { display: flex; flex-direction: column; gap: 0.6rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 1.4rem; padding: 1.6rem; background: rgba(255,255,255,0.02); text-align: left; }
+      .lives a:hover { border-color: rgba(255,255,255,0.3); }
+      .lives .st { display: inline-flex; align-items: center; gap: 0.4rem; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--good-ink); }
+      .lives .st i { width: 6px; height: 6px; border-radius: 50%; background: var(--good); }
+      .lives .url { font-family: var(--mono); font-size: 1.05rem; color: var(--ink); }
+      .lives .d { font-size: 0.85rem; color: rgba(255,255,255,0.45); }
+
+      /* capability mini-bentos */
+      .caps { list-style: none; margin: 3rem auto 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; max-width: 1000px; text-align: left; }
+      .caps li { border: 1px solid rgba(255,255,255,0.08); border-radius: 1.4rem; padding: 1.6rem 1.5rem; background: rgba(255,255,255,0.02); }
+      .caps .mk { display: inline-block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 0.9rem; }
+      .caps h3 { margin: 0 0 0.45rem; font-size: 1.2rem; font-weight: 600; }
+      .caps p { margin: 0; font-size: 0.92rem; color: rgba(255,255,255,0.55); line-height: 1.55; }
+      .caps .vers { list-style: none; margin: 1rem 0 0; padding: 0; font-family: var(--mono); font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.35rem; }
+      .caps .vers span { display: grid; grid-template-columns: 2.4rem 1fr auto; gap: 0.5rem; color: rgba(255,255,255,0.55); }
+      .caps .vers .v { color: rgba(255,255,255,0.35); }
+      .caps .vers .now { color: var(--good-ink); }
+      .caps .acl { list-style: none; margin: 1rem 0 0; padding: 0; font-family: var(--mono); font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.4rem; }
+      .caps .acl li { display: flex; justify-content: space-between; color: rgba(255,255,255,0.6); border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.4rem; }
+      .caps .acl .tag { font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.35); }
+      .caps .acl .edit { color: var(--good-ink); }
+
+      /* pricing */
+      .prices { list-style: none; margin: 3rem auto 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; max-width: 1000px; text-align: left; }
+      .pcard { border: 1px solid rgba(255,255,255,0.1); border-radius: 1.6rem; padding: 2rem 1.8rem; background: rgba(255,255,255,0.02); display: flex; flex-direction: column; }
+      .pcard.hot { background: linear-gradient(180deg, #fff, #d9d9de); color: #000; }
+      .pcard .pname { font-size: 1.15rem; font-weight: 700; }
+      .pcard .pdesc { margin: 0.5rem 0 0; font-size: 0.95rem; line-height: 1.5; }
+      .pcard.hot .pdesc { color: rgba(0,0,0,0.65); }
+      .pcard .amt { margin-top: 1.5rem; font-size: 3rem; font-weight: 700; letter-spacing: -0.04em; line-height: 1; }
+      .pcard .per { display: block; margin-top: 0.35rem; font-size: 0.9rem; }
+      .pcard.hot .per { color: rgba(0,0,0,0.55); }
+      .pcard .btn-pill { margin: 1.5rem 0 1.2rem; }
+      .pcard.hot .btn-white { background: #000; color: #fff; }
+      .pcard.hot .btn-white::before { background: rgba(0,0,0,0.15); }
+      .pcard.hot .btn-ghost-pill { border-color: rgba(0,0,0,0.2); color: #000; background: transparent; }
+      .pcard ul { list-style: none; margin: 0; padding: 1.2rem 0 0; border-top: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 0.55rem; }
+      .pcard.hot ul { border-color: rgba(0,0,0,0.12); }
+      .pcard ul li { padding-left: 1.4rem; position: relative; font-size: 0.92rem; color: rgba(255,255,255,0.7); }
+      .pcard.hot ul li { color: rgba(0,0,0,0.75); }
+      .pcard ul li::before { content: "✓"; position: absolute; left: 0; color: var(--good-ink); }
+      .pcard.hot ul li::before { color: #16a34a; }
+      .pcard .hot-note { font-size: 0.8rem; color: var(--good-ink); font-family: var(--mono); }
+
+      /* faq */
+      .faq-list { margin: 3rem auto 0; max-width: 760px; border-top: 1px solid rgba(255,255,255,0.08); text-align: left; }
+      .faq-item { border-bottom: 1px solid rgba(255,255,255,0.08); }
+      .faq-item summary { list-style: none; cursor: pointer; padding: 1.4rem 0.25rem; display: flex; justify-content: space-between; align-items: baseline; gap: 1.5rem; font-size: 1.15rem; font-weight: 500; }
+      .faq-item summary::-webkit-details-marker { display: none; }
+      .faq-item summary::after { content: "+"; font-family: var(--sans); font-weight: 300; color: var(--good-ink); font-size: 1.5rem; line-height: 1; }
+      .faq-item[open] summary::after { content: "–"; }
+      .faq-item p { margin: 0; padding: 0 2.5rem 1.4rem 0.25rem; color: rgba(255,255,255,0.55); max-width: 64ch; }
+
+      /* final */
+      .final { padding: clamp(5rem, 10vw, 8rem) 0; text-align: center; }
+      .final .btn-pill { margin-top: 2.2rem; }
+
+      footer { position: relative; z-index: 2; border-top: 1px solid rgba(255,255,255,0.07); padding: 2.5rem 0 3rem; }
+      .foot { display: flex; flex-direction: column; align-items: center; gap: 1.2rem; text-align: center; }
+      .foot .mark { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
+      .foot .mark .dot { color: var(--good-ink); }
+      .foot-cols { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem 2.5rem; }
+      .foot-cols a { color: rgba(255,255,255,0.45); font-size: 0.88rem; }
+      .foot-cols a:hover { color: var(--ink); }
+      .foot .status { display: inline-flex; align-items: center; gap: 0.5rem; font-family: var(--mono); font-size: 0.75rem; color: var(--good-ink); }
+      .foot .status i { width: 6px; height: 6px; border-radius: 50%; background: var(--good); box-shadow: 0 0 8px var(--good); }
+      .foot .copy { font-size: 0.8rem; color: rgba(255,255,255,0.3); }
+
+      @media (max-width: 860px) {
+        .promises, .race, .lives, .caps, .prices { grid-template-columns: 1fr; }
+        .race { max-width: 620px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        * { animation: none !important; transition: none !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- dot-matrix signal field -->
+    <div class="signal-bg" aria-hidden="true"><canvas id="signal"></canvas></div>
+
+    <!-- floating pill nav -->
+    <nav class="pillnav" id="pillnav" aria-label="Primary">
+      <div class="pillnav-row">
+        <div class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <div class="links">
+          <a class="nl" href="#moment"><span class="wrap2"><span>The moment</span><span>The moment</span></span></a>
+          <a class="nl" href="#ways"><span class="wrap2"><span>Ways in</span><span>Ways in</span></span></a>
+          <a class="nl" href="#proof"><span class="wrap2"><span>Live proof</span><span>Live proof</span></span></a>
+          <a class="nl" href="#pricing"><span class="wrap2"><span>Pricing</span><span>Pricing</span></span></a>
+        </div>
+        <div class="nav-actions">
+          <button class="ph-btn" type="button">Log in</button>
+          <button class="pw-btn" type="button">Deploy an app</button>
+        </div>
+        <button class="burger" type="button" aria-label="Menu" id="burger">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+      </div>
+      <div class="pillnav-mobile" id="pillnav-mobile">
+        <a href="#moment">The moment</a>
+        <a href="#ways">Ways in</a>
+        <a href="#proof">Live proof</a>
+        <a href="#pricing">Pricing</a>
+        <div class="row2">
+          <button class="ph-btn" type="button">Log in</button>
+          <button class="pw-btn" type="button">Deploy an app</button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- hero -->
+    <header class="hero wrap">
+      <span class="kicker"><i></i> No account · no card · no queue</span>
+      <h1 class="hero-title">Your agent built it.<br /><span class="ghost">Now make it a</span> <span class="live">link.</span></h1>
+      <p class="hero-sub">The publish button for software your agent just made. One URL out, openable by anyone you choose — <b>same URL on every update</b>.</p>
+
+      <div class="launch">
+        <div class="launch-bar">
+          <span class="ps">&gt;</span>
+          <input type="text" placeholder="github.com/you/your-app  ·  or drop a folder" aria-label="Repo or folder" />
+          <button class="launch-go" type="button" aria-label="Run"><span class="ar">→</span></button>
+        </div>
+        <p class="launch-out">✓ 3 files · 2.1s → <span class="url">hello.aft.page</span> · no account</p>
+        <p class="launch-alt">Or tell your agent: <a href="#">"deploy this and give me the link"</a></p>
+      </div>
+
+      <div class="cta-row">
+        <a class="btn-pill btn-white" href="#deploy">Deploy an app →</a>
+        <a class="btn-pill btn-ghost-pill" href="#moment">See the two ways</a>
+      </div>
+      <p class="flowline"><span>agent</span><span>→</span><span>aft</span><span>→</span><span class="go">live URL</span></p>
+    </header>
+
+    <!-- works-with -->
+    <div class="proof">
+      <ul aria-label="Works with">
+        <li><a href="#">Claude Code</a></li>
+        <li><a href="#">Cursor</a></li>
+        <li><a href="#">Codex</a></li>
+        <li><a href="#">ChatGPT</a></li>
+        <li><a href="#">MCP</a></li>
+        <li><a href="#">Drop</a></li>
+        <li><a href="#">Run</a></li>
+      </ul>
+    </div>
+
+    <!-- // the moment -->
+    <section class="block" id="moment">
+      <div class="sec wrap">
+        <span class="eyebrow-code">// The moment</span>
+        <h2 class="big">Making software got easy.<br />Going live didn't.</h2>
+        <p class="subline">Software for one person should not need a stack built for ten thousand.</p>
+        <p class="subline" style="max-width:60ch;margin-top:.8rem">
+          Agents compress weeks into minutes. But the output dies in a folder — going live still assumes a repo,
+          a build config, an account, a billing page, a region. <b>aft is the step that was missing.</b>
+        </p>
+      </div>
+    </section>
+
+    <!-- numbered promises -->
+    <section class="block" id="promises">
+      <div class="sec wrap">
+        <span class="eyebrow-code">// What you get</span>
+        <h2 class="big">One URL that behaves like a Doc.</h2>
+        <ul class="promises">
+          <li><span class="no">01</span><h3>Live in seconds</h3><p>The first success is a URL, not an account.</p></li>
+          <li><span class="no">02</span><h3>Same URL forever</h3><p>Every update ships on the same link. No "v2".</p></li>
+          <li><span class="no">03</span><h3>Roll back in a click</h3><p>Change is wrong? One click, previous version.</p></li>
+          <li><span class="no">04</span><h3>Share like a Doc</h3><p>Invite, edit, view, revoke — by email.</p></li>
+          <li><span class="no">05</span><h3>Private when you want</h3><p>Only the people you name can open it.</p></li>
+          <li><span class="no">06</span><h3>Stop when done</h3><p>Software for a week shouldn't bill for a year.</p></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- two ways -->
+    <section class="block" id="ways">
+      <div class="sec wrap">
+        <span class="eyebrow-code">// Two ways to go live</span>
+        <h2 class="big">One of these was built for your software.</h2>
+        <div class="race">
+          <div class="lane lane-old">
+            <div class="lane-head"><b>The usual way</b><span class="lane-time">≈ 40 min</span></div>
+            <div class="lane-steps">
+              <span class="chip">create account</span><span class="sep">→</span>
+              <span class="chip">connect repo</span><span class="sep">→</span>
+              <span class="chip">add billing</span><span class="sep">→</span>
+              <span class="chip">pick region</span><span class="sep">→</span>
+              <span class="chip">wait for CI</span>
+            </div>
+            <p class="lane-out"># → still building…</p>
+            <p class="lane-note">Built for teams that run always-on.</p>
+          </div>
+          <div class="lane lane-aft">
+            <div class="lane-head"><b>aft</b><span class="lane-time">≈ 2 s</span></div>
+            <div class="lane-steps">
+              <span class="chip">✓ drop or agent call</span><span class="sep">→</span>
+              <span class="chip">✓ live URL</span>
+            </div>
+            <p class="lane-out"># → <span class="url">hello.aft.page</span></p>
+            <p class="lane-note"><b style="color:var(--good-ink)">No account.</b> Claim it later to keep it.</p>
+          </div>
+          <p class="race-foot">// the other one was built for a team that doesn't exist yet</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- live proof -->
+    <section class="block" id="proof">
+      <div class="sec wrap">
+        <span class="eyebrow-code">// Live proof</span>
+        <h2 class="big">Made with aft. Live now.</h2>
+        <p class="subline">Open them. If they're slow or broken, that's honest feedback we want.</p>
+        <ul class="lives">
+          <li><a href="#"><span class="st"><i></i> live</span><span class="url">hello.aft.page</span><span class="d">The original demo</span></a></li>
+          <li><a href="#"><span class="st"><i></i> live</span><span class="url">vite-hello.aft.page</span><span class="d">A Vite SPA</span></a></li>
+          <li><a href="#"><span class="st"><i></i> live</span><span class="url">next-hello.aft.page</span><span class="d">A Next.js app</span></a></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- capability proof -->
+    <section class="block" id="cap">
+      <div class="sec wrap">
+        <span class="eyebrow-code">// Under the hood</span>
+        <h2 class="big">Three things, done properly.</h2>
+        <ul class="caps">
+          <li>
+            <span class="mk">The URL is the contract</span>
+            <h3>Update whenever. It never moves.</h3>
+            <p>Same link across every ship. Roll back the second a change is wrong.</p>
+            <ul class="vers">
+              <li><span class="v">v3</span><span>hello.aft.page</span><span class="now">● live</span></li>
+              <li><span class="v">v2</span><span>rollback point</span><span>kept</span></li>
+              <li><span class="v">v1</span><span>first deploy</span><span>kept</span></li>
+            </ul>
+          </li>
+          <li>
+            <span class="mk">Share like a Doc</span>
+            <h3>Invite by email. Revoke when done.</h3>
+            <p>Public when you want. Private when it's just your team.</p>
+            <ul class="acl">
+              <li><span>you@company.com</span><span class="tag edit">owner</span></li>
+              <li><span>alex@company.com</span><span class="tag edit">edit</span></li>
+              <li><span>ops@company.com</span><span class="tag">view</span></li>
+            </ul>
+          </li>
+          <li>
+            <span class="mk">Made for small software</span>
+            <h3>Free while it matters. Gone when it's not.</h3>
+            <p>Claim to keep. Stop when done. No orphaned infrastructure, no surprise invoice.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- pricing -->
+    <section class="block" id="pricing">
+      <div class="sec wrap">
+        <span class="eyebrow-code">// Pricing</span>
+        <h2 class="big">Free is the whole free tier.</h2>
+        <p class="subline">Personal is $19 after 30 free days — when billing starts. It hasn't yet.</p>
+        <ul class="prices">
+          <li class="pcard">
+            <span class="pname">Free</span>
+            <p class="pdesc">A live link the second it's built. Claim it whenever, keep it forever.</p>
+            <div class="amt">$0</div><span class="per">during beta</span>
+            <a class="btn-pill btn-ghost-pill" href="#deploy">Deploy an app</a>
+            <ul><li>A public link you can share</li><li>Drop files or deploy from your agent</li><li>Claim your URL to keep it</li><li>500 files · 25 MB each · 100 MB total</li></ul>
+          </li>
+          <li class="pcard hot">
+            <span class="pname">Personal</span>
+            <p class="pdesc">For the private things only you and a few people use.</p>
+            <div class="amt">$19</div><span class="per">after 30 days free</span>
+            <a class="btn-pill btn-white" href="#deploy">Join waitlist</a>
+            <span class="hot-note">billing hasn't started — you'll hear first</span>
+            <ul><li>30 days free, then $19/month</li><li>Private apps for one person</li><li>Higher limits, secrets, rollback</li><li>Viewers don't need an account</li></ul>
+          </li>
+          <li class="pcard">
+            <span class="pname">Team &amp; Enterprise</span>
+            <p class="pdesc">Access control, SSO, and a human being to quote you.</p>
+            <div class="amt">Talk</div><span class="per">to us</span>
+            <a class="btn-pill btn-ghost-pill" href="#deploy">Contact</a>
+            <ul><li>Private apps + invite ACL</li><li>Per-site secrets, updates, rollback</li><li>IP allowlist / SSO as they ship</li><li>Connector or pilot if you deploy this week</li></ul>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- faq -->
+    <section class="block" id="faq">
+      <div class="sec wrap">
+        <span class="eyebrow-code">// FAQ</span>
+        <h2 class="big">Questions, answered.</h2>
+        <div class="faq-list">
+          <details class="faq-item"><summary>Is it really free right now?</summary><p>Yes. Going live is free during beta, and claiming your URL to keep it is free too. Private apps, invite-by-email sharing, and per-site secrets are part of Personal — $19/mo after 30 days free. We email the waitlist before charging anyone.</p></details>
+          <details class="faq-item"><summary>What can I put on aft?</summary><p>Single HTML documents, or multi-file static sites and SPAs (include an index.html). Limits: 500 files, 25 MB per file, 100 MB total. If your software needs a server that runs code, that's the roadmap — not today.</p></details>
+          <details class="faq-item"><summary>Why not the big platforms?</summary><p>Those are right when you already have a git repo, CI, preview PRs, or a production team. If you have agent output or a dist/ folder and want a live HTTPS URL in seconds with no account, that's the job aft exists for.</p></details>
+          <details class="faq-item"><summary>Who owns the link?</summary><p>Anyone can deploy anonymously and get a link. Claim it and it's yours: same URL on every update, rollback, private access, invite by email. Unclaimed sites are deleted after 30 days idle.</p></details>
+          <details class="faq-item"><summary>How do agents deploy?</summary><p>Any agent that speaks MCP can use the remote server at mcp.aft.page/mcp with the deploy, aft_deploys, aft_rollback, and aft_health tools — or ask: "deploy this and give me the link."</p></details>
+        </div>
+      </div>
+    </section>
+
+    <!-- final -->
+    <section class="final wrap" id="deploy">
+      <h2 class="big">Your agent built it. Make it a link.</h2>
+      <p class="subline">Paste a repo, drop a folder, or tell your agent to deploy. Live in seconds, free, no account.</p>
+      <a class="btn-pill btn-white" href="#top">Get your live link →</a>
+    </section>
+
+    <footer>
+      <div class="foot wrap">
+        <div class="mark">aft<span class="dot">.</span></div>
+        <div class="foot-cols">
+          <a href="#">Docs</a><a href="#pricing">Pricing</a><a href="#">Drop</a><a href="#">Run</a><a href="#">Projects</a><a href="#">MCP</a><a href="#">Privacy</a><a href="#">Terms</a>
+        </div>
+        <span class="status"><i></i> All systems operational</span>
+        <span class="copy">© 2026 aft.page · a cloud for small software</span>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        /* ---------- dot-matrix signal field ---------- */
+        var canvas = document.getElementById("signal");
+        var ctx = canvas.getContext("2d");
+        var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        var SPACING = 26;
+        var DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+        function rand(i) {
+          var x = Math.sin(i * 127.1 + 311.7) * 43758.5453;
+          return x - Math.floor(x);
+        }
+
+        var dots = [];
+        function build() {
+          var w = window.innerWidth, h = window.innerHeight;
+          canvas.width = w * DPR; canvas.height = h * DPR;
+          canvas.style.width = w + "px"; canvas.style.height = h + "px";
+          ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+          var cols = Math.ceil(w / SPACING) + 1;
+          var rows = Math.ceil(h / SPACING) + 1;
+          dots = [];
+          var cx = w / 2, cy = h * 0.42;
+          var maxD = Math.sqrt(cx * cx + cy * cy);
+          var n = 0;
+          for (var r = 0; r < rows; r++) {
+            for (var c = 0; c < cols; c++) {
+              var x = c * SPACING, y = r * SPACING;
+              var d = Math.sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy)) / maxD;
+              dots.push({ x: x, y: y, d: d, r: rand(n++) });
+            }
+          }
+        }
+
+        var t0 = null;
+        function easeOut(p) { return 1 - Math.pow(1 - p, 3); }
+
+        function frame(t) {
+          if (t0 === null) t0 = t;
+          var el = (t - t0) / 1000;
+          ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+          for (var i = 0; i < dots.length; i++) {
+            var dot = dots[i];
+            var delay = 0.1 + dot.d * dot.d * 1.2 + dot.r * 0.5;
+            var dur = 0.7 + dot.r * 0.6;
+            var p = (el - delay) / dur;
+            if (p <= 0) continue;
+            if (p > 1) p = 1;
+            var a = (0.05 + dot.r * 0.4) * easeOut(p);
+            var sz = (dot.r < 0.5 ? 1.4 : 1.8) * (0.6 + easeOut(p) * 0.6);
+            ctx.beginPath();
+            ctx.arc(dot.x, dot.y, sz, 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(255,255,255," + a.toFixed(3) + ")";
+            ctx.fill();
+          }
+          if (el < 6) requestAnimationFrame(frame);
+        }
+
+        function drawStatic() {
+          ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+          for (var i = 0; i < dots.length; i++) {
+            var dot = dots[i];
+            ctx.beginPath();
+            ctx.arc(dot.x, dot.y, 1.2, 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(255,255,255,0.07)";
+            ctx.fill();
+          }
+        }
+
+        function start() {
+          build();
+          if (reduce) drawStatic();
+          else { t0 = null; requestAnimationFrame(frame); }
+        }
+
+        var resizeTimer;
+        window.addEventListener("resize", function () {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(start, 200);
+        });
+        start();
+
+        /* ---------- pill nav ---------- */
+        var nav = document.getElementById("pillnav");
+        var burger = document.getElementById("burger");
+        burger.addEventListener("click", function () { nav.classList.toggle("open"); });
+      })();
+    </script>
+  </body>
+</html>

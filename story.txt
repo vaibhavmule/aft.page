@@ -1,5 +1,5 @@
 # aft.page — founder story
-# Updated: 2026-08-09
+# Updated: 2026-09-06
 # Vaibhav. Internal voice; publish when you mean it.
 
 In 2011 someone asked me: can you deploy WordPress? How long?
@@ -37,6 +37,22 @@ asking me.
 Honesty, 9 Aug 2026: nobody has deployed. Forget deploy twice. Pay is secondary.
 Pay comes later — when they keep the app, share it, or hook it to their data.
 This week is not a price. This week is one stranger who tries.
+
+Honesty, 6 Sep 2026: they came. 17 external accounts on ops, 59 sites they
+claimed and own, first on 12 Aug, fourteen of them in the last nine days. An
+account only exists after someone deploys, gets a URL, and finishes a magic
+link on it — so 17 strangers did the whole loop with me nowhere near their
+screen. I sent zero outreach messages. They found it.
+
+Do not get high on this. I do not know what a single one of them built. One
+account holds 31 sites and I have not looked at it. Nobody has invited a second
+human. Nobody has paid. The waitlist is still two rows and both are me. This is
+activation, which is the thing I said was missing on 9 Aug, and it is not
+retention, which is the thing that makes it a company.
+
+The next number is not more signups. It is one of these 17 coming back next
+week, or handing the URL to someone else. Email them. Ask what they deployed.
+Numbers and what to do about them: docs/EVIDENCE-PACK.md § Ops snapshot.
 
 The company is a cloud for small software. Agent made it → aft makes it live.
 If I cannot give someone the 2011 feeling for the thing their agent just built,

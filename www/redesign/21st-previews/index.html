@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>21st.dev — aft homepage candidates</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css" />
+    <style>
+      :root { --bg:#0a0a0a; --card:#131313; --line:#262626; --ink:#fafafa; --soft:#a1a1aa; --faint:#767680; --good:#22c55e; }
+      * { box-sizing: border-box; }
+      body { margin:0; font-family:"Geist Variable",system-ui,sans-serif; background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; }
+      .wrap { max-width:1200px; margin:0 auto; padding:3rem 1.5rem 5rem; }
+      h1 { margin:0 0 .4rem; font-size:1.8rem; letter-spacing:-.02em; }
+      .lede { color:var(--soft); margin:0 0 2.5rem; max-width:70ch; line-height:1.6; }
+      h2 { margin:3rem 0 1rem; font-size:1.15rem; letter-spacing:-.01em; border-top:1px solid var(--line); padding-top:1.5rem; }
+      h2 .n { color:var(--good); font-family:ui-monospace,monospace; font-size:.75rem; margin-right:.5rem; }
+      .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:1.25rem; }
+      .card { background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; }
+      .card .shot { background:#000; }
+      .card .shot img { width:100%; display:block; }
+      .card .meta { padding:0.9rem 1rem 1rem; }
+      .card .meta h3 { margin:0 0 .25rem; font-size:1rem; }
+      .card .meta p { margin:0 0 .6rem; color:var(--faint); font-size:.8rem; line-height:1.45; }
+      .card .meta a { color:var(--soft); font-size:.78rem; text-decoration:none; border:1px solid var(--line); padding:.3rem .6rem; border-radius:6px; display:inline-block; }
+      .card .meta a:hover { border-color:var(--ink); color:var(--ink); }
+      .note { margin-top:2rem; padding:1rem 1.2rem; border:1px solid var(--line); border-left:2px solid var(--good); color:var(--soft); font-size:.9rem; line-height:1.6; }
+      .note b { color:var(--ink); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>aft homepage — 21st.dev candidates</h1>
+      <p class="lede">
+        Real components from 21st.dev that map to the aft landing structure (commandcode.ai skeleton).
+        All are React + shadcn + Tailwind, so they are <b>structural references</b>, not drop-ins —
+        aft.page is static HTML. Heroes below; bento grids for the capability section; pricing for the
+        price block.
+      </p>
+
+      <h2><span class="n">01</span>Hero — serif / editorial (the "Paper &amp; Live" direction)</h2>
+      <div class="grid">
+        <div class="card">
+          <div class="shot"><img src="hero03.png" alt="Hero 03 — serif headline" loading="lazy" /></div>
+          <div class="meta">
+            <h3>Hero 03 — serif headline</h3>
+            <p>Centered serif headline, dual CTAs, portrait fades into the page. Calm, editorial — closest to the light "friendly cloud" direction.</p>
+            <a href="https://21st.dev/@felipemenezes098/components/hero-03" target="_blank" rel="noopener">Source ↗</a>
+          </div>
+        </div>
+        <div class="card">
+          <div class="shot"><img src="hero-split.png" alt="Modern Hero — split screen" loading="lazy" /></div>
+          <div class="meta">
+            <h3>Modern Hero — split screen</h3>
+            <p>Left headline + right dashboard screenshot preview. The Linear/Railway product-proof layout.</p>
+            <a href="https://21st.dev/@mokshithcodez/components/modern-landing-hero" target="_blank" rel="noopener">Source ↗</a>
+          </div>
+        </div>
+        <div class="card">
+          <div class="shot"><img src="hero-dark.png" alt="Hero Section Dark" loading="lazy" /></div>
+          <div class="meta">
+            <h3>Hero Section Dark</h3>
+            <p>Dark, gradient-atmosphere hero. The current black-system register.</p>
+            <a href="https://21st.dev/@skiper-ui/components/hero-section" target="_blank" rel="noopener">Source ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <h2><span class="n">02</span>Capability section — bento grid</h2>
+      <div class="grid">
+        <div class="card">
+          <div class="shot"><img src="bento-designali.png" alt="Bento Grid designali" loading="lazy" /></div>
+          <div class="meta">
+            <h3>Bento Grid</h3>
+            <p>Clean bento for the "live in seconds / same URL / share like a Doc" capability proof.</p>
+            <a href="https://21st.dev/@designali-in/components/bento-grid" target="_blank" rel="noopener">Source ↗</a>
+          </div>
+        </div>
+        <div class="card">
+          <div class="shot"><img src="bento-kinfe.png" alt="Bento kinfe" loading="lazy" /></div>
+          <div class="meta">
+            <h3>Bento</h3>
+            <p>Compact bento variant.</p>
+            <a href="https://21st.dev/@kinfe123/components/bento" target="_blank" rel="noopener">Source ↗</a>
+          </div>
+        </div>
+        <div class="card">
+          <div class="shot"><img src="bento-avanish.png" alt="bento grid 01 avanish" loading="lazy" /></div>
+          <div class="meta">
+            <h3>Bento Grid 01</h3>
+            <p>Reusable responsive bento with animation.</p>
+            <a href="https://21st.dev/@avanishverma4/components/bento-grid-01" target="_blank" rel="noopener">Source ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <h2><span class="n">03</span>Pricing</h2>
+      <div class="grid">
+        <div class="card">
+          <div class="shot"><img src="pricing-kokonutd.png" alt="Pricing kokonutd" loading="lazy" /></div>
+          <div class="meta">
+            <h3>Pricing Section</h3>
+            <p>Highlighted middle tier — the "Personal $19 after 30 free days" beat.</p>
+            <a href="https://21st.dev/@kokonutd/components/pricing-section" target="_blank" rel="noopener">Source ↗</a>
+          </div>
+        </div>
+        <div class="card">
+          <div class="shot"><img src="pricing-shadcnstore.png" alt="Pricing shadcnstore" loading="lazy" /></div>
+          <div class="meta">
+            <h3>Pricing Section 1</h3>
+            <p>Three-tier pricing with feature lists.</p>
+            <a href="https://21st.dev/@shadcnstore/components/pricing-section-1" target="_blank" rel="noopener">Source ↗</a>
+          </div>
+        </div>
+        <div class="card">
+          <div class="shot"><img src="pricing-brijr.png" alt="Pricing brijr" loading="lazy" /></div>
+          <div class="meta">
+            <h3>Pricing Section</h3>
+            <p>Simple three-card pricing.</p>
+            <a href="https://21st.dev/@brijr/components/pricing-section" target="_blank" rel="noopener">Source ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <p class="note">
+        <b>How to use this.</b> Pick the pieces whose <i>structure</i> fits aft — I'll hand-convert them
+        into static HTML/CSS matching aft's real stack (no React build). The hero choice rides on the
+        light-vs-black register decision: <b>Hero 03</b> suits the light "friendly cloud" direction;
+        the split-screen and dark heroes suit the black system.
+      </p>
+    </div>
+  </body>
+</html>

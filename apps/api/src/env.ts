@@ -82,6 +82,8 @@ export const RESERVED_SLUGS = new Set([
   "drop",
   "code",
   "cname",
+  // Shadowed by the aft-run-container route on run-container.aft.page.
+  "run-container",
   "aft",
   "aft-page",
   "ai",

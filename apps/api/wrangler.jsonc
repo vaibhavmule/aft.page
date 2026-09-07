@@ -77,6 +77,11 @@
       "dataset": "aft_page_metrics"
     }
   ],
+  // Do not remove `*/*`. It is what routes Cloudflare for SaaS custom hostnames
+  // (chatcontract.ai, discovra.ai) into this Worker — they are not *.aft.page,
+  // so no other pattern here matches them. Verified 2026-09-05: with `*/*`
+  // present the apex is still served by Pages, so it is not shadowing the
+  // marketing site.
   "routes": [
     {
       "pattern": "api.aft.page",
@@ -110,6 +115,6 @@
     }
   ],
   "triggers": {
-    "crons": ["*/5 * * * *", "0 4,16 * * *"]
+    "crons": ["*/5 * * * *", "0 4,16 * * *", "0 9 * * *"]
   }
 }

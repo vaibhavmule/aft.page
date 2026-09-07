@@ -1,5 +1,7 @@
 # Evidence pack (Week 4 / Phase 1 close)
 
+Updated: 2026-09-06 — first external users (see § Ops snapshot).
+
 Fill this for YC, investors, and yourself. Mission:
 
 > **Make Small Software as easy to deploy and share as a Google Doc.**
@@ -83,11 +85,59 @@ Live (founder, counts as dogfood not stranger evidence):
 
 Time-to-URL (agent MCP call → live HTTPS): **~2 seconds**. Seven-day return: not yet due.
 
+## Ops snapshot — 2026-09-06 (day 34)
+
+First real outside signal. Read [ops.aft.page](https://ops.aft.page/users?filter=external)
+for the live version; this is the dated copy.
+
+| Count | Value | What it means |
+| --- | --- | --- |
+| Sites | **362** | D1 `sites` minus `test--%`. Includes unclaimed anonymous drops. |
+| Users | **34** | 17 internal (`OPS_EMAILS` / `@aft.page` / plus-aliases) + **17 external** |
+| Sites claimed by external users | **59** | Sum of the Sites column on ops → Users → External |
+| External accounts holding ≥2 claimed sites | **6** | 31 · 6 · 4 · 3 · 3 · 2 |
+| Custom domains | 3 | Founder dogfood. Zero external `requested`. |
+| Waitlist | 2 | Both founder addresses. Homepage capture converts nothing. |
+| Feedback rows | 1 | |
+
+External accounts, first → latest: **2026-08-12 → 2026-09-05**. Fourteen of the
+seventeen arrived in the last nine days (Aug 28 – Sep 5), so the curve is
+bending up, not flat. Nobody was sent by an outreach message — this is inbound.
+
+Country spread in the emails (`.at`, `qq.com`, Indian and South Asian gmails)
+matches [REGIONS.md](./REGIONS.md): the demand is not US-first.
+
+### What this is, honestly
+
+An account exists only after a magic-link claim on a live URL, so each external
+row means: a stranger deployed something, got a URL, and chose to own it —
+without the founder in the session. That is **activation**, and it is the first
+time this file has had a number in it.
+
+It is **not** retention, sharing, or revenue:
+
+- No idea what any of them built, or whether they came back.
+- One account holds **31** sites. Read that before counting it as one happy user
+  — it could be an agent loop.
+- Several addresses look throwaway (`dsddsd981@`, `ppppppppprrrr…@`).
+- One external account (`mdsakib22ww@`) has **0** sites — signed up, deployed nothing.
+- Zero invite accepts by a second human. Zero paid. One feedback row.
+
+### Next (do these before writing any new claim)
+
+1. Sort external sites by `last_served_at` / views 7d — who actually came back.
+2. Look at what `platinum303030@` (31 sites) and `609860565@qq.com` (6 sites) built.
+3. Email all 17. One question: *what did you deploy, and did you send it to anyone?*
+4. Only then fill the stranger-trial rows in [../qa/stranger-trial.md](../qa/stranger-trial.md)
+   — that scoreboard wants named, observed trials, and inbound accounts do not
+   substitute for it.
+
 ## Customer evidence (fill weekly)
 
 | Date | Who | Agent they use | App | Next step | Paid? |
 | --- | --- | --- | --- | --- | --- |
 | 2026-08-08 | founder (hello@aft.page) | remote MCP | [enterprise-license](https://enterprise-license.aft.page) | claim → private → invite one teammate; check return 2026-08-15 | no |
+| 2026-08-12 → 09-05 | 17 external accounts (inbound, unknown) | unknown | 59 claimed sites | email all 17; ask what they built and who they sent it to | no |
 
 Ask every call:
 
@@ -96,19 +146,25 @@ Ask every call:
 
 ## Numbers (day 30 target)
 
+Actual = ops, **2026-09-06** (day 34 of a window that closed 2026-09-02).
+
 | Metric | Target | Actual |
 | --- | --- | --- |
-| Outreaches (cum) | 120 | |
-| Calls held | 20 | |
-| Stranger deployments reaching a URL | ≥10 | |
-| Repeat deployers | ≥5 | |
-| Apps still used after 7 days | ≥3 | |
-| Apps shared with another person | ≥1 | |
-| Full-stack app without manual cloud setup | ≥1 | |
-| Capability approvals (non-you) | ≥5 | |
-| Connector demos (if asked) | ≥2 | |
-| Paid / LOI / pilot (non-friend) | ≥1 | |
-| YC app | Fall 2026 rejected 29 Aug (no interview). Next on-time 2 Nov | |
+| Outreaches (cum) | 120 | **0** — none sent; every external account is inbound |
+| Calls held | 20 | **0** |
+| Stranger deployments reaching a URL | ≥10 | **≥17** — external accounts, each claimed on a live URL (16 with ≥1 site) |
+| Repeat deployers | ≥5 | **6** external accounts hold ≥2 claimed sites (not yet checked for return visits) |
+| Apps still used after 7 days | ≥3 | **unknown** — sort external sites by `last_served_at` / views 7d |
+| Apps shared with another person | ≥1 | **0** invite accepts |
+| Full-stack app without manual cloud setup | ≥1 | **yes** — [next-hello](https://next-hello.aft.page) (founder), Run Express fixture |
+| Capability approvals (non-you) | ≥5 | **0** |
+| Connector demos (if asked) | ≥2 | **0** |
+| Paid / LOI / pilot (non-friend) | ≥1 | **0** |
+| YC app | Fall 2026 rejected 29 Aug (no interview). Next on-time 2 Nov | file now has activation numbers; retention still missing |
+
+Two lines carry the whole quarter: **outreach 0** and **shared with another
+person 0**. Strangers found the product without help; nothing yet proves they
+keep the app or hand it to anyone.
 
 ## Screenshots / artifacts
 

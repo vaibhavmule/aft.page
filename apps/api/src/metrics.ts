@@ -15,6 +15,7 @@
  *   doubles[2]  files        file count
  *   doubles[3]  http_status  response status
  */
+import { waitUntil } from "cloudflare:workers";
 
 export type MetricEvent =
   | "deploy"
@@ -46,9 +47,22 @@ export function recentUtcDays(n: number, now = new Date()): string[] {
   return days;
 }
 
-export function viewDayKey(day = utcDayKey()): string {
-  return `views:day:${day}`;
+/** Prefix for one UTC day's per-slug counters. */
+export function viewDayPrefix(day = utcDayKey()): string {
+  return `views:day:${day}:`;
 }
+
+/**
+ * One counter key per slug per day. The old shape was a single key holding
+ * every slug's map, which KV rate-limits to one write per second *globally* —
+ * one busy site silently dropped every other site's increments. Sharding by
+ * slug scopes that ceiling to a single site.
+ */
+export function viewDayKey(slug: string, day = utcDayKey()): string {
+  return `${viewDayPrefix(day)}${slug}`;
+}
+
+type ViewMeta = { n?: number };
 
 export type SlugViews = { slug: string; today: number; d7: number };
 
@@ -58,22 +72,54 @@ export type ViewRollup = {
   bySlug: SlugViews[];
 };
 
-/** Increment HTML document views for utc day. */
+/**
+ * Increment HTML document views for this slug on the current UTC day.
+ *
+ * The count lives in KV metadata so `loadViewRollup` can read a whole day with
+ * one `list()` instead of a `get()` per site.
+ *
+ * ponytail: still a last-write-wins RMW, so concurrent views of the *same*
+ * slug can drop increments. Analytics Engine holds the exact record
+ * (`page_view`); this is the cheap read-back for dashboards. A Durable Object
+ * per slug if these ever need to be exact.
+ */
 export async function incrementViewCount(
   kv: KVNamespace,
   slug: string,
 ): Promise<void> {
-  const key = viewDayKey();
-  // ponytail: last-write-wins RMW — concurrent HTML views same UTC day can drop increments. D1 UPSERT or a DO if counts must be exact.
-  let map: Record<string, number> = {};
+  const key = viewDayKey(slug);
+  let n = 0;
   try {
-    const raw = await kv.get(key);
-    if (raw) map = JSON.parse(raw) as Record<string, number>;
+    const got = await kv.getWithMetadata<ViewMeta>(key, "text");
+    n = Number(got.metadata?.n) || 0;
   } catch {
-    map = {};
+    n = 0;
   }
-  map[slug] = (Number(map[slug]) || 0) + 1;
-  await kv.put(key, JSON.stringify(map), { expirationTtl: VIEW_TTL_SEC });
+  const next = n + 1;
+  await kv.put(key, String(next), {
+    expirationTtl: VIEW_TTL_SEC,
+    metadata: { n: next } satisfies ViewMeta,
+  });
+}
+
+/** One UTC day's counters as `{ slug: n }`. Counts ride in list metadata. */
+async function loadViewDay(
+  kv: KVNamespace,
+  day: string,
+): Promise<Record<string, number>> {
+  const prefix = viewDayPrefix(day);
+  const out: Record<string, number> = {};
+  let cursor: string | undefined;
+  do {
+    const listing = await kv.list<ViewMeta>({ prefix, cursor });
+    for (const key of listing.keys) {
+      const slug = key.name.slice(prefix.length);
+      if (!slug) continue;
+      out[slug] = (out[slug] || 0) + (Number(key.metadata?.n) || 0);
+    }
+    cursor = listing.list_complete ? undefined : listing.cursor;
+  } while (cursor);
+  return out;
 }
 
 export async function loadViewRollup(
@@ -81,16 +127,7 @@ export async function loadViewRollup(
   days = 7,
 ): Promise<ViewRollup> {
   const dayIds = recentUtcDays(days);
-  const raws = await Promise.all(dayIds.map((d) => kv.get(viewDayKey(d))));
-  const maps = raws.map((raw) => {
-    if (!raw) return {} as Record<string, number>;
-    try {
-      const j = JSON.parse(raw) as Record<string, number>;
-      return j && typeof j === "object" && !Array.isArray(j) ? j : {};
-    } catch {
-      return {};
-    }
-  });
+  const maps = await Promise.all(dayIds.map((d) => loadViewDay(kv, d)));
   const todayMap = maps[0] || {};
   const slugs = [...new Set(maps.flatMap((m) => Object.keys(m)))];
   const bySlug = slugs.map((slug) => ({
@@ -277,31 +314,42 @@ export function trackServe(
   });
 }
 
-/** Document view only: HTML 200. Also bumps the KV day counter. */
-export async function trackPageView(
+/**
+ * Document view only: HTML 200. Also bumps the KV day counter.
+ *
+ * Fire-and-forget: telemetry must never sit between the origin read and the
+ * response. The IP hash and the KV counter both cost a round trip, so this
+ * runs under `waitUntil` and the caller does not await it.
+ */
+export function trackPageView(
   env: MetricsEnv,
   request: Request,
   slug: string,
   opts: { path: string; contentType?: string; httpStatus: number },
-): Promise<void> {
+): void {
   if (opts.httpStatus !== 200) return;
   if (!/^text\/html\b/i.test(opts.contentType || "")) return;
-  writeMetric(env, {
-    event: "page_view",
-    source: resolveClient(request),
-    status: "ok",
-    slug,
-    deployer: await deployerKey(request),
-    path: opts.path,
-    requestId: request.headers.get("cf-ray") || undefined,
-    httpStatus: 200,
+
+  const task = (async () => {
+    writeMetric(env, {
+      event: "page_view",
+      source: resolveClient(request),
+      status: "ok",
+      slug,
+      deployer: await deployerKey(request),
+      path: opts.path,
+      requestId: request.headers.get("cf-ray") || undefined,
+      httpStatus: 200,
+    });
+    if (env.SITES) await incrementViewCount(env.SITES, slug);
+  })().catch(() => {
+    /* never fail the request because counters failed */
   });
-  if (env.SITES) {
-    try {
-      await incrementViewCount(env.SITES, slug);
-    } catch {
-      /* never fail the request because counters failed */
-    }
+
+  try {
+    waitUntil(task);
+  } catch {
+    void task;
   }
 }
 

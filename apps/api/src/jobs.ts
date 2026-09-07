@@ -18,6 +18,14 @@ import type { BuildPlan } from "./engine-kind";
 import { scrubProductSurface } from "./product-surface";
 import { getSiteSecretsMap } from "./secrets";
 import { shaFromPlanJson, writeCachedRunFail } from "./run-fail-cache";
+import { parseSandboxOrigin } from "./container-origin";
+
+/**
+ * Lifetime of an anonymous `aft run` URL. Matches EXPIRY_DEFAULT_SEC for
+ * anonymous static quick-views. Container slots are the scarce resource — a
+ * longer window multiplies concurrent containers during a launch spike.
+ */
+export const TRY_TIER_EXPIRY = "1h";
 
 const SSE_MS = 24_000;
 const SSE_TICK_MS = 800;
@@ -296,25 +304,51 @@ async function completeNextJob(
 ): Promise<{ ok: boolean; reason?: string; url?: string; slug?: string }> {
   const slug = job.slug;
   if (!slug) return { ok: false, reason: "Job has no slug." };
-  let dest: URL;
-  try {
-    dest = new URL(upstream);
-  } catch {
-    return { ok: false, reason: "upstream is not a URL." };
-  }
-  if (dest.protocol !== "https:") {
-    return { ok: false, reason: "upstream must be https." };
-  }
 
   const isContainer = job.kind === "container";
+
+  // A container publishes `sandbox://{id}:{port}` — addressed through its
+  // Durable Object, not a hostname. Everything else must still be https.
+  const sandbox = parseSandboxOrigin(upstream);
+  let upstreamValue: string;
+  if (sandbox) {
+    if (!isContainer) {
+      return { ok: false, reason: "sandbox origin is only valid for container runs." };
+    }
+    upstreamValue = upstream;
+  } else {
+    let dest: URL;
+    try {
+      dest = new URL(upstream);
+    } catch {
+      return { ok: false, reason: "upstream is not a URL." };
+    }
+    if (dest.protocol !== "https:") {
+      return { ok: false, reason: "upstream must be https." };
+    }
+    upstreamValue = dest.origin;
+  }
   const placeholder = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><title>${slug}</title></head><body><p>${slug} on aft.page</p></body></html>`;
   const aftJson = JSON.stringify({
     name: slug,
     runtime: isContainer ? "worker" : "next",
-    upstream: dest.origin,
+    upstream: upstreamValue,
   });
+  // `aft run` is a try service. An anonymous container run gets a URL that
+  // expires on a promise it can keep, instead of permanence it cannot: the
+  // container sleeps and there is no wake yet, so an unexpiring URL just
+  // breaks silently later. Claimed runs (job.userId) are the durable tier and
+  // never expire here.
+  //
+  // No new machinery — `?expires=` already exists on /v1/deploy, and the
+  // expired page, sweepExpiredSites, R2 cleanup and the claim flow are all
+  // built. The run path simply never passed it.
+  const tryTier = isContainer && !job.userId;
+  const deployUrl = `https://api.aft.page/v1/deploy?slug=${encodeURIComponent(slug)}${
+    tryTier ? `&expires=${TRY_TIER_EXPIRY}` : ""
+  }`;
   const res = await deploy(
-    new Request(`https://api.aft.page/v1/deploy?slug=${encodeURIComponent(slug)}`, {
+    new Request(deployUrl, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -335,6 +369,8 @@ async function completeNextJob(
     deployId?: string;
     error?: string;
     message?: string;
+    expiresAt?: string;
+    claimUrl?: string;
   };
   if (!res.ok || !body.slug) {
     return {

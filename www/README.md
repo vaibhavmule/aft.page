@@ -18,7 +18,7 @@ Docs              App
   /docs/domains/  /project
   /docs/frameworks/
 /docs.md (agent index — not HTML twin)
-/changelog · .md
+/changelog · .md · .rss
 /mcp · /mcp.md
 /plugins
 /llms.txt

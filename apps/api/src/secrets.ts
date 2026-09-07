@@ -7,7 +7,39 @@ import { ensureDb } from "./db";
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
-async function deriveKey(env: Env): Promise<CryptoKey> {
+/**
+ * Vault format version.
+ *
+ * Stored ciphertext is `"<version>:<base64(iv || ciphertext)>"`. Values written
+ * before versioning have no prefix and are read as v1, so nothing needs
+ * rewriting. The prefix is what makes rotation possible at all: add a v2
+ * derivation, write new secrets as v2, and keep reading v1 until the old rows
+ * are re-encrypted. Without it, changing AUTH_SECRET silently destroys every
+ * stored tenant secret.
+ */
+export const VAULT_VERSION = "v1";
+
+/** Per-version KDF salt. Add an entry rather than editing one in place. */
+const VAULT_SALT: Record<string, string> = {
+  v1: "aft.page/site-secrets/v1",
+};
+
+/** Split `"v1:<b64>"`; an unprefixed legacy value reads as v1. */
+export function parseVaultValue(stored: string): {
+  version: string;
+  b64: string;
+} {
+  const at = stored.indexOf(":");
+  if (at > 0) {
+    const version = stored.slice(0, at);
+    if (VAULT_SALT[version]) return { version, b64: stored.slice(at + 1) };
+  }
+  return { version: "v1", b64: stored };
+}
+
+async function deriveKey(env: Env, version: string): Promise<CryptoKey> {
+  const salt = VAULT_SALT[version];
+  if (!salt) throw new Error(`unknown vault version: ${version}`);
   const material = await crypto.subtle.importKey(
     "raw",
     enc.encode(env.AUTH_SECRET),
@@ -18,7 +50,7 @@ async function deriveKey(env: Env): Promise<CryptoKey> {
   return crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
-      salt: enc.encode("aft.page/site-secrets/v1"),
+      salt: enc.encode(salt),
       iterations: 100_000,
       hash: "SHA-256",
     },
@@ -30,7 +62,7 @@ async function deriveKey(env: Env): Promise<CryptoKey> {
 }
 
 export async function encryptSecret(env: Env, plaintext: string): Promise<string> {
-  const key = await deriveKey(env);
+  const key = await deriveKey(env, VAULT_VERSION);
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const cipher = await crypto.subtle.encrypt(
     { name: "AES-GCM", iv },
@@ -40,12 +72,13 @@ export async function encryptSecret(env: Env, plaintext: string): Promise<string
   const packed = new Uint8Array(iv.length + cipher.byteLength);
   packed.set(iv, 0);
   packed.set(new Uint8Array(cipher), iv.length);
-  return btoa(String.fromCharCode(...packed));
+  return `${VAULT_VERSION}:${btoa(String.fromCharCode(...packed))}`;
 }
 
-export async function decryptSecret(env: Env, packedB64: string): Promise<string> {
-  const key = await deriveKey(env);
-  const packed = Uint8Array.from(atob(packedB64), (c) => c.charCodeAt(0));
+export async function decryptSecret(env: Env, stored: string): Promise<string> {
+  const { version, b64 } = parseVaultValue(stored);
+  const key = await deriveKey(env, version);
+  const packed = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
   const iv = packed.slice(0, 12);
   const data = packed.slice(12);
   const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);

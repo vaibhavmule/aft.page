@@ -16,6 +16,7 @@ export async function proxyUpstream(
   upstreamBase: string,
   user: AftViewer | null = null,
   root = "aft.page",
+  timeoutMs?: number,
 ): Promise<Response> {
   const incoming = new URL(request.url);
   const base = new URL(upstreamBase);
@@ -38,6 +39,10 @@ export async function proxyUpstream(
     headers,
     redirect: "manual",
   };
+  // A dead ephemeral origin otherwise hangs until the client gives up.
+  if (timeoutMs && timeoutMs > 0) {
+    init.signal = AbortSignal.timeout(timeoutMs);
+  }
   if (request.method !== "GET" && request.method !== "HEAD") {
     init.body = request.body;
     // @ts-expect-error duplex required for streaming bodies in Workers

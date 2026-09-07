@@ -2,7 +2,11 @@
 
 Internal. Goal: prove **A Cloud for Small Software** with real users in 30 days.
 
-Updated: 2026-08-11
+Updated: 2026-09-06
+
+**Window closed 2026-09-02.** Day-30 result is at the bottom (§ Scoreboard) —
+short version: platform shipped, outreach never started, and 17 external users
+arrived inbound anyway ([EVIDENCE-PACK.md](./EVIDENCE-PACK.md) § Ops snapshot).
 
 **Freeze lifted 23 Aug 2026.** Host / Ship / Run / Code may ship. See [STRATEGY.md](./STRATEGY.md) § Mode and
 [`../todo.txt`](../todo.txt).
@@ -201,16 +205,39 @@ Polymerize: **do not resign** in the first seven-week proof.
 
 ## Scoreboard (check every Sunday)
 
-| Metric | Day 7 | Day 14 | Day 21 | Day 30 |
-| --- | --- | --- | --- | --- |
-| Outreaches sent (cum) | 30 | 60 | 90 | 120 |
-| Calls held | 3 | 8 | 15 | 20 |
-| Repeat deployers | 1 | 3 | 5 | 5–10 |
-| Apps used after 7 days | 0 | 1 | 2 | 3+ |
-| Apps shared with another person | 0 | 1 | 2 | 3+ |
-| Full-stack dogfood (Next / worker) | next-hello live | demos | demos | retained |
-| Paid / LOI / pilot | 0 | 0 | 0–1 | ≥1 |
-| YC app | done | — | — | — |
+| Metric | Day 7 | Day 14 | Day 21 | Day 30 | **Actual 2026-09-06** |
+| --- | --- | --- | --- | --- | --- |
+| Outreaches sent (cum) | 30 | 60 | 90 | 120 | **0** |
+| Calls held | 3 | 8 | 15 | 20 | **0** |
+| Repeat deployers | 1 | 3 | 5 | 5–10 | **6** (external accounts with ≥2 claimed sites) |
+| Apps used after 7 days | 0 | 1 | 2 | 3+ | **unknown — not yet measured** |
+| Apps shared with another person | 0 | 1 | 2 | 3+ | **0** |
+| Full-stack dogfood (Next / worker) | next-hello live | demos | demos | retained | **next-hello live; Run Express fixture live; 0 demos given** |
+| Paid / LOI / pilot | 0 | 0 | 0–1 | ≥1 | **0** |
+| YC app | done | — | — | — | **submitted 18 Aug, rejected 29 Aug. Next: 2 Nov** |
+
+## Day-30 verdict (written 2026-09-06)
+
+The dual track did not run. **Platform ran; proof never did** — zero outreaches,
+zero calls, for the entire window. By the plan's own rule ("build > outreach two
+days in a row = failing"), this is a failed track.
+
+What saved the quarter is not in the plan: **17 external accounts, 59 claimed
+sites, all inbound**, first 2026-08-12, fourteen in the last nine days. Nobody
+was recruited. They found aft.page, deployed, and claimed a URL unassisted.
+
+Read that correctly:
+
+- The **activation** half of the 30-day outcome is met. Strangers reach a URL
+  and own it without the founder in the room.
+- The **retention** half is untouched. The plan's own user definition — deploys
+  more than once, returns, would notice if aft disappeared — is verified for
+  none of the 17. Six hold ≥2 sites, which is deploys, not returns.
+- The **commercial** half is zero. No paid, no LOI, no price shown to anyone.
+
+Next 30 days invert the split: the bottleneck is no longer "will anyone try,"
+it is "does anyone stay." Talk to the 17 before building the next surface —
+[EVIDENCE-PACK.md](./EVIDENCE-PACK.md) § Next.
 
 ---
 

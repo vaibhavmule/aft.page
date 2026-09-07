@@ -134,3 +134,29 @@ describe("secrets vault endpoints", () => {
     expect(put.status).toBe(200);
   });
 });
+
+describe("vault format versioning", () => {
+  it("writes a versioned prefix and still reads legacy unprefixed values", async () => {
+    const { encryptSecret, decryptSecret, parseVaultValue } = await import(
+      "../src/secrets"
+    );
+
+    const packed = await encryptSecret(env, "sk-live-123");
+    expect(packed.startsWith("v1:")).toBe(true);
+    expect(await decryptSecret(env, packed)).toBe("sk-live-123");
+
+    // A value written before versioning has no prefix; it must still decrypt.
+    const legacy = packed.slice("v1:".length);
+    expect(await decryptSecret(env, legacy)).toBe("sk-live-123");
+
+    expect(parseVaultValue(legacy)).toEqual({ version: "v1", b64: legacy });
+    expect(parseVaultValue(packed)).toEqual({ version: "v1", b64: legacy });
+  });
+
+  it("refuses a version it does not know how to derive", async () => {
+    const { decryptSecret } = await import("../src/secrets");
+    // v9 is not in VAULT_SALT, so this parses as legacy and fails to decrypt
+    // rather than silently returning the wrong plaintext.
+    await expect(decryptSecret(env, "v9:bm90LWEtcmVhbC1jaXBoZXI=")).rejects.toThrow();
+  });
+});

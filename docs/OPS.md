@@ -34,6 +34,36 @@ Same `CF_API_TOKEN` powers **Sites → Traffic** Analytics Engine SQL — needs 
 
 **WfP trigger** (same cost row): D1 count of non-test `runtime=worker|next` sites with `upstream_url`. Pill `stay` / `watch` / `switch`. Watch at **400** site Workers, switch at **450** (500 Paid cap) or when MTD overage **> $20** (WfP’s extra floor — only wins if most of that is proxy double-bill). Static Drop is not this count. Numbers: [ADR-TEMP-ACCOUNTS.md](./ADR-TEMP-ACCOUNTS.md) § Costing.
 
+## Hub (what the nav actually is)
+
+Four groups. Every panel is a real path, not a hash — deep-link them.
+
+| Group | Panels | Badge counts |
+| --- | --- | --- |
+| **Operate** | `/overview` · `/audit` · `/smoke` · `/run` · `/failures` · `/status-probes` · `/logs` | hijack cases · smoke cases · run jobs · failure rows · status probes · probe rows. The list panels cap at 50 rows — a badge reading `50` means *capped*, not *exactly fifty*. |
+| **Inventory** | `/sites` · `/users?filter=external` · `/domains` · `/feedback` | live D1 counts |
+| **Map** | `/cf` · `/network` · `/stories` | CF practice cases |
+| **Grow** | `/distribute` · `/todos` | checklist `done/total` (18 distribute · 26 startup-30d) |
+
+Counts you will quote at people, and what they actually mean:
+
+- **Sites** — `COUNT(*) FROM sites WHERE slug NOT LIKE 'test--%'`. Includes
+  **unclaimed anonymous drops**, excludes smoke/compat canaries. It is not a
+  user count and not a "real apps" count.
+- **Users** — every row in `users`, split by `isInternalUserEmail`: `OPS_EMAILS`,
+  `@aft.page`, and plus-aliases of ops emails are **internal**; everything else
+  is **external**. The tab defaults to **External** because internal is founder
+  noise. A user row only exists after a magic-link claim on a live URL, so an
+  external row = a stranger who deployed and chose to own the URL.
+- **Users → Sites column** — claimed sites for that owner; links to
+  `/sites?owner=…`. Requested custom domains sort first; Approve is on the row.
+- **Waitlist** (bottom of `/users`) — homepage email capture, **not accounts**.
+  Never add it to the user count.
+- **Domains** — `custom_domains` rows (plus the RDAP brand-domain watch table).
+
+First external users landed 2026-08-12. Dated snapshot and what is still
+unproven: [EVIDENCE-PACK.md](./EVIDENCE-PACK.md) § Ops snapshot.
+
 ## Two Workers Logs streams
 
 `mcp.aft.page` hits **aft-page-api** (wildcard `*.aft.page`), which service-binds **aft-page-mcp**. One Cursor call is two streams:

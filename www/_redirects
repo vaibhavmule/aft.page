@@ -32,3 +32,4 @@
 /webmcp/ /webmcp/index.html 200
 /webmcp/* /webmcp/index.html 200
 /changelog.md https://api.aft.page/v1/changelog.md 302
+/changelog.rss https://api.aft.page/v1/changelog.rss 302

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>aft.page — redesign B · schematic</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --void: #0b0d10;
+        --paper: #101318;
+        --panel: #161a20;
+        --line: #232a33;
+        --line-bright: #3a4552;
+        --ink: #e8ecf1;
+        --quiet: #98a2ad;
+        --faint: #616b76;
+        --good: #22c55e;
+        --blueprint: #7dd3fc;
+        --font-sans: "Geist Variable", "Geist", "Segoe UI", system-ui, sans-serif;
+        --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, Menlo, Consolas, monospace;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: auto; }
+      body {
+        margin: 0; font-family: var(--font-sans); font-size: 1rem; line-height: 1.6;
+        color: var(--ink); background: var(--void); -webkit-font-smoothing: antialiased; overflow-x: clip;
+      }
+      a { color: inherit; text-decoration: none; }
+      code, pre { font-family: var(--font-mono); }
+
+      /* drafting-sheet frame */
+      .sheet { position: relative; min-height: 100vh; }
+      .sheet::before {
+        content: ""; position: fixed; inset: 0; pointer-events: none; opacity: 0.5; z-index: 0;
+        background-image: radial-gradient(circle, #ffffff14 1px, transparent 1.1px);
+        background-size: 26px 26px;
+        mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, #000 20%, transparent 75%);
+      }
+      .frame-lines { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
+      .frame-lines::before {
+        content: ""; position: absolute; left: 1.1rem; right: 1.1rem; top: 0; bottom: 0;
+        border-left: 1px solid var(--line); border-right: 1px solid var(--line);
+      }
+      .tick { position: fixed; width: 1.1rem; height: 1.1rem; z-index: 2; pointer-events: none; border: 1px solid var(--line-bright); }
+      .tick.tl { top: 0.85rem; left: 0.85rem; border-right: none; border-bottom: none; }
+      .tick.tr { top: 0.85rem; right: 0.85rem; border-left: none; border-bottom: none; }
+      .tick.bl { bottom: 0.85rem; left: 0.85rem; border-right: none; border-top: none; }
+      .tick.br { bottom: 0.85rem; right: 0.85rem; border-left: none; border-top: none; }
+
+      .inner { position: relative; z-index: 3; width: min(1180px, calc(100% - 5rem)); margin: 0 auto; }
+
+      /* blueprint title block */
+      .titleblock {
+        display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+        padding: 1.1rem 0; border-bottom: 1px solid var(--line);
+        font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint);
+      }
+      .titleblock .brand { font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); text-transform: none; }
+      .titleblock .brand .dot { color: var(--good); }
+      .titleblock nav { display: flex; gap: 1rem; }
+      .titleblock nav a:hover { color: var(--ink); }
+      .titleblock .rev { border: 1px solid var(--line); padding: 0.3rem 0.6rem; color: var(--ink); }
+
+      /* hero — dimensioned assembly */
+      .hero { padding: 4rem 0 4.5rem; }
+      .dim-row { display: flex; align-items: center; gap: 0.6rem; margin: 0 0 1.6rem; font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); }
+      .dim-row .line { flex: 1; height: 1px; background: var(--line); position: relative; }
+      .dim-row .line::before, .dim-row .line::after { content: ""; position: absolute; top: -2px; width: 5px; height: 5px; border-top: 1px solid var(--line-bright); }
+      .dim-row .line::before { left: 0; }
+      .dim-row .line::after { right: 0; }
+      .hero-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: clamp(2rem, 5vw, 4rem); align-items: center; }
+      .hero h1 { margin: 0 0 1rem; font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 600; letter-spacing: -0.04em; line-height: 1; }
+      .hero h1 .hl { color: var(--blueprint); }
+      .hero .lede { margin: 0; color: var(--quiet); font-size: 1.05rem; line-height: 1.55; max-width: 40ch; }
+      .hero .note { margin: 0.8rem 0 0; color: var(--faint); font-size: 0.85rem; }
+      .hero .cta { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 1.8rem; }
+      .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.8rem 1.4rem; border-radius: 2px; font-weight: 600; font-size: 0.95rem; border: 1px solid transparent; cursor: pointer; }
+      .btn-primary { background: var(--ink); color: #0b0d10; }
+      .btn-primary:hover { background: #fff; }
+      .btn-ghost { border-color: var(--line-bright); color: var(--ink); background: color-mix(in srgb, var(--panel) 55%, transparent); }
+      .btn-ghost:hover { border-color: var(--ink); }
+
+      /* schematic callout box */
+      .assy { border: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 60%, transparent); position: relative; padding: 0.9rem 0 0; }
+      .assy::before { content: "DWG-01"; position: absolute; top: -0.5rem; left: 0.9rem; padding: 0 0.4rem; background: var(--void); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.08em; color: var(--faint); }
+      .assy-head { display: flex; align-items: center; justify-content: space-between; padding: 0.35rem 1rem 0.75rem; border-bottom: 1px dashed var(--line); font-family: var(--font-mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); }
+      .assy-body { padding: 1.2rem 1.2rem 1.4rem; font-family: var(--font-mono); font-size: 0.84rem; line-height: 1.8; }
+      .assy-body .dim { color: var(--faint); }
+      .assy-body .cmd { color: var(--good); }
+      .assy-body .url { color: var(--blueprint); text-decoration: underline; text-underline-offset: 0.18em; }
+      .assy-body .ln { display: flex; gap: 0.6rem; }
+      .assy-body .ps { color: var(--good); flex-shrink: 0; font-weight: 600; }
+      .callout { margin: 0.9rem 0 0; padding: 0.85rem 1rem; border: 1px dashed var(--line-bright); background: color-mix(in srgb, var(--blueprint) 5%, transparent); }
+      .callout .k { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blueprint); display: block; margin-bottom: 0.5rem; }
+      .callout ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem 1.4rem; }
+      .callout li { font-size: 0.85rem; color: var(--quiet); }
+      .callout li b { color: var(--ink); font-weight: 600; }
+
+      .marginalia { position: absolute; left: calc(-11rem); top: 0.4rem; width: 9rem; text-align: right; font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+      @media (max-width: 1280px) { .marginalia { display: none; } }
+
+      .sec { padding: 4rem 0; border-top: 1px solid var(--line); position: relative; }
+      .sec-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2rem; align-items: end; margin-bottom: 2rem; }
+      .sec-head .tag { margin: 0 0 0.5rem; font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--blueprint); }
+      .sec-head h2 { margin: 0; font-size: clamp(1.5rem, 2.8vw, 2rem); letter-spacing: -0.03em; }
+      .sec-head .lede { margin: 0.6rem 0 0; color: var(--quiet); max-width: 52ch; font-size: 0.95rem; }
+      .sec-head .n { font-family: var(--font-mono); font-size: 0.72rem; color: var(--faint); white-space: nowrap; }
+
+      /* spec rows */
+      .spec { list-style: none; margin: 0; padding: 0; }
+      .spec li { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr) minmax(0, 1fr); gap: 1.5rem; padding: 1.4rem 0.25rem; border-top: 1px solid var(--line); align-items: start; }
+      .spec li:last-child { border-bottom: 1px solid var(--line); }
+      .spec .no { font-family: var(--font-mono); font-size: 0.72rem; color: var(--faint); }
+      .spec h3 { margin: 0 0 0.4rem; font-size: 1.15rem; font-weight: 600; }
+      .spec .spec-desc { margin: 0; color: var(--quiet); font-size: 0.9rem; max-width: 46ch; }
+      .spec .right { justify-self: end; text-align: right; }
+      .spec .right code { display: inline-block; margin-top: 0.3rem; font-size: 0.76rem; color: var(--blueprint); }
+      .spec .right .st { font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+
+      /* plan grid */
+      .grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); }
+      .grid li { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 40%, transparent); }
+      .grid li:nth-child(3n) { border-right: none; }
+      .grid a { display: block; padding: 1.4rem 1.3rem; height: 100%; }
+      .grid a:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+      .grid .no { font-family: var(--font-mono); font-size: 0.66rem; color: var(--faint); }
+      .grid h3 { margin: 0.6rem 0 0.5rem; font-size: 1.1rem; font-weight: 600; }
+      .grid code { display: block; margin-bottom: 0.5rem; font-size: 0.78rem; color: var(--blueprint); overflow-wrap: anywhere; }
+      .grid p { margin: 0; color: var(--quiet); font-size: 0.85rem; }
+
+      /* cmp table */
+      .cmp { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+      .cmp th, .cmp td { text-align: left; padding: 0.9rem 1rem; border: 1px solid var(--line); font-size: 0.9rem; }
+      .cmp thead th { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); background: var(--paper); }
+      .cmp td { color: var(--quiet); }
+      .cmp .aft { color: var(--ink); background: color-mix(in srgb, var(--blueprint) 6%, transparent); }
+      .cmp thead .aft { color: var(--blueprint); }
+
+      /* pricing */
+      .price { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--line); }
+      .price > li { border-right: 1px solid var(--line); padding: 1.6rem 1.4rem; display: flex; flex-direction: column; background: color-mix(in srgb, var(--panel) 40%, transparent); }
+      .price > li:last-child { border-right: none; }
+      .price > li.hot { background: var(--panel); box-shadow: inset 0 1px 0 var(--blueprint), inset 0 -1px 0 var(--blueprint); }
+      .price h3 { margin: 0; font-size: 1rem; }
+      .price .d { margin: 0.4rem 0 1rem; color: var(--quiet); font-size: 0.85rem; }
+      .price .amt { font-size: 2.1rem; font-weight: 600; letter-spacing: -0.04em; line-height: 1; }
+      .price .per { display: block; color: var(--faint); font-size: 0.72rem; margin-top: 0.3rem; }
+      .price .btn { width: 100%; margin: 1.2rem 0 1rem; }
+      .price .inc { margin: 0 0 0.6rem; padding-top: 1rem; border-top: 1px solid var(--line); font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+      .price ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
+      .price ul li { padding-left: 1.1rem; position: relative; color: var(--quiet); font-size: 0.82rem; }
+      .price ul li::before { content: "▸"; position: absolute; left: 0; color: var(--blueprint); font-size: 0.7rem; top: 0.1rem; }
+
+      .faq { border-top: 1px solid var(--line); }
+      .faq details { border-bottom: 1px solid var(--line); }
+      .faq details:last-child { border-bottom: none; }
+      .faq summary { list-style: none; cursor: pointer; padding: 1.05rem 0.25rem; font-weight: 500; display: flex; justify-content: space-between; gap: 1rem; }
+      .faq summary::after { content: "+"; font-family: var(--font-mono); color: var(--blueprint); }
+      .faq details[open] summary::after { content: "–"; }
+      .faq p { margin: 0; padding: 0 2rem 1rem 0.25rem; color: var(--quiet); font-size: 0.9rem; max-width: 68ch; }
+
+      /* waitlist — drawing revision box */
+      .wait {
+        margin: 4rem auto 4.5rem; width: min(1180px, calc(100% - 5rem)); position: relative; z-index: 3;
+        border: 1px solid var(--line-bright); background: var(--paper); padding: 2.2rem 2.4rem;
+        display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 2.5rem; align-items: center;
+      }
+      .wait h2 { margin: 0 0 0.6rem; font-size: clamp(1.4rem, 2.4vw, 1.9rem); letter-spacing: -0.02em; }
+      .wait p { margin: 0; color: var(--quiet); max-width: 44ch; }
+      .wl { display: flex; gap: 0.5rem; }
+      .wl input[type="email"] { flex: 1; min-width: 0; padding: 0.85rem 1rem; background: var(--void); border: 1px solid var(--line-bright); color: var(--ink); font: inherit; font-size: 1rem; }
+      .wl input[type="email"]:focus { outline: none; border-color: var(--blueprint); }
+
+      footer { border-top: 1px solid var(--line); position: relative; overflow: hidden; }
+      .foot { width: min(1180px, calc(100% - 5rem)); margin: 0 auto; padding: 2rem 0 0; position: relative; z-index: 3; }
+      .foot-top { display: flex; justify-content: space-between; align-items: center; padding-bottom: 1.4rem; border-bottom: 1px solid var(--line); color: var(--quiet); font-size: 0.85rem; }
+      .foot-top .s { font-family: var(--font-mono); font-size: 0.72rem; color: var(--good); }
+      .foot-cols { display: grid; grid-template-columns: 1.5fr repeat(3, 1fr); gap: 2rem; padding: 2rem 0; }
+      .foot-cols h3 { margin: 0 0 0.8rem; font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); font-weight: 500; }
+      .foot-cols a { display: block; margin-bottom: 0.5rem; color: var(--quiet); font-size: 0.88rem; }
+      .foot-cols a:hover { color: var(--ink); }
+      .giant { text-align: center; margin: 0; font-size: clamp(6rem, 26vw, 15rem); font-weight: 600; letter-spacing: -0.06em; line-height: 0.72; color: transparent; background: linear-gradient(180deg, #e8ecf133, transparent 80%); -webkit-background-clip: text; background-clip: text; user-select: none; }
+      .giant .sq { color: var(--blueprint); -webkit-text-fill-color: var(--blueprint); }
+
+      @media (max-width: 900px) {
+        .hero-grid, .wait { grid-template-columns: 1fr; }
+        .grid { grid-template-columns: 1fr 1fr; }
+        .grid li:nth-child(3n) { border-right: 1px solid var(--line); }
+        .grid li:nth-child(2n) { border-right: none; }
+        .spec li { grid-template-columns: 1fr; gap: 0.4rem; }
+        .spec .right { justify-self: start; text-align: left; }
+        .price { grid-template-columns: 1fr; }
+        .price > li { border-right: none; border-bottom: 1px solid var(--line); }
+        .price > li:last-child { border-bottom: none; }
+        .foot-cols { grid-template-columns: 1fr 1fr; }
+      }
+      @media (max-width: 560px) {
+        .titleblock nav a:not(.rev) { display: none; }
+        .grid { grid-template-columns: 1fr; }
+        .grid li, .grid li:nth-child(2n), .grid li:nth-child(3n) { border-right: none; }
+        .wl { flex-direction: column; }
+        .inner, .foot, .wait { width: min(100% - 3rem, 1180px); }
+      }
+      @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+    </style>
+  </head>
+  <body>
+    <div class="sheet">
+      <div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+
+      <div class="titleblock inner">
+        <a class="brand" href="/">aft<span class="dot">.</span>page</a>
+        <nav>
+          <a href="#spec">Spec</a>
+          <a href="#ways">Ways in</a>
+          <a href="#cmp">Compare</a>
+          <a href="#price">Pricing</a>
+          <a class="rev" href="#deploy">Deploy an app</a>
+        </nav>
+      </div>
+
+      <header class="hero inner">
+        <div class="dim-row"><span class="line"></span> Fig. 01 — agent to live URL</div>
+        <div class="marginalia">deploy schematic<br />scale: instant<br />sheet 1 of 1</div>
+        <div class="hero-grid">
+          <div>
+            <h1>Agent output → a <span class="hl">live link</span>, drawn to scale.</h1>
+            <p class="lede">A cloud for small software. Drop your files or let your agent send them. Live link. No account. Same URL when you update.</p>
+            <p class="note">Roll back or take it down anytime.</p>
+            <div class="cta">
+              <a class="btn btn-primary" href="#deploy">Deploy an app</a>
+              <a class="btn btn-ghost" href="#spec">Read the spec ↓</a>
+            </div>
+          </div>
+          <div>
+            <div class="assy">
+              <div class="assy-head"><span>Assembly — hello.aft.page</span><span>rev B</span></div>
+              <div class="assy-body">
+                <div class="ln"><span class="ps">%</span><span>aft deploy</span></div>
+                <div class="ln dim"><span class="ps">✓</span><span>3 files · 2.1s</span></div>
+                <div class="ln"><span class="ps">→</span><span class="url">hello.aft.page</span></div>
+                <div class="ln dim"><span></span><span>anon · claim to keep · expires 1h</span></div>
+              </div>
+            </div>
+            <div class="callout">
+              <span class="k">Deploy via</span>
+              <ul>
+                <li><b>Drop</b> folder or zip</li>
+                <li><b>MCP</b> agent tool</li>
+                <li><b>CLI</b> aft deploy</li>
+                <li><b>Run</b> GitHub repo</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="sec inner" id="spec">
+        <div class="sec-head">
+          <div>
+            <p class="tag">Capabilities · sheet 02</p>
+            <h2>What you can ship</h2>
+            <p class="lede">Agent output becomes a live app you can open, share, and keep — without a cloud account.</p>
+          </div>
+          <div class="n">SPEC-02</div>
+        </div>
+        <ul class="spec">
+          <li>
+            <span class="no">02.1</span>
+            <div><h3>Deploy</h3><p class="spec-desc">Drop a folder or let your agent call MCP. Live URL in seconds. No account. Same link stays put when you update.</p></div>
+            <div class="right"><span class="st">status</span><br /><code>● ships today</code></div>
+          </li>
+          <li>
+            <span class="no">02.2</span>
+            <div><h3>Share</h3><p class="spec-desc">Public when you want. Private when it's internal. Invite by email; revoke without redeploying.</p></div>
+            <div class="right"><span class="st">access</span><br /><code>invite · revoke</code></div>
+          </li>
+          <li>
+            <span class="no">02.3</span>
+            <div><h3>Keep</h3><p class="spec-desc">Same URL when you update. Roll back or remove anytime. Claim to own it.</p></div>
+            <div class="right"><span class="st">lifecycle</span><br /><code>update · rollback</code></div>
+          </li>
+        </ul>
+      </section>
+
+      <section class="sec inner" id="ways">
+        <div class="sec-head">
+          <div>
+            <p class="tag">Get started · sheet 03</p>
+            <h2>Ways in</h2>
+            <p class="lede">Agents: MCP, plugin, CLI. Humans: Drop, Run (GitHub), Code. Same live URL.</p>
+          </div>
+          <div class="n">PLAN-03</div>
+        </div>
+        <ul class="grid">
+          <li><a href="/mcp"><span class="no">001</span><h3>MCP</h3><code>mcp.aft.page/mcp</code><p>Point your agent. Deploy and rollback.</p></a></li>
+          <li><a href="/install"><span class="no">002</span><h3>CLI</h3><code>aft deploy</code><p>Install once. Ship from the terminal.</p></a></li>
+          <li><a href="/drop"><span class="no">003</span><h3>Drop</h3><code>aft.page/drop</code><p>Folder or zip. No account.</p></a></li>
+          <li><a href="/run/"><span class="no">004</span><h3>Run</h3><code>aft.page/run/owner/repo</code><p>Public GitHub repo → live URL.</p></a></li>
+          <li><a href="/code/"><span class="no">005</span><h3>Code</h3><code>aft.page/code</code><p>Prompt → static site → live URL.</p></a></li>
+          <li><a href="/plugins"><span class="no">006</span><h3>Plugin</h3><code>npx plugins add vaibhavmule/aft.page</code><p>Skill + MCP. Open protocols — then Unix.</p></a></li>
+        </ul>
+      </section>
+
+      <section class="sec inner" id="cmp">
+        <div class="sec-head">
+          <div>
+            <p class="tag">Comparison · sheet 04</p>
+            <h2>Why agent users pick aft</h2>
+            <p class="lede">A URL and a share — without the rest of the ceremony.</p>
+          </div>
+          <div class="n">CMP-04</div>
+        </div>
+        <table class="cmp">
+          <thead><tr><th></th><th>Traditional cloud</th><th class="aft">aft</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Time to URL</strong></td><td>Repo · build · account · wait</td><td class="aft">Seconds from agent output</td></tr>
+            <tr><td><strong>Sharing</strong></td><td>Public site or DIY auth</td><td class="aft">Invite by email · revoke anytime</td></tr>
+            <tr><td><strong>Ownership</strong></td><td>Scattered across tools</td><td class="aft">Claim · update · same URL</td></tr>
+            <tr><td><strong>Custom domain</strong></td><td>Platform DNS ceremony</td><td class="aft">Request access · CNAME to cname.aft.page</td></tr>
+            <tr><td><strong>Lifecycle</strong></td><td>Always-on by default</td><td class="aft">Ship · use · stop when done</td></tr>
+            <tr><td><strong>Built for</strong></td><td>Big Software teams</td><td class="aft">Small software · agent users</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="sec inner" id="price">
+        <div class="sec-head">
+          <div>
+            <p class="tag">Pricing · sheet 05</p>
+            <h2>Free to go live.</h2>
+            <p class="lede">Personal is 30 days free, then $19. Team and Enterprise — one conversation.</p>
+          </div>
+          <div class="n">PRC-05</div>
+        </div>
+        <ul class="price">
+          <li>
+            <h3>Free</h3><p class="d">Get a public link. No account. Claim it to keep, invite, or add secrets.</p>
+            <div class="amt">$0</div><span class="per">during beta</span>
+            <a class="btn btn-ghost" href="#deploy">Deploy an app</a>
+            <span class="inc">Free includes</span>
+            <ul><li>A public link you can share</li><li>Drop files or deploy from your agent</li><li>Claim your URL to keep it</li><li>500 files · 25 MB each · 100 MB total</li></ul>
+          </li>
+          <li class="hot">
+            <h3>Personal</h3><p class="d">Just you. 30 days free, then $19 a month. Viewers never pay.</p>
+            <div class="amt">$19</div><span class="per">after 30 days free</span>
+            <a class="btn btn-primary" href="#wait">Join waitlist</a>
+            <span class="inc">When billing starts</span>
+            <ul><li>30 days free, then $19/month</li><li>Private apps for one person</li><li>Higher limits, secrets, rollback</li><li>Viewers don't need an account</li></ul>
+          </li>
+          <li>
+            <h3>Team &amp; Enterprise</h3><p class="d">Invite ACL, IP allowlist, SSO, or the connector. We quote you.</p>
+            <div class="amt">Talk</div><span class="per">to us</span>
+            <a class="btn btn-ghost" href="mailto:hello@aft.page?subject=aft%20Team%20or%20Enterprise">Contact</a>
+            <span class="inc">On the call</span>
+            <ul><li>Private apps + invite ACL</li><li>Per-site secrets, updates, rollback</li><li>IP allowlist / SSO as they ship</li><li>Connector or pilot if you deploy this week</li></ul>
+          </li>
+        </ul>
+      </section>
+
+      <section class="faq inner sec" id="faq" style="border-bottom:none">
+        <div class="sec-head">
+          <div>
+            <p class="tag">FAQ · sheet 06</p>
+            <h2>Questions, answered</h2>
+          </div>
+          <div class="n">FAQ-06</div>
+        </div>
+        <details><summary>What is aft.page?</summary><p>aft is a cloud for small software — a live link you can share. Drop your files or let your agent deploy. No account.</p></details>
+        <details><summary>Do I need an account to deploy?</summary><p>No. Anonymous deploy gives you a live shareable URL immediately. You only sign in when you want to claim the app, update it, make it private, or invite people.</p></details>
+        <details><summary>Is aft.page free?</summary><p>Yes — going live is free during beta, and claiming your URL to keep it is free too. Private apps, invite-by-email sharing, and per-site secrets are part of Personal ($19/mo after 30 days free). Team and Enterprise are one conversation.</p></details>
+        <details><summary>How is aft different from Cloudflare Pages, Netlify, or Vercel?</summary><p>Deploy a static site: aft.page, Cloudflare Pages, Netlify, or Vercel. aft.page — no account, drop dist/ or MCP, live HTTPS URL in seconds. The others are better when you already have a git repo, CI, preview PRs, or a big production setup.</p></details>
+      </section>
+
+      <section id="wait" style="border:none">
+        <div class="wait">
+          <div>
+            <p class="tag" style="font-family:var(--font-mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--blueprint);margin:0 0 .5rem">Rev block · billing not live</p>
+            <h2>Prices are listed. Charging isn't.</h2>
+            <p>Free now. Personal is 30 days free, then $19. Join the waitlist before billing starts.</p>
+          </div>
+          <form class="wl" onsubmit="return false">
+            <input type="email" name="email" autocomplete="email" placeholder="you@company.com" aria-label="Work email" />
+            <button class="btn btn-primary" type="submit">Join waitlist</button>
+          </form>
+        </div>
+      </section>
+
+      <footer>
+        <div class="foot">
+          <div class="foot-top"><span class="s">● All systems operational</span><span>© 2026 aft.page · sheet aft-01</span></div>
+          <div class="foot-cols">
+            <div><h3>aft</h3><p style="margin:0;color:var(--quiet);font-size:.9rem;max-width:26ch">You built it. aft puts it online. Live links. Invite people. Same URL when you update.</p></div>
+            <div><h3>Product</h3><a href="/docs">Docs</a><a href="#price">Pricing</a><a href="/drop">Drop</a><a href="/projects">Projects</a></div>
+            <div><h3>Agents</h3><a href="/mcp">MCP</a><a href="/with/claude/">Claude Code</a><a href="/with/cursor/">Cursor</a><a href="/with/api/">API</a></div>
+            <div><h3>Company</h3><a href="https://status.aft.page">Status</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></div>
+          </div>
+          <p class="giant">aft<span class="sq">.</span></p>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

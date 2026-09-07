@@ -4,6 +4,10 @@
 >
 > Submitted **17–18 Aug** (late; on-time deadline was 27 Jul). Decision email ~11.5 days later. Portal moved the file to **Previous**. Standard line: *“We're sorry to say that your startup was not selected for an interview.”* YC only gives written feedback after an interview — this email has none.
 >
+> **Update 6 Sep 2026:** the "no users" line below is no longer true — 17 external
+> accounts, 59 claimed sites, all inbound. See § Since submission before drafting
+> the 2 Nov file.
+>
 > **Do not start the new application now.** Next cycle is already open: on-time **2 Nov 2026, 8pm PT**, decision by **11 Dec**. Apply on-time with proof (strangers deploying and returning). Same product story is fine; a rewrite without users is the same file.
 >
 > Archive below is what they actually read. Keep it.
@@ -131,6 +135,41 @@ Are you looking for a cofounder?
 > My mentor (https://www.crunchbase.com/person/freeman-murray) introduced me to YC about ten years ago.
 
 **Batch preference:** current
+
+---
+
+## Since submission — facts for the 2 Nov file (updated 2026-09-06)
+
+The archive above is what YC read; do not edit it. This section is what changed
+after 18 Aug, and it is the only part that makes the next application different.
+
+**"Are people using your product?" — the answer flipped.** It was *No*.
+
+As of 2026-09-06 (ops):
+
+- **17 external accounts** (non-founder, non-`@aft.page`), first 2026-08-12,
+  most recent 2026-09-05. **Fourteen arrived 28 Aug – 5 Sep.**
+- **59 sites claimed and owned by them.** An account only exists after someone
+  deploys, receives a URL, and completes a magic link on that URL — so every row
+  is a stranger who finished the loop with no founder in the session.
+- **6 of the 17 hold ≥2 claimed sites.**
+- **Zero outreach messages sent.** All inbound.
+- 362 total sites; 3 custom domains (founder); 0 paid.
+
+**What is still honestly missing** (say this plainly on 2 Nov — YC reads a padded
+number faster than you can write it):
+
+- No retained-user proof yet: return visits and 7-day usage are not measured.
+- No app shared with a second human (0 invite accepts).
+- No revenue, no LOI, no pilot.
+- Not one of the 17 has been interviewed. One account holds 31 of the 59 sites
+  and has not been inspected.
+
+The 17 Aug file said *"I do not yet have external retained users, so proving that
+other people claim, share, and return to these apps is the main unvalidated
+assumption."* Half of that assumption — **claim** — is now evidence. **Share**
+and **return** are still open, and they are the whole 2 Nov story. Detail and
+next actions: [EVIDENCE-PACK.md](./EVIDENCE-PACK.md) § Ops snapshot.
 
 ---
 

@@ -4,7 +4,7 @@ Internal north star. Canonical mission: [`../rfs.txt`](../rfs.txt).
 Belief: [`../youtube-moment.txt`](../youtube-moment.txt).
 CN + EU are growth exceptions (paid primitives, local agents): [`REGIONS.md`](./REGIONS.md). Not the current build.
 
-Updated: 2026-08-26
+Updated: 2026-09-06
 
 **Runnable OSS (GitHub → URL):** [RUN.md](./RUN.md) — Drop / Deploy / Run / Code:
 [HOST.md](./HOST.md) · [SHIP.md](./SHIP.md) · [CODE.md](./CODE.md). Sites intel:
@@ -58,6 +58,22 @@ China/EU product primitives: [REGIONS.md](./REGIONS.md).
    is Run + Plugin listing + **Code** + **WfP**.
 2. **$1,000 USD** for Show HN + Product Hunt of **AFT Run** — spend on
    Run builds, not ads. Amp only. Details: [RUN.md](./RUN.md) § Launch budget.
+
+**Signal, 2026-09-06 — inbound exists before any channel shipped.** 17 external
+accounts, 59 claimed sites, first 12 Aug, 14 of them 28 Aug – 5 Sep, with **zero**
+outreach, no plugin listing, no Show HN, no AEO work landed. The distribution
+stack above is still the right order — but the engine door is already leaking
+users on its own, which raises the value of the **owned channel** and **cite
+path** rows (more of the same traffic) and lowers the excuse for delaying them.
+
+Two strategy questions this raises, neither answered yet:
+
+1. **Where are they coming from?** No attribution has been run. Check ops →
+   Sites → Traffic (`serve` by country, `page_view` series) against the signup
+   dates before guessing. Emails skew `.at` / `qq.com` / South Asia — consistent
+   with [REGIONS.md](./REGIONS.md), not with a US launch.
+2. **Do they stay?** Nothing here proves it. Numbers and honest caveats:
+   [EVIDENCE-PACK.md](./EVIDENCE-PACK.md) § Ops snapshot.
 
 Retained users are the Winter 2027 YC file. They do not block shipping Run.
 

@@ -1,0 +1,443 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "aft.page API",
+    "version": "1.0.0",
+    "description": "Deploy HTML or a built site to a live HTTPS URL. Cloud for small software — no account, no cloud setup.",
+    "termsOfService": "https://aft.page/",
+    "contact": {
+      "name": "aft.page",
+      "url": "https://aft.page"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.aft.page"
+    }
+  ],
+  "tags": [
+    {
+      "name": "deploy",
+      "description": "Publish and update sites"
+    },
+    {
+      "name": "claim",
+      "description": "Claim an anonymous deploy"
+    },
+    {
+      "name": "auth",
+      "description": "Session and ownership"
+    },
+    {
+      "name": "repo",
+      "description": "Deploy a public GitHub repo"
+    },
+    {
+      "name": "sites",
+      "description": "Deploys, files, logs, rollback"
+    },
+    {
+      "name": "domains",
+      "description": "Custom domains"
+    },
+    {
+      "name": "meta",
+      "description": "Health, changelog, discovery"
+    }
+  ],
+  "paths": {
+    "/v1/deploy": {
+      "post": {
+        "tags": [
+          "deploy"
+        ],
+        "summary": "Deploy HTML or files to a live URL",
+        "description": "multipart field 'files', application/json {files:[{path,content,encoding}]}, or a raw text/html body. Optional ?slug= to target an existing site.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$"
+            },
+            "description": "Target an existing slug (PATCH only)"
+          },
+          {
+            "name": "expires",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+(s|m|h|d)?$"
+            },
+            "description": "Anon quick-view self-destruct, e.g. 1h, 24h"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Live URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "slug": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "deployId": {
+                      "type": "string"
+                    },
+                    "editToken": {
+                      "type": "string"
+                    },
+                    "files": {
+                      "type": "number"
+                    },
+                    "claimUrl": {
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No files / invalid body"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "deploy"
+        ],
+        "summary": "Redeploy to an existing slug",
+        "description": "Requires x-aft-edit-token header or an owning session.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated deploy"
+          },
+          "404": {
+            "description": "Unknown slug"
+          }
+        }
+      }
+    },
+    "/v1/claim/start": {
+      "post": {
+        "tags": [
+          "claim"
+        ],
+        "summary": "Claim an anonymous deploy by email",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "slug",
+                  "email",
+                  "editToken"
+                ],
+                "properties": {
+                  "slug": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "editToken": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Claim started"
+          }
+        }
+      }
+    },
+    "/v1/auth/start": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Send a magic sign-in link",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email sent"
+          }
+        }
+      }
+    },
+    "/v1/auth/verify": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Exchange a magic link token for a session",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session set"
+          }
+        }
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Current user",
+        "responses": {
+          "200": {
+            "description": "User"
+          },
+          "401": {
+            "description": "No session"
+          }
+        }
+      }
+    },
+    "/v1/repo/check": {
+      "post": {
+        "tags": [
+          "repo"
+        ],
+        "summary": "Detect build plan for a public GitHub repo",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "url"
+                ],
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Detected plan"
+          }
+        }
+      }
+    },
+    "/v1/repo/deploy": {
+      "post": {
+        "tags": [
+          "repo"
+        ],
+        "summary": "Deploy a public GitHub repo to a live URL",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "url"
+                ],
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Job started"
+          }
+        }
+      }
+    },
+    "/v1/jobs/{id}": {
+      "get": {
+        "tags": [
+          "repo"
+        ],
+        "summary": "Job status",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Job snapshot"
+          }
+        }
+      }
+    },
+    "/v1/sites/{slug}/deploys": {
+      "get": {
+        "tags": [
+          "sites"
+        ],
+        "summary": "Deploy history for a slug",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deploy list"
+          }
+        }
+      }
+    },
+    "/v1/sites/{slug}/rollback": {
+      "post": {
+        "tags": [
+          "sites"
+        ],
+        "summary": "Point a live slug at a prior deploy",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "deployId"
+                ],
+                "properties": {
+                  "deployId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rolled back"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Health check",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/llms.txt": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "llms.txt agent index",
+        "responses": {
+          "200": {
+            "description": "text/plain"
+          }
+        }
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "This OpenAPI document",
+        "responses": {
+          "200": {
+            "description": "application/json"
+          }
+        }
+      }
+    }
+  }
+}

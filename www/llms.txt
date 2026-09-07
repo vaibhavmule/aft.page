@@ -67,6 +67,8 @@ aft.page does not provide:
 
 ## Endpoints for agents
 
+- OpenAPI: https://aft.page/openapi.json
+- MCP manifest: https://aft.page/.well-known/mcp.json
 - Remote MCP: https://mcp.aft.page/mcp
 - Health: https://api.aft.page/health
 - Deploy: POST https://api.aft.page/v1/deploy

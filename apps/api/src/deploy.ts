@@ -50,6 +50,59 @@ export { sanitizeHtmlDocument } from "./upload";
 
 type UploadFile = { path: string; bytes: ArrayBuffer; contentType: string };
 
+/**
+ * R2 put batching.
+ *
+ * Serial puts made deploy time linear in file count — ~1.7s each, 201s for 120
+ * files. Batching fixed that, but bounding only the file count was wrong: a
+ * batch of 25 x 1MB fired at once and R2 answered
+ * `put: We encountered an internal error (10001)`, turning a 5MB deploy into a
+ * 100s failure. So the batch is bounded by BOTH files in flight and bytes in
+ * flight — many tiny files still go wide, a few large ones do not.
+ *
+ * Measured 2026-09-05 (120 tiny files): serial 201s, batched ~28-30s.
+ */
+const PUT_MAX_FILES_INFLIGHT = 60;
+const PUT_MAX_BYTES_INFLIGHT = 8 * 1024 * 1024;
+
+/** Write every file of a deploy, respecting both in-flight bounds. */
+async function putAllObjects(
+  env: Env,
+  slug: string,
+  deployId: string,
+  files: UploadFile[],
+): Promise<void> {
+  let batch: UploadFile[] = [];
+  let bytes = 0;
+
+  const flush = async () => {
+    if (!batch.length) return;
+    const inflight = batch;
+    batch = [];
+    bytes = 0;
+    await Promise.all(
+      inflight.map((f) =>
+        putObject(env, slug, deployId, f.path, f.bytes, f.contentType),
+      ),
+    );
+  };
+
+  for (const f of files) {
+    const size = f.bytes.byteLength;
+    // A file bigger than the byte budget still goes, just on its own.
+    if (
+      batch.length &&
+      (batch.length >= PUT_MAX_FILES_INFLIGHT ||
+        bytes + size > PUT_MAX_BYTES_INFLIGHT)
+    ) {
+      await flush();
+    }
+    batch.push(f);
+    bytes += size;
+  }
+  await flush();
+}
+
 /** Anon quick-view self-destruct. Bounded so it can't be used for abuse. */
 export const EXPIRY_MAX_SEC = 7 * 24 * 60 * 60;
 export const EXPIRY_DEFAULT_SEC = 60 * 60;
@@ -393,9 +446,7 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
     const deployId = `dep_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
     const createdAt = new Date().toISOString();
 
-    for (const f of files) {
-      await putObject(env, slug, deployId, f.path, f.bytes, f.contentType);
-    }
+    await putAllObjects(env, slug, deployId, files);
 
     const upstreamUrl = manifest?.upstream ?? null;
     const mainModule = manifest?.main ?? null;
@@ -415,29 +466,30 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
     await env.SITES.put(`site:${slug}`, JSON.stringify(meta));
 
     const editToken = sessionUser ? "" : randomToken("aft_edit_");
+    // The row has to exist before anything can update it or reference it by FK.
     await upsertSiteRow(env, slug, deployId, sessionUser?.id ?? null);
-    if (expiresAt) await setSiteExpiresAt(env, slug, expiresAt);
-    await setSiteRuntime(env, slug, {
-      runtime,
-      upstreamUrl,
-      mainModule,
-    });
+    // The rest touch different columns (or a different table), so they are
+    // independent of each other — one round trip instead of four.
+    await Promise.all([
+      expiresAt ? setSiteExpiresAt(env, slug, expiresAt) : Promise.resolve(),
+      setSiteRuntime(env, slug, { runtime, upstreamUrl, mainModule }),
+      editToken
+        ? hashEditToken(env, slug, editToken).then((hash) =>
+            setSiteEditTokenHash(env, slug, hash),
+          )
+        : clearSiteEditTokenHash(env, slug),
+      insertDeploy(env, {
+        id: deployId,
+        slug,
+        fileCount: files.length,
+        bytes: total,
+        createdByUserId: sessionUser?.id ?? null,
+        source: "post",
+        client: resolveClient(request),
+        ms: Math.max(0, Date.now() - started),
+      }),
+    ]);
     scheduleVaultSyncToWorker(env, slug, runtime, upstreamUrl);
-    if (editToken) {
-      await setSiteEditTokenHash(env, slug, await hashEditToken(env, slug, editToken));
-    } else {
-      await clearSiteEditTokenHash(env, slug);
-    }
-    await insertDeploy(env, {
-      id: deployId,
-      slug,
-      fileCount: files.length,
-      bytes: total,
-      createdByUserId: sessionUser?.id ?? null,
-      source: "post",
-      client: resolveClient(request),
-      ms: Math.max(0, Date.now() - started),
-    });
     scheduleSiteThumb(env, { slug, deployId });
 
     const capsPayload = await maybeCapabilities(env, slug, deployId, files);
@@ -552,9 +604,7 @@ async function redeployToSlug(
   const deployId = `dep_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
   const createdAt = new Date().toISOString();
 
-  for (const f of files) {
-    await putObject(env, slug, deployId, f.path, f.bytes, f.contentType);
-  }
+  await putAllObjects(env, slug, deployId, files);
 
   const upstreamUrl = manifest?.upstream ?? null;
   const mainModule = manifest?.main ?? null;
@@ -569,22 +619,20 @@ async function redeployToSlug(
   };
   await env.SITES.put(`site:${slug}`, JSON.stringify(meta));
   await upsertSiteRow(env, slug, deployId, sessionUser?.id ?? null);
-  await setSiteRuntime(env, slug, {
-    runtime,
-    upstreamUrl,
-    mainModule,
-  });
+  await Promise.all([
+    setSiteRuntime(env, slug, { runtime, upstreamUrl, mainModule }),
+    insertDeploy(env, {
+      id: deployId,
+      slug,
+      fileCount: files.length,
+      bytes: total,
+      createdByUserId: sessionUser?.id ?? null,
+      source: "patch",
+      client: resolveClient(request),
+      ms: Math.max(0, Date.now() - started),
+    }),
+  ]);
   scheduleVaultSyncToWorker(env, slug, runtime, upstreamUrl);
-  await insertDeploy(env, {
-    id: deployId,
-    slug,
-    fileCount: files.length,
-    bytes: total,
-    createdByUserId: sessionUser?.id ?? null,
-    source: "patch",
-    client: resolveClient(request),
-    ms: Math.max(0, Date.now() - started),
-  });
   scheduleSiteThumb(env, { slug, deployId });
 
   const capsPayload = await maybeCapabilities(env, slug, deployId, files);

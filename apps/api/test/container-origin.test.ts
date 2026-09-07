@@ -113,3 +113,36 @@ describe("serve rebind", () => {
     }
   });
 });
+
+describe("sandbox:// origins", () => {
+  it("round-trips a sandbox origin and rejects junk", async () => {
+    const {
+      sandboxOrigin,
+      parseSandboxOrigin,
+      isSandboxOrigin,
+      isContainerOrigin,
+      isEphemeralContainerOrigin,
+    } = await import("../src/container-origin");
+
+    const origin = sandboxOrigin("run-abc123", 8080);
+    expect(origin).toBe("sandbox://run-abc123:8080");
+    expect(isSandboxOrigin(origin)).toBe(true);
+    expect(parseSandboxOrigin(origin)).toEqual({ sandboxId: "run-abc123", port: 8080 });
+
+    // Defaults to the publish port when none is given.
+    expect(parseSandboxOrigin("sandbox://run-abc123")).toEqual({
+      sandboxId: "run-abc123",
+      port: 8080,
+    });
+
+    // A sandbox origin is not a tunnel, but both are container origins.
+    expect(isEphemeralContainerOrigin(origin)).toBe(false);
+    expect(isContainerOrigin(origin)).toBe(true);
+    expect(isContainerOrigin("https://x.trycloudflare.com")).toBe(true);
+    expect(isContainerOrigin("https://example.com")).toBe(false);
+
+    // Path traversal or odd ids must not resolve.
+    expect(parseSandboxOrigin("sandbox://../etc:8080")).toBeNull();
+    expect(parseSandboxOrigin("https://example.com")).toBeNull();
+  });
+});

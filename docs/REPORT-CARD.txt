@@ -1,19 +1,27 @@
 # aft.page — Report Card
 # Graded against the "Cloud for Small Software" (YC RFS) playbook.
 # Grounded in: STRATEGY.md, plan.md, CAPABILITIES.md, SHARING.md, PRICING.md, EVIDENCE-PACK.md, BRAND.md.
-# Updated: 2026-08-26
+# Updated: 2026-09-06
 #
 # Two axes: BUILT (does the code exist) vs PROVEN (do real users do it).
-# Strong on built. Thin on proven.
+# Strong on built. Proven moved from zero to "activation, not retention."
 
 ================================================================
-OVERALL: B-  (strong thesis + real platform, unproven traction)
+OVERALL: B   (strong thesis + real platform, first inbound users,
+              retention still unproven)
 ================================================================
 
 Category line "A cloud for small software" is a near-verbatim match to the RFS,
-and much of what the playbook calls "hard" is already shipped. The gap is
-EVIDENCE (empty scoreboard) and two product holes: REMIX/FORK and a
-SHIPPED AGENT PLUGIN.
+and much of what the playbook calls "hard" is already shipped.
+
+CHANGED 6 SEP 2026: the scoreboard is no longer empty. 17 external accounts,
+59 claimed sites, first 12 Aug, 14 of them in the last nine days, all inbound
+(zero outreach sent). Each account = a stranger who deployed, got a URL, and
+finished a magic link unassisted. EVIDENCE-PACK.md § Ops snapshot.
+
+What that buys: activation is proven. What it does not buy: nobody has been
+asked what they built, nobody has invited a second human, nobody pays. The
+remaining holes are RETENTION EVIDENCE, REMIX/FORK, and a SHIPPED AGENT PLUGIN.
 
 ----------------------------------------------------------------
 1. NAIL THE CORE LOOP — A-
@@ -24,7 +32,8 @@ SHIPPED AGENT PLUGIN.
 [~] Default private/unguessable (link = credential)
     -> MISMATCH: anonymous drops default PUBLIC; private is opt-in after claim.
 [x] "Slightly more than static" feels easy (built: secrets + next/worker upstream)
-    -> not yet validated with strangers.
+    -> strangers now reach a URL and claim it; nobody has been asked whether the
+       "slightly more than static" part felt easy. Still unvalidated by interview.
 
 Why not A: playbook wants default PRIVATE, public opt-in. Loop defaults public.
 Make it a conscious decision, not drift.
@@ -53,9 +62,10 @@ You own multi-user, partway on secure, ZERO on remixable.
 [~] Agents manage site after deploy (update, invite, logs)
     -> intentionally OUT of MCP (thin-surface ADR). Post-deploy mgmt is web-only.
 [~] Agent Plugin — package scaffold; per-IDE marketplace pending (use MCP)
-    -> local discover works (1 skill + mcp). Needs push to origin + 30s demo + 5 users.
+    -> local discover works (1 skill + mcp). Needs push to origin + 30s demo.
 
-Ship the demo + 5 stranger deploys -> this jumps to A-.
+5 stranger deploys is now DONE (17 inbound accounts) without the plugin ever
+shipping. Ship the demo + listing -> this jumps to A-.
 
 ----------------------------------------------------------------
 4. DISTRIBUTION — C+
@@ -66,8 +76,11 @@ Ship the demo + 5 stranger deploys -> this jumps to A-.
 [x] Genuinely useful free tier (public deploys + MCP)
 [x] Paid for permanence / private / teams (written: $99 team, $499 connector)
 
-Plan is right; execution pending. Scoreboard (30/60/90/120 outreaches, 20 calls)
-appears unfilled. This is where "execution wins" — riskiest if it stays theoretical.
+Plan is right; execution pending. Outreach scoreboard (30/60/90/120, 20 calls)
+is still 0/120 and 0/20 — six weeks, not one message sent. The 17 users arrived
+anyway, which says the product is findable and says nothing about whether the
+founder can run a sales motion. This is where "execution wins" — the inbound
+trickle is a reason to start talking to people, not a reason to skip it.
 
 ----------------------------------------------------------------
 5. ROADMAP PRIORITIES — B+
@@ -89,14 +102,17 @@ but not wrongly so.
 ----------------------------------------------------------------
 [x] Start solo / tiny
 [~] Charge early — Team $99 written, NO PAID CUSTOMERS YET; no $10-20 personal per-seat tier
-[x] Reliability/speed > features once you have users (CF edge) — "once you have users" is the catch
+    -> 17 external accounts and not one has been shown a price. Ask one.
+[x] Reliability/speed > features once you have users (CF edge) — you now have
+    users; edge reliability starts counting for real
 [~] Security/abuse as constant work — acknowledged; egress stub + abuse story thin
 [x] Watch incumbents + agent tools — sharp competitive map; treats CF as commoditizing static
 [x] Apply to YC — Fall 2026 submitted 18 Aug, rejected 29 Aug (no interview). Next: 2 Nov with users.
 
-THE EVIDENCE PACK IS EMPTY. Every "Actual" column is blank. Your own plan:
-"weekly usage cannot wait" and "agents cannot send your 30 messages."
-Well-built platform, no demonstrated retained users or revenue = capped grade.
+THE EVIDENCE PACK HAS ITS FIRST NUMBERS (6 Sep): activation yes, retention
+unknown, revenue zero. Your own plan: "weekly usage cannot wait" and "agents
+cannot send your 30 messages." Both still true — the users showed up on their
+own, and the grade stays capped until one of them comes back or shares.
 
 ================================================================
 STRENGTHS (keep)
@@ -107,11 +123,14 @@ STRENGTHS (keep)
 - Disciplined non-goals (no BYOC theatre, no static-hosting race).
 
 ================================================================
-TOP 3 FIXES (priority order)
+TOP 3 FIXES (priority order) — reordered 6 Sep for the 17 users
 ================================================================
-1. MAKE RUN STRANGER-HONEST (paste → URL or clear fail). Engine is honest; five trials still a scoreboard.
-2. SHIP CURSOR MARKETPLACE LISTING (plugin + MCP). Owned channel — #1 install path in 2026.
-3. SHOW HN / PH ($1k builds) — unblocked. Remix/fork stays next viral loop after try volume (RFS hole; not amp).
+1. TALK TO THE 17. Sort external sites by last-served, see what they built,
+   email every one of them. Retention evidence beats any new surface.
+2. SHIP CURSOR MARKETPLACE LISTING (plugin + MCP). Owned channel — #1 install
+   path in 2026. Inbound already works; this multiplies the same door.
+3. SHOW HN / PH ($1k builds) — unblocked, and now with a live user count to
+   quote. Remix/fork stays the next viral loop (RFS hole; not amp).
 
 ================================================================
 WATCH ITEMS
@@ -119,3 +138,6 @@ WATCH ITEMS
 - Default-public vs playbook's default-private wedge — make it a conscious call.
 - Egress/sandbox/abuse story still a stub; agent code is "a magnet for bad actors."
 - Thin-MCP bet may under-serve "agents manage the app after deploy" — revisit if users ask.
+- One external account holds 31 of the 59 claimed sites. Inspect before quoting
+  17 users as 17 humans; an agent loop is not a cohort.
+- Waitlist is 2 rows, both founder. Homepage capture is dead weight — fix or cut.

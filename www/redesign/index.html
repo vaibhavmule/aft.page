@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>aft.page — homepage redesign board</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --void: #000;
+        --panel: #0a0a0a;
+        --line: #27272a;
+        --line-bright: #3f3f46;
+        --ink: #fafafa;
+        --quiet: #a1a1aa;
+        --faint: #767680;
+        --good: #22c55e;
+        --bad: #ff6b6b;
+        --font-sans: "Geist Variable", "Geist", "Segoe UI", system-ui, sans-serif;
+        --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, Menlo, Consolas, monospace;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; font-family: var(--font-sans); color: var(--ink); background: var(--void); -webkit-font-smoothing: antialiased; padding-bottom: 6rem; }
+      a { color: inherit; text-decoration: none; }
+      code { font-family: var(--font-mono); font-size: 0.86em; }
+      .wrap { width: min(1120px, calc(100% - 2.5rem)); margin: 0 auto; padding: 2.5rem 0 2rem; }
+      .eyebrow { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); margin: 0 0 0.65rem; }
+      h1 { margin: 0 0 0.55rem; font-size: clamp(1.8rem, 3.4vw, 2.5rem); font-weight: 600; letter-spacing: -0.035em; }
+      .lede { margin: 0 0 2rem; max-width: 44rem; color: var(--quiet); line-height: 1.55; font-size: 0.98rem; }
+
+      .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.5rem; }
+      .concept:last-child:nth-child(3n+1) { grid-column: span 3; }
+      @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .concept:last-child:nth-child(3n+1) { grid-column: auto; } .shot { aspect-ratio: 16/9; } }
+      .concept { border: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; overflow: hidden; }
+      .concept:hover { border-color: var(--line-bright); }
+      .shot { aspect-ratio: 3 / 2; border-bottom: 1px solid var(--line); overflow: hidden; position: relative; background: var(--void); }
+      .shot iframe { width: 200%; height: 100%; border: 0; transform-origin: top left; transform: scale(0.5); pointer-events: none; }
+      .meta { padding: 1.1rem 1.2rem 1.3rem; display: flex; flex-direction: column; gap: 0.45rem; flex: 1; }
+      .meta .tag { font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--good); }
+      .meta h2 { margin: 0; font-size: 1.3rem; letter-spacing: -0.02em; }
+      .meta .mood { margin: 0; color: var(--quiet); font-size: 0.88rem; line-height: 1.5; }
+      .meta .open { margin-top: auto; padding-top: 0.7rem; }
+      .meta .open a { display: inline-block; border: 1px solid var(--line-bright); padding: 0.5rem 1rem; font-weight: 600; font-size: 0.88rem; }
+      .meta .open a:hover { border-color: var(--ink); background: var(--ink); color: #000; }
+
+      .note { margin-top: 2rem; padding: 1rem 1.2rem; border: 1px solid var(--line); border-left: 2px solid var(--line-bright); color: var(--quiet); font-size: 0.88rem; line-height: 1.6; }
+      .note b { color: var(--ink); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <p class="eyebrow">Homepage redesign · concept board</p>
+      <h1>Five ways the aft homepage could look</h1>
+      <p class="lede">E is the full rewrite — new words, new structure, new layout, no recycled homepage copy. D is its layout sibling (same re-structure, old copy retained). A-C are visual-world experiments. The shipped homepage is untouched — open each, then pick.</p>
+
+      <div class="grid">
+        <article class="concept" style="border-color:color-mix(in srgb, var(--good) 55%, var(--line))">
+          <div class="shot"><iframe src="e-rewrite.html" title="Rewrite concept" loading="lazy"></iframe></div>
+          <div class="meta">
+            <span class="tag">E — Rewrite · recommended</span>
+            <h2>Recopied, restructured, relaid</h2>
+            <p class="mood">Every line re-authored, every section re-thought. Hero: "Go live like you share a Doc." Two-way race card (the usual way ≈ 40 min vs aft ≈ 2 s). Share as "Hand it out," keep as "The link outlives the hype," compare as "The ceremony isn't a feature," pricing as "Free is the whole free tier." No recycled homepage copy.</p>
+            <div class="open"><a href="e-rewrite.html" target="_blank" rel="noopener">Open full page ↗</a></div>
+          </div>
+        </article>
+        <article class="concept">
+          <div class="shot"><iframe src="d-contrast.html" title="Contrast concept" loading="lazy"></iframe></div>
+          <div class="meta">
+            <span class="tag">D — Contrast</span>
+            <h2>The race to live</h2>
+            <p class="mood">Same re-structure as E (race-card hero, proof-trail bands) but keeps the existing homepage copy. Useful as the conservative version of E if the new words feel too far.</p>
+            <div class="open"><a href="d-contrast.html" target="_blank" rel="noopener">Open full page ↗</a></div>
+          </div>
+        </article>
+        <article class="concept">
+          <div class="shot"><iframe src="a-instrument.html" title="Instrument concept" loading="lazy"></iframe></div>
+          <div class="meta">
+            <span class="tag">A — Instrument</span>
+            <h2>Spec-sheet console</h2>
+            <p class="mood">Hard-edged, mono-labeled. The page reads as an instrument panel: test-card hero, spec readouts (TtU / auth / status), keypad ways-in, telemetry waitlist. CTA is a sharp-edged rectangle.</p>
+            <div class="open"><a href="a-instrument.html" target="_blank" rel="noopener">Open full page ↗</a></div>
+          </div>
+        </article>
+        <article class="concept">
+          <div class="shot"><iframe src="b-schematic.html" title="Schematic concept" loading="lazy"></iframe></div>
+          <div class="meta">
+            <span class="tag">B — Schematic</span>
+            <h2>Drafting sheet</h2>
+            <p class="mood">Blueprint register on a cool paper-void. Dimension rules, DWG title block, corner ticks, marginalia, section numbers (SPEC-02 / CMP-04). Blueprint blue is used as the drawing-annotation color, not a brand hue.</p>
+            <div class="open"><a href="b-schematic.html" target="_blank" rel="noopener">Open full page ↗</a></div>
+          </div>
+        </article>
+        <article class="concept">
+          <div class="shot"><iframe src="c-editorial.html" title="Index concept" loading="lazy"></iframe></div>
+          <div class="meta">
+            <span class="tag">C — Index</span>
+            <h2>Numbered editorial</h2>
+            <p class="mood">A persistent index rail on the left, giant outline numerals per section, stroke-outline hero type, pill CTAs, magazine rules. Green stays the only live/success voice. The page is a table of contents you scroll through.</p>
+            <div class="open"><a href="c-editorial.html" target="_blank" rel="noopener">Open full page ↗</a></div>
+          </div>
+        </article>
+      </div>
+
+      <p class="note"><b>Scope.</b> These are homepage visual concepts only — real deploy/drop/run wiring is not attached. The shipped <code>www/index.html</code> is untouched. If one of these feels like the lane, the next step is a proper <code>brand board</code> approval pass on the actual homepage file, not shipping from chat.<br /><br /><b>Constraints held.</b> Black/white/green token family, Geist only, no cream/neon/orange, no gradient chrome, no invented proof, 500-file / 25 MB / 100 MB limits, $0 / $19 / Talk pricing, "Prices are listed. Charging isn't."</p>
+    </div>
+  </body>
+</html>

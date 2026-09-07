@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>aft.page — homepage rewrite</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist@5.2.5/index.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@5.2.5/index.min.css" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --void: #000000;
+        --panel: #0a0a0a;
+        --line: #27272a;
+        --line-bright: #3f3f46;
+        --ink: #fafafa;
+        --quiet: #a1a1aa;
+        --faint: #767680;
+        --cta: #ffffff;
+        --cta-ink: #000000;
+        --cta-hover: #e4e4e7;
+        --good: #22c55e;
+        --font-sans: "Geist Variable", "Geist", "Segoe UI", system-ui, sans-serif;
+        --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, Menlo, Consolas, monospace;
+        --page: 1180px;
+        --gutter: 2.5rem;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: auto; }
+      body { margin: 0; min-height: 100vh; font-family: var(--font-sans); font-weight: 400; font-size: 1rem; line-height: 1.6; color: var(--ink); background: var(--void); -webkit-font-smoothing: antialiased; overflow-x: clip; }
+      a { color: inherit; text-decoration: none; }
+      code, pre { font-family: var(--font-mono); }
+      ::selection { background: color-mix(in srgb, var(--good) 35%, transparent); }
+      .visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+      .topnav { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: min(var(--page), calc(100% - var(--gutter))); margin: 0 auto; padding: 1.2rem clamp(1.25rem, 3vw, 2.25rem); border-left: 1px solid var(--line); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+      .brand { display: inline-flex; align-items: center; gap: 0.55rem; font-size: 1.35rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1; }
+      .brand .dot { color: var(--good); }
+      .nav-beta { font-family: var(--font-mono); font-size: 0.65rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--quiet); border: 1px solid var(--line); padding: 0.2rem 0.45rem; border-radius: 999px; }
+      .topnav .links { display: flex; align-items: center; gap: 0.35rem 1.4rem; font-size: 0.92rem; font-weight: 500; color: var(--quiet); }
+      .topnav .links a:hover { color: var(--ink); }
+      .nav-cta { padding: 0.45rem 0.95rem; border-radius: 0.5rem; background: var(--cta); color: var(--cta-ink) !important; font-weight: 600; font-size: 0.88rem; }
+      .nav-cta:hover { background: var(--cta-hover); }
+      .wrap { width: min(var(--page), calc(100% - var(--gutter))); margin: 0 auto; }
+
+      .hero { border-bottom: 1px solid var(--line); position: relative; overflow: hidden; }
+      .hero-inner { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: clamp(1.75rem, 4vw, 3.5rem); align-items: center; padding: 3rem 0 3.5rem; }
+      .hero .pill { display: inline-flex; align-items: center; gap: 0.5rem; margin: 0 0 1.15rem; padding: 0.4rem 0.85rem 0.4rem 0.7rem; border: 1px solid var(--line); border-radius: 999px; color: var(--quiet); font-size: 0.78rem; font-weight: 500; }
+      .hero .pill i { width: 0.4rem; height: 0.4rem; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 3px color-mix(in srgb, var(--good) 22%, transparent); }
+      h1 { margin: 0 0 1.1rem; font-size: clamp(2rem, 4.6vw, 3.2rem); font-weight: 600; letter-spacing: -0.04em; line-height: 1.02; max-width: 14ch; }
+      h1 .green { color: var(--good); }
+      .hero .lede { margin: 0; max-width: 42ch; color: var(--quiet); font-size: 1.08rem; line-height: 1.6; }
+      .hero .lede b { color: var(--ink); font-weight: 600; }
+      .hero .durable { margin: 0.9rem 0 0; max-width: 42ch; font-size: 0.92rem; color: var(--faint); }
+      .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1rem; margin-top: 1.9rem; }
+      .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.8rem 1.3rem; border-radius: 0.5rem; font-weight: 600; font-size: 0.95rem; border: 1px solid transparent; cursor: pointer; }
+      .btn-primary { background: var(--cta); color: var(--cta-ink); }
+      .btn-primary:hover { background: var(--cta-hover); }
+      .btn-ghost { border-color: var(--line-bright); color: var(--ink); }
+      .btn-ghost:hover { border-color: var(--ink); }
+      .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem; margin: 1.7rem 0 0; font-family: var(--font-mono); font-size: 0.78rem; color: var(--faint); }
+      .flow .arr { color: var(--line-bright); }
+      .flow .live { color: var(--good); }
+
+      .race { border: 1px solid var(--line); background: var(--panel); }
+      .race-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.7rem 1rem; border-bottom: 1px solid var(--line); font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); }
+      .race-head .live-dot { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--good); }
+      .race-head .live-dot i { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--good); }
+      .lane { padding: 1.1rem 1rem 1.2rem; border-bottom: 1px solid var(--line); }
+      .lane:last-child { border-bottom: none; }
+      .lane-label { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.8rem; }
+      .lane-label .who { font-size: 0.9rem; font-weight: 600; }
+      .lane-label .time { font-family: var(--font-mono); font-size: 0.9rem; font-weight: 600; letter-spacing: -0.02em; }
+      .lane.old .time { color: var(--faint); text-decoration: line-through; text-decoration-color: var(--faint); }
+      .lane.aft .time { color: var(--good); }
+      .lane-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; font-family: var(--font-mono); font-size: 0.72rem; }
+      .lane-steps .chip { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.55rem; border: 1px solid var(--line); border-radius: 4px; white-space: nowrap; }
+      .lane.old .chip { color: var(--faint); }
+      .lane.aft .chip { color: var(--quiet); border-color: var(--line-bright); }
+      .lane.aft .chip.go { border-color: color-mix(in srgb, var(--good) 55%, var(--line)); color: var(--good); }
+      .lane-steps .sep { color: var(--faint); }
+      .lane-out { margin-top: 0.9rem; font-family: var(--font-mono); font-size: 0.82rem; }
+      .lane.old .lane-out { color: var(--faint); }
+      .lane.aft .lane-out { color: var(--quiet); }
+      .lane.aft .lane-out a { color: var(--good); text-decoration: underline; text-underline-offset: 0.18em; }
+      .lane-note { margin: 0.6rem 0 0; font-size: 0.8rem; }
+      .lane.old .lane-note { color: var(--faint); }
+      .lane.aft .lane-note { color: var(--quiet); }
+      .lane.aft .lane-note b { color: var(--good); font-weight: 600; }
+
+      .proof { border-bottom: 1px solid var(--line); }
+      .proof ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, 1fr); }
+      .proof a { display: flex; align-items: center; justify-content: center; min-height: 3.75rem; padding: 0.6rem 0.4rem; font-size: 0.78rem; font-weight: 600; color: color-mix(in srgb, var(--ink) 72%, transparent); border-right: 1px solid var(--line); white-space: nowrap; }
+      .proof li:last-child a { border-right: none; }
+      .proof a:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 4%, transparent); }
+
+      .band { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; padding: clamp(3rem, 6vw, 5rem) clamp(1.25rem, 3vw, 2.25rem); border-bottom: 1px solid var(--line); width: min(var(--page), calc(100% - var(--gutter))); margin: 0 auto; }
+      .band .kicker { margin: 0 0 0.7rem; font-family: var(--font-mono); font-size: 0.7rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--good); }
+      .band h2 { margin: 0 0 0.85rem; font-size: clamp(1.5rem, 2.9vw, 2.1rem); font-weight: 600; letter-spacing: -0.03em; line-height: 1.18; max-width: 20ch; }
+      .band .copy { margin: 0 0 1.4rem; max-width: 44ch; color: var(--quiet); font-size: 1rem; line-height: 1.6; }
+      .band .copy a { color: var(--ink); text-decoration: underline; text-underline-offset: 0.15em; }
+      .stage { border: 1px solid var(--line); border-radius: 0.5rem; background: var(--panel); padding: 1.35rem 1.4rem; font-family: var(--font-mono); }
+      .stage .cap { margin: 0 0 0.7rem; font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--good); }
+      .acl { list-style: none; margin: 0 0 0.8rem; padding: 0; display: flex; flex-direction: column; font-size: 0.82rem; color: var(--quiet); }
+      .acl li { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid var(--line); }
+      .acl .role { font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+      .acl .role.edit { color: var(--good); }
+      .stage-meta { margin: 0; font-size: 0.72rem; color: var(--faint); }
+      .stage-meta a { color: var(--quiet); text-decoration: underline; text-underline-offset: 0.15em; }
+      .vers { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+      .vers li { display: grid; grid-template-columns: 2.2rem minmax(0, 1fr) auto; gap: 0.8rem; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--line); font-size: 0.82rem; }
+      .vers li:last-child { border-bottom: none; }
+      .vers .v { font-family: var(--font-mono); color: var(--faint); }
+      .vers .url { color: var(--quiet); overflow-wrap: anywhere; }
+      .vers .st { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; }
+      .vers .st.now { color: var(--good); }
+      .vers .st.old { color: var(--faint); }
+
+      .ways { border-bottom: 1px solid var(--line); }
+      .ways-inner { width: min(var(--page), calc(100% - var(--gutter))); margin: 0 auto; padding: clamp(3.5rem, 7vw, 5rem) 0 0; }
+      .tag { margin: 0 0 0.6rem; padding: 0 clamp(1.25rem, 3vw, 2.25rem); font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); }
+      .tag.on { color: var(--good); }
+      .h2 { margin: 0 0 0.75rem; padding: 0 clamp(1.25rem, 3vw, 2.25rem); font-size: clamp(1.5rem, 2.8vw, 2rem); font-weight: 600; letter-spacing: -0.025em; }
+      .lede { margin: 0 0 2rem; padding: 0 clamp(1.25rem, 3vw, 2.25rem); max-width: 56ch; color: var(--quiet); font-size: 0.98rem; }
+      .ways ol { list-style: none; margin: 2rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(6, 1fr); border-top: 1px solid var(--line); }
+      .ways li { border-right: 1px solid var(--line); }
+      .ways li:last-child { border-right: none; }
+      .ways a { display: flex; flex-direction: column; height: 100%; padding: 1.9rem 1.15rem 2.1rem; }
+      .ways a:hover { background: var(--panel); }
+      .ways .no { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.08em; color: var(--faint); margin-bottom: 1.1rem; }
+      .ways h3 { margin: 0 0 0.5rem; font-size: 1.05rem; font-weight: 600; }
+      .ways .cmd { margin: 0 0 0.8rem; font-family: var(--font-mono); font-size: 0.8rem; color: var(--good); overflow-wrap: anywhere; }
+      .ways p { margin: 0; color: var(--quiet); font-size: 0.86rem; line-height: 1.5; }
+      .ways-more { margin: 0; padding: 1rem clamp(1.25rem, 3vw, 2.25rem) 1.9rem; font-size: 0.88rem; color: var(--quiet); }
+      .ways-more a { color: var(--ink); text-decoration: underline; text-underline-offset: 0.18em; }
+
+      .cmp-sec { width: min(var(--page), calc(100% - var(--gutter))); margin: 0 auto; padding: clamp(3.5rem, 7vw, 5rem) clamp(1.25rem, 3vw, 2.25rem); border-bottom: 1px solid var(--line); }
+      .cmp-sec .tag, .cmp-sec .h2, .cmp-sec .lede { padding: 0; }
+      .cmp { margin-top: 2rem; border: 1px solid var(--line); border-radius: 0.5rem; overflow: hidden; }
+      .cmp-row { display: grid; grid-template-columns: minmax(7rem, 0.7fr) minmax(0, 1fr) minmax(0, 1.1fr); }
+      .cmp-row > * { padding: 0.95rem 1.15rem; font-size: 0.9rem; color: var(--quiet); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+      .cmp-row > *:last-child { border-right: none; }
+      .cmp-row:last-child > * { border-bottom: none; }
+      .cmp .h > * { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); background: var(--panel); font-weight: 600; }
+      .cmp .rowhead { color: var(--ink); font-weight: 600; }
+      .cmp .aft-cell { color: var(--ink); background: color-mix(in srgb, var(--good) 5%, transparent); }
+
+      .price-sec { width: min(var(--page), calc(100% - var(--gutter))); margin: 0 auto; padding: clamp(3.5rem, 7vw, 5rem) clamp(1.25rem, 3vw, 2.25rem); border-bottom: 1px solid var(--line); }
+      .price-sec .tag, .price-sec .h2, .price-sec .lede { padding: 0; }
+      .price-grid { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 2rem; border: 1px solid var(--line); border-radius: 0.5rem; overflow: hidden; }
+      .price-card { display: flex; flex-direction: column; padding: 1.6rem 1.45rem 1.75rem; border-right: 1px solid var(--line); }
+      .price-card:last-child { border-right: none; }
+      .price-card.hot { background: var(--panel); }
+      .price-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.4rem; }
+      .price-head h3 { margin: 0; font-size: 0.95rem; font-weight: 600; }
+      .badge { font-family: var(--font-mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--quiet); border: 1px solid var(--line); border-radius: 0.5rem; padding: 0.18rem 0.45rem; }
+      .badge.go { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, var(--line)); }
+      .price-desc { margin: 0 0 1.15rem; font-size: 0.85rem; line-height: 1.5; color: var(--quiet); }
+      .price-fig { display: flex; align-items: baseline; gap: 0.35rem; margin-bottom: 1.15rem; }
+      .price-amt { font-size: clamp(2rem, 3.4vw, 2.35rem); font-weight: 600; letter-spacing: -0.045em; line-height: 1; }
+      .price-per { font-size: 0.72rem; color: var(--faint); }
+      .price-card .btn { width: 100%; justify-content: center; margin-bottom: 1.25rem; }
+      .price-includes { margin: 0 0 0.7rem; padding-top: 1.15rem; border-top: 1px solid var(--line); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; }
+      .price-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.55rem; }
+      .price-list li { position: relative; padding-left: 1.25rem; font-size: 0.82rem; line-height: 1.4; color: var(--quiet); }
+      .price-list li::before { content: "✓"; position: absolute; left: 0; font-size: 0.7rem; color: var(--good); }
+
+      .faq-sec { width: min(var(--page), calc(100% - var(--gutter))); margin: 0 auto; padding: clamp(3.5rem, 7vw, 5rem) clamp(1.25rem, 3vw, 2.25rem); border-bottom: 1px solid var(--line); }
+      .faq-sec .tag, .faq-sec .h2 { padding: 0; }
+      .faq-list { margin-top: 2rem; border: 1px solid var(--line); border-radius: 0.5rem; overflow: hidden; }
+      .faq-item { border-bottom: 1px solid var(--line); }
+      .faq-item:last-child { border-bottom: none; }
+      .faq-item summary { list-style: none; cursor: pointer; padding: 1.1rem 1.25rem; font-weight: 550; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+      .faq-item summary::-webkit-details-marker { display: none; }
+      .faq-item summary::after { content: "+"; font-family: var(--font-mono); color: var(--faint); }
+      .faq-item[open] summary::after { content: "–"; color: var(--good); }
+      .faq-item p { margin: 0; padding: 0 1.25rem 1.2rem; max-width: 68ch; color: var(--quiet); font-size: 0.92rem; }
+
+      .wait-sec { padding: clamp(3rem, 6vw, 4.5rem) clamp(1.25rem, 3vw, 2.25rem); }
+      .wait-card { width: min(var(--page), calc(100% - var(--gutter))); margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3rem); align-items: center; border: 1px solid var(--line); border-radius: 0.5rem; padding: clamp(1.5rem, 4vw, 3rem); background: var(--panel); }
+      .wait-card .eyebrow { margin: 0 0 0.6rem; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--quiet); }
+      .wait-card h2 { margin: 0 0 0.75rem; font-size: clamp(1.5rem, 2.8vw, 2.1rem); line-height: 1.2; letter-spacing: -0.025em; }
+      .wait-card .wcopy > p { margin: 0; color: var(--quiet); max-width: 48ch; }
+      .wl { display: flex; gap: 0.65rem; }
+      .wl input[type="email"] { min-width: 0; flex: 1; padding: 0.8rem 0.9rem; border: 1px solid var(--line-bright); border-radius: 4px; background: var(--void); color: var(--ink); font: inherit; font-size: 1rem; }
+      .wl input[type="email"]:focus { outline: none; border-color: var(--cta); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 8%, transparent); }
+      .wl-note { margin: 0.65rem 0 0; font-size: 0.78rem; color: var(--faint); }
+
+      footer { position: relative; overflow: hidden; border-top: 1px solid var(--line); }
+      .foot { width: min(var(--page), calc(100% - var(--gutter))); margin: 0 auto; padding: 2rem 0 0; }
+      .foot-status { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 2rem; }
+      .status-pill { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.7rem 0.35rem 0.55rem; border: 1px solid var(--line); border-radius: 999px; font-family: var(--font-mono); font-size: 0.72rem; color: var(--good); }
+      .status-pill i { width: 6px; height: 6px; border-radius: 50%; background: var(--good); }
+      .foot-cols { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 2rem; padding: 0 0 2rem; }
+      .foot-cols h3 { margin: 0 0 0.85rem; font-family: var(--font-mono); font-size: 0.68rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+      .foot-cols a { display: block; margin: 0 0 0.55rem; font-size: 0.88rem; font-weight: 500; color: var(--quiet); }
+      .foot-cols a:hover { color: var(--ink); }
+      .foot-tagline { margin: 0 0 0.4rem; font-size: 0.92rem; line-height: 1.55; color: var(--quiet); max-width: 26ch; }
+      .foot-giant { margin: 0; text-align: center; font-size: clamp(5.5rem, 28vw, 16rem); font-weight: 600; letter-spacing: -0.06em; line-height: 0.78; color: transparent; background: linear-gradient(185deg, color-mix(in srgb, var(--ink) 30%, transparent) 0%, transparent 80%); -webkit-background-clip: text; background-clip: text; user-select: none; pointer-events: none; }
+      .foot-giant .sq { color: var(--good); -webkit-text-fill-color: var(--good); }
+
+      @media (max-width: 1000px) {
+        .ways ol { grid-template-columns: repeat(3, 1fr); }
+        .ways li:nth-child(3n) { border-right: none; }
+        .ways li:nth-child(n + 4) { border-top: 1px solid var(--line); }
+      }
+      @media (max-width: 900px) {
+        .hero-inner, .band, .wait-card { grid-template-columns: 1fr; }
+        .band { gap: 2rem; }
+        .price-grid { grid-template-columns: 1fr; }
+        .price-card { border-right: none; border-bottom: 1px solid var(--line); }
+        .price-card:last-child { border-bottom: none; }
+        .cmp-row { grid-template-columns: 1fr; }
+        .cmp-row > * { border-right: none; border-bottom: 1px solid var(--line); }
+        .cmp-row > *:last-child { border-bottom: none; }
+        .foot-cols { grid-template-columns: 1fr 1fr; }
+        .proof ul { grid-template-columns: repeat(4, 1fr); }
+        .proof li:nth-child(n + 5) { border-top: 1px solid var(--line); }
+      }
+      @media (max-width: 640px) {
+        .topnav .links a:not(.nav-cta) { display: none; }
+        .proof ul { grid-template-columns: repeat(2, 1fr); }
+        .ways ol { grid-template-columns: 1fr; }
+        .ways li, .ways li:nth-child(3n) { border-right: none; border-bottom: 1px solid var(--line); }
+        .ways li:last-child { border-bottom: none; }
+        .wl { flex-direction: column; }
+        .wl .btn { width: 100%; }
+      }
+      @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+    </style>
+  </head>
+  <body>
+    <nav class="topnav" aria-label="Primary">
+      <div style="display:flex;align-items:center;gap:0.55rem">
+        <a class="brand" href="/">aft<span class="dot">.</span>page</a>
+        <span class="nav-beta">Beta</span>
+      </div>
+      <div class="links">
+        <a href="#share">Share</a>
+        <a href="#keep">Keep</a>
+        <a href="#ways">Ways in</a>
+        <a href="#compare">Compare</a>
+        <a href="#pricing">Pricing</a>
+        <a href="/login">Log in</a>
+        <a class="nav-cta" href="#deploy">Deploy an app</a>
+      </div>
+    </nav>
+
+    <header class="hero" id="deploy">
+      <div class="wrap hero-inner">
+        <div>
+          <p class="pill"><i></i> No account · no card · no queue</p>
+          <h1>Go live like you share a <span class="green">Doc.</span></h1>
+          <p class="lede">Your agent made the app. aft makes it a <b>URL</b>. No repo wiring, no build pipeline, no billing page — the ceremony big clouds need is for software bigger than yours.</p>
+          <p class="durable">One link that stays yours: same URL on every update, rollback in a click, gone the moment you say so.</p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="#ways">Deploy an app</a>
+            <a class="btn btn-ghost" href="#race">See the two ways</a>
+          </div>
+          <p class="flow"><span>agent</span><span class="arr">→</span><span>aft</span><span class="arr">→</span><span class="live">live URL</span></p>
+        </div>
+
+        <div class="race" id="race" role="img" aria-label="Race: the usual way takes about forty minutes across six steps; aft takes about two seconds in one step">
+          <div class="race-head">
+            <span>Two ways to a live URL</span>
+            <span class="live-dot"><i></i> live</span>
+          </div>
+          <div class="lane old">
+            <div class="lane-label">
+              <span class="who">The usual way</span>
+              <span class="time">≈ 40 min</span>
+            </div>
+            <div class="lane-steps">
+              <span class="chip">create account</span>
+              <span class="sep">→</span>
+              <span class="chip">connect repo</span>
+              <span class="sep">→</span>
+              <span class="chip">add billing</span>
+              <span class="sep">→</span>
+              <span class="chip">pick region</span>
+              <span class="sep">→</span>
+              <span class="chip">wait for CI</span>
+            </div>
+            <p class="lane-out"># → still building…</p>
+            <p class="lane-note">Built for teams that run always-on. You're not one.</p>
+          </div>
+          <div class="lane aft">
+            <div class="lane-label">
+              <span class="who">aft</span>
+              <span class="time">≈ 2 s</span>
+            </div>
+            <div class="lane-steps">
+              <span class="chip go">✓ drop or agent call</span>
+              <span class="sep">→</span>
+              <span class="chip go">✓ live URL</span>
+            </div>
+            <p class="lane-out"># → <a href="https://hello.aft.page">hello.aft.page</a></p>
+            <p class="lane-note"><b>No account.</b> Claim it later to keep it.</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="proof">
+      <ul aria-label="Works with">
+        <li><a href="/with/claude/">Claude Code</a></li>
+        <li><a href="/with/cursor/">Cursor</a></li>
+        <li><a href="/with/codex/">Codex</a></li>
+        <li><a href="/with/chatgpt/">ChatGPT</a></li>
+        <li><a href="/mcp">MCP</a></li>
+        <li><a href="/drop">Drop</a></li>
+        <li><a href="/run/">Run</a></li>
+      </ul>
+    </div>
+
+    <article class="band" id="share">
+      <div class="band-copy">
+        <p class="kicker">Hand it out</p>
+        <h2>Private when it's yours. Public when you say so.</h2>
+        <p class="copy">Share a link like a Doc, not like a deployment. Invite exactly the people you mean to, by email. Change their access, revoke it, close the door — nothing redeploys, nothing breaks, nobody sees the plumbing.</p>
+        <a class="btn btn-ghost" href="https://hello.aft.page" target="_blank" rel="noopener noreferrer">Open a live example</a>
+      </div>
+      <div class="stage" aria-hidden="true">
+        <p class="cap">Share</p>
+        <ul class="acl">
+          <li><span>alex@company.com</span><span class="role edit">edit</span></li>
+          <li><span>ops@company.com</span><span class="role">view</span></li>
+        </ul>
+        <p class="stage-meta">add · change · revoke — same URL the whole time</p>
+      </div>
+    </article>
+
+    <article class="band" id="keep">
+      <div class="band-copy">
+        <p class="kicker">Keep it</p>
+        <h2>The link outlives the hype.</h2>
+        <p class="copy">Software made for a week shouldn't bill you for a year. Update whenever and the URL holds. Roll back the second a change's wrong. When it's over, it's over — no orphaned infrastructure, no surprise invoice.</p>
+        <a class="btn btn-ghost" href="#ways">Ship something</a>
+      </div>
+      <div class="stage" aria-hidden="true">
+        <p class="cap">Lifecycle</p>
+        <ul class="vers">
+          <li><span class="v">v3</span><span class="url">hello.aft.page</span><span class="st now">● live</span></li>
+          <li><span class="v">v2</span><span class="url">rollback point</span><span class="st old">kept</span></li>
+          <li><span class="v">v1</span><span class="url">first deploy</span><span class="st old">kept</span></li>
+        </ul>
+        <p class="stage-meta">ship · update · roll back · stop when done</p>
+      </div>
+    </article>
+
+    <section class="ways" id="ways">
+      <div class="ways-inner">
+        <p class="tag on">Ways in</p>
+        <h2 class="h2">Bring whatever made your app.</h2>
+        <p class="lede">An agent, a terminal, a folder, a repo, a prompt. aft meets the software where it already is — and every door opens onto the same live URL.</p>
+        <ol>
+          <li><a href="/mcp"><span class="no">001</span><h3>MCP</h3><p class="cmd">mcp.aft.page/mcp</p><p>If your agent made it, your agent ships it.</p></a></li>
+          <li><a href="/install"><span class="no">002</span><h3>CLI</h3><p class="cmd">aft deploy</p><p>Install once. Ship from then on.</p></a></li>
+          <li><a href="/drop"><span class="no">003</span><h3>Drop</h3><p class="cmd">aft.page/drop</p><p>A folder or a zip. That's the whole flow.</p></a></li>
+          <li><a href="/run/"><span class="no">004</span><h3>Run</h3><p class="cmd">aft.page/run/owner/repo</p><p>A public repo in, one URL out.</p></a></li>
+          <li><a href="/code/"><span class="no">005</span><h3>Code</h3><p class="cmd">aft.page/code</p><p>Say what it should do. Get a site.</p></a></li>
+          <li><a href="/plugins"><span class="no">006</span><h3>Plugin</h3><p class="cmd">npx plugins add vaibhavmule/aft.page</p><p>Skill + MCP for agents that want both.</p></a></li>
+        </ol>
+        <p class="ways-more">Scripting? <a href="/compare">cURL → POST /v1/deploy</a>. Limits: 500 files · 25 MB each · 100 MB total.</p>
+      </div>
+    </section>
+
+    <section class="cmp-sec" id="compare">
+      <p class="tag">Compare</p>
+      <h2 class="h2">The ceremony isn't a feature.</h2>
+      <p class="lede">Every control panel a big platform adds is work you don't need. Here's the ledger.</p>
+      <div class="cmp" role="table" aria-label="Traditional cloud vs aft">
+        <div class="cmp-row h" role="row"><div role="columnheader"></div><div role="columnheader">Traditional cloud</div><div role="columnheader">aft</div></div>
+        <div class="cmp-row" role="row"><div class="rowhead" role="rowheader">Time to URL</div><div>Repo · build · account · wait</div><div class="aft-cell">Seconds from agent output</div></div>
+        <div class="cmp-row" role="row"><div class="rowhead" role="rowheader">Sharing</div><div>Public site or DIY auth</div><div class="aft-cell">Invite by email · revoke anytime</div></div>
+        <div class="cmp-row" role="row"><div class="rowhead" role="rowheader">Ownership</div><div>Scattered across tools</div><div class="aft-cell">Claim · update · same URL</div></div>
+        <div class="cmp-row" role="row"><div class="rowhead" role="rowheader">Custom domain</div><div>Platform DNS ceremony</div><div class="aft-cell">Request access · CNAME to cname.aft.page</div></div>
+        <div class="cmp-row" role="row"><div class="rowhead" role="rowheader">Lifecycle</div><div>Always-on by default</div><div class="aft-cell">Ship · use · stop when done</div></div>
+        <div class="cmp-row" role="row"><div class="rowhead" role="rowheader">Built for</div><div>Big Software teams</div><div class="aft-cell">Small software · agent users</div></div>
+      </div>
+    </section>
+
+    <section class="price-sec" id="pricing">
+      <p class="tag">Pricing</p>
+      <h2 class="h2">Free is the whole free tier.</h2>
+      <p class="lede">Personal is $19 after 30 free days — when billing starts. It hasn't yet.</p>
+      <div class="price-grid">
+        <article class="price-card">
+          <div class="price-head"><h3>Free</h3><span class="badge go">Now</span></div>
+          <p class="price-desc">A live link the second it's built. Claim it whenever, keep it forever.</p>
+          <div class="price-fig"><span class="price-amt">$0</span><span class="price-per">during beta</span></div>
+          <a class="btn btn-ghost" href="#ways">Deploy an app</a>
+          <p class="price-includes">Free includes</p>
+          <ul class="price-list">
+            <li>A public link you can share</li>
+            <li>Drop files or deploy from your agent</li>
+            <li>Claim your URL to keep it</li>
+            <li>500 files · 25 MB each · 100 MB total</li>
+          </ul>
+        </article>
+        <article class="price-card hot">
+          <div class="price-head"><h3>Personal</h3><span class="badge">Soon</span></div>
+          <p class="price-desc">For the private things only you and a few people use.</p>
+          <div class="price-fig"><span class="price-amt">$19</span><span class="price-per">after 30 days free</span></div>
+          <a class="btn btn-primary" href="#waitlist">Join waitlist</a>
+          <p class="price-includes">When billing starts</p>
+          <ul class="price-list">
+            <li>30 days free, then $19/month</li>
+            <li>Private apps for one person</li>
+            <li>Higher limits, secrets, rollback</li>
+            <li>Viewers don't need an account</li>
+          </ul>
+        </article>
+        <article class="price-card">
+          <div class="price-head"><h3>Team &amp; Enterprise</h3><span class="badge">Design partners</span></div>
+          <p class="price-desc">Access control, SSO, and a human being to quote you.</p>
+          <div class="price-fig"><span class="price-amt">Talk</span><span class="price-per">to us</span></div>
+          <a class="btn btn-ghost" href="mailto:hello@aft.page?subject=aft%20Team%20or%20Enterprise">Contact</a>
+          <p class="price-includes">On the call</p>
+          <ul class="price-list">
+            <li>Private apps + invite ACL</li>
+            <li>Per-site secrets, updates, rollback</li>
+            <li>IP allowlist / SSO as they ship</li>
+            <li>Connector or pilot if you deploy this week</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="faq-sec" id="faq">
+      <p class="tag">FAQ</p>
+      <h2 class="h2">The questions people actually ask.</h2>
+      <div class="faq-list">
+        <details class="faq-item"><summary>Is it really free right now?</summary><p>Yes. Going live is free during beta, and claiming your URL to keep it is free too. Private apps, invite-by-email sharing, and per-site secrets are part of Personal — $19/mo after 30 days free. We will email the waitlist before charging anyone.</p></details>
+        <details class="faq-item"><summary>What can I put on aft?</summary><p>Single HTML documents, or multi-file static sites and SPAs (include an index.html). Limits: 500 files, 25 MB per file, 100 MB total. If your software needs a server that runs code, that's the roadmap — not today.</p></details>
+        <details class="faq-item"><summary>Why not Vercel, Netlify, or Cloudflare Pages?</summary><p>Those are right when you already have a git repo, CI, preview PRs, or a production team. If you have agent output or a dist/ folder and want a live HTTPS URL in seconds with no account, that's the job aft exists for.</p></details>
+        <details class="faq-item"><summary>Who owns the link?</summary><p>Anyone can deploy anonymously and get a link. Claim it and it's yours: same URL on every update, rollback, private access, invite by email. Unclaimed sites are deleted after 30 days idle.</p></details>
+      </div>
+    </section>
+
+    <section class="wait-sec" id="waitlist">
+      <div class="wait-card">
+        <div class="wcopy">
+          <p class="eyebrow">Waitlist</p>
+          <h2>Billing hasn't started. You'll hear it from us first.</h2>
+          <p>Free during beta. $19 a month after 30 free days, whenever charging actually begins. No retroactive bills, no surprise invoices.</p>
+        </div>
+        <form class="wl" onsubmit="return false">
+          <label class="visually-hidden" for="rw-email">Work email</label>
+          <input id="rw-email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@company.com" />
+          <button class="btn btn-primary" type="submit">Join waitlist</button>
+        </form>
+      </div>
+    </section>
+
+    <footer>
+      <div class="foot">
+        <div class="foot-status">
+          <a class="status-pill" href="https://status.aft.page"><i></i> All systems operational</a>
+          <span style="font-size:0.82rem;color:var(--faint)">© 2026 aft.page</span>
+        </div>
+        <div class="foot-cols">
+          <div>
+            <h3>aft</h3>
+            <p class="foot-tagline">Software's done. The link is the last mile. Live links. Invite people. Same URL when you update.</p>
+          </div>
+          <div><h3>Product</h3><a href="/docs">Docs</a><a href="#pricing">Pricing</a><a href="/drop">Drop</a><a href="/projects">Projects</a><a href="/preview">Preview</a></div>
+          <div><h3>Agents</h3><a href="/mcp">MCP</a><a href="/with/claude/">Claude Code</a><a href="/with/cursor/">Cursor</a><a href="/with/codex/">Codex</a><a href="/with/api/">API</a></div>
+          <div><h3>Company</h3><a href="https://status.aft.page">Status</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="/cookies/">Cookies</a></div>
+        </div>
+        <p class="foot-giant">aft<span class="sq">.</span></p>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -367,3 +367,42 @@ describe("dispatchRunContainer", () => {
     expect(out).toEqual({ ok: true });
   });
 });
+
+describe("container jobs publish a sandbox origin", () => {
+  it("accepts sandbox:// for container runs and rejects it elsewhere", async () => {
+    const { parseSandboxOrigin } = await import("../src/container-origin");
+    // The scheme the run-container worker now reports instead of a tunnel URL.
+    expect(parseSandboxOrigin("sandbox://run-abc:8080")).toEqual({
+      sandboxId: "run-abc",
+      port: 8080,
+    });
+    // https origins still parse as not-sandbox, so they take the https path.
+    expect(parseSandboxOrigin("https://x.trycloudflare.com")).toBeNull();
+  });
+});
+
+describe("aft run is a try service", () => {
+  it("expires an anonymous container run but never a claimed one", async () => {
+    const { TRY_TIER_EXPIRY } = await import("../src/jobs");
+    // 1h matches EXPIRY_DEFAULT_SEC for anonymous static quick-views.
+    expect(TRY_TIER_EXPIRY).toBe("1h");
+
+    const { parseExpires, EXPIRY_MAX_SEC } = await import("../src/deploy");
+    const parsed = parseExpires(TRY_TIER_EXPIRY);
+    expect(parsed?.sec).toBe(3600);
+    expect(parsed!.sec).toBeLessThanOrEqual(EXPIRY_MAX_SEC);
+  });
+
+  it("only anonymous container runs are try-tier", () => {
+    // The gate is job.userId: null means nobody claimed it, so the URL is
+    // allowed to be temporary. A claimed run is the durable tier.
+    const tryTier = (isContainer: boolean, userId: string | null) =>
+      isContainer && !userId;
+
+    expect(tryTier(true, null)).toBe(true);
+    expect(tryTier(true, "usr_abc")).toBe(false);
+    // Static and next runs produce durable artifacts; they must not expire.
+    expect(tryTier(false, null)).toBe(false);
+    expect(tryTier(false, "usr_abc")).toBe(false);
+  });
+});

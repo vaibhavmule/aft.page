@@ -1,5 +1,5 @@
 import { getSandbox, type Sandbox } from "@cloudflare/sandbox";
-import { CONTAINER_PUBLISH_PORT, sandboxIdForJob } from "./origin";
+import { CONTAINER_PUBLISH_PORT, sandboxIdForJob, sandboxOrigin } from "./origin";
 import { viteChunkWarnIsOnlyFail } from "./vite-chunk-warn";
 import { completeJob, DEFAULT_API, failJob, patchJob, scrub } from "./job-api";
 import { thinkTurn, MAX_REPAIR_TURNS } from "./think";
@@ -758,32 +758,17 @@ if os.path.isfile(os.path.join(root, "index.html")):
 
     deadline();
     await patchJob(env, api, jobId, jobToken, "deploying", "Publishing");
-    // SDK: Tunnel recovery exhausted → destroy + retry same port (runtime fence).
-    let upstream = "";
-    let tunnelErr = "";
-    for (let attempt = 0; attempt < 3 && !upstream; attempt++) {
-      try {
-        if (attempt > 0) {
-          await sandbox.tunnels.destroy(listenPort).catch(() => null);
-          await new Promise((r) => setTimeout(r, 1500 * attempt));
-        }
-        const tunnel = await sandbox.tunnels.get(listenPort);
-        upstream = tunnel.url || "";
-      } catch (e) {
-        tunnelErr = e instanceof Error ? e.message : String(e);
-      }
-    }
-    if (!upstream) {
-      await failJob(
-        env,
-        api,
-        jobId,
-        jobToken,
-        tunnelErr || "Could not get a public URL for the process.",
-      );
-      return;
-    }
-    await completeJob(env, api, jobId, jobToken, upstream);
+    // No tunnel. The published origin addresses this sandbox through its
+    // Durable Object, so nothing about it can go stale between requests — a
+    // Quick Tunnel hostname under a permanent aft.page URL was what made every
+    // container-backed site die the first time it slept.
+    await completeJob(
+      env,
+      api,
+      jobId,
+      jobToken,
+      sandboxOrigin(sandboxIdForJob(jobId), listenPort),
+    );
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     await failJob(env, api, jobId, jobToken, msg.slice(0, 500));

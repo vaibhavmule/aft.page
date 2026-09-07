@@ -402,10 +402,15 @@ describe("serving files", () => {
     expect((await fetchSite("no-such-view-slug")).status).toBe(404);
     expect((await fetchSite("view-count")).status).toBe(200);
 
-    const raw = await env.SITES.get(viewDayKey(utcDayKey()));
-    expect(raw).toBeTruthy();
-    const map = JSON.parse(raw!) as Record<string, number>;
-    expect(map["view-count"]).toBe(2);
+    // The counter is deferred (waitUntil), so poll rather than read once.
+    const key = viewDayKey("view-count", utcDayKey());
+    let got = await env.SITES.getWithMetadata<{ n?: number }>(key, "text");
+    for (let i = 0; i < 50 && got.value !== "2"; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      got = await env.SITES.getWithMetadata<{ n?: number }>(key, "text");
+    }
+    expect(got.value).toBe("2");
+    expect(got.metadata?.n).toBe(2);
   });
 });
 
@@ -557,6 +562,104 @@ describe("sign in with aft", () => {
       }),
     );
     expect(denied.status).toBe(401);
+  });
+});
+
+describe("edge asset cache", () => {
+  it("serves a second anonymous read from cache and re-misses after a redeploy", async () => {
+    const created = await call(
+      uploadJson([{ path: "index.html", content: "<h1>v1</h1>" }], "cache-me"),
+    );
+    const { editToken } = (await created.json()) as { editToken: string };
+
+    const first = await fetchSite("cache-me");
+    expect(first.status).toBe(200);
+    expect(first.headers.get("x-aft-cache")).toBe("miss");
+    expect(await first.text()).toContain("v1");
+
+    const second = await fetchSite("cache-me");
+    expect(second.status).toBe(200);
+    expect(second.headers.get("x-aft-cache")).toBe("hit");
+    // The browser is still told the short TTL, not the edge's.
+    expect(second.headers.get("cache-control")).toBe("public, max-age=60");
+    expect(await second.text()).toContain("v1");
+
+    // A redeploy mints a new deploy id, so the key changes and content is fresh.
+    await call(
+      new Request(`${API_ORIGIN}/v1/deploy?slug=cache-me`, {
+        method: "PATCH",
+        headers: {
+          "content-type": "application/json",
+          "x-aft-edit-token": editToken,
+        },
+        body: JSON.stringify({ files: [{ path: "index.html", content: "<h1>v2</h1>" }] }),
+      }),
+    );
+    const afterRedeploy = await fetchSite("cache-me");
+    expect(afterRedeploy.headers.get("x-aft-cache")).toBe("miss");
+    expect(await afterRedeploy.text()).toContain("v2");
+  });
+
+  it("never shares a private site through the cache", async () => {
+    const { createSession, findOrCreateUser } = await import("../src/auth");
+    await call(uploadJson([{ path: "index.html", content: "<h1>secret</h1>" }], "cache-private"));
+    const user = await findOrCreateUser(env, "cache-owner@example.com");
+    const { assignSiteOwner } = await import("../src/auth");
+    await assignSiteOwner(env, "cache-private", user.id);
+    const { setSiteVisibility } = await import("../src/db");
+    await setSiteVisibility(env, "cache-private", "private");
+    const session = await createSession(env, user.id);
+
+    const owner = await call(
+      new Request("https://cache-private.aft.page/", {
+        headers: { cookie: `aft_session=${session.token}` },
+      }),
+    );
+    expect(owner.status).toBe(200);
+    expect(owner.headers.get("x-aft-cache")).toBeNull();
+    expect(owner.headers.get("cache-control")).toBe("private, no-store");
+
+    // Anonymous still gets bounced to login, not served the owner's bytes.
+    const anon = await fetchSite("cache-private");
+    expect(anon.status).toBe(302);
+  });
+});
+
+describe("container origins fail fast and honestly", () => {
+  it("shows the not-running page when a container origin is dead", async () => {
+    // Exercised through a tunnel origin because that is the one that genuinely
+    // fails under miniflare — a sandbox:// origin goes through the
+    // RUN_CONTAINER service binding, which the test runtime stubs rather than
+    // failing. Both schemes share one dead-origin block in serveSite, so this
+    // covers the sandbox path's behaviour too.
+    const created = await call(
+      uploadJson([{ path: "index.html", content: "<h1>c</h1>" }], "dead-sandbox"),
+    );
+    // allocateUniqueSlug appends a suffix when the name is taken, so use the
+    // slug that was actually allocated rather than the one requested.
+    const { slug } = (await created.json()) as { slug: string };
+    const { setSiteRuntime } = await import("../src/db");
+    await setSiteRuntime(env, slug, {
+      runtime: "worker",
+      upstreamUrl: "https://does-not-exist-aft-test.trycloudflare.com",
+      mainModule: null,
+    });
+
+    const res = await fetchSite(slug);
+    expect(res.status).toBe(503);
+    expect(res.headers.get("x-aft-origin")).toBe("dead");
+    expect(await res.text()).toContain("isn’t running");
+  });
+
+  it("treats both container origin schemes as container origins", async () => {
+    const { isContainerOrigin, CONTAINER_PROXY_TIMEOUT_MS } = await import(
+      "../src/container-origin"
+    );
+    expect(isContainerOrigin("sandbox://run-x:8080")).toBe(true);
+    expect(isContainerOrigin("https://x.trycloudflare.com")).toBe(true);
+    expect(isContainerOrigin("https://example.com")).toBe(false);
+    // Both paths share one bound so they fail alike.
+    expect(CONTAINER_PROXY_TIMEOUT_MS).toBe(6000);
   });
 });
 

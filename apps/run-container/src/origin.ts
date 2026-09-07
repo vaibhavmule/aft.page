@@ -8,3 +8,8 @@ export function sandboxIdForJob(jobId: string): string {
 export function isSandboxId(id: string): boolean {
   return /^[a-z0-9-]{1,60}$/.test(id) && !id.includes("..");
 }
+
+/** Keep in sync with apps/api/src/container-origin.ts */
+export function sandboxOrigin(sandboxId: string, port = CONTAINER_PUBLISH_PORT): string {
+  return `sandbox://${sandboxId}:${port}`;
+}

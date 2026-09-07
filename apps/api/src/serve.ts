@@ -1,3 +1,4 @@
+import { waitUntil } from "cloudflare:workers";
 import type { Env } from "./env";
 import { RESERVED_SLUGS } from "./env";
 import {
@@ -10,9 +11,11 @@ import {
   deployExists,
   getLatestRunJobBySlug,
   getSiteRow,
+  getSiteRowForServe,
   markSiteExpired,
   touchLastServed,
   type RunJobPhase,
+  type SiteRowRead,
 } from "./db";
 import { corsHeaders, json } from "./http";
 import { trackPageView, trackServe } from "./metrics";
@@ -23,11 +26,15 @@ import { queueOwnerLog } from "./site-logs";
 import { renderSiteOgImage, siteOgImagePath } from "./og-image";
 import { proxyUpstream } from "./runtimes/proxy";
 import {
+  CONTAINER_PROXY_TIMEOUT_MS,
+  isContainerOrigin,
   isEphemeralContainerOrigin,
+  isSandboxOrigin,
   rebindContainerOrigin,
+  serveViaSandbox,
   tunnelOriginDead,
 } from "./container-origin";
-import { canAccessSite, privateDeniedHtml } from "./sharing";
+import { canAccessSiteRow, privateDeniedHtml } from "./sharing";
 import { getObject } from "./storage";
 import { deployPreviewHost, isSmokeSlug, liveSiteHost } from "./site-url";
 import { siteThumbPath } from "./thumb";
@@ -77,6 +84,50 @@ function noteServe(
   if (opts.persist !== false) queueOwnerLog(env, request, slug, opts);
 }
 
+/** What a browser is told. Short, so a redeploy is picked up quickly. */
+const PUBLIC_CACHE_CONTROL = "public, max-age=60";
+/** What the edge stores. Long, because the key pins the deploy id. */
+const EDGE_CACHE_CONTROL = "public, max-age=86400";
+
+/**
+ * Cache key for one file of one deploy.
+ *
+ * Deliberately not the request URL: `{slug}/{deployId}/{path}` is immutable
+ * (a redeploy mints a new deploy id, so it lands on a fresh key and the old
+ * entry just ages out — no purge needed), and it is shared by every host that
+ * can reach the same bytes — `{slug}.aft.page`, a custom domain, `/s/{slug}/`.
+ */
+function assetCacheKey(slug: string, deployId: string, path: string): Request {
+  const key = `https://asset-cache.aft.page/${slug}/${deployId}/${encodeURI(path)}`;
+  return new Request(key, { method: "GET" });
+}
+
+/**
+ * Only anonymous reads of a live deploy are shared-cacheable. A signed-in
+ * viewer gets personalised identity headers and `private, no-store`, and a
+ * pinned preview must never be shared.
+ */
+function mayUseAssetCache(
+  request: Request,
+  access: { user: unknown; role: unknown },
+  pinDeployId: string | undefined,
+): boolean {
+  return (
+    request.method === "GET" && !pinDeployId && !access.user && !access.role
+  );
+}
+
+/** Where the site row was read from, so replica use is observable in prod. */
+function stampD1(headers: Headers, read: SiteRowRead): void {
+  if (read.fellBack) {
+    headers.set("x-aft-d1", "fallback-primary");
+    return;
+  }
+  if (read.servedByPrimary === null && !read.servedByRegion) return;
+  const where = read.servedByPrimary ? "primary" : "replica";
+  headers.set("x-aft-d1", `${where}/${read.servedByRegion || "?"}`);
+}
+
 export async function serveSite(
   request: Request,
   env: Env,
@@ -101,8 +152,17 @@ export async function serveSite(
     if (identity) return identity;
   }
 
-  const access = await canAccessSite(env, request, slug);
+  // One D1 read of `sites` for the whole request. Access control, expiry,
+  // runtime and upstream all come off this row; kicked off alongside the KV
+  // pointer read because neither depends on the other.
+  const sitePromise = getSiteRowForServe(env, slug);
+  const rawPromise = env.SITES.get(`site:${slug}`);
+  const siteRead = await sitePromise;
+  const siteRow = siteRead.row;
+
+  const access = await canAccessSiteRow(env, request, slug, siteRow);
   if (!access.allowed) {
+    void rawPromise.catch(() => null);
     const headers = new Headers({
       "cache-control": "private, no-store",
       "x-aft-slug": slug,
@@ -141,7 +201,7 @@ export async function serveSite(
     if (identity) return identity;
   }
 
-  const raw = await env.SITES.get(`site:${slug}`);
+  const raw = await rawPromise;
   if (!raw) {
     const pending = await resolveSitePending(env, slug);
     if (pending) {
@@ -166,8 +226,6 @@ export async function serveSite(
     badge?: boolean;
     expiresAt?: string | null;
   };
-
-  const siteRow = await getSiteRow(env, slug);
 
   // Anon quick-view self-destruct. Past the deadline (or swept): stop serving,
   // keep the D1 row for audit, free the slug for reuse.
@@ -258,24 +316,62 @@ export async function serveSite(
 
   if (!pinDeployId && upstreamUrl && (runtime === "worker" || runtime === "next")) {
     let res: Response;
-    if (isEphemeralContainerOrigin(upstreamUrl)) {
+    let rebound = false;
+    // Preferred path: reach the container through its Durable Object. No
+    // tunnel hostname, so no rebind, no DNS settle, no 530-on-stale-origin.
+    // A timeout or a thrown fetch means the container is gone; fall through to
+    // the shared dead-origin handling below rather than hanging.
+    if (isSandboxOrigin(upstreamUrl)) {
+      res =
+        (await serveViaSandbox(env, request, upstreamUrl).catch(
+          () => null,
+        )) ?? new Response("container unreachable", { status: 530 });
+    } else if (isEphemeralContainerOrigin(upstreamUrl)) {
       const replay = request.clone();
       try {
-        res = await proxyUpstream(request, upstreamUrl, access.user, root);
+        res = await proxyUpstream(
+          request,
+          upstreamUrl,
+          access.user,
+          root,
+          CONTAINER_PROXY_TIMEOUT_MS,
+        );
       } catch {
         res = new Response("origin unreachable", { status: 530 });
       }
       if (tunnelOriginDead(res.status)) {
         const next = await rebindContainerOrigin(env, slug);
+        rebound = Boolean(next);
         if (next) {
           await res.body?.cancel().catch(() => null);
-          res = await proxyUpstream(replay, next, access.user, root);
-          // ponytail: Quick Tunnel DNS can 530 for ~15–20s after mint. This loop waits up to 12s on the same hostname; first GET can still 530, the next GET on the stable *.aft.page URL recovers. Upgrade: probe origin before swapping KV.
+          try {
+            res = await proxyUpstream(
+              replay,
+              next,
+              access.user,
+              root,
+              CONTAINER_PROXY_TIMEOUT_MS,
+            );
+          } catch {
+            res = new Response("origin unreachable", { status: 530 });
+          }
+          // Quick Tunnel DNS can 530 for a short while after a fresh mint, so
+          // one bounded retry is worth it. It used to poll for 12s, which only
+          // helped a tunnel that was actually coming up — for a container that
+          // is simply gone it added 12s to a failure that was never going to
+          // succeed.
           if (res.status === 530) {
-            const deadline = Date.now() + 12_000;
-            while (res.status === 530 && Date.now() < deadline) {
-              await scheduler.wait(2000);
-              res = await proxyUpstream(request.clone(), next, access.user, root);
+            await scheduler.wait(1500);
+            try {
+              res = await proxyUpstream(
+                request.clone(),
+                next,
+                access.user,
+                root,
+                CONTAINER_PROXY_TIMEOUT_MS,
+              );
+            } catch {
+              res = new Response("origin unreachable", { status: 530 });
             }
           }
         }
@@ -283,15 +379,25 @@ export async function serveSite(
     } else {
       res = await proxyUpstream(request, upstreamUrl, access.user, root);
     }
-    const path = servePath(pathname);
-    // A dead origin never answered, so the site was not "served": do not touch
-    // the 30-day idle clock in sweepUnusedAnonSites, and tell the visitor the
-    // container is not running instead of handing back a bare 530.
-    if (tunnelOriginDead(res.status)) {
+
+    // Shared by both container paths. A sandbox origin whose container is gone
+    // and a tunnel that could not be rebound are the same thing to a visitor,
+    // so they get the same honest page instead of a bare 530.
+    if (isContainerOrigin(upstreamUrl) && tunnelOriginDead(res.status)) {
       await res.body?.cancel().catch(() => null);
+      console.warn(
+        JSON.stringify({
+          level: "warn",
+          where: "container_origin_dead",
+          slug,
+          upstream: upstreamUrl,
+          rebound,
+          status: res.status,
+        }),
+      );
       noteServe(env, request, slug, {
         httpStatus: 503,
-        path,
+        path: servePath(pathname),
       });
       const headers = new Headers({
         "content-type": "text/html; charset=utf-8",
@@ -307,18 +413,22 @@ export async function serveSite(
         headers,
       });
     }
-    // Only mark the site as served once the origin has actually answered —
-    // not while we are still trying (or after it failed). Firing before the
-    // proxy attempt used to reset the 30-day idle clock in
-    // sweepUnusedAnonSites even when a container was dead, so scanner traffic
-    // kept broken sites immortal and they could never be garbage collected.
+
+    // Only now, once the origin actually answered. This used to fire before
+    // the proxy attempt, so a dead container was still marked "served" —
+    // which reset the 30-day idle clock in sweepUnusedAnonSites on every
+    // request, including scanner traffic. Broken sites could therefore never
+    // be garbage collected, which is how 32 of them accumulated. The static
+    // path already only touches after a successful read.
     void touchLastServed(env, slug);
+
+    const path = servePath(pathname);
     noteServe(env, request, slug, {
       httpStatus: res.status,
       path,
     });
     if (looksLikeDocumentPath(pathname) && res.status === 200) {
-      await trackPageView(env, request, slug, {
+      trackPageView(env, request, slug, {
         path,
         contentType: res.headers.get("content-type") || "",
         httpStatus: res.status,
@@ -397,6 +507,35 @@ export async function serveSite(
     return new Response(thumb.body, { status: 200, headers });
   }
 
+  // Edge cache for anonymous reads of a live deploy. Saves the R2 GET and, for
+  // HTML, the OG/chrome rewrite below. The D1 gating above still runs on every
+  // request — that is what keeps a newly paused, expired or private site from
+  // being served out of cache.
+  const cacheKey = mayUseAssetCache(request, access, pinDeployId)
+    ? assetCacheKey(slug, deployId, path)
+    : null;
+  if (cacheKey) {
+    const hit = await caches.default.match(cacheKey).catch(() => undefined);
+    if (hit) {
+      void touchLastServed(env, slug);
+      const headers = new Headers(hit.headers);
+      headers.set("cache-control", PUBLIC_CACHE_CONTROL);
+      headers.set("x-aft-cache", "hit");
+      stampD1(headers, siteRead);
+      noteServe(env, request, slug, {
+        httpStatus: 200,
+        path: servePath(pathname),
+        bytes: Number(headers.get("content-length")) || 0,
+      });
+      trackPageView(env, request, slug, {
+        path: servePath(pathname),
+        contentType: headers.get("content-type") || "",
+        httpStatus: 200,
+      });
+      return new Response(hit.body, { status: 200, headers });
+    }
+  }
+
   let obj = await getObject(env, slug, deployId, path);
   if (!obj && !path.includes(".")) {
     obj = await getObject(env, slug, deployId, `${path}/index.html`);
@@ -423,6 +562,7 @@ export async function serveSite(
   headers.set("x-aft-slug", slug);
   headers.set("x-aft-deploy", deployId);
   headers.set("x-aft-runtime", runtime);
+  stampD1(headers, siteRead);
   if (pinDeployId) headers.set("x-aft-preview", "1");
   applyAftIdentityHeaders(headers, access.user);
   for (const [name, value] of corsHeaders(null, false)) {
@@ -436,7 +576,7 @@ export async function serveSite(
     persist: !pinDeployId,
   });
   if (!pinDeployId) {
-    await trackPageView(env, request, slug, {
+    trackPageView(env, request, slug, {
       path: servePath(pathname),
       contentType: obj.contentType,
       httpStatus: 200,
@@ -465,7 +605,29 @@ export async function serveSite(
     body = out;
   }
 
-  return new Response(body, { status: 200, headers });
+  if (cacheKey) headers.set("x-aft-cache", "miss");
+  const res = new Response(body, { status: 200, headers });
+
+  if (cacheKey) {
+    // Store under a longer TTL than the browser is told: the key pins the
+    // deploy id, so a stale entry is unreachable once a redeploy lands.
+    const stored = new Response(res.clone().body, {
+      status: 200,
+      headers: new Headers(headers),
+    });
+    stored.headers.set("cache-control", EDGE_CACHE_CONTROL);
+    stored.headers.delete("x-aft-cache");
+    const put = caches.default.put(cacheKey, stored).catch(() => {
+      /* a full or unavailable cache must never fail the response */
+    });
+    try {
+      waitUntil(put);
+    } catch {
+      void put;
+    }
+  }
+
+  return res;
 }
 
 function ensureSmokeNoindex(html: string): string {
@@ -854,34 +1016,6 @@ function siteNotFoundResponse(
   return new Response(siteNotFoundHtml(slug, root), { status: 404, headers });
 }
 
-/** A container-backed site whose origin is gone. The app has to be re-run to
- * come back; the deploy record and files are untouched. A clear 503 beats a
- * bare 530 after a proxy timeout.
- */
-export function containerAsleepHtml(slug: string, root: string): string {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="robots" content="noindex"/><meta name="theme-color" content="${BRAND.void}"/><title>App not running — aft.page</title>
-${BRAND_FONT_LINKS}
-<style>
-${BRAND_CSS_VARS}
-*{box-sizing:border-box}body{margin:0;font:15px/1.5 var(--font-sans);color:var(--ink);background:var(--void);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.25rem;-webkit-font-smoothing:antialiased}
-main{width:min(26rem,100%);text-align:center}
-${BRAND_WORDMARK_CSS}
-.brand{display:inline-block;margin:0 0 1.5rem;font-size:1.15rem}
-.badge{display:inline-block;margin:0 0 1rem;padding:.2rem .6rem;border:1px solid var(--line-bright);border-radius:999px;font-size:.72rem;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--quiet)}
-h1{font-size:1.25rem;margin:0 0 .5rem;font-weight:600}
-p{color:var(--quiet);margin:0 0 1rem}p strong{color:var(--ink)}
-.hint{margin-top:1.25rem;font-size:.85rem;color:var(--faint)}.hint a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
-</style></head><body>
-<main>
-  <a class="brand" href="https://${root}/">aft<span>.</span>page</a>
-  <div class="badge">Not running</div>
-  <h1>This app isn’t running</h1>
-  <p><strong>${slug}.${root}</strong> is a server app, and the container behind it has stopped. Nothing is lost — it needs to be run again to come back.</p>
-  <p class="hint">Are you the owner? Re-run it from your <a href="https://${root}/projects">projects</a>.</p>
-</main>
-</body></html>`;
-}
-
 export function sitePausedHtml(slug: string, root: string): string {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="robots" content="noindex"/><meta name="theme-color" content="${BRAND.void}"/><title>Site paused — aft.page</title>
 ${BRAND_FONT_LINKS}
@@ -902,6 +1036,35 @@ p{color:var(--quiet);margin:0 0 1rem}p strong{color:var(--ink)}
   <h1>This site is paused</h1>
   <p><strong>${slug}.${root}</strong> has been deactivated by its owner. Its files are still safe — it just isn’t serving right now.</p>
   <p class="hint">Are you the owner? Reactivate it from your <a href="https://${root}/projects">projects</a>.</p>
+</main>
+</body></html>`;
+}
+
+/**
+ * A container-backed site whose Quick Tunnel origin is gone. The app has to be
+ * re-run to come back; the deploy record and files are untouched. Better a
+ * clear 503 than a bare 530 after a 30-second hang.
+ */
+export function containerAsleepHtml(slug: string, root: string): string {
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="robots" content="noindex"/><meta name="theme-color" content="${BRAND.void}"/><title>App not running — aft.page</title>
+${BRAND_FONT_LINKS}
+<style>
+${BRAND_CSS_VARS}
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 var(--font-sans);color:var(--ink);background:var(--void);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.25rem;-webkit-font-smoothing:antialiased}
+main{width:min(26rem,100%);text-align:center}
+${BRAND_WORDMARK_CSS}
+.brand{display:inline-block;margin:0 0 1.5rem;font-size:1.15rem}
+.badge{display:inline-block;margin:0 0 1rem;padding:.2rem .6rem;border:1px solid var(--line-bright);border-radius:999px;font-size:.72rem;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--quiet)}
+h1{font-size:1.25rem;margin:0 0 .5rem;font-weight:600}
+p{color:var(--quiet);margin:0 0 1rem}p strong{color:var(--ink)}
+.hint{margin-top:1.25rem;font-size:.85rem;color:var(--faint)}.hint a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+</style></head><body>
+<main>
+  <a class="brand" href="https://${root}/">aft<span>.</span>page</a>
+  <div class="badge">Not running</div>
+  <h1>This app isn\u2019t running</h1>
+  <p><strong>${slug}.${root}</strong> is a server app, and the container behind it has stopped. Nothing is lost \u2014 it needs to be run again to come back.</p>
+  <p class="hint">Are you the owner? Re-run it from your <a href="https://${root}/projects">projects</a>.</p>
 </main>
 </body></html>`;
 }

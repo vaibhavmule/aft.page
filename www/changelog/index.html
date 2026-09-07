@@ -10,6 +10,7 @@
     />
     <link rel="canonical" href="https://aft.page/changelog" />
     <link rel="alternate" type="text/markdown" href="https://aft.page/changelog.md" title="Changelog (Markdown)" />
+    <link rel="alternate" type="application/rss+xml" href="https://aft.page/changelog.rss" title="aft.page changelog" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -94,6 +95,7 @@
       <main class="changelog">
         <header class="changelog-hero">
           <h1>Changelog</h1>
+          <p class="lede">What shipped on aft.page — deploys, agents, sharing, and the platform underneath.</p>
           <div class="changelog-toolbar">
             <div class="changelog-filters" role="group" aria-label="Filter by category">
               <button type="button" data-filter="all" aria-pressed="true">All</button>
@@ -101,9 +103,34 @@
               <button type="button" data-filter="agents" aria-pressed="false">Agents</button>
               <button type="button" data-filter="platform" aria-pressed="false">Platform</button>
             </div>
-            <a class="changelog-md" href="https://api.aft.page/v1/changelog.md">Read as Markdown</a>
+            <div class="changelog-controls">
+              <label class="changelog-search">
+                <span class="visually-hidden">Search changelog</span>
+                <input
+                  type="search"
+                  data-changelog-search
+                  placeholder="Search changelog…"
+                  autocomplete="off"
+                />
+              </label>
+              <label class="changelog-month">
+                <span class="visually-hidden">Filter by month</span>
+                <select data-changelog-month>
+                  <option value="">All months</option>
+                </select>
+              </label>
+            </div>
+            <div class="changelog-sub">
+              <a class="changelog-feed-link" href="https://api.aft.page/v1/changelog.rss">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 11a2 2 0 0 1 2 2H3v-2Zm0-4a6 6 0 0 1 6 6H7a4 4 0 0 0-4-4v-2Zm0-4a10 10 0 0 1 10 10h-2a8 8 0 0 0-8-8V3Z" fill="currentColor"/></svg>
+                RSS
+              </a>
+              <a class="changelog-md" href="https://api.aft.page/v1/changelog.md">Read as Markdown</a>
+            </div>
           </div>
         </header>
+
+        <div class="changelog-summary" data-changelog-summary hidden></div>
 
         <div class="changelog-feed" data-changelog-feed>
           <p class="changelog-status">Loading…</p>
@@ -175,14 +202,26 @@
       (function () {
         var API = "https://api.aft.page/v1/changelog";
         var feed = document.querySelector("[data-changelog-feed]");
+        var summaryEl = document.querySelector("[data-changelog-summary]");
         var filters = document.querySelector(".changelog-filters");
-        if (!feed || !filters) return;
+        var searchEl = document.querySelector("[data-changelog-search]");
+        var monthEl = document.querySelector("[data-changelog-month]");
+        if (!feed || !filters || !summaryEl || !searchEl || !monthEl) return;
+
+        var entries = [];
+        var months = [];
 
         function esc(s) {
           return String(s)
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/"/g, "&quot;");
+        }
+
+        var KIND_LABELS = { feat: "FEAT", fix: "FIX", imp: "IMP" };
+
+        function kindOf(e) {
+          return KIND_LABELS[e.kind] ? e.kind : "feat";
         }
 
         function dayLabels(day) {
@@ -195,21 +234,21 @@
           };
         }
 
-        function render(entries) {
-          entries = entries.filter(function (e) {
+        function render() {
+          var visible = entries.filter(function (e) {
             return (
               /^[a-z0-9-]+$/.test(e.id) &&
               /^\d{4}-\d{2}-\d{2}$/.test(e.day) &&
               /^(product|agents|platform)$/.test(e.category)
             );
           });
-          if (!entries.length) {
+          if (!visible.length) {
             feed.innerHTML = '<p class="changelog-status">Nothing shipped yet.</p>';
             return;
           }
           var days = [];
           var byDay = {};
-          entries.forEach(function (e) {
+          visible.forEach(function (e) {
             if (!byDay[e.day]) {
               byDay[e.day] = [];
               days.push(e.day);
@@ -221,16 +260,29 @@
               var lab = dayLabels(day);
               var items = byDay[day]
                 .map(function (e) {
+                  var kind = kindOf(e);
                   return (
                     '<article id="' +
                     e.id +
                     '" data-cat="' +
                     e.category +
-                    '"><h2><a href="#' +
+                    '" data-day="' +
+                    e.day +
+                    '" data-kind="' +
+                    kind +
+                    '" data-title="' +
+                    esc(e.title.toLowerCase()) +
+                    '" data-body="' +
+                    esc(e.body.toLowerCase()) +
+                    '"><div class="changelog-article-head"><span class="cl-kind cl-kind--' +
+                    kind +
+                    '">' +
+                    KIND_LABELS[kind] +
+                    '</span><h2><a href="#' +
                     e.id +
                     '">' +
                     esc(e.title) +
-                    "</a></h2><p>" +
+                    "</a></h2></div><p>" +
                     e.html +
                     "</p></article>"
                   );
@@ -255,13 +307,49 @@
             .join("");
         }
 
-        function applyFilter(f) {
+        function activeFilter() {
+          var on = filters.querySelector('[aria-pressed="true"]');
+          return on ? on.getAttribute("data-filter") : "all";
+        }
+
+        function applyFilters() {
+          var f = activeFilter();
+          var q = (searchEl.value || "").trim().toLowerCase();
+          var month = monthEl.value;
           feed.querySelectorAll(".changelog-items article").forEach(function (el) {
-            el.hidden = f !== "all" && el.getAttribute("data-cat") !== f;
+            var showCat = f === "all" || el.getAttribute("data-cat") === f;
+            var showMonth = !month || (el.getAttribute("data-day") || "").slice(0, 7) === month;
+            var showSearch =
+              !q ||
+              (el.getAttribute("data-title") || "").indexOf(q) !== -1 ||
+              (el.getAttribute("data-body") || "").indexOf(q) !== -1;
+            el.hidden = !(showCat && showMonth && showSearch);
           });
           feed.querySelectorAll(".changelog-day").forEach(function (day) {
             day.hidden = !day.querySelector("article:not([hidden])");
           });
+          renderSummary();
+        }
+
+        function renderSummary() {
+          var visible = feed.querySelectorAll(".changelog-items article:not([hidden])");
+          if (!visible.length) {
+            summaryEl.hidden = true;
+            return;
+          }
+          var counts = { feat: 0, fix: 0, imp: 0 };
+          visible.forEach(function (el) {
+            var k = el.getAttribute("data-kind");
+            if (counts[k] !== undefined) counts[k]++;
+          });
+          var total = visible.length;
+          var bits = [];
+          if (total > 0) bits.push(String(total) + (total === 1 ? " change" : " changes"));
+          if (counts.feat) bits.push(counts.feat + " feature" + (counts.feat === 1 ? "" : "s"));
+          if (counts.fix) bits.push(counts.fix + " fix" + (counts.fix === 1 ? "" : "es"));
+          if (counts.imp) bits.push(counts.imp + " improvement" + (counts.imp === 1 ? "" : "s"));
+          summaryEl.innerHTML = bits.join(" · ");
+          summaryEl.hidden = false;
         }
 
         filters.addEventListener("click", function (e) {
@@ -271,8 +359,11 @@
           filters.querySelectorAll("[data-filter]").forEach(function (b) {
             b.setAttribute("aria-pressed", b === btn ? "true" : "false");
           });
-          applyFilter(f);
+          applyFilters();
         });
+
+        searchEl.addEventListener("input", applyFilters);
+        monthEl.addEventListener("change", applyFilters);
 
         fetch(API)
           .then(function (r) {
@@ -280,9 +371,16 @@
             return r.json();
           })
           .then(function (data) {
-            render(Array.isArray(data.entries) ? data.entries : []);
-            var on = filters.querySelector('[aria-pressed="true"]');
-            applyFilter(on ? on.getAttribute("data-filter") : "all");
+            entries = Array.isArray(data.entries) ? data.entries : [];
+            months = Array.isArray(data.months) ? data.months : [];
+            months.forEach(function (m) {
+              var opt = document.createElement("option");
+              opt.value = m.month;
+              opt.textContent = m.label;
+              monthEl.appendChild(opt);
+            });
+            render();
+            applyFilters();
           })
           .catch(function () {
             feed.innerHTML = '<p class="changelog-status">Could not load changelog.</p>';

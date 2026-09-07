@@ -127,3 +127,22 @@ describe("GET /v1/sites/{slug}/files", () => {
     expect(escape.status).toBe(400);
   });
 });
+
+describe("R2 put retry classification", () => {
+  it("retries transient R2 errors and not deterministic ones", async () => {
+    const { r2ErrorIsRetryable } = await import("../src/storage");
+
+    expect(
+      r2ErrorIsRetryable(
+        new Error("put: We encountered an internal error. Please try again. (10001)"),
+      ),
+    ).toBe(true);
+    expect(r2ErrorIsRetryable(new Error("Too many requests 429"))).toBe(true);
+    expect(r2ErrorIsRetryable(new Error("503 Service Unavailable"))).toBe(true);
+
+    // A malformed request will fail identically every time — retrying wastes
+    // the caller's deploy budget.
+    expect(r2ErrorIsRetryable(new Error("Key too long"))).toBe(false);
+    expect(r2ErrorIsRetryable(new Error("The specified bucket does not exist"))).toBe(false);
+  });
+});

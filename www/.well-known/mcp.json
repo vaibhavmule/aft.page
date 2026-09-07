@@ -1,0 +1,5 @@
+{
+  "name": "aft.page",
+  "description": "Deploy HTML or a built dist/ to a live HTTPS URL. No account.",
+  "url": "https://mcp.aft.page/mcp"
+}

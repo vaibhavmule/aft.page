@@ -374,11 +374,15 @@ describe("status.aft.page host", () => {
         (p) => p.id === "sites" && p.siteSlug === "hello" && p.url === "https://hello.aft.page/",
       ),
     ).toBe(true);
-    expect(STATUS_PROBES.some((p) => p.id === "express")).toBe(false);
+    // "express" is the Server apps probe. Public since 2026-09-05, but flagged
+    // informational so a sleeping fixture cannot paint the platform red.
+    expect(
+      STATUS_PROBES.some(
+        (p) => p.id === "express" && p.name === "Server apps" && p.informational === true,
+      ),
+    ).toBe(true);
     expect(STATUS_PROBES.some((p) => p.id === "aft_me")).toBe(false);
-    expect(OPS_ONLY_PROBES.some((p) => p.id === "express" && p.mode === "internal_site")).toBe(
-      true,
-    );
+    expect(OPS_ONLY_PROBES.some((p) => p.id === "express")).toBe(false);
     expect(
       STATUS_PROBES.some(
         (p) =>
@@ -398,8 +402,14 @@ describe("status.aft.page host", () => {
     expect(mcp?.url).toBe("https://mcp.aft.page/health");
     expect(snap.components.some((c) => c.id === "express")).toBe(true);
     const pub = filterPublicSnapshot(snap);
-    expect(pub.components.some((c) => c.id === "express")).toBe(false);
-    expect(pub.overall).toBe(snap.overall);
+    // Server apps is public now, so it survives the filter — but it is
+    // informational, so it must not change the headline either way.
+    expect(pub.components.some((c) => c.id === "express")).toBe(true);
+    expect(pub.overall).toBe(
+      overallFromComponents(
+        pub.components.filter((c) => c.id !== "express"),
+      ),
+    );
   });
 
   it("does not paint public overall from a down Express fixture", () => {
@@ -421,8 +431,19 @@ describe("status.aft.page host", () => {
       ],
     };
     const pub = filterPublicSnapshot(snap);
+    // The invariant that matters and must not regress: a down Server apps
+    // probe is visible, but never decides the headline and never pages.
     expect(pub.overall).toBe("operational");
-    expect(pub.components.map((c) => c.id)).toEqual(["api", "www", "sites", "mcp"]);
+    expect(pub.components.map((c) => c.id)).toEqual([
+      "api",
+      "www",
+      "sites",
+      "mcp",
+      "express",
+    ]);
+    expect(pub.components.find((c) => c.id === "express")?.status).toBe(
+      "major_outage",
+    );
   });
 
   it("does not serve status as a user site slug", async () => {

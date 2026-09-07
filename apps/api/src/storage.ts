@@ -12,6 +12,27 @@ export function normalizePath(path: string): string {
   return path.replace(/^(\.\/)+/, "").replace(/^\/+/, "").replace(/\\/g, "/");
 }
 
+/**
+ * R2 answers a burst of concurrent puts with
+ * `put: We encountered an internal error. Please try again. (10001)`.
+ * It says "try again" and it means it — observed 2026-09-05, where a single
+ * unretried failure turned a whole multi-MB deploy into an opaque 500 after
+ * 100+ seconds, discarding every file that had already landed.
+ */
+const PUT_ATTEMPTS = 3;
+const PUT_RETRY_BASE_MS = 250;
+
+/** Transient R2 failures worth another attempt. A bad key or size is not. */
+export function r2ErrorIsRetryable(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  return (
+    /\(10001\)/.test(message) ||
+    /internal error/i.test(message) ||
+    /try again/i.test(message) ||
+    /\b(429|500|502|503|504)\b/.test(message)
+  );
+}
+
 export async function putObject(
   env: Env,
   slug: string,
@@ -21,11 +42,33 @@ export async function putObject(
   contentType: string,
 ): Promise<void> {
   if (env.BUCKET) {
-    await env.BUCKET.put(r2Key(slug, deployId, path), bytes, {
-      httpMetadata: { contentType },
-      customMetadata: { slug, deployId },
-    });
-    return;
+    const key = r2Key(slug, deployId, path);
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await env.BUCKET.put(key, bytes, {
+          httpMetadata: { contentType },
+          customMetadata: { slug, deployId },
+        });
+        return;
+      } catch (err) {
+        if (attempt >= PUT_ATTEMPTS || !r2ErrorIsRetryable(err)) throw err;
+        console.warn(
+          JSON.stringify({
+            level: "warn",
+            where: "r2_put_retry",
+            slug,
+            deployId,
+            path,
+            attempt,
+            message: err instanceof Error ? err.message : String(err),
+          }),
+        );
+        // Exponential with jitter so a whole batch does not retry in lockstep.
+        const backoff =
+          PUT_RETRY_BASE_MS * 2 ** (attempt - 1) + Math.random() * 200;
+        await scheduler.wait(backoff);
+      }
+    }
   }
   const key = kvFileKey(slug, deployId, path);
   await env.SITES.put(key, bytes, {

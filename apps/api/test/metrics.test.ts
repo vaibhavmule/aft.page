@@ -172,22 +172,24 @@ describe("writeMetric", () => {
         },
       } as AnalyticsEngineDataset,
     };
-    await trackPageView(
+    trackPageView(
       bound,
       new Request("https://hello.aft.page/app.css"),
       "hello",
       { path: "/app.css", contentType: "text/css", httpStatus: 200 },
     );
-    await trackPageView(bound, new Request("https://hello.aft.page/"), "hello", {
+    trackPageView(bound, new Request("https://hello.aft.page/"), "hello", {
       path: "/",
       contentType: "text/html; charset=utf-8",
       httpStatus: 404,
     });
-    await trackPageView(bound, new Request("https://hello.aft.page/"), "hello", {
+    trackPageView(bound, new Request("https://hello.aft.page/"), "hello", {
       path: "/",
       contentType: "text/html; charset=utf-8",
       httpStatus: 200,
     });
+    // trackPageView is fire-and-forget; let the deferred AE write land.
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(points).toHaveLength(1);
     expect(points[0]).toMatchObject({
       indexes: ["page_view"],

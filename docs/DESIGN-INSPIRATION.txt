@@ -1,5 +1,5 @@
 # aft.page — design inspiration
-# Updated: 2026-08-08
+# Updated: 2026-09-05
 
 Vision first (vision.txt / rfs.txt). External sites supply craft only.
 They do not redefine the product.
@@ -46,6 +46,21 @@ one sharp H2); product proof before feature sprawl; footer status +
 copyright meta row above a giant brand mark.
 Reject: enterprise code-review / PR-inbox category; mega feature grids;
 literal neon-tube logo (aft uses recessed `aft.` instead).
+
+### Command Code (commandcode.ai)
+Adopt: statement-grade "anti-slop" positioning used as an explicit
+editorial weapon — the page argues against a generic category (AI coding
+agents) by showing a before/after contrast strip (other agents vs
+Command) that makes the category reflex the enemy; "one sharp line"
+headlines ("stop patching AI slop"); honest proof via named testimonials
+(Zeno Rocha, David Thyresson) rather than invented logos; a numbered
+01-07 capabilities list that stays scannable, plus a strong lone
+terminal artifact repeated as the product proof.
+Reject: the AI-startup price-table sprawl (five stacked plans with
+"GOAT" naming) and model-name marketing — aft pricing stays three quiet
+cards; the dark-but-colorful neon-tinted palette and the heavy
+animated-noise visual texture (aft uses hairline + tonal steps, not
+noise loops); "subscribe to be a GOAT" voice.
 
 aft stern mark: `aft.` below chrome only; no hover / neon on the watermark.
 
