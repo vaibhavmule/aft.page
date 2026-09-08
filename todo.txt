@@ -32,7 +32,7 @@
 
 ### Proof
 - [x] Prospect share-checklist app live: https://share-checklist.aft.page
-- [x] Ops distribute tracker — retired with Worker ops SSR (8 Sep 2026). Rebuild in workspace `ops/` + aft deploy. docs/parked/smoke-audit-ops.md
+- [x] Ops distribute tracker — retired with Worker ops SSR (8 Sep 2026). docs/parked/smoke-audit-ops.md
 - [ ] Push plugin · marketplace submit · 30s demo live
 - [ ] Cursor marketplace + cursor.directory submit
 - [x] ≥5 strangers deploy without founder help — **17 external accounts, 59 claimed
