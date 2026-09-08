@@ -31,6 +31,7 @@ import { extractAftManifest } from "./manifest";
 import { explainDeployFailure } from "./fail-explain";
 import { scheduleVaultSyncToWorker } from "./worker-secrets";
 import {
+  deployerKey,
   resolveClient,
   trackDeploy,
   trackRedeploy,
@@ -222,6 +223,18 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
   const started = Date.now();
   const requestId = deployRequestId(request);
   let uploadFiles: UploadFile[] = [];
+  const rawClient = (request.headers.get("x-aft-client") || "").toLowerCase().trim();
+  // Synthetic (smoke / test) deploys fire intentional rejects to assert codes.
+  const synthetic = rawClient === "smoke" || rawClient === "test";
+  // Resolve the actor once per request: signed-in email when a session exists,
+  // else a stable anon hash of the deployer (never the raw IP). Smoke/test
+  // requests are tagged so ops can tell a real user from our own suite.
+  const actorPromise = (async (): Promise<string> => {
+    if (synthetic) return rawClient;
+    const user = await resolveSessionUser(env, request);
+    if (user) return user.email;
+    return `anon_${await deployerKey(request)}`;
+  })();
 
   const done = async (
     response: Response,
@@ -233,7 +246,7 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
     });
     if (response.status >= 400) {
       const error = fields?.error || String(response.status);
-      const source = resolveClient(request);
+      const source = synthetic ? rawClient : resolveClient(request);
       const explained = explainDeployFailure({
         error,
         path: fields?.path,
@@ -271,6 +284,7 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
           httpStatus: response.status,
           requestId,
           hint,
+          actor: await actorPromise,
           upload: {
             contentType: request.headers.get("content-type") || undefined,
             userAgent: request.headers.get("user-agent") || undefined,
@@ -330,6 +344,7 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
         {
           error: "no_files",
           hint: "multipart field 'files' or raw text/html body",
+          slug: url.searchParams.get("slug")?.toLowerCase() || undefined,
         },
       );
     }
@@ -429,6 +444,7 @@ export async function deploy(request: Request, env: Env): Promise<Response> {
     if (preferred && RESERVED_SLUGS.has(preferred)) {
       return done(deployJson(request, { error: "reserved_slug", slug: preferred }, 400), {
         error: "reserved_slug",
+        slug: preferred,
         bytes: total,
         files: files.length,
       });

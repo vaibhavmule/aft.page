@@ -103,7 +103,7 @@ export async function incrementViewCount(
 }
 
 /** One UTC day's counters as `{ slug: n }`. Counts ride in list metadata. */
-async function loadViewDay(
+export async function loadViewDay(
   kv: KVNamespace,
   day: string,
 ): Promise<Record<string, number>> {

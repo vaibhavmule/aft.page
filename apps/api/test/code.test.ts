@@ -74,16 +74,6 @@ describe("run jobs", () => {
     const listed = await listRunJobs(env, 10);
     expect(listed.some((row) => row.id === job.id && row.status === "failed")).toBe(true);
   });
-
-  it("POST /api/run/sample rejects a bad secret", async () => {
-    const res = await call(
-      new Request("https://ops.aft.page/api/run/sample", {
-        method: "POST",
-        headers: { authorization: "Bearer wrong" },
-      }),
-    );
-    expect(res.status).toBe(401);
-  });
 });
 
 describe("POST /v1/code/generate", () => {

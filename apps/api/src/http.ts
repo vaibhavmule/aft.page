@@ -1,6 +1,6 @@
 import type { Env } from "./env";
 import { RESERVED_SLUGS } from "./env";
-import { parseDeployPreviewLabel, smokeSlugForCase } from "./site-url";
+import { parseDeployPreviewLabel } from "./site-url";
 
 export function json(
   data: unknown,
@@ -146,22 +146,6 @@ export function subdomainSlug(host: string, root: string): string | null {
   return sub.toLowerCase();
 }
 
-/**
- * `{case}.test.{root}` → case id; `test.{root}` → "".
- * One extra label past the zone wildcard — needs its own DNS + Worker route.
- */
-export function testHostCase(host: string, root: string): string | null {
-  const h = host.toLowerCase();
-  const apex = `test.${root}`;
-  if (h === apex) return "";
-  const suffix = `.${apex}`;
-  if (!h.endsWith(suffix)) return null;
-  const left = h.slice(0, -suffix.length);
-  if (!left || left.includes(".")) return null;
-  if (!/^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/.test(left)) return null;
-  return left;
-}
-
 export function clientIp(request: Request): string {
   return request.headers.get("cf-connecting-ip") || "0.0.0.0";
 }
@@ -175,7 +159,7 @@ export function cookieDomain(env: Env): string {
  * Tenant hosts share Domain=.aft.page session cookies. A credentialed call
  * from https://{attacker}.aft.page must not act on another slug.
  * No Origin/Referer = non-browser (curl, MCP, editToken header) — allow.
- * Product hosts (apex, ops, preview, …) may act on any slug.
+ * Product hosts (apex, preview, …) may act on any slug.
  */
 export function originMayActOnSlug(
   request: Request,
@@ -192,10 +176,6 @@ export function originMayActOnSlug(
   }
   if (host === "localhost" || host === "127.0.0.1") return true;
   if (host === root) return true;
-  const testCase = testHostCase(host, root);
-  if (testCase !== null) {
-    return testCase !== "" && smokeSlugForCase(testCase) === slug;
-  }
   if (!host.endsWith(`.${root}`)) return true;
   const left = host.slice(0, -(root.length + 1));
   if (!left || left.includes(".")) return false;

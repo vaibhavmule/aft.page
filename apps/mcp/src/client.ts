@@ -287,7 +287,7 @@ export async function deployRepo(
       }
       await new Promise((resolve) => setTimeout(resolve, pollMs));
     }
-    throw new Error("Build timed out. Retry deploy_repo or check ops.aft.page/run.");
+    throw new Error("Build timed out. Retry deploy_repo or check job status via GET /v1/jobs/{id}.");
   }
   if (typeof body.url === "string" && typeof body.slug === "string") {
     return {

@@ -1,20 +1,20 @@
 # aft.page QA
 
-Founder-facing umbrella. **Security ship gate is Hijack CIL**, not this folder and not Bug0/Passmark.
+Founder-facing umbrella. **Security ship gate is Vitest + scanner ritual**, not Bug0/Passmark.
 
 ## Layers
 
 | Layer | Command | Owns |
 | --- | --- | --- |
-| 1. API Vitest | `cd apps/api && npm test` | Auth, claim, sharing, secrets, waitlist |
-| 2. Hijack CIL | `cd apps/api && npm run audit` → [ops `#audit`](https://ops.aft.page/#audit) | editToken death, origin bind, IDOR, magic single-use, open redirect, private body, CORS, CLI, ops gate, invite ACL |
-| 3. Scanner ritual | `cd apps/api && npm run audit:security` | Public `.git` / `.env` / `.php` must not 200 — see [`docs/SECURITY-AUDIT.md`](../docs/SECURITY-AUDIT.md) |
-| 4. Mail auth | `node qa/email-auth/check.mjs` | SPF / DKIM / DMARC / MX |
-| 5. Page smoke | `node qa/pages/check.mjs` | Every public URL loads (fetch or CF Browser Rendering) |
-| 6. Browser-sec | `node qa/browser-sec/check.mjs` | Junk-path 404, private no-leak, ops login gate (HTTP checks of browser-visible gates) |
+| 1. API Vitest | `cd apps/api && npm test` | Auth, claim, sharing, secrets, waitlist, deploy |
+| 2. Scanner ritual | `cd apps/api && npm run audit:security` | Public `.git` / `.env` / `.php` must not 200 — see [`docs/SECURITY-AUDIT.md`](../docs/SECURITY-AUDIT.md) |
+| 3. Mail auth | `node qa/email-auth/check.mjs` | SPF / DKIM / DMARC / MX |
+| 4. Page smoke | `node qa/pages/check.mjs` | Every public URL loads (fetch or CF Browser Rendering) |
+| 5. Browser-sec | `node qa/browser-sec/check.mjs` | Junk-path 404, private no-leak (HTTP checks) |
 | Live CLI T2U (opt-in) | `node qa/time-to-url/check.mjs` | Build/deploy HTML, Vite, and Next fixtures; measure URL readiness |
-| Compat probe (opt-in) | `node qa/compat-probe/check.mjs` then `run.mjs` | Random GitHub framework repos → `aft deploy`; log URL or fail |
-| Arbitrary runtime (opt-in) | [`qa/arbitrary-runtime.md`](./arbitrary-runtime.md) | Detect + live honesty corpus for invent / ensureRuntime / DinD / need-pg |
+| Arbitrary runtime (opt-in) | [`qa/arbitrary-runtime.md`](./arbitrary-runtime.md) | Detect + live honesty corpus |
+
+**Retired 8 Sep 2026:** Hijack CIL (`npm run audit`), prod smoke suite, compat-probe GH Action, ops HTML scoreboard. See [`docs/parked/smoke-audit-ops.md`](../docs/parked/smoke-audit-ops.md).
 
 Passmark / Bug0 hire: **deferred**. Never the security gate.
 
@@ -35,14 +35,8 @@ node qa/pages/check.mjs
 AFT_QA_MODE=fetch node qa/pages/check.mjs
 ```
 
-Security still means:
-
-```sh
-cd apps/api && npm run audit
-```
-
 ## Cadence
 
-- **API PR / deploy:** Vitest + `npm run audit` (when `SMOKE_SECRET` available)
-- **Daily:** `audit:security` + Ops Probes + compat probe GH Action (`qa/compat-probe/`)
+- **API PR / deploy:** Vitest
+- **Daily:** `audit:security` + status.aft.page
 - **Weekly / pre-launch:** `node qa/check.mjs`

@@ -128,7 +128,7 @@ It is **not** retention, sharing, or revenue:
 1. Sort external sites by `last_served_at` / views 7d — who actually came back.
 2. Look at what `platinum303030@` (31 sites) and `609860565@qq.com` (6 sites) built.
 3. Email all 17. One question: *what did you deploy, and did you send it to anyone?*
-4. Only then fill the stranger-trial rows in [../qa/stranger-trial.md](../qa/stranger-trial.md)
+4. Ops external users who deployed from public docs alone are the stranger proof (no separate trial table)
    — that scoreboard wants named, observed trials, and inbound accounts do not
    substitute for it.
 

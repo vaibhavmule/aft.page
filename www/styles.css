@@ -1204,123 +1204,6 @@ strong {
   text-decoration: underline;
 }
 
-.cli-panel {
-  border: 1px solid var(--line-bright);
-  border-radius: 0.35rem;
-  background: color-mix(in srgb, var(--void) 82%, transparent);
-  overflow: hidden;
-  box-shadow:
-    0 24px 80px color-mix(in srgb, #000 55%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--ink) 4%, transparent);
-}
-
-.cli-ascii {
-  margin: 0;
-  padding: 1.35rem 1.35rem 0.35rem;
-  font-family: var(--font-sans);
-  font-size: clamp(2.5rem, 5vw, 3.5rem);
-  font-weight: 600;
-  letter-spacing: -0.04em;
-  line-height: 1;
-  color: var(--ink);
-}
-
-.cli-ascii::after {
-  content: ".";
-  color: var(--quiet);
-  font-weight: 600;
-}
-
-.cli-tagline {
-  margin: 0;
-  padding: 0 1.35rem 1rem;
-  border-bottom: 1px solid var(--line);
-  font-size: 0.88rem;
-  color: var(--quiet);
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 0.55rem 0.75rem;
-}
-
-.cli-beta {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--quiet);
-  border: 1px solid var(--line);
-  padding: 0.12rem 0.4rem;
-  border-radius: 999px;
-}
-
-.cli-body {
-  padding: 1rem 1.35rem 1.25rem;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  line-height: 1.65;
-  color: var(--quiet);
-  overflow-x: auto;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.012) 0 1px,
-    transparent 1px 3px
-  );
-}
-
-.cli-body pre {
-  margin: 0;
-  white-space: pre;
-  overflow-wrap: normal;
-  word-break: normal;
-}
-
-.cli-section {
-  margin: 0.85rem 0 0.25rem;
-  font-size: 0.65rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--faint);
-}
-
-.cli-section:first-child {
-  margin-top: 0;
-}
-
-.cli-body pre.cli-typed,
-.cli-body pre.cli-out {
-  --chars: 20;
-  display: block;
-  overflow: hidden;
-  white-space: pre;
-  width: 0;
-  max-width: none;
-  color: var(--ink);
-  animation: type-reveal calc(var(--chars) * 0.028s) steps(var(--chars)) forwards;
-  animation-delay: var(--delay, 0s);
-}
-
-.cli-body pre.cli-out {
-  color: var(--quiet);
-}
-
-.cli-prompt {
-  margin: 1rem 0 0;
-  color: var(--ink);
-  display: flex;
-  align-items: center;
-  gap: 0.15rem;
-}
-
-.cli-cursor {
-  display: inline-block;
-  width: 0.55em;
-  height: 1em;
-  background: var(--good);
-  animation: blink 1s step-end infinite;
-}
-
 /* —— Proof: live example + works-with strip —— */
 .proof-band {
   position: relative;
@@ -1646,11 +1529,6 @@ strong {
   .terminal-out,
   .terminal-gate,
   .cursor,
-  .cli-typed,
-  .cli-out,
-  .cli-body pre.cli-typed,
-  .cli-body pre.cli-out,
-  .cli-cursor,
   .hero-frame,
   .hero-product,
   .proof-band,
@@ -4429,8 +4307,7 @@ a.band-stage-url:hover {
     flex-direction: column;
   }
 
-  .terminal-body,
-  .cli-body {
+  .terminal-body {
     font-size: 0.68rem;
   }
 

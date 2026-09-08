@@ -112,7 +112,8 @@ non-cacheable, redacted `503` response.
 
 Workers Analytics Engine dataset `aft_page_metrics` (binding `METRICS`) — see
 [`docs/METRICS.md`](../../docs/METRICS.md). The binding is live in
-`wrangler.jsonc`. Founder debug UI: `https://ops.aft.page` ([OPS.md](../../docs/OPS.md)).
+`wrangler.jsonc`. Scoreboard: D1 + [status.aft.page](https://status.aft.page)
+([OPS.md](../../docs/OPS.md) — Worker ops SSR retired).
 
 ## Tests
 
@@ -133,11 +134,8 @@ cd apps/api
 npm install --legacy-peer-deps
 npx wrangler d1 migrations apply aft-page --remote
 npx wrangler deploy
-SMOKE_SECRET=… npm run smoke
 ```
 
 Requires Cloudflare account access (`npx wrangler login`). Account id: set `CLOUDFLARE_ACCOUNT_ID` if needed.
 
-`npm run smoke` hits `POST https://ops.aft.page/api/smoke/run` (Bearer `SMOKE_SECRET`). Same suite also runs on cron `0 4,16 * * *` UTC. Scoreboard: [ops.aft.page/smoke](https://ops.aft.page/smoke). Canaries: `https://test--{case}.aft.page`.
-
-`npm run audit` hits `POST https://ops.aft.page/api/audit/run` (same secret). Hijack cases: [ops.aft.page/audit](https://ops.aft.page/audit). Scanner junk is `npm run audit:security`.
+Smoke/audit suites were retired (2026-09-08). Scanner ritual remains: `npm run audit:security`.

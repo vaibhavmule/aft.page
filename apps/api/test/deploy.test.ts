@@ -157,9 +157,11 @@ describe("deploy limits", () => {
     expect(res.headers.get("x-aft-request-id")).toBeTruthy();
     expect(await res.json()).toMatchObject({ error: "file_too_large", path: "big.bin" });
     const row = await env.DB.prepare(
-      `SELECT error, path FROM deploy_failures WHERE path = 'big.bin' ORDER BY created_at DESC LIMIT 1`,
-    ).first<{ error: string; path: string }>();
+      `SELECT error, path, actor FROM deploy_failures WHERE path = 'big.bin' ORDER BY created_at DESC LIMIT 1`,
+    ).first<{ error: string; path: string; actor: string | null }>();
     expect(row).toMatchObject({ error: "file_too_large", path: "big.bin" });
+    // No session + no client tag → anon deployer hash, not raw PII.
+    expect(row?.actor).toMatch(/^anon_[0-9a-f]{16}$/);
   });
 
   it("rejects an oversized payload spread across files", async () => {
@@ -271,5 +273,54 @@ describe("web Drop is static-only; MCP/CLI use the engine", () => {
     const body = (await res.json()) as { error: string; reason: string };
     expect(body.error).toBe("needs_container");
     expect(body.reason).toMatch(/Express/);
+  });
+});
+
+describe("deploy failure attribution", () => {
+  it("attributes an authed deployer's reject to their email", async () => {
+    const user = await findOrCreateUser(env, "attrib@example.com");
+    const session = await createSession(env, user.id);
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/deploy?slug=attrib-test`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${session.token}`,
+        },
+        body: JSON.stringify({ files: [] }),
+      }),
+    );
+    expect(res.status).toBe(400);
+    expect((await res.json()) as { error: string }).toMatchObject({
+      error: "no_files",
+    });
+    const row = await env.DB.prepare(
+      `SELECT error, actor FROM deploy_failures WHERE slug = 'attrib-test' ORDER BY created_at DESC LIMIT 1`,
+    ).first<{ error: string; actor: string | null }>();
+    expect(row?.error).toBe("no_files");
+    expect(row?.actor).toBe("attrib@example.com");
+  });
+
+  it("tags smoke-suite rejects as actor 'smoke'", async () => {
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/deploy?slug=ai`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-aft-client": "smoke",
+        },
+        body: JSON.stringify({ files: [{ path: "index.html", content: "<p>x</p>" }] }),
+      }),
+    );
+    expect(res.status).toBe(400);
+    expect((await res.json()) as { error: string }).toMatchObject({
+      error: "reserved_slug",
+    });
+    const row = await env.DB.prepare(
+      `SELECT error, actor, source FROM deploy_failures WHERE slug = 'ai' ORDER BY created_at DESC LIMIT 1`,
+    ).first<{ error: string; actor: string | null; source: string }>();
+    expect(row?.error).toBe("reserved_slug");
+    expect(row?.actor).toBe("smoke");
+    expect(row?.source).toBe("smoke");
   });
 });

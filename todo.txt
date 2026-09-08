@@ -32,12 +32,12 @@
 
 ### Proof
 - [x] Prospect share-checklist app live: https://share-checklist.aft.page
-- [x] Ops distribute tracker: https://ops.aft.page/distribute (ready → listings → proof)
+- [x] Ops distribute tracker — retired with Worker ops SSR (8 Sep 2026). Rebuild in workspace `ops/` + aft deploy. docs/parked/smoke-audit-ops.md
 - [ ] Push plugin · marketplace submit · 30s demo live
 - [ ] Cursor marketplace + cursor.directory submit
 - [x] ≥5 strangers deploy without founder help — **17 external accounts, 59 claimed
       sites, all inbound (6 Sep 2026)**. docs/EVIDENCE-PACK.md § Ops snapshot.
-      Named/observed trials still 0/5: [qa/stranger-trial.md](qa/stranger-trial.md)
+      Proof = ops external users who ran Drop/CLI/Run from public docs alone (no founder backchannel).
 - [ ] **Email the 17 external users** — what did you deploy, did you send it to anyone
 - [ ] **Measure return visits** — sort external sites by last-served / views 7d on ops
 - [ ] Inspect `platinum303030@` (31 sites) — real user or agent loop

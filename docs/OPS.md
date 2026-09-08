@@ -1,230 +1,49 @@
 # aft.page ops (founder)
 
+**Worker SSR ops + smoke/audit retired 8 Sep 2026.** See [parked/smoke-audit-ops.md](./parked/smoke-audit-ops.md).
+
 Three failure classes. Do not mix them.
 
 | Class | What it looks like | Where to look |
 | --- | --- | --- |
 | A — product down | status red | [status.aft.page](https://status.aft.page) |
-| B — deploy rejected | error code + file path | [ops.aft.page](https://ops.aft.page) → recent failures |
-| C — client never arrived | API green, MCP traffic 0 | Cursor MCP session; ops health still green |
-
-Cursor `mcp_auth` timeout is **C**. aft.page was up. See [USE-CASE-PARAKH.md](../../docs/USE-CASE-PARAKH.md).
+| B — deploy rejected | error code + path | D1 `deploy_failures` (wrangler / Cloudflare MCP) |
+| C — client never arrived | API green, MCP traffic 0 | Cursor MCP session |
 
 ## Surfaces
 
 | URL | Audience | Job |
 | --- | --- | --- |
-| `https://status.aft.page` | public | Website, API, static hello, MCP. Not try-URL canaries (they sleep). |
-| `https://ops.aft.page` | founder (`OPS_EMAILS`) | Scoreboard + users/sites/domains + CF cost + failed deploys + feedback + retry + smoke + hijack audit + domain access + **[/distribute](https://ops.aft.page/distribute)** (plugin/CLI marketplace pipeline) |
-
-**Engine (Network + Stories + Run on ops):** Drop is static HTML/`dist/` only. MCP, CLI, and Run share detect → build → URL. Shipped runners: static, Vite, Next. Container Run is an ephemeral try (Express/Flask/etc); ops watches one Express fixture, public status does not. Drop/CLI upload of server source still returns `needs_container` (paste public GitHub on Run). `not_a_site` (db/redis/queue) remains an honest detect fail.
-| `https://test--{case}.aft.page` | public canary (`noindex`) | Last smoke artifacts — not tenant inventory |
-| `https://test--fw-N.aft.page` | founder | Compat probe canaries (random GitHub → AFT) |
+| `https://status.aft.page` | public | Website, API, hello, MCP probes |
+| `https://api.aft.page` | product | Deploy, claim, share, Run jobs |
 | CF Workers Logs | you | Stacks / MCP JSON-RPC |
 
-The status **API** probe means this Worker isolate is alive. It does **not** check D1 or R2.
+`ops.aft.page` returns **410 gone**. Scoreboard = D1 + status.
 
-No Sentry. No Grafana. Ops is the scoreboard + product counts + CF cost estimate + replay + feedback.
+Status **API** probe = Worker isolate alive. It does **not** check D1 or R2.
 
-**Email** (`EMAIL` → `OPS_EMAILS`, today hello@ + gmail): platform **500** / unhandled throw (api/ops/status/mcp only — not tenant `*.aft.page`), **smoke/hijack fail**, **status major_outage** (30m debounce), and a **once-per-UTC-day Class B digest** of deploy rejects. Not per-request 400 — that is reserved_slug / no_files noise.
+No Sentry. No Grafana.
 
-Workers MTD request/CPU on the cost card comes from GraphQL (`CF_API_TOKEN`, Account Analytics Read) when set, otherwise STATUS KV `ops:cf-usage` written via Cloudflare MCP on API deploy. Overage is $0.30/M req and $0.02/M CPU-ms after 10M req / 30M CPU-ms included ($5 Workers Paid floor). Refresh the KV snapshot when deploying `aft-page-api` if the token is not set.
+**Email** (`EMAIL` → `OPS_EMAILS`): platform **500** / unhandled throw (api/status/mcp), **status major_outage** (30m debounce), once-per-UTC-day Class B deploy digest. Not per-request 400.
 
-Same `CF_API_TOKEN` powers **Sites → Traffic** Analytics Engine SQL — needs **Account Analytics Read** (AE SQL API).
+## Crons (API Worker)
 
-**WfP trigger** (same cost row): D1 count of non-test `runtime=worker|next` sites with `upstream_url`. Pill `stay` / `watch` / `switch`. Watch at **400** site Workers, switch at **450** (500 Paid cap) or when MTD overage **> $20** (WfP’s extra floor — only wins if most of that is proxy double-bill). Static Drop is not this count. Numbers: [ADR-TEMP-ACCOUNTS.md](./ADR-TEMP-ACCOUNTS.md) § Costing.
-
-## Hub (what the nav actually is)
-
-Four groups. Every panel is a real path, not a hash — deep-link them.
-
-| Group | Panels | Badge counts |
-| --- | --- | --- |
-| **Operate** | `/overview` · `/audit` · `/smoke` · `/run` · `/failures` · `/status-probes` · `/logs` | hijack cases · smoke cases · run jobs · failure rows · status probes · probe rows. The list panels cap at 50 rows — a badge reading `50` means *capped*, not *exactly fifty*. |
-| **Inventory** | `/sites` · `/users?filter=external` · `/domains` · `/feedback` | live D1 counts |
-| **Map** | `/cf` · `/network` · `/stories` | CF practice cases |
-| **Grow** | `/distribute` · `/todos` | checklist `done/total` (18 distribute · 26 startup-30d) |
-
-Counts you will quote at people, and what they actually mean:
-
-- **Sites** — `COUNT(*) FROM sites WHERE slug NOT LIKE 'test--%'`. Includes
-  **unclaimed anonymous drops**, excludes smoke/compat canaries. It is not a
-  user count and not a "real apps" count.
-- **Users** — every row in `users`, split by `isInternalUserEmail`: `OPS_EMAILS`,
-  `@aft.page`, and plus-aliases of ops emails are **internal**; everything else
-  is **external**. The tab defaults to **External** because internal is founder
-  noise. A user row only exists after a magic-link claim on a live URL, so an
-  external row = a stranger who deployed and chose to own the URL.
-- **Users → Sites column** — claimed sites for that owner; links to
-  `/sites?owner=…`. Requested custom domains sort first; Approve is on the row.
-- **Waitlist** (bottom of `/users`) — homepage email capture, **not accounts**.
-  Never add it to the user count.
-- **Domains** — `custom_domains` rows (plus the RDAP brand-domain watch table).
-
-First external users landed 2026-08-12. Dated snapshot and what is still
-unproven: [EVIDENCE-PACK.md](./EVIDENCE-PACK.md) § Ops snapshot.
-
-## Two Workers Logs streams
-
-`mcp.aft.page` hits **aft-page-api** (wildcard `*.aft.page`), which service-binds **aft-page-mcp**. One Cursor call is two streams:
-
-1. `aft-page-api` — host + `/v1/deploy`
-2. `aft-page-mcp` — JSON-RPC (`initialize` / `tools/list` / `tools/call`), including Zod failures that never reach the API
-
-Ops page links both. Correlate with `x-aft-request-id` (also AE `blob6` / D1 `deploy_failures.request_id`).
-
-## Scoreboard
-
-`/` and `/api.json` show last **24h** and **7d**. Overview is **critical first** (health, hijack `/audit`, smoke CIL, deploy fails, scanner 200s), then **information** (T2U, rates, product, CF practices `/cf`, CF cost).
-
-- **Sites** (`/sites`) — **Traffic** (HTML `page_view` time series + `serve` by country; ranges 24h / 7d / 30d / 90d; Hello | All) then **Inventory** (filters + table, including Deleting ≤7d). AE via `CF_API_TOKEN` (Account Analytics Read), cached ~5m in STATUS KV `ops:visits:{scope}:{range}`. `GET /api/visits?range=&scope=`. `/visits` redirects to `/sites`. Hub panels use paths (`/overview`, `/smoke`, …), not hashes.
-- **CF practices** (`/cf`) — D1/R2/KV/AE/Email bindings, MCP service bind, secrets, `nodejs_compat`, `compatibility_date` &lt; 6mo, SaaS zone. First ops hit writes STATUS KV `ops:cf-practices`; status cron refreshes when older than 20h.
-
-- **Time-to-URL** (`deploys.ms`) — n / p50 / p95 machine clock (Worker → URL). Look at this every day. Human T2U is a stopwatch — [time-to-url.txt](../time-to-url.txt)
-- successes (`deploys`) + failures (`deploy_failures`) + success rate
-- by source (`mcp` / `web` / `curl` / `ops-retry` / …) — successes use `deploys.client`, failures use `deploy_failures.source`
-- what to fix: top error codes + one-line why
-
-Successful upload bodies are **not** stored. Success = counts + `ms`. Old rows have `ms` null and do not enter T2U.
-
-## Deploy failures + retry
-
-Every non-ok `/v1/deploy` **after** parse has files:
-
-- structured `console.warn` `{ where: "deploy", error, path, slug, source, requestId }`
-- D1 `deploy_failures` (14-day retention, pruned on the status cron) including **every uploaded path + size** (`upload_json`)
-- file **bytes** in R2 `ops/failures/{id}/{path}` (`has_payload=1`) — not in D1
-- Analytics Engine `deploy` with `blob2` = error, `blob5` = path
-
-`no_files` / auth-before-body: no payload (nothing to retry).
-
-Cron prune deletes the D1 rows **and** the R2 prefix.
-
-Same `*/5` status cron also hard-deletes unclaimed sites idle 30d (`sweepUnusedAnonSites`) and unpauses leftover unclaimed `active=0` rows from the old 7d park. Skips `_login` and `test--*`. Claimed sites are never swept.
-
-Click a failure on ops → why / fix / file list. Each file: download + text preview (64 KB cap) at `GET /f/{id}/file?path=`.
-
-**Retry** = `POST /f/{id}/retry` (same session + `OPS_EMAILS`). Reloads R2 bytes and calls `deploy()` as a new anonymous POST (`x-aft-client: ops-retry`). New slug + live URL, or a new failure row if it still blows limits.
-
-MCP Zod failures that never hit the API still cannot be retried from ops (class C).
-
-500s return `{ error: "internal" }` only. The exception text stays in the log + `hint` column.
-
-## Gate
-
-`OPS_EMAILS` wrangler var (comma-separated). Unauthenticated → `https://aft.page/login?next=https://ops.aft.page/`. Wrong email → 403.
-
-## Custom domains (Cloudflare for SaaS)
-
-Live. Invite-only: `users.custom_domains` = `requested` | `approved`. Ops emails
-skip the gate. Approve on [ops.aft.page](https://ops.aft.page/#users).
-
-## Scanner probes
-
-Daily scanner junk: [SECURITY-AUDIT.md](./SECURITY-AUDIT.md) ·
-`cd apps/api && npm run audit:security`.
-
-Hijack CIL (origin↔slug, editToken dead after claim): ops `/audit` ·
-`SMOKE_SECRET=… npm run audit` · same cron as smoke.
-
-Ops → Logs → **Probes**: `site_logs` grouped by path + status + slug + country
-(last 7d). Same `isJunkPath` tokens as serve (`.git`, `wp-`, `.env`, `.php`,
-`xmlrpc`, `phpinfo`, `cgi-bin`). Public junk → 404 text/plain **before** SPA
-fallback. Private stays 302 login. No IPs. CF GraphQL sees 200 `.env`/`.php`
-that owner logs drop. Security Events / bot scores are not on this plan.
-
-When comparing Vercel, do not use
-[readme-black-chi.vercel.app](https://readme-black-chi.vercel.app/). That host
-is a **Vercel Drop of a README file** — no `index.html`, so `/` is 404. Same
-class as our readme-only deploy (`pd-readme` in vitest). It is not a SPA and
-not how Vercel serves Next. Use a real app host or a public `*.aft.page` slug.
-
-Already on:
-
-1. SSL for SaaS + fallback origin `cname.aft.page` (AAAA `100::`, Active).
-2. Zone route `*/*` → `aft-page-api` (in wrangler.jsonc). Apex `aft.page/*` →
-   None so Pages stays.
-3. Customers CNAME to `cname.aft.page`. D1 `custom_domains` + Domain tab
-   progress. First dogfood: `discovra.ai`.
-
-`CF_API_TOKEN` needs SSL and Certificates Write. Zone id is `CF_ZONE_ID`.
-
-## Compat probe (random GitHub → AFT)
-
-Internal QA mill, not smoke and not a product. Node script: search GitHub → clone → `npm run build` → hosted `aft deploy` → log URL or fail reason.
-
-| When | How |
+| Cron | Job |
 | --- | --- |
-| Daily | GH Action cron `0 12 * * *` UTC (`.github/workflows/compat-probe.yml`) |
-| Founder laptop | `node qa/compat-probe/run.mjs` |
+| `*/5 * * * *` | Status probes, deploy digest, prune, anon GC |
+| `0 9 * * *` | Brand-domain RDAP watch (`aft.dev` / `aft.app`) |
 
-Canaries: `test--fw-1` … `test--fw-5` (`https://test--fw-N.aft.page`, noindex). Logs: `qa/compat-probe/logs/` (gitignored) + Action artifact. Failures are expected — read `reason`, do not page. Smoke sweep **does not** delete these slugs (only smoke catalog cases). Do not mark frameworks verified from random-repo luck; T2U fixtures still gate [FRAMEWORK-COMPATIBILITY.md](./FRAMEWORK-COMPATIBILITY.md).
+Customer Run builds still use GitHub Actions (`run-vite` / `run-next` / `run-static-build`).
 
-## Prod smoke (`*.test.aft.page`)
+## Counts (D1)
 
-Not status. Status pings `/health`. Smoke **deploys**, hits MCP `tools/call`, claims the URL, then deletes **smoke catalog** `test--{case}` leftovers (not `test--fw-*` / T2U).
+Prefer remote D1 on database `aft-page` (`49430d21-12f7-44dd-bd74-fb649148b34c`). Exclude `slug LIKE 'test--%'` from site counts. Internal emails: `OPS_EMAILS` + `*@aft.page` + founder gmail +tags.
 
-| When | How |
-| --- | --- |
-| After every API deploy | `cd apps/api && SMOKE_SECRET=… npm run smoke` |
-| Twice daily | cron `0 4,16 * * *` UTC (not the `*/5` status cron) |
-| Founder | ops → Smoke. Run now + cron: isolate then MCP-isolate public TLS |
+## Deploy
 
-`POST https://ops.aft.page/api/smoke/run` — `Authorization: Bearer $SMOKE_SECRET` or an `OPS_EMAILS` session. Results in D1 `smoke_runs` / `smoke_cases` (14 days). Clickable canaries: `test--{case}.aft.page` (`noindex`). Apex `test.aft.page` → ops `/smoke`. DNS `*.test.aft.page` is proxied; HTTPS handshake fails until an ACM pack covers `*.test.aft.page` (same shape as existing `*.mcp.aft.page`). Worker still maps `{case}.test.aft.page` → slug `test--{case}` in-process.
+```bash
+cd apps/api && npx wrangler deploy
+cd apps/mcp-worker && npx wrangler deploy   # if MCP changed
+```
 
-Covers (Worker isolate): HTML paste, multi-file, missing index → 404, `no_files`, reserved `ai`, slug collision, PATCH + rollback, destroy, MCP **binding** `/health`, claimUrl row, private → `/login?next=`, invite+revoke, unknown canary 404, custom-domain **inventory** (D1 counts).
-
-After the isolate suite, API asks **aft-page-mcp** `POST /flight` (other isolate) to GET public `test--*` + `/claim` + active custom domains. That Worker needs `global_fetch_strictly_public` or those GETs hit originless `100::` (522 / timeout) instead of the API Worker. Cron and ops Run now get TLS without a laptop. `npm run smoke` still does MCP JSON-RPC as a real client. Same-isolate `tools/call` is API→MCP→API and deadlocks — do not add it back. Marketing landing is optional.
-
-Does **not** allocate a 25–100 MB payload or 501-file `too_many_files` in prod. Invite case skips email send. Last canaries stay up until the next run’s sweep.
-
-## Critical items — [NASA LLIS 803](https://llis.nasa.gov/lesson/803)
-
-This is what we follow. Subject: *Identification, Control, and Management of Critical Items Lists* (PD-ED-1240 / TM 4322A).
-
-NASA: FMEA finds failure modes that lose the mission → put them on a CIL **before the design freezes** → each row needs retention rationale (design / test / inspection / failure history / ops) → use the list in operations.
-
-AFT mapping (same job, smaller words):
-
-| NASA | Here |
-| --- | --- |
-| FMEA | Class A / B / C + `fail-explain` |
-| CIL | this scorecard + ops |
-| Test rationale | prod smoke (`*.test.aft.page` + `npm run smoke`) |
-| Inspection | [status.aft.page](https://status.aft.page) (`/health` only) |
-| Failure history | `deploy_failures` + retry |
-| Operational use | this file + ops Run now |
-
-**Aligned where a row has a smoke case or a named gap.** Not a Shuttle FMEA shop — no fault trees, no PRA. We started the list after the product shipped (803 says start earlier). Open CIL items = “Still unknown” below; do not pretend smoke covers them.
-
-Local `vitest` (miniflare) is **not** CIL test rationale. It checks logic. It does not fly. Class C (MCP `tools/call` never hit the API) is exactly what miniflare missed. Keep vitest; do not count it as flight test.
-
-## SPOF scorecard
-
-What exists. Smoke vs still unknown. This table **is** the CIL.
-
-| Box | Smoke covers | Still unknown |
-| --- | --- | --- |
-| API isolate | deploy + serve + rollback in-process | isolate crash mid-request (no queue to kill) |
-| D1 | site rows, invites, smoke_runs write | primary unavailability — cannot inject cheaply; public KV/R2 serve should still work if D1 is sad (not asserted) |
-| R2 / KV | put + get canary bytes + destroy | regional replica lag |
-| MCP binding | Worker: `/health` via `env.MCP`. MCP isolate `/flight` = public TLS. `npm run smoke`: JSON-RPC `tools/call` from Node | Cursor `mcp_auth` / client never arriving (class C). Do not round-trip API→MCP→API |
-| Pages (`aft.page`) | `GET /claim` 200 on prod runs (MCP `/flight` + npm) | landing/docs/Drop UI (optional; status `/` only) |
-| Email / auth | private gate 302 to `/login?next=` | magic-link delivery, Google OAuth callback |
-| DNS / cert | MCP `/flight` HTTPS GET `test--html.aft.page` | `*.test.aft.page` HTTPS — needs ACM pack (token here cannot) |
-| Custom domains | Worker inventory + MCP `/flight` HTTPS each `active` + SSL live | pending DCV / CNAME not pointed (skipped, not a fail) |
-
-Data plane vs control plane: existing public sites should keep serving from KV/R2 if D1 or auth is down. Documented, not faked in smoke.
-
-## Ship
-
-D1 migration `0018_smoke.sql` + `SMOKE_SECRET` wrangler secret + DNS `test` / `*.test` (proxied AAAA `100::`) + deploy `aft-page-api`. Then `npm run smoke`.
-
-## Related
-
-- [METRICS.md](./METRICS.md) — AE schema + SQL
-- [status.ts](../apps/api/src/status.ts) — public probes
-- [ops.ts](../apps/api/src/ops.ts) — founder page
-- [smoke.ts](../apps/api/src/smoke.ts) — prod contract
-- [NASA LLIS 803](https://llis.nasa.gov/lesson/803) — Critical Items List (what we follow)
-
+Committed ≠ deployed. Ship from the laptop.

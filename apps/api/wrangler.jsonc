@@ -94,14 +94,6 @@
     {
       "pattern": "*.aft.page/*",
       "zone_name": "aft.page"
-    },
-    {
-      "pattern": "test.aft.page/*",
-      "zone_name": "aft.page"
-    },
-    {
-      "pattern": "*.test.aft.page/*",
-      "zone_name": "aft.page"
     }
   ],
   "services": [
@@ -115,6 +107,6 @@
     }
   ],
   "triggers": {
-    "crons": ["*/5 * * * *", "0 4,16 * * *", "0 9 * * *"]
+    "crons": ["*/5 * * * *", "0 9 * * *"]
   }
 }

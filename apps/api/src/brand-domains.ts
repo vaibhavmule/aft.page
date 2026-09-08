@@ -1,9 +1,9 @@
 /**
  * Brand-domain release watch (aft.dev / aft.app).
  *
- * Founder ops: once a day, ask the public RDAP registry whether the brand
- * domains are still registered, and store the answer in D1 so ops.aft.page
- * can show it. When either drops / changes hands the ops Domains panel flips.
+ * Once a day, ask the public RDAP registry whether the brand domains are still
+ * registered, and store the answer in D1. Founder ops HTML retired — read via
+ * D1 / rebuild console.
  *
  * Ground truth is RDAP (RFC 7483) — public registry JSON, no key. Cloudflare
  * Registrar only knows domains inside our own account, so it cannot see these.
@@ -15,7 +15,7 @@ import {
   listBrandDomainWatch,
   upsertBrandDomainWatch,
   type BrandDomainWatchRow,
-} from "./db/ops-reports";
+} from "./db/brand-domain-watch";
 
 export const BRAND_DOMAIN_CRON = "0 9 * * *";
 export const BRAND_WATCH_DOMAINS = ["aft.dev", "aft.app"] as const;

@@ -18,7 +18,7 @@ Workspace root `Projects/aft` is **not** a git repo. Two products:
 
 ## Run
 
-Do these in parallel where you can. **Ops is D1 — never skip it because `ops.aft.page` is 302.**
+Do these in parallel where you can. **Ops scoreboard is D1** — `ops.aft.page` is a retired stub (410), not a console.
 
 1. Execute [scripts/check.sh](scripts/check.sh) (`bash .cursor/skills/aft-status/scripts/check.sh` from workspace or `aft.page/`). It dumps git/probes **and** ops from D1 via `wrangler d1 execute aft-page --remote` (`scripts/ops-d1.py`).
 2. `aft_health` on MCP `user-aft`.
@@ -27,17 +27,17 @@ Do these in parallel where you can. **Ops is D1 — never skip it because `ops.a
 5. Read `aft.page/todo.txt` + product table in `aft.page/docs/STRATEGY.md` (do not invent roadmap).
 6. **Build next (required).** Web search current market, then pick **one** open `todo.txt` row. Rules in § Build next. Do not skip because Class A is green.
 
-Canonical ops map: `aft.page/docs/OPS.md`.
+Canonical ops map: `aft.page/docs/OPS.md` (Worker ops SSR + smoke retired — see `docs/parked/smoke-audit-ops.md`).
 
 ## Ops D1 (every run)
 
-`ops.aft.page` 302 → `/login` is the **cookie gate**. Not down. Do not ask the user to paste `/api.json` unless D1 **and** wrangler both failed.
+`ops.aft.page` **410 stub** is expected (console ripped). Scoreboard from D1, not that curl. Do not ask the user to paste `/api.json` unless D1 **and** wrangler both failed.
 
 Namespace: `user-cloudflare-bindings` tool `d1_database_query`. Bind ISO cutoffs in UTC (`now-1d` / `now-7d` as `YYYY-MM-DDTHH:MM:SS.000Z`) — do **not** use `datetime('now')` (space vs `T` breaks the compare).
 
 T2U percentile = ops `percentileNearest`: `rank = ceil(p/100 * n) - 1` on sorted `ms`. Bar: p50 &lt; 3s · p95 &lt; 10s.
 
-**Internal** (hide from the external list): `hello@aft.page`, `vaibhavmule135@gmail.com`, `*@aft.page`, `vaibhavmule135+…@gmail.com`. Everyone else is external. List every external email + sites + joined. Flag mill-looking (20+ sites in 24h). Accounts ≠ `qa/stranger-trial.md`.
+**Internal** (hide from the external list): `hello@aft.page`, `vaibhavmule135@gmail.com`, `*@aft.page`, `vaibhavmule135+…@gmail.com`. Everyone else is external. List every external email + sites + joined. Flag mill-looking (20+ sites in 24h). External ops users who used Drop/CLI/Run from public docs alone are the stranger proof.
 
 **CF cost** is GraphQL / STATUS KV, not D1. Omit unless the user pasted ops `/api.json`.
 
@@ -99,8 +99,8 @@ Not a second product. Map **today’s** market onto the **open** `todo.txt` rows
 | --- | --- |
 | Run paste / `deploy_repo` still lies (no URL and no honest fail) | **Run engine** — every channel is a lie until this works |
 | Engine works; AFT not one-click in Cursor Marketplace / `npx plugins add` not ready | **Plugin listing** (Cursor first) — owned channel. Market: agents install from Marketplace; Vercel/CF already listed |
-| Listing exists; strangers not recorded | **Stranger-trial** 5 rows — ops external Gmails are not that scoreboard |
-| Plugin + 5 trials moving; Code still a hole vs Sites | **Code** (prompt/template → D1+R2) — Sites is that category, not Run. Do not clone ChatGPT Sites as a brand |
+| Listing exists; activation thin (few/no ops externals) | **Inbound / retain** — ops external list is the stranger proof; email/return visits, not a trial table |
+| Plugin + ops externals moving; Code still a hole vs Sites | **Code** (prompt/template → D1+R2) — Sites is that category, not Run. Do not clone ChatGPT Sites as a brand |
 | Next.js/script cap or Worker count approaching WfP trigger | **WfP / Dynamic Workers** — wrap CF, don’t rebuild |
 
 **Not this (say it if the search is loud):** ChatGPT Sites ≠ ship a Sites clone (that’s Code, later). Directory spam ≠ distribution. Paid social ≠ the $1k (builds only). External claimers + mill accounts ≠ retained users.
@@ -124,12 +124,11 @@ No Sentry. No Grafana. Scanner junk (`.env`, `.php`, `wp-`) is expected — not 
 | URL | Job |
 | --- | --- |
 | `https://status.aft.page` | Public probes: API, MCP `/health`, website, site serve (hello) |
-| `https://ops.aft.page` | Founder HTML (cookie). 302 login ≠ down. Scoreboard via D1 (`aft-page`) |
+| `https://ops.aft.page` | Founder stub (410). Rebuild in workspace `ops/` + aft deploy. Scoreboard via D1 |
 | `https://api.aft.page/health` | API isolate |
 | `https://mcp.aft.page/health` | MCP isolate |
-| `https://test--html.aft.page` | Last smoke canary (`noindex`) — 200 means last smoke left artifacts |
 
-Workers: `aft-page-api` (routes `*/*` + `api.aft.page`), `aft-page-mcp` (bound as `MCP`). Apex `aft.page` = Pages (`www/`). Crons on API: `*/5` status probes, `0 4,16 * * *` UTC smoke.
+Workers: `aft-page-api` (routes `*/*` + `api.aft.page`), `aft-page-mcp` (bound as `MCP`). Apex `aft.page` = Pages (`www/`). Crons on API: `*/5` status probes, `0 9 * * *` brand-domain watch. Smoke/audit cron retired.
 
 Yesterday's `D1_ERROR: no such column: active` on site serve is a known recovered Class A (migration lag). Mention only if still on `recentFailures` and probes are red *now*.
 
@@ -151,7 +150,7 @@ Source of truth: `STRATEGY.md` progression + `todo.txt`. As of skill authoring:
 
 **Freeze lifted 23 Aug 2026.** Host / Ship / Run may ship. See `todo.txt` + STRATEGY § Focus.
 
-OSS CLI (`cli/`, customer-cloud AWS) is **parked** — different product from hosted aft.page. Hosted needs its own CLI later (`api.aft.page`). Cron-as-product is **parked** (`docs/parked/cron.md`); API status/smoke crons are unrelated ops.
+OSS CLI (`cli/`, customer-cloud AWS) is **parked** — different product from hosted aft.page. Hosted needs its own CLI later (`api.aft.page`). Cron-as-product is **parked** (`docs/parked/cron.md`); API status cron is unrelated ops.
 
 Proof gaps (todo, not ops): ≥5 repeat deployers, ≥1 invite-accepted share, plugin install bar. YC Fall 2026 rejected 29 Aug (no interview). Next on-time 2 Nov — only with retained users.
 
@@ -166,8 +165,8 @@ Proof gaps (todo, not ops): ≥5 repeat deployers, ≥1 invite-accepted share, p
 
 ## Live
 - status.aft.page: overall … (components + any recentFailures still relevant)
-- probes: api / mcp / www / hello / smoke canary
-- ops HTML: 302 login is expected (cookie). Scoreboard from D1, not that curl.
+- probes: api / mcp / www / hello
+- ops HTML: 410 stub expected. Scoreboard from D1, not that curl.
 - ops D1: sites/claimed/users · 24h+7d ok/fail + T2U p50/p95 · top fail codes · **list every external user** (email, sites, joined)
 - CF cost: omitted unless pasted (not in D1)
 

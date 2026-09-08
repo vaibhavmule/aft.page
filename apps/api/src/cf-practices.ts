@@ -91,13 +91,13 @@ export async function runCfPracticeChecks(
     }
   }
 
-  const secretsOk = Boolean(env.AUTH_SECRET?.trim() && env.SMOKE_SECRET?.trim());
+  const secretsOk = Boolean(env.AUTH_SECRET?.trim());
   cases.push(
     caseOf(
       "secrets",
       "Wrangler secrets",
       secretsOk,
-      secretsOk ? "AUTH_SECRET + SMOKE_SECRET" : "unset",
+      secretsOk ? "AUTH_SECRET" : "unset",
     ),
   );
 

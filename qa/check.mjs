@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Run qa/ suites (mail + pages + browser-sec).
- * Hijack CIL is separate: cd apps/api && npm run audit
+ * Scanner ritual: cd apps/api && npm run audit:security
  */
 import { spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
@@ -25,10 +25,7 @@ for (const [name, script] of suites) {
   if (r.status !== 0) failed++;
 }
 
-console.log(
-  `\nHijack CIL (security ship gate): cd apps/api && npm run audit`,
-);
-console.log(`Scanner ritual: cd apps/api && npm run audit:security`);
+console.log(`\nScanner ritual: cd apps/api && npm run audit:security`);
 
 if (failed) {
   console.error(`\n${failed}/${suites.length} qa suites failed`);

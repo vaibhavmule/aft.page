@@ -14,4 +14,4 @@ export * from "./deploys";
 export * from "./deploy-failures";
 export * from "./capabilities";
 export * from "./jobs";
-export * from "./ops-reports";
+export * from "./brand-domain-watch";

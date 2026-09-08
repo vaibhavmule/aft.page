@@ -374,13 +374,9 @@ describe("status.aft.page host", () => {
         (p) => p.id === "sites" && p.siteSlug === "hello" && p.url === "https://hello.aft.page/",
       ),
     ).toBe(true);
-    // "express" is the Server apps probe. Public since 2026-09-05, but flagged
-    // informational so a sleeping fixture cannot paint the platform red.
-    expect(
-      STATUS_PROBES.some(
-        (p) => p.id === "express" && p.name === "Server apps" && p.informational === true,
-      ),
-    ).toBe(true);
+    // "express" was the Server apps fixture probe — removed from public status
+    // (sleeping containers looked like a major outage strip).
+    expect(STATUS_PROBES.some((p) => p.id === "express")).toBe(false);
     expect(STATUS_PROBES.some((p) => p.id === "aft_me")).toBe(false);
     expect(OPS_ONLY_PROBES.some((p) => p.id === "express")).toBe(false);
     expect(
@@ -400,19 +396,15 @@ describe("status.aft.page host", () => {
     expect(mcp?.ok).toBe(true);
     expect(mcp?.status).toBe("operational");
     expect(mcp?.url).toBe("https://mcp.aft.page/health");
-    expect(snap.components.some((c) => c.id === "express")).toBe(true);
+    expect(snap.components.some((c) => c.id === "express")).toBe(false);
     const pub = filterPublicSnapshot(snap);
-    // Server apps is public now, so it survives the filter — but it is
-    // informational, so it must not change the headline either way.
-    expect(pub.components.some((c) => c.id === "express")).toBe(true);
-    expect(pub.overall).toBe(
-      overallFromComponents(
-        pub.components.filter((c) => c.id !== "express"),
-      ),
+    expect(pub.components.some((c) => c.id === "express")).toBe(false);
+    expect(pub.components.map((c) => c.id).sort()).toEqual(
+      ["api", "mcp", "sites", "www"].sort(),
     );
   });
 
-  it("does not paint public overall from a down Express fixture", () => {
+  it("drops Express from the public snapshot even if still in stored data", () => {
     const snap: StatusSnapshot = {
       checkedAt: "2026-08-29T06:00:00.000Z",
       overall: "operational",
@@ -431,19 +423,14 @@ describe("status.aft.page host", () => {
       ],
     };
     const pub = filterPublicSnapshot(snap);
-    // The invariant that matters and must not regress: a down Server apps
-    // probe is visible, but never decides the headline and never pages.
     expect(pub.overall).toBe("operational");
     expect(pub.components.map((c) => c.id)).toEqual([
       "api",
       "www",
       "sites",
       "mcp",
-      "express",
     ]);
-    expect(pub.components.find((c) => c.id === "express")?.status).toBe(
-      "major_outage",
-    );
+    expect(pub.components.some((c) => c.id === "express")).toBe(false);
   });
 
   it("does not serve status as a user site slug", async () => {

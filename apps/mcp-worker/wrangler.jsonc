@@ -8,7 +8,7 @@
   "account_id": "44255ec64e0080b678670b53bf810d27",
   "main": "src/index.ts",
   "compatibility_date": "2026-07-28",
-  // global_fetch_strictly_public: /flight GETs *.aft.page + SaaS hosts; omit → originless 100:: (522 / timeout)
+  // Prefer public egress for tenant/custom-domain fetches when needed.
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "workers_dev": true,
   "observability": {

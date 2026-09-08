@@ -1,6 +1,7 @@
 /**
  * Founder mail via existing EMAIL binding → OPS_EMAILS (hello@).
  * Not Sentry. Not per-request 400 (Class B noise).
+ * Ops HTML console retired — links point at status / D1.
  */
 import type { Env } from "./env";
 import { parseCsvLower } from "./env";
@@ -9,20 +10,18 @@ import {
   countFailuresByError,
   countFailuresSince,
 } from "./db";
-import type { AuditRunResult } from "./audit";
-import type { SmokeRunResult } from "./smoke";
 import { filterPublicSnapshot, type StatusSnapshot } from "./status";
 
 const KV_PREFIX = "ops:alert:";
 export const OPS_ALERT_DEBOUNCE_S = 30 * 60;
 
-export type OpsAlertKind = "500" | "smoke" | "audit" | "status" | "digest";
+export type OpsAlertKind = "500" | "status" | "digest";
 
 export function opsAlertRecipients(env: Env): string[] {
   return parseCsvLower(env.OPS_EMAILS);
 }
 
-/** api / ops / status / mcp — not tenant `*.aft.page` (their Worker 500 is not ours). */
+/** api / status / mcp — not tenant `*.aft.page` (their Worker 500 is not ours). */
 export function isPlatformAlertHost(host: string, root: string): boolean {
   const h = host.toLowerCase();
   const r = root.toLowerCase();
@@ -95,7 +94,7 @@ export async function alertPlatform500(
       `status ${res.status}`,
       ray ? `request ${ray}` : "",
       "",
-      `https://ops.${root}/failures`,
+      `https://status.${root}/`,
     ]
       .filter(Boolean)
       .join("\n"),
@@ -119,55 +118,7 @@ export async function alertUnhandled(
       `${request.method} ${url.origin}${url.pathname}`,
       message,
       "",
-      `https://ops.${root}/`,
-    ].join("\n"),
-  });
-}
-
-export async function alertIfSmokeFailed(
-  env: Env,
-  result: SmokeRunResult,
-): Promise<boolean> {
-  if (result.ok) return false;
-  const root = env.ROOT_DOMAIN || "aft.page";
-  const failed = result.cases
-    .filter((c) => !c.ok)
-    .map((c) => `${c.id}: ${c.detail}`)
-    .join("\n");
-  return sendOpsAlert(env, {
-    kind: "smoke",
-    key: `smoke:${result.id}`,
-    debounceSec: 7 * 24 * 60 * 60,
-    subject: `[aft.page] smoke FAIL (${result.trigger})`,
-    text: [
-      `${result.finishedAt} · ${result.ms} ms · ${result.id}`,
-      failed || "(no case detail)",
-      "",
-      `https://ops.${root}/smoke`,
-    ].join("\n"),
-  });
-}
-
-export async function alertIfAuditFailed(
-  env: Env,
-  result: AuditRunResult,
-): Promise<boolean> {
-  if (result.ok) return false;
-  const root = env.ROOT_DOMAIN || "aft.page";
-  const failed = result.cases
-    .filter((c) => !c.ok)
-    .map((c) => `${c.id}: ${c.detail}`)
-    .join("\n");
-  return sendOpsAlert(env, {
-    kind: "audit",
-    key: `audit:${result.id}`,
-    debounceSec: 7 * 24 * 60 * 60,
-    subject: `[aft.page] hijack FAIL (${result.trigger})`,
-    text: [
-      `${result.finishedAt} · ${result.ms} ms · ${result.id}`,
-      failed || "(no case detail)",
-      "",
-      `https://ops.${root}/audit`,
+      `https://status.${root}/`,
     ].join("\n"),
   });
 }
@@ -218,7 +169,7 @@ export async function maybeSendDeployDigest(env: Env): Promise<boolean> {
       "",
       lines || `${failN} fails`,
       "",
-      `https://ops.${root}/failures`,
+      `https://status.${root}/`,
     ].join("\n"),
   });
 }

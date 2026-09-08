@@ -11,7 +11,6 @@ import {
   optionsResponse,
   redirectHttpToHttps,
   subdomainSlug,
-  testHostCase,
   withHsts,
 } from "./http";
 import { serveSite } from "./serve";
@@ -29,7 +28,6 @@ import { handleCliPreflight } from "./cli-preflight";
 import { handleCodeGenerate } from "./code";
 import { handleRepoRoute } from "./repo";
 import { handleJobCompleteRoute, handleJobRoute } from "./jobs";
-import { handleOps, isOpsHost } from "./ops";
 import {
   handleStatus,
   isStatusHost,
@@ -40,13 +38,9 @@ import { pruneDeployFailures } from "./db";
 import { pruneSiteLogs } from "./site-logs";
 import { sweepExpiredSites, sweepUnusedAnonSites } from "./anon-gc";
 import { refreshCfPracticesIfStale } from "./cf-practices";
-import { pruneAuditRuns, runAuditSuite } from "./audit";
 import { BRAND_DOMAIN_CRON, refreshBrandDomains } from "./brand-domains";
-import { attachPublicFlight, pruneSmokeRuns, runSmokeSuite, SMOKE_CRON } from "./smoke";
-import { parseDeployPreviewLabel, smokeSlugForCase } from "./site-url";
+import { parseDeployPreviewLabel } from "./site-url";
 import {
-  alertIfAuditFailed,
-  alertIfSmokeFailed,
   alertIfStatusMajor,
   alertPlatform500,
   alertUnhandled,
@@ -65,6 +59,10 @@ import {
 } from "./ai-discovery";
 
 export { sanitizeHtmlDocument } from "./upload";
+
+function isOpsHost(host: string, root: string): boolean {
+  return host === `ops.${root}`;
+}
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -89,37 +87,6 @@ export default {
     env: Env,
     ctx: ExecutionContext,
   ): Promise<void> {
-    if (controller.cron === SMOKE_CRON) {
-      try {
-        const result = await runSmokeSuite(env, { trigger: "cron" });
-        ctx.waitUntil(alertIfSmokeFailed(env, result).catch(() => false));
-        ctx.waitUntil(
-          attachPublicFlight(env, result.id).catch((err) => {
-            const message = err instanceof Error ? err.message : String(err);
-            console.error(JSON.stringify({ level: "error", event: "smoke_flight", message }));
-          }),
-        );
-        ctx.waitUntil(
-          runAuditSuite(env, { trigger: "cron" })
-            .then((audit) => alertIfAuditFailed(env, audit))
-            .catch((err) => {
-              const message = err instanceof Error ? err.message : String(err);
-              console.error(JSON.stringify({ level: "error", event: "audit_cron", message }));
-            }),
-        );
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        console.error(JSON.stringify({ level: "error", event: "smoke_cron", message }));
-        ctx.waitUntil(
-          alertUnhandled(
-            env,
-            new Request("https://api.aft.page/health"),
-            err,
-          ).catch(() => false),
-        );
-      }
-      return;
-    }
     if (controller.cron === BRAND_DOMAIN_CRON) {
       ctx.waitUntil(
         refreshBrandDomains(env)
@@ -147,8 +114,6 @@ export default {
         await refreshCfPracticesIfStale(env);
         await pruneDeployFailures(env);
         await pruneSiteLogs(env);
-        await pruneSmokeRuns(env);
-        await pruneAuditRuns(env);
         await pruneStatusChecks(env);
         await sweepUnusedAnonSites(env);
         await sweepExpiredSites(env);
@@ -169,7 +134,6 @@ async function routeRequest(
   const host = url.hostname.toLowerCase();
   const root = (env.ROOT_DOMAIN || "aft.page").toLowerCase();
 
-  // Thin remote MCP — mcp.aft.page is reserved (not a site slug).
   if (host === `mcp.${root}`) {
     if (!env.MCP) {
       return json({ error: "mcp_unavailable" }, 503);
@@ -177,13 +141,14 @@ async function routeRequest(
     return env.MCP.fetch(request);
   }
 
-  // Sales agent retired — send founders to ops checklist.
   if (host === `sales.${root}`) {
-    return Response.redirect(`https://ops.${root}/todos`, 302);
+    return Response.redirect(`https://${root}/`, 302);
   }
 
-  // Keep the public signup's preflight and redacted storage-error response
-  // independent of the global schema bootstrap below.
+  if (isOpsHost(host, root)) {
+    return json({ error: "gone", host }, 410);
+  }
+
   if (
     isApiHost(host, root) &&
     url.pathname === "/v1/waitlist" &&
@@ -195,7 +160,6 @@ async function routeRequest(
     return await handleWaitlistSignup(request, env);
   }
 
-  // Public product feedback — kept before the schema bootstrap like waitlist.
   if (
     isApiHost(host, root) &&
     url.pathname === "/v1/feedback" &&
@@ -207,7 +171,6 @@ async function routeRequest(
     return await handleFeedback(request, env);
   }
 
-  // Opt-in anonymous CLI usage (command + version). No auth.
   if (
     isApiHost(host, root) &&
     url.pathname === "/v1/cli/event" &&
@@ -216,7 +179,6 @@ async function routeRequest(
     return await handleCliEvent(request, env);
   }
 
-  // CLI preflight — rules + optional Workers AI. No auth.
   if (
     isApiHost(host, root) &&
     url.pathname === "/v1/cli/preflight" &&
@@ -229,27 +191,10 @@ async function routeRequest(
     return await handleStatus(request, env, url);
   }
 
-  if (isOpsHost(host, root)) {
-    return await handleOps(request, env, url, ctx);
-  }
-
   await ensureDb(env);
 
   if (isApiHost(host, root)) {
     return await handleApi(request, env, url, ctx);
-  }
-
-  const testCase = testHostCase(host, root);
-  if (testCase !== null) {
-    if (testCase === "") {
-      return Response.redirect(`https://ops.${root}/smoke`, 302);
-    }
-    return await serveSite(
-      request,
-      env,
-      smokeSlugForCase(testCase),
-      url.pathname,
-    );
   }
 
   const slug = subdomainSlug(host, root);
@@ -310,7 +255,6 @@ async function handleApi(
     return json({ ok: true });
   }
 
-  // AI-discovery surface — crawled by Prowl / llms.txt-style agents.
   if (url.pathname === "/llms.txt" && request.method === "GET") {
     return new Response(LLMS_TXT, {
       headers: {
@@ -329,14 +273,10 @@ async function handleApi(
   }
 
   if (url.pathname === "/.well-known/mcp.json" && request.method === "GET") {
-    return json(
-      mcpManifest(root),
-      200,
-      {
-        "access-control-allow-origin": "*",
-        "cache-control": "public, max-age=3600",
-      },
-    );
+    return json(mcpManifest(root), 200, {
+      "access-control-allow-origin": "*",
+      "cache-control": "public, max-age=3600",
+    });
   }
 
   const changelog = await handleChangelog(request, env, url);

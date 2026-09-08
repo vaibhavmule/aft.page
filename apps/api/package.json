@@ -10,8 +10,6 @@
     "posttest": "node ../cli/check.mjs && node ../plugin/check.mjs",
     "test:watch": "vitest",
     "check:cli": "node ../cli/check.mjs",
-    "smoke": "node ./scripts/smoke.mjs",
-    "audit": "node ./scripts/audit.mjs",
     "audit:security": "node ./scripts/security-audit.mjs"
   },
   "devDependencies": {

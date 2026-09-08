@@ -14,7 +14,6 @@ import {
   rollbackSite,
   type ApiTransport,
 } from "./client";
-import { runPublicFlight } from "./flight";
 
 const slugSchema = z
   .string()
@@ -360,31 +359,6 @@ export default {
     }
     if (url.pathname === "/health") {
       return Response.json({ ok: true, service: "aft-page-mcp" });
-    }
-    if (url.pathname === "/flight" && request.method === "POST") {
-      if (!env.API) {
-        return Response.json({ ok: false, error: "api_binding_missing" }, { status: 503 });
-      }
-      const auth = request.headers.get("authorization") || "";
-      if (!auth.startsWith("Bearer ")) {
-        return Response.json({ error: "unauthorized" }, { status: 401 });
-      }
-      const list = await env.API.fetch(
-        new Request("https://ops.aft.page/api/smoke/domains", {
-          headers: { authorization: auth },
-          signal: AbortSignal.timeout(10_000),
-        }),
-      );
-      if (list.status === 401) {
-        return Response.json({ error: "unauthorized" }, { status: 401 });
-      }
-      let rows: { hostname: string; status: string; sslStatus: string | null }[] = [];
-      if (list.ok) {
-        const body = (await list.json()) as { domains?: typeof rows };
-        rows = body.domains || [];
-      }
-      const flight = await runPublicFlight(rows);
-      return Response.json(flight);
     }
 
     if (!env.API) {

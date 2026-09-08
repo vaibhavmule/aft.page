@@ -28,6 +28,8 @@ export type DeployFailureRow = {
   hint: string | null;
   upload: UploadListing | null;
   hasPayload: boolean;
+  /** Who caused it: signed-in email, `anon_<deployer hash>`, or `smoke`/`test`. */
+  actor: string | null;
 };
 
 function parseUploadListing(raw: string | null | undefined): UploadListing | null {
@@ -68,6 +70,13 @@ function serializeUploadListing(upload?: UploadListing | null): string | null {
 
 const FAILURE_RETENTION_DAYS = 14;
 
+/** Sources that fire intentional rejects (smoke suite, unit tests) — not real users. */
+export const SYNTHETIC_SOURCES = ["smoke", "test"] as const;
+
+function syntheticSql(): string {
+  return `'${SYNTHETIC_SOURCES.join("', '")}'`;
+}
+
 export async function insertDeployFailure(
   env: Env,
   opts: {
@@ -81,14 +90,15 @@ export async function insertDeployFailure(
     requestId: string;
     hint?: string;
     upload?: UploadListing | null;
+    actor?: string | null;
   },
 ): Promise<string> {
   await ensureDb(env);
   const id = `fail_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
   await env.DB.prepare(
     `INSERT INTO deploy_failures (
-       id, created_at, error, path, slug, source, files, bytes, http_status, request_id, hint, upload_json, has_payload
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+       id, created_at, error, path, slug, source, files, bytes, http_status, request_id, hint, upload_json, has_payload, actor
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`,
   )
     .bind(
       id,
@@ -103,6 +113,7 @@ export async function insertDeployFailure(
       opts.requestId.slice(0, 64),
       opts.hint?.slice(0, 500) || null,
       serializeUploadListing(opts.upload),
+      opts.actor?.slice(0, 256) || null,
     )
     .run();
   return id;
@@ -122,7 +133,7 @@ export async function getDeployFailure(
   await ensureDb(env);
   const r = await env.DB.prepare(
     `SELECT id, created_at, error, path, slug, source, files, bytes, http_status, request_id, hint, upload_json,
-            COALESCE(has_payload, 0) AS has_payload
+            COALESCE(has_payload, 0) AS has_payload, actor
      FROM deploy_failures WHERE id = ?`,
   )
     .bind(id)
@@ -140,6 +151,7 @@ export async function getDeployFailure(
       hint: string | null;
       upload_json: string | null;
       has_payload: number;
+      actor: string | null;
     }>();
   if (!r) return null;
   return mapFailureRow(r);
@@ -152,8 +164,9 @@ export async function listDeployFailures(
   await ensureDb(env);
   const { results } = await env.DB.prepare(
     `SELECT id, created_at, error, path, slug, source, files, bytes, http_status, request_id, hint, upload_json,
-            COALESCE(has_payload, 0) AS has_payload
-     FROM deploy_failures ORDER BY created_at DESC LIMIT ?`,
+            COALESCE(has_payload, 0) AS has_payload, actor
+     FROM deploy_failures WHERE source NOT IN (${syntheticSql()})
+     ORDER BY created_at DESC LIMIT ?`,
   )
     .bind(limit)
     .all<{
@@ -170,6 +183,7 @@ export async function listDeployFailures(
       hint: string | null;
       upload_json: string | null;
       has_payload: number;
+      actor: string | null;
     }>();
   return (results || []).map(mapFailureRow);
 }
@@ -188,6 +202,7 @@ function mapFailureRow(r: {
   hint: string | null;
   upload_json: string | null;
   has_payload: number;
+  actor: string | null;
 }): DeployFailureRow {
   return {
     id: r.id,
@@ -203,6 +218,7 @@ function mapFailureRow(r: {
     hint: r.hint,
     upload: parseUploadListing(r.upload_json),
     hasPayload: Number(r.has_payload) === 1,
+    actor: r.actor ?? null,
   };
 }
 
@@ -214,7 +230,8 @@ export async function countFailuresByError(
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
   const { results } = await env.DB.prepare(
     `SELECT error, COUNT(*) AS n FROM deploy_failures
-     WHERE created_at >= ? GROUP BY error ORDER BY n DESC`,
+     WHERE created_at >= ? AND source NOT IN (${syntheticSql()})
+     GROUP BY error ORDER BY n DESC`,
   )
     .bind(since)
     .all<{ error: string; n: number }>();
@@ -257,7 +274,21 @@ export async function pruneDeployFailures(env: Env): Promise<void> {
 export async function countFailuresSince(env: Env, sinceIso: string): Promise<number> {
   await ensureDb(env);
   const row = await env.DB.prepare(
-    `SELECT COUNT(*) AS n FROM deploy_failures WHERE created_at >= ?`,
+    `SELECT COUNT(*) AS n FROM deploy_failures WHERE created_at >= ? AND source NOT IN (${syntheticSql()})`,
+  )
+    .bind(sinceIso)
+    .first<{ n: number }>();
+  return Number(row?.n || 0);
+}
+
+/** Count of synthetic (smoke/test) failures in the window — shown separately, not in real counts. */
+export async function countSyntheticFailures(
+  env: Env,
+  sinceIso: string,
+): Promise<number> {
+  await ensureDb(env);
+  const row = await env.DB.prepare(
+    `SELECT COUNT(*) AS n FROM deploy_failures WHERE created_at >= ? AND source IN (${syntheticSql()})`,
   )
     .bind(sinceIso)
     .first<{ n: number }>();
@@ -271,7 +302,7 @@ export async function countFailuresBySource(
   await ensureDb(env);
   const { results } = await env.DB.prepare(
     `SELECT source, COUNT(*) AS n FROM deploy_failures
-     WHERE created_at >= ? GROUP BY source ORDER BY n DESC`,
+     WHERE created_at >= ? AND source NOT IN (${syntheticSql()}) GROUP BY source ORDER BY n DESC`,
   )
     .bind(sinceIso)
     .all<{ source: string; n: number }>();
@@ -286,7 +317,7 @@ export async function countFailuresByDay(
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
   const { results } = await env.DB.prepare(
     `SELECT substr(created_at, 1, 10) AS day, COUNT(*) AS n FROM deploy_failures
-     WHERE created_at >= ? GROUP BY day ORDER BY day`,
+     WHERE created_at >= ? AND source NOT IN (${syntheticSql()}) GROUP BY day ORDER BY day`,
   )
     .bind(since)
     .all<{ day: string; n: number }>();
@@ -298,11 +329,18 @@ export async function listDeployFailuresForSlug(
   slug: string,
   limit = 20,
 ): Promise<
-  { id: string; createdAt: string; error: string; path: string | null; source: string }[]
+  {
+    id: string;
+    createdAt: string;
+    error: string;
+    path: string | null;
+    source: string;
+    actor: string | null;
+  }[]
 > {
   await ensureDb(env);
   const { results } = await env.DB.prepare(
-    `SELECT id, created_at, error, path, source FROM deploy_failures
+    `SELECT id, created_at, error, path, source, actor FROM deploy_failures
      WHERE slug = ? ORDER BY created_at DESC LIMIT ?`,
   )
     .bind(slug, limit)
@@ -312,6 +350,7 @@ export async function listDeployFailuresForSlug(
       error: string;
       path: string | null;
       source: string;
+      actor: string | null;
     }>();
   return (results || []).map((r) => ({
     id: r.id,
@@ -319,5 +358,6 @@ export async function listDeployFailuresForSlug(
     error: r.error,
     path: r.path,
     source: r.source,
+    actor: r.actor ?? null,
   }));
 }

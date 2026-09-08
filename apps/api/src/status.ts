@@ -4,7 +4,6 @@ import { waitUntil } from "cloudflare:workers";
  */
 import type { Env } from "./env";
 import { json } from "./http";
-import { EXPRESS_FIXTURE_SLUG } from "./container-origin";
 import { serveSite } from "./serve";
 import {
   BRAND,
@@ -129,26 +128,6 @@ export const STATUS_PROBES: ProbeDef[] = [
     url: "https://mcp.aft.page/health",
     expect: "health_json",
     mode: "internal_mcp",
-  },
-  {
-    // Public since 2026-09-05, informational. Every container-backed site was
-    // down for about a week while this page read "All systems operational",
-    // because the only probe covering them was ops-only.
-    //
-    // informational: a container fixture sleeping is normal and must not paint
-    // the platform red or page anyone — that was the original reason this was
-    // hidden. Showing it without alarming keeps both.
-    //
-    // The id stays "express": it carries the existing uptime history, and a
-    // second id against the same URL would just double the checks.
-    id: "express",
-    name: "Server apps",
-    description: "Apps that run a server, not just files",
-    url: `https://${EXPRESS_FIXTURE_SLUG}.aft.page/`,
-    expect: "http_ok",
-    mode: "internal_site",
-    siteSlug: EXPRESS_FIXTURE_SLUG,
-    informational: true,
   },
 ];
 
