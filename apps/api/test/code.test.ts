@@ -131,4 +131,21 @@ describe("POST /v1/code/generate", () => {
     );
     expect(res.status).not.toBe(401);
   });
+
+  it("rejects tenant origin", async () => {
+    const user = await findOrCreateUser(env, "code-tenant@aft.page");
+    const session = await createSession(env, user.id);
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/code/generate`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          cookie: `aft_session=${session.token}`,
+          origin: "https://evil.aft.page",
+        },
+        body: JSON.stringify({ template: "todo" }),
+      }),
+    );
+    expect(res.status).toBe(403);
+  });
 });

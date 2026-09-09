@@ -8,7 +8,7 @@ import {
   type RunJobPhase,
   type RunJobRow,
 } from "./db";
-import { corsHeaders, json, optionsResponse } from "./http";
+import { corsHeaders, json, optionsResponse, rejectNonProductOrigin } from "./http";
 import { rateLimit } from "./rate-limit";
 import { allocateUniqueSlug, slugFromHint } from "./slug";
 import { randomToken, resolveSessionUser, sha256Hex } from "./auth";
@@ -955,6 +955,11 @@ export async function handleRepoRoute(
   }
   if (request.method === "OPTIONS") return optionsResponse(origin, true);
   if (request.method !== "POST") return repoJson({ error: "method_not_allowed" }, 405, origin);
+
+  if (url.pathname === "/v1/repo/deploy") {
+    const blocked = rejectNonProductOrigin(request, env.ROOT_DOMAIN || "aft.page");
+    if (blocked) return blocked;
+  }
 
   const ip = request.headers.get("cf-connecting-ip") || "unknown";
   // 1000/hour/IP — platform target is 10k deploys; this is anti-spam, not capacity.

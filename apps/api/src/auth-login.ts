@@ -17,7 +17,14 @@ import {
 } from "./auth";
 import { handleGoogleCallback, handleGoogleStart } from "./auth-google";
 import { handleCliAuthRoute } from "./auth-cli";
-import { corsHeaders, json, optionsResponse, clientIp, privateJson } from "./http";
+import {
+  corsHeaders,
+  json,
+  optionsResponse,
+  clientIp,
+  privateJson,
+  rejectNonProductOrigin,
+} from "./http";
 import { rateLimit } from "./rate-limit";
 
 export function authNeedsCredentials(pathname: string): boolean {
@@ -53,7 +60,7 @@ export async function handleAuthRoute(
     return optionsResponse(origin, true);
   }
   if (url.pathname === "/v1/auth/logout" && request.method === "POST") {
-    return authLogout(env, origin);
+    return authLogout(request, env, origin);
   }
   if (url.pathname === "/v1/me" && request.method === "OPTIONS") {
     return optionsResponse(origin, true);
@@ -69,6 +76,8 @@ async function authMe(
   env: Env,
   origin: string | null,
 ): Promise<Response> {
+  const blocked = rejectNonProductOrigin(request, env.ROOT_DOMAIN || "aft.page");
+  if (blocked) return blocked;
   const extra = Object.fromEntries(corsHeaders(origin, true));
   const user = await resolveSessionUser(env, request);
   if (!user) return privateJson({ error: "unauthorized" }, 401, extra);
@@ -76,9 +85,12 @@ async function authMe(
 }
 
 async function authLogout(
+  request: Request,
   env: Env,
   origin: string | null,
 ): Promise<Response> {
+  const blocked = rejectNonProductOrigin(request, env.ROOT_DOMAIN || "aft.page");
+  if (blocked) return blocked;
   const extra = Object.fromEntries(corsHeaders(origin, true));
   return json(
     { ok: true },
