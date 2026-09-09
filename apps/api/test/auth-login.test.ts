@@ -144,6 +144,70 @@ describe("auth login", () => {
     expect(clear).toMatch(/Max-Age=0/i);
   });
 
+  it("GET /v1/me and logout reject tenant origin", async () => {
+    const email = "me-tenant@example.com";
+    const user = await findOrCreateUser(env, email);
+    const session = await createSession(env, user.id);
+    const cookie = `aft_session=${session.token}`;
+
+    const me = await call(
+      new Request(`${API_ORIGIN}/v1/me`, {
+        headers: { cookie, origin: "https://evil.aft.page" },
+      }),
+    );
+    expect(me.status).toBe(403);
+    expect(me.headers.get("access-control-allow-credentials")).toBeNull();
+
+    const logout = await call(
+      new Request(`${API_ORIGIN}/v1/auth/logout`, {
+        method: "POST",
+        headers: { cookie, origin: "https://evil.aft.page" },
+      }),
+    );
+    expect(logout.status).toBe(403);
+    expect(logout.headers.get("set-cookie")).toBeNull();
+
+    const still = await call(
+      new Request(`${API_ORIGIN}/v1/me`, {
+        headers: { cookie, origin: "https://aft.page" },
+      }),
+    );
+    expect(still.status).toBe(200);
+  });
+
+  it("POST /v1/deploy with session rejects tenant origin", async () => {
+    const email = "deploy-tenant@example.com";
+    const user = await findOrCreateUser(env, email);
+    const session = await createSession(env, user.id);
+
+    const stolen = await call(
+      new Request(`${API_ORIGIN}/v1/deploy?slug=csrf-owned`, {
+        method: "POST",
+        headers: {
+          "content-type": "text/html; charset=utf-8",
+          cookie: `aft_session=${session.token}`,
+          origin: "https://evil.aft.page",
+        },
+        body: "<h1>csrf-owned</h1>",
+      }),
+    );
+    expect(stolen.status).toBe(403);
+
+    const hub = await call(
+      new Request(`${API_ORIGIN}/v1/deploy?slug=csrf-owned`, {
+        method: "POST",
+        headers: {
+          "content-type": "text/html; charset=utf-8",
+          cookie: `aft_session=${session.token}`,
+          origin: "https://aft.page",
+        },
+        body: "<h1>hub-owned</h1>",
+      }),
+    );
+    expect(hub.status).toBe(200);
+    expect(await getSiteOwnerId(env, "csrf-owned")).toBe(user.id);
+  });
+
   it("deploy with session auto-owns; anonymous stays unowned", async () => {
     const anon = await deployPaste("<h1>anon</h1>", "auto-own-anon");
     expect(await getSiteOwnerId(env, anon.slug)).toBeNull();

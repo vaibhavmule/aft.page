@@ -15,6 +15,8 @@ export default defineConfig(async () => {
     plugins: [
       cloudflareTest({
         wrangler: { configPath: "./wrangler.jsonc" },
+        // Local tests must not start a remote AI proxy (needs CLOUDFLARE_API_TOKEN).
+        remoteBindings: false,
         miniflare: {
           bindings: {
             AUTH_SECRET: "test-auth-secret-for-vitest-only",

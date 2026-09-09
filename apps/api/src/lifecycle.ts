@@ -31,7 +31,7 @@ import {
   listDeployFiles,
   normalizePath,
 } from "./storage";
-import { corsHeaders, json, privateJson } from "./http";
+import { corsHeaders, json, privateJson, rejectNonProductOrigin } from "./http";
 import { attachDeployPreviewUrls, liveSiteUrl } from "./site-url";
 import { executeRepoJob } from "./repo";
 
@@ -122,6 +122,8 @@ async function meSites(
   url: URL,
   origin: string | null,
 ): Promise<Response> {
+  const blocked = rejectNonProductOrigin(request, env.ROOT_DOMAIN || "aft.page");
+  if (blocked) return blocked;
   const extra = Object.fromEntries(corsHeaders(origin, true));
   const user = await resolveSessionUser(env, request);
   if (!user) return privateJson({ error: "unauthorized" }, 401, extra);

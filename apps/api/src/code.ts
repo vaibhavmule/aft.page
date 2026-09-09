@@ -2,7 +2,13 @@
 import type { Env } from "./env";
 import { hasAiBinding, runGatewayChat } from "./ai-gateway";
 import { resolveSessionUser } from "./auth";
-import { corsHeaders, json, optionsResponse, isLoopbackRequest } from "./http";
+import {
+  corsHeaders,
+  json,
+  optionsResponse,
+  isLoopbackRequest,
+  rejectNonProductOrigin,
+} from "./http";
 import { rateLimit } from "./rate-limit";
 
 export const CODE_TEMPLATES = ["todo", "contact", "tracker"] as const;
@@ -94,6 +100,9 @@ export async function handleCodeGenerate(
   if (request.method !== "POST") {
     return json({ error: "method_not_allowed" }, 405);
   }
+
+  const blocked = rejectNonProductOrigin(request, env.ROOT_DOMAIN || "aft.page");
+  if (blocked) return blocked;
 
   const creds = Object.fromEntries(corsHeaders(origin, true));
 

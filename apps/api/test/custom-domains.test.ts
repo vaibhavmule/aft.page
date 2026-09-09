@@ -314,4 +314,15 @@ describe("custom domain endpoints", () => {
     };
     expect(onlyA.domains.map((d) => d.hostname)).toEqual(["a.example.com"]);
   });
+
+  it("GET /v1/me/domains rejects tenant origin", async () => {
+    const a = await deployPaste("<h1>A</h1>", "me-dom-tenant");
+    const cookie = await ownSite(a.slug, "me-dom-tenant@example.com");
+    const res = await call(
+      new Request(`${API_ORIGIN}/v1/me/domains`, {
+        headers: { cookie, origin: "https://evil.aft.page" },
+      }),
+    );
+    expect(res.status).toBe(403);
+  });
 });
