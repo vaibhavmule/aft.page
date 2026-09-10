@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Clone a public Next.js repo, OpenNext-build, wrangler deploy aft-u-{slug}.
 # Usage: run-next-job.sh build|deploy
-# `build` never receives Cloudflare tokens (GHA step-scoped). `deploy` does.
+# `build` never receives Cloudflare tokens. `deploy` runs in a clean staging
+# dir (only .open-next + our wrangler.jsonc) via registry wrangler@4 — never
+# the cloned repo's node_modules/.bin/wrangler.
 set -euo pipefail
 
 MODE="${1:-}"
@@ -275,11 +277,17 @@ fi
 if [[ -z "${CLOUDFLARE_API_TOKEN:-}" ]]; then
   fail "Deploy credentials are not set on the runner."
 fi
+# Staging dir only — a leftover package.json means we pointed at the clone.
+if [[ -f "$SRC/package.json" ]]; then
+  fail "Deploy staging dir must not contain the cloned repo."
+fi
 
 write_wrangler
 post_phase deploying "Deploying"
 cd "$SRC"
-DEPLOY_OUT="$(npx wrangler deploy --name "aft-u-${SLUG}" 2>&1)" || {
+# Registry package, not npx wrangler (that prefers ./node_modules/.bin).
+WRANGLER_PKG="${WRANGLER_PKG:-wrangler@4}"
+DEPLOY_OUT="$(npx --yes "$WRANGLER_PKG" deploy --name "aft-u-${SLUG}" 2>&1)" || {
   echo "$DEPLOY_OUT"
   fail "Deploy failed."
 }

@@ -292,6 +292,51 @@ describe("run job API", () => {
   });
 });
 
+  it("complete rejects a Next upstream that is not this site", async () => {
+    const token = randomToken("run_tok_");
+    const slug = `nxtb${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`;
+    const id = await insertRunJob(env, {
+      owner: "octo",
+      repo: "hello-next",
+      url: "https://github.com/octo/hello-next",
+      trigger: "test",
+      kind: "next",
+      phase: "queued",
+      slug,
+      jobTokenHash: await sha256Hex(token),
+    });
+    const complete = await call(
+      new Request(`${API_ORIGIN}/v1/jobs/${id}/complete`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ upstream: "https://evil.example" }),
+      }),
+    );
+    expect(complete.status).toBe(422);
+    const job = await getRunJob(env, id);
+    expect(job?.status).toBe("failed");
+  });
+});
+
+describe("isAllowedNextUpstream", () => {
+  it("accepts this slug's workers.dev host and rejects others", async () => {
+    const { isAllowedNextUpstream } = await import("../src/jobs");
+    expect(isAllowedNextUpstream("demo", "https://aft-u-demo.workers.dev")).toBe(
+      true,
+    );
+    expect(
+      isAllowedNextUpstream("demo", "https://aft-u-demo.acct.workers.dev"),
+    ).toBe(true);
+    expect(isAllowedNextUpstream("demo", "https://aft-u-victim.workers.dev")).toBe(
+      false,
+    );
+    expect(isAllowedNextUpstream("demo", "https://evil.example")).toBe(false);
+  });
+});
+
 describe("ghaDispatchInputs", () => {
   it("never includes a job bearer token", async () => {
     const { ghaDispatchInputs } = await import("../src/jobs");

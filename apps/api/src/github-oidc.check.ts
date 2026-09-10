@@ -101,4 +101,8 @@ for (const wf of ["run-next.yml", "run-static-build.yml", "run-vite.yml"]) {
   assert.doesNotMatch(yml, /JOB_TOKEN:\s*\$\{\{\s*inputs\.job_token/);
 }
 
+const nextYml = readFileSync(join(root, ".github/workflows/run-next.yml"), "utf8");
+assert.match(nextYml, /needs:\s*build/);
+assert.match(nextYml, /^  deploy:/m);
+
 console.log("ok");
