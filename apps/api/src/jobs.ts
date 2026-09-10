@@ -18,7 +18,13 @@ import type { BuildPlan } from "./engine-kind";
 import { scrubProductSurface } from "./product-surface";
 import { getSiteSecretsMap } from "./secrets";
 import { shaFromPlanJson, writeCachedRunFail } from "./run-fail-cache";
-import { parseSandboxOrigin } from "./container-origin";
+import {
+  isEphemeralContainerOrigin,
+  parseSandboxOrigin,
+} from "./container-origin";
+import { isAllowedNextUpstream } from "./run-upstream";
+
+export { isAllowedNextUpstream } from "./run-upstream";
 
 /**
  * Lifetime of an anonymous `aft run` URL. Matches EXPIRY_DEFAULT_SEC for
@@ -327,6 +333,13 @@ async function completeNextJob(
       return { ok: false, reason: "upstream must be https." };
     }
     upstreamValue = dest.origin;
+    if (isContainer) {
+      if (!isEphemeralContainerOrigin(upstreamValue)) {
+        return { ok: false, reason: "upstream must belong to this site." };
+      }
+    } else if (!isAllowedNextUpstream(slug, upstreamValue)) {
+      return { ok: false, reason: "upstream must belong to this site." };
+    }
   }
   const placeholder = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><title>${slug}</title></head><body><p>${slug} on aft.page</p></body></html>`;
   const aftJson = JSON.stringify({
