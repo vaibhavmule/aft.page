@@ -13,6 +13,7 @@ import {
 import { corsHeaders, json, optionsResponse } from "./http";
 import { sha256Hex, timingSafeEqual } from "./auth";
 import { jobRunnerAudience, verifyGithubActionsOidc } from "./github-oidc";
+import { verifyJobStopToken } from "./job-stop";
 import { liveSiteUrl } from "./site-url";
 import type { BuildPlan } from "./engine-kind";
 import { scrubProductSurface } from "./product-surface";
@@ -220,13 +221,17 @@ function lastLine(tail: string | null): string {
   return parts[parts.length - 1] || "";
 }
 
+function bearerToken(request: Request): string {
+  const auth = request.headers.get("authorization") || "";
+  return auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
+}
+
 async function authorizeJobToken(
   env: Env,
   request: Request,
   job: { id: string; jobTokenHash: string | null },
 ): Promise<boolean> {
-  const auth = request.headers.get("authorization") || "";
-  const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
+  const token = bearerToken(request);
   if (!token) return false;
   if (token.startsWith("eyJ")) {
     const repo = (env.AFT_RUN_GITHUB_REPO || "vaibhavmule/aft.page").trim();
@@ -239,6 +244,14 @@ async function authorizeJobToken(
   if (!job.jobTokenHash) return false;
   const hash = await sha256Hex(token);
   return timingSafeEqual(hash, job.jobTokenHash);
+}
+
+async function authorizeJobStop(
+  env: Env,
+  request: Request,
+  job: { id: string },
+): Promise<boolean> {
+  return verifyJobStopToken(env, job.id, bearerToken(request));
 }
 
 function jobJson(data: unknown, status: number, origin: string | null): Response {
@@ -479,6 +492,10 @@ export async function handleJobRoute(
     if (request.method !== "POST") return jobJson({ error: "method_not_allowed" }, 405, origin);
     const job = await getRunJob(env, id);
     if (!job) return jobJson({ error: "not_found" }, 404, origin);
+    // Job ids are on pending pages and public GET/SSE. Stop is a mutation.
+    if (!(await authorizeJobStop(env, request, job))) {
+      return jobJson({ error: "unauthorized" }, 401, origin);
+    }
     if (job.status === "live") {
       return jobJson({ error: "already_live", status: job.status }, 409, origin);
     }

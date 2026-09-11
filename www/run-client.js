@@ -86,7 +86,7 @@ export function runPageUrl(ref) {
 
 /**
  * Start a Run job. Returns one of:
- *   { status: "queued", jobId }          — build underway, poll/SSE via watchJob
+ *   { status: "queued", jobId, stopToken } — build underway, poll/SSE via watchJob
  *   { status: "ok", url, editToken }     — instant static deploy
  *   { status: "pick_root", ref, roots }  — repo has more than one app
  *   { status: "error", reason }          — failed (rate_limited retried)
@@ -104,7 +104,7 @@ export async function runGithubRepo(owner, repo, root) {
     })
     const data = await res.json().catch(() => ({}))
     if (res.status === 202 && data.jobId) {
-      return { status: "queued", jobId: data.jobId }
+      return { status: "queued", jobId: data.jobId, stopToken: data.stopToken }
     }
     if (res.ok && data.url) {
       return { status: "ok", url: data.url, editToken: data.editToken }

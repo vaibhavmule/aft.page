@@ -15,6 +15,8 @@ export default defineConfig(async () => {
     plugins: [
       cloudflareTest({
         wrangler: { configPath: "./wrangler.jsonc" },
+        // wrangler.jsonc marks AI remote:true; tests must not need a live token.
+        remoteBindings: false,
         miniflare: {
           bindings: {
             AUTH_SECRET: "test-auth-secret-for-vitest-only",
