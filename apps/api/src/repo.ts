@@ -12,7 +12,7 @@ import { corsHeaders, json, optionsResponse } from "./http";
 import { rateLimit } from "./rate-limit";
 import { allocateUniqueSlug, slugFromHint } from "./slug";
 import { randomToken, resolveSessionUser, sha256Hex } from "./auth";
-import { dispatchRunBuildWorkflow } from "./jobs";
+import { dispatchRunBuildWorkflow, jobStopToken } from "./jobs";
 import { getSiteSecretsMap } from "./secrets";
 import { readCachedRunFail, writeCachedRunFail } from "./run-fail-cache";
 import {
@@ -1037,6 +1037,7 @@ export async function handleRepoRoute(
         owner: job.owner,
         repo: job.repo,
         branch: job.branch,
+        stopToken: await jobStopToken(env, job.id),
       },
       202,
       origin,

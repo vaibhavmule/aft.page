@@ -33,6 +33,7 @@ import {
 } from "./storage";
 import { corsHeaders, json, privateJson } from "./http";
 import { attachDeployPreviewUrls, liveSiteUrl } from "./site-url";
+import { jobStopToken } from "./jobs";
 import { executeRepoJob } from "./repo";
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -686,6 +687,7 @@ async function rerunSite(
         slug: job.slug,
         owner: job.owner,
         repo: job.repo,
+        stopToken: await jobStopToken(env, job.id),
       },
       202,
       extra,

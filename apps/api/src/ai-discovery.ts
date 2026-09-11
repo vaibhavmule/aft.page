@@ -52,7 +52,8 @@ Body: {"slug":"<slug>","email":"you@example.com","editToken":"<editToken>"}
 
 - POST /v1/repo/check {"url":"https://github.com/owner/repo"} → detect plan.
 - POST /v1/repo/deploy {"url":"…"} → static fast; Vite/Next build in background.
-- GET /v1/jobs/{id}, GET /v1/jobs/{id}/events, POST /v1/jobs/{id}/stop.
+- GET /v1/jobs/{id}, GET /v1/jobs/{id}/events.
+- POST /v1/jobs/{id}/stop — Bearer stopToken from the deploy 202. Job ids on pending pages are not enough.
 
 ## Inventory / operations (auth or edit token)
 

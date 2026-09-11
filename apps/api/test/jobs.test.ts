@@ -259,7 +259,39 @@ describe("run job API", () => {
     expect(job?.status).toBe("live");
   });
 
-  it("POST stop marks failed so complete cannot go live", async () => {
+  it("POST stop without the stop token is 401 (job ids leak on pending pages)", async () => {
+    const token = randomToken("run_tok_");
+    const id = await insertRunJob(env, {
+      owner: "octo",
+      repo: "hello-next",
+      url: "https://github.com/octo/hello-next",
+      trigger: "test",
+      kind: "next",
+      phase: "cloning",
+      slug: "stopanon1",
+      jobTokenHash: await sha256Hex(token),
+    });
+    const naked = await call(
+      new Request(`${API_ORIGIN}/v1/jobs/${id}/stop`, { method: "POST" }),
+    );
+    expect(naked.status).toBe(401);
+    const runner = await call(
+      new Request(`${API_ORIGIN}/v1/jobs/${id}/stop`, {
+        method: "POST",
+        headers: { authorization: `Bearer ${token}` },
+      }),
+    );
+    expect(runner.status).toBe(401);
+    const snap = await call(new Request(`${API_ORIGIN}/v1/jobs/${id}`));
+    const body = (await snap.json()) as { status: string; stopToken?: unknown };
+    expect(body.status).toBe("queued");
+    expect(body.stopToken).toBeUndefined();
+    const job = await getRunJob(env, id);
+    expect(job?.status).toBe("queued");
+  });
+
+  it("POST stop with the stop token marks failed so complete cannot go live", async () => {
+    const { jobStopToken } = await import("../src/jobs");
     const token = randomToken("run_tok_");
     const id = await insertRunJob(env, {
       owner: "octo",
@@ -271,8 +303,19 @@ describe("run job API", () => {
       slug: "stopjob1",
       jobTokenHash: await sha256Hex(token),
     });
+    const stopToken = await jobStopToken(env, id);
+    const wrong = await call(
+      new Request(`${API_ORIGIN}/v1/jobs/${id}/stop`, {
+        method: "POST",
+        headers: { authorization: `Bearer run_stop_${"0".repeat(64)}` },
+      }),
+    );
+    expect(wrong.status).toBe(401);
     const stop = await call(
-      new Request(`${API_ORIGIN}/v1/jobs/${id}/stop`, { method: "POST" }),
+      new Request(`${API_ORIGIN}/v1/jobs/${id}/stop`, {
+        method: "POST",
+        headers: { authorization: `Bearer ${stopToken}` },
+      }),
     );
     expect(stop.status).toBe(200);
     const job = await getRunJob(env, id);
@@ -289,6 +332,19 @@ describe("run job API", () => {
       }),
     );
     expect(complete.status).toBe(409);
+  });
+});
+
+describe("jobStopToken", () => {
+  it("is derived per job id and is not interchangeable", async () => {
+    const { jobStopToken, verifyJobStopToken } = await import("../src/jobs");
+    const a = await jobStopToken(env, "run_aaa");
+    const b = await jobStopToken(env, "run_bbb");
+    expect(a).toMatch(/^run_stop_[0-9a-f]{64}$/);
+    expect(a).not.toBe(b);
+    expect(await verifyJobStopToken(env, "run_aaa", a)).toBe(true);
+    expect(await verifyJobStopToken(env, "run_bbb", a)).toBe(false);
+    expect(await verifyJobStopToken(env, "run_aaa", "")).toBe(false);
   });
 });
 

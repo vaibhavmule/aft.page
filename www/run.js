@@ -189,6 +189,9 @@ async function watchJobUi(data) {
       await fetch(`${API}/v1/jobs/${encodeURIComponent(data.jobId)}/stop`, {
         method: "POST",
         credentials: "include",
+        headers: data.stopToken
+          ? { authorization: `Bearer ${data.stopToken}` }
+          : {},
       })
     } catch (_) {}
     hideStop()
