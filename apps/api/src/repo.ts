@@ -12,7 +12,8 @@ import { corsHeaders, json, optionsResponse } from "./http";
 import { rateLimit } from "./rate-limit";
 import { allocateUniqueSlug, slugFromHint } from "./slug";
 import { randomToken, resolveSessionUser, sha256Hex } from "./auth";
-import { dispatchRunBuildWorkflow, jobStopToken } from "./jobs";
+import { dispatchRunBuildWorkflow } from "./jobs";
+import { jobStopToken } from "./job-stop";
 import { getSiteSecretsMap } from "./secrets";
 import { readCachedRunFail, writeCachedRunFail } from "./run-fail-cache";
 import {

@@ -33,7 +33,7 @@ import {
 } from "./storage";
 import { corsHeaders, json, privateJson } from "./http";
 import { attachDeployPreviewUrls, liveSiteUrl } from "./site-url";
-import { jobStopToken } from "./jobs";
+import { jobStopToken } from "./job-stop";
 import { executeRepoJob } from "./repo";
 
 const DEFAULT_PAGE_SIZE = 20;

@@ -13,6 +13,7 @@ import {
 import { corsHeaders, json, optionsResponse } from "./http";
 import { sha256Hex, timingSafeEqual } from "./auth";
 import { jobRunnerAudience, verifyGithubActionsOidc } from "./github-oidc";
+import { verifyJobStopToken } from "./job-stop";
 import { liveSiteUrl } from "./site-url";
 import type { BuildPlan } from "./engine-kind";
 import { scrubProductSurface } from "./product-surface";
@@ -223,22 +224,6 @@ function lastLine(tail: string | null): string {
 function bearerToken(request: Request): string {
   const auth = request.headers.get("authorization") || "";
   return auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
-}
-
-/** Client cancel secret. Derived from AUTH_SECRET so it is not stored, not on GET/SSE/pending HTML. */
-export async function jobStopToken(env: Env, jobId: string): Promise<string> {
-  const hex = await sha256Hex(`${env.AUTH_SECRET}:job-stop:${jobId}`);
-  return `run_stop_${hex}`;
-}
-
-export async function verifyJobStopToken(
-  env: Env,
-  jobId: string,
-  token: string,
-): Promise<boolean> {
-  if (!token.startsWith("run_stop_")) return false;
-  const expect = await jobStopToken(env, jobId);
-  return timingSafeEqual(token, expect);
 }
 
 async function authorizeJobToken(

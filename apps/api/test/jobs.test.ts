@@ -291,7 +291,7 @@ describe("run job API", () => {
   });
 
   it("POST stop with the stop token marks failed so complete cannot go live", async () => {
-    const { jobStopToken } = await import("../src/jobs");
+    const { jobStopToken } = await import("../src/job-stop");
     const token = randomToken("run_tok_");
     const id = await insertRunJob(env, {
       owner: "octo",
@@ -337,7 +337,7 @@ describe("run job API", () => {
 
 describe("jobStopToken", () => {
   it("is derived per job id and is not interchangeable", async () => {
-    const { jobStopToken, verifyJobStopToken } = await import("../src/jobs");
+    const { jobStopToken, verifyJobStopToken } = await import("../src/job-stop");
     const a = await jobStopToken(env, "run_aaa");
     const b = await jobStopToken(env, "run_bbb");
     expect(a).toMatch(/^run_stop_[0-9a-f]{64}$/);
