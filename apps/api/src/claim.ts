@@ -33,6 +33,7 @@ import {
 import { clientIp, corsHeaders, json, optionsResponse, originMayActOnSlug, privateJson } from "./http";
 import { rateLimit } from "./rate-limit";
 import { attachDeployPreviewUrls, liveSiteUrl } from "./site-url";
+import { htmlSafeSlug } from "./slug";
 
 export async function handleClaimRoute(
   request: Request,
@@ -207,7 +208,7 @@ async function claimVerify(
   url: URL,
 ): Promise<Response> {
   const token = url.searchParams.get("token") || "";
-  const slug = url.searchParams.get("slug")?.toLowerCase() || "";
+  const slug = htmlSafeSlug(url.searchParams.get("slug")?.toLowerCase()) || "";
   const root = env.ROOT_DOMAIN || "aft.page";
 
   if (!token || !slug) {
@@ -408,10 +409,14 @@ export async function authorizeSiteHub(
   return { ok: false, status: 403, error: "forbidden" };
 }
 
-/** Branded error page for claim link failures. */
+/** Branded error page for claim link failures. `slug` is a query param — only interpolate a real slug. */
 function claimErrorHtml(title: string, slug: string, root: string): Response {
-  const siteLink = `https://${slug}.${root}/`;
+  const safe = htmlSafeSlug(slug) || "";
+  const siteLink = safe ? `https://${safe}.${root}/` : `https://${root}/`;
   const loginLink = `https://${root}/login`;
+  const visit = safe
+    ? `Visit <a href="${siteLink}">${safe}.${root}</a> or <a href="${loginLink}">log in</a> to continue.`
+    : `Visit <a href="${siteLink}">aft.page</a> or <a href="${loginLink}">log in</a> to continue.`;
 
   const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="${BRAND.void}"/><title>${title} — aft.page</title>
 ${BRAND_FONT_LINKS}
@@ -427,7 +432,7 @@ p a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
 <main>
   <a class="brand" href="https://${root}/">aft<span>.</span>page</a>
   <h1>${title}</h1>
-  <p>This claim link is invalid or has expired. Visit <a href="${siteLink}">${slug}.${root}</a> or <a href="${loginLink}">log in</a> to continue.</p>
+  <p>This claim link is invalid or has expired. ${visit}</p>
 </main>
 </body></html>`;
 

@@ -253,6 +253,26 @@ describe("claim/verify", () => {
       ),
     );
     expect(res.status).toBe(400);
+    expect(res.headers.get("content-type")).toContain("text/html");
+    const html = await res.text();
+    expect(html).toContain("verify-bad.aft.page");
+  });
+
+  it("does not reflect an unvalidated slug into claim error HTML", async () => {
+    const payload = `"><img src=x onerror=alert(1)>`;
+    const res = await call(
+      new Request(
+        `${API_ORIGIN}/v1/claim/verify?token=x&slug=${encodeURIComponent(payload)}`,
+      ),
+    );
+    expect(res.status).toBe(400);
+    expect(res.headers.get("content-type")).toContain("text/html");
+    const html = await res.text();
+    expect(html).toContain("<!DOCTYPE html>");
+    expect(html).not.toContain("<img");
+    expect(html).not.toContain("onerror");
+    expect(html).not.toContain(payload);
+    expect(html).not.toContain(encodeURIComponent(payload));
   });
 
   it("lands on the live slug after a valid magic link", async () => {
