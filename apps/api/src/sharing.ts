@@ -49,7 +49,7 @@ import { clientIp } from "./http";
 import { deleteSiteObjects, moveSiteObjects } from "./storage";
 import { releaseCustomDomains } from "./custom-domains";
 import { RESERVED_SLUGS } from "./env";
-import { isValidSlug } from "./slug";
+import { htmlSafeSlug, isValidSlug } from "./slug";
 import { liveSiteUrl } from "./site-url";
 
 const INVITE_DAYS = 7;
@@ -732,10 +732,11 @@ button:hover{background:var(--cta-hover)}button:disabled{opacity:.6;cursor:defau
 </body></html>`;
 }
 
-/** Branded error page for invite link failures. */
+/** Branded error page for invite link failures. Only interpolate a real slug. */
 function inviteErrorHtml(title: string, slug: string | null, root: string): Response {
-  const siteLink = slug
-    ? `<a href="https://${slug}.${root}/">${slug}.${root}</a>`
+  const safe = htmlSafeSlug(slug);
+  const siteLink = safe
+    ? `<a href="https://${safe}.${root}/">${safe}.${root}</a>`
     : `<a href="https://${root}/">aft.page</a>`;
   const loginLink = `https://${root}/login`;
 
@@ -753,7 +754,7 @@ p a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
 <main>
   <a class="brand" href="https://${root}/">aft<span>.</span>page</a>
   <h1>${title}</h1>
-  <p>This invite link is invalid or has expired. ${slug ? `Visit ${siteLink} or ` : "Visit "}${slug ? `<a href="${loginLink}">log in</a>` : siteLink} to continue.</p>
+  <p>This invite link is invalid or has expired. ${safe ? `Visit ${siteLink} or ` : "Visit "}${safe ? `<a href="${loginLink}">log in</a>` : siteLink} to continue.</p>
 </main>
 </body></html>`;
 

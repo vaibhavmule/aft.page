@@ -42,6 +42,12 @@ export function isValidSlug(slug: string): boolean {
   return /^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$/.test(slug);
 }
 
+/** Slug interpolated into Worker HTML. Query params are not hostnames — drop junk. */
+export function htmlSafeSlug(slug: string | null | undefined): string | null {
+  if (!slug || !isValidSlug(slug)) return null;
+  return slug;
+}
+
 /** package.json name, aft.json name, <title>, <h1>, etc. */
 export function slugFromHint(raw: string): string | undefined {
   const slug = raw

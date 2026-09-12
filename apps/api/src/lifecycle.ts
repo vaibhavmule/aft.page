@@ -31,7 +31,7 @@ import {
   listDeployFiles,
   normalizePath,
 } from "./storage";
-import { corsHeaders, json, privateJson } from "./http";
+import { corsHeaders, json, originMayActOnSlug, privateJson } from "./http";
 import { attachDeployPreviewUrls, liveSiteUrl } from "./site-url";
 import { executeRepoJob } from "./repo";
 
@@ -402,6 +402,10 @@ async function absorbSite(
   origin: string | null,
 ): Promise<Response> {
   const extra = Object.fromEntries(corsHeaders(origin, true));
+  const root = env.ROOT_DOMAIN || "aft.page";
+  if (!originMayActOnSlug(request, targetSlug, root)) {
+    return json({ error: "forbidden" }, 403, extra);
+  }
   const user = await resolveSessionUser(env, request);
   if (!user) return json({ error: "unauthorized" }, 401, extra);
 
@@ -502,6 +506,8 @@ async function getCaps(
   origin: string | null,
 ): Promise<Response> {
   const extra = Object.fromEntries(corsHeaders(origin, true));
+  const auth = await authorizeDeployUpdate(env, request, slug);
+  if (!auth.ok) return json({ error: auth.error }, auth.status, extra);
   const grant = await getCapabilityGrant(env, slug);
   if (!grant) return json({ slug, capabilities: null }, 200, extra);
   return json(
@@ -527,6 +533,10 @@ async function approveCaps(
   origin: string | null,
 ): Promise<Response> {
   const extra = Object.fromEntries(corsHeaders(origin, true));
+  const root = env.ROOT_DOMAIN || "aft.page";
+  if (!originMayActOnSlug(request, slug, root)) {
+    return json({ error: "forbidden" }, 403, extra);
+  }
   const user = await resolveSessionUser(env, request);
   if (!user) return json({ error: "unauthorized" }, 401, extra);
   const { getSiteOwnerId } = await import("./db");
