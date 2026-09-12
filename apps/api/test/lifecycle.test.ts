@@ -163,6 +163,18 @@ describe("capabilities", () => {
     expect(body.capabilities?.summary?.length).toBeGreaterThan(0);
 
     const cookie = await ownSite(body.slug, "caps@example.com");
+    const listed = await call(
+      new Request(`${API_ORIGIN}/v1/sites/${body.slug}/capabilities`, {
+        headers: { cookie, origin: "https://aft.page" },
+      }),
+    );
+    expect(listed.status).toBe(200);
+    const shown = (await listed.json()) as {
+      capabilities: { status: string; requested: { secrets: string[] } };
+    };
+    expect(shown.capabilities.status).toBe("pending");
+    expect(shown.capabilities.requested.secrets).toContain("slack-webhook");
+
     const approve = await call(
       new Request(`${API_ORIGIN}/v1/sites/${body.slug}/capabilities`, {
         method: "POST",
@@ -215,6 +227,138 @@ describe("capabilities", () => {
       }),
     );
     expect(approve.status).toBe(403);
+  });
+
+  it("does not publish capability names without a site credential", async () => {
+    const res = await call(
+      uploadJson(
+        [
+          { path: "index.html", content: "<h1>caps</h1>" },
+          {
+            path: "aft.json",
+            content: JSON.stringify({
+              capabilities: { secrets: ["ANTHROPIC_API_KEY"] },
+            }),
+          },
+        ],
+        "caps-public",
+      ),
+    );
+    expect(res.status).toBe(200);
+    const { slug } = (await res.json()) as { slug: string };
+
+    const anon = await call(
+      new Request(`${API_ORIGIN}/v1/sites/${slug}/capabilities`),
+    );
+    expect(anon.status).toBe(401);
+    const leaked = (await anon.json()) as {
+      capabilities?: { requested?: { secrets?: string[] } };
+    };
+    expect(JSON.stringify(leaked)).not.toContain("ANTHROPIC_API_KEY");
+  });
+
+  it("lists capabilities with the unclaimed edit token", async () => {
+    const res = await call(
+      uploadJson(
+        [
+          { path: "index.html", content: "<h1>caps</h1>" },
+          {
+            path: "aft.json",
+            content: JSON.stringify({
+              capabilities: { secrets: ["slack-webhook"] },
+            }),
+          },
+        ],
+        "caps-edit",
+      ),
+    );
+    expect(res.status).toBe(200);
+    const { slug, editToken } = (await res.json()) as {
+      slug: string;
+      editToken: string;
+    };
+    const listed = await call(
+      new Request(`${API_ORIGIN}/v1/sites/${slug}/capabilities`, {
+        headers: { "x-aft-edit-token": editToken },
+      }),
+    );
+    expect(listed.status).toBe(200);
+    const shown = (await listed.json()) as {
+      capabilities: { requested: { secrets: string[] } };
+    };
+    expect(shown.capabilities.requested.secrets).toContain("slack-webhook");
+  });
+
+  it("rejects capability approve from another tenant origin", async () => {
+    const res = await call(
+      uploadJson(
+        [
+          { path: "index.html", content: "<h1>caps</h1>" },
+          {
+            path: "aft.json",
+            content: JSON.stringify({
+              capabilities: { secrets: ["slack-webhook"] },
+            }),
+          },
+        ],
+        "caps-csrf",
+      ),
+    );
+    expect(res.status).toBe(200);
+    const { slug } = (await res.json()) as { slug: string };
+    const cookie = await ownSite(slug, "caps-csrf@example.com");
+
+    const csrf = await call(
+      new Request(`${API_ORIGIN}/v1/sites/${slug}/capabilities`, {
+        method: "POST",
+        headers: {
+          cookie,
+          origin: "https://evil.aft.page",
+          "content-type": "application/json",
+        },
+        body: "{}",
+      }),
+    );
+    expect(csrf.status).toBe(403);
+
+    const hub = await call(
+      new Request(`${API_ORIGIN}/v1/sites/${slug}/capabilities`, {
+        method: "POST",
+        headers: {
+          cookie,
+          origin: "https://aft.page",
+          "content-type": "application/json",
+        },
+        body: "{}",
+      }),
+    );
+    expect(hub.status).toBe(200);
+  });
+});
+
+describe("absorb origin", () => {
+  it("rejects absorb from another tenant origin", async () => {
+    const target = await deployPaste("<h1>keep</h1>", "absorb-target");
+    const source = await deployPaste("<h1>fold</h1>", "absorb-source");
+    const cookie = await ownSite(target.slug, "absorb@example.com");
+    const user = await findOrCreateUser(env, "absorb@example.com");
+    expect(await assignSiteOwner(env, source.slug, user.id)).toBe(true);
+
+    const csrf = await call(
+      new Request(`${API_ORIGIN}/v1/sites/${target.slug}/absorb`, {
+        method: "POST",
+        headers: {
+          cookie,
+          origin: "https://evil.aft.page",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ source: source.slug, destroySource: true }),
+      }),
+    );
+    expect(csrf.status).toBe(403);
+
+    const still = await call(new Request(`https://${source.slug}.aft.page/`));
+    expect(await still.text()).toBe("<h1>fold</h1>");
   });
 });
 
