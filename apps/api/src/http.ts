@@ -159,7 +159,9 @@ export function cookieDomain(env: Env): string {
  * Tenant hosts share Domain=.aft.page session cookies. A credentialed call
  * from https://{attacker}.aft.page must not act on another slug.
  * No Origin/Referer = non-browser (curl, MCP, editToken header) — allow.
- * Product hosts (apex, preview, …) may act on any slug.
+ * Product hosts (apex, reserved, matching preview) may act on any slug.
+ * Foreign hosts must not: cookie-less routes (connector invoke) still
+ * reflect CORS, so fail-open here lets any website pull private agent data.
  */
 export function originMayActOnSlug(
   request: Request,
@@ -176,7 +178,7 @@ export function originMayActOnSlug(
   }
   if (host === "localhost" || host === "127.0.0.1") return true;
   if (host === root) return true;
-  if (!host.endsWith(`.${root}`)) return true;
+  if (!host.endsWith(`.${root}`)) return false;
   const left = host.slice(0, -(root.length + 1));
   if (!left || left.includes(".")) return false;
   if (RESERVED_SLUGS.has(left)) return true;

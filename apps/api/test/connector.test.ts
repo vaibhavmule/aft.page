@@ -191,4 +191,34 @@ describe("connector", () => {
     const body = (await inv.json()) as { error: string };
     expect(body.error).toBe("capability_denied");
   });
+
+  it("rejects connector invoke from a foreign website", async () => {
+    const { slug } = await deployExpense("conn-origin");
+    const cookie = await ownSite(slug, "conn-origin@example.com");
+    await call(
+      new Request(`${API_ORIGIN}/v1/sites/${slug}/capabilities`, {
+        method: "POST",
+        headers: {
+          cookie,
+          origin: "https://aft.page",
+          "content-type": "application/json",
+        },
+        body: "{}",
+      }),
+    );
+
+    const inv = await call(
+      new Request(`${API_ORIGIN}/v1/sites/${slug}/connector/invoke`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: "https://evil.example",
+        },
+        body: JSON.stringify({ capability: "expenses:read" }),
+      }),
+    );
+    expect(inv.status).toBe(403);
+    const body = (await inv.json()) as { error: string };
+    expect(body.error).toBe("forbidden");
+  });
 });
